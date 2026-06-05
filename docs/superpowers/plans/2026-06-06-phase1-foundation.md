@@ -117,14 +117,15 @@ dependencies {
     testImplementation(libs.turbine)
 }
 tasks.test { useJUnitPlatform() }
-kotlin { jvmToolchain(17) }
+kotlin { jvmToolchain(21) }
 ```
 
 - [ ] **Step 4: Build verifizieren**
 
+Der Gradle-Wrapper (8.10.2) ist im Repo bereits vorhanden (`./gradlew`, `gradle/wrapper/`). System-JDK ist 21 → `jvmToolchain(21)` braucht keinen Toolchain-Download.
+
 Run: `./gradlew :domain:build`
 Expected: BUILD SUCCESSFUL (leeres Modul kompiliert, keine Tests).
-Falls Gradle-Wrapper fehlt: `gradle wrapper --gradle-version 8.10` einmalig ausführen, dann erneut.
 
 - [ ] **Step 5: Commit**
 

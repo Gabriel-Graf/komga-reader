@@ -32,7 +32,7 @@ class ResolveViewerTypeTest {
     }
 
     @Test
-    fun `Serien-Override schlaegt den Regal-Typ`() {
+    fun `Serien-Override schlägt den Regal-Typ`() {
         assertEquals(ViewerType.WEBTOON, resolve(series(ContentType.WEBTOON), shelf))
     }
 }

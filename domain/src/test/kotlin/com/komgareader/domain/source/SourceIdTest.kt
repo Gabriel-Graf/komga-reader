@@ -23,7 +23,7 @@ class SourceIdTest {
     }
 
     @Test
-    fun `ID ist nie negativ (Sign-Bit geloescht)`() {
+    fun `ID ist nie negativ (Sign-Bit gelöscht)`() {
         val id = SourceId.of("x", SourceKind.PLUGIN, "y")
         assertTrue(id >= 0L)
     }

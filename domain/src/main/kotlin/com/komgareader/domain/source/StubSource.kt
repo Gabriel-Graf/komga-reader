@@ -11,5 +11,5 @@ data class StubSource(
     override val id: Long,
     override val name: String,
 ) : MediaSource {
-    override val kind: SourceKind = SourceKind.PLUGIN
+    override val kind: SourceKind = SourceKind.UNKNOWN
 }

@@ -25,13 +25,13 @@ class SourceManagerTest {
     }
 
     @Test
-    fun `get liefert null fuer unbekannte Quelle`() {
+    fun `get liefert null für unbekannte Quelle`() {
         val manager = SourceManager()
         assertNull(manager.get(99))
     }
 
     @Test
-    fun `getOrStub liefert Stub fuer fehlende Quelle statt null`() {
+    fun `getOrStub liefert Stub für fehlende Quelle statt null`() {
         val manager = SourceManager()
         val stub = manager.getOrStub(id = 7, name = "Verschwunden")
         assertTrue(stub is StubSource)
@@ -43,9 +43,9 @@ class SourceManagerTest {
     fun `sources-Flow emittiert nach Registrierung`() = runTest {
         val manager = SourceManager()
         manager.sources.test {
-            assertEquals(emptyList(), awaitItem())
+            assertEquals(emptyMap(), awaitItem())
             manager.register(FakeSource(id = 1, name = "A"))
-            assertEquals(listOf(1L), awaitItem().map { it.id })
+            assertEquals(setOf(1L), awaitItem().keys)
             cancelAndIgnoreRemainingEvents()
         }
     }

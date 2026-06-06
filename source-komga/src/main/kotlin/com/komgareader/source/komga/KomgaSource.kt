@@ -57,6 +57,9 @@ class KomgaSource internal constructor(
     override suspend fun openPage(ref: PageRef): ByteArray =
         api.getPage(ref.bookRemoteId, ref.pageNumber).bytes()
 
+    suspend fun downloadFile(bookRemoteId: String): ByteArray =
+        api.getFile(bookRemoteId).bytes()
+
     override suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress) {
         api.updateProgress(bookRemoteId, ReadProgressUpdateDto(progress.page, progress.completed))
     }

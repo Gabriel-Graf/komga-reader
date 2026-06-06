@@ -2,6 +2,7 @@ package com.komgareader.source.komga
 
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DownloadState
+import com.komgareader.domain.model.ReadingDirection
 import com.komgareader.source.komga.dto.BookDto
 import com.komgareader.source.komga.dto.BookMediaDto
 import com.komgareader.source.komga.dto.BookMetadataDto
@@ -126,5 +127,27 @@ class KomgaMapperTest {
         val dto = BookDto(id = "B1", seriesId = "S1", name = "x",
             media = BookMediaDto(mediaType = "application/pdf", pagesCount = 10))
         assertNull(mapper.toReadProgress(dto, localBookId = 9, updatedAt = 1))
+    }
+
+    @Test
+    fun `Series-readingDirection wird aus Komga-Wert gemappt`() {
+        val webtoon = mapper.toSeries(
+            SeriesDto(id = "S1", name = "Tower", metadata = SeriesMetadataDto(readingDirection = "WEBTOON")),
+        )
+        val rtl = mapper.toSeries(
+            SeriesDto(id = "S2", name = "Berserk", metadata = SeriesMetadataDto(readingDirection = "RIGHT_TO_LEFT")),
+        )
+        assertEquals(ReadingDirection.WEBTOON, webtoon.readingDirection)
+        assertEquals(ReadingDirection.RTL, rtl.readingDirection)
+    }
+
+    @Test
+    fun `Series-readingDirection ist null bei leer oder unbekannt`() {
+        val leer = mapper.toSeries(SeriesDto(id = "S3", name = "X"))
+        val unbekannt = mapper.toSeries(
+            SeriesDto(id = "S4", name = "Y", metadata = SeriesMetadataDto(readingDirection = "DIAGONAL")),
+        )
+        assertNull(leer.readingDirection)
+        assertNull(unbekannt.readingDirection)
     }
 }

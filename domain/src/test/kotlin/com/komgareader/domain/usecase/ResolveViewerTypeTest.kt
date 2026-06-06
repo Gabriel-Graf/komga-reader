@@ -1,8 +1,10 @@
 package com.komgareader.domain.usecase
 
+import com.komgareader.domain.model.Book
+import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.ContentType
+import com.komgareader.domain.model.ReadingDirection
 import com.komgareader.domain.model.Series
-import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.model.ViewerType
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,35 +12,51 @@ import kotlin.test.assertEquals
 class ResolveViewerTypeTest {
 
     private val resolve = ResolveViewerType()
-    private val shelf = Shelf(id = 1, name = "R", contentType = ContentType.COMIC, sourceIds = listOf(5))
-    private fun series(override: ContentType? = null) =
-        Series(id = 9, sourceId = 5, remoteId = "r", title = "T", contentTypeOverride = override)
+
+    private fun series(
+        override: ContentType? = null,
+        direction: ReadingDirection? = null,
+    ) = Series(
+        id = 0, sourceId = 0, remoteId = "S", title = "t",
+        contentTypeOverride = override, readingDirection = direction,
+    )
+
+    private fun book(format: BookFormat) =
+        Book(id = 0, sourceId = 0, seriesId = 0, remoteId = "B", title = "t", format = format, pageCount = 1)
 
     @Test
-    fun `Comic-Regal ohne Override ergibt PAGED`() {
-        assertEquals(ViewerType.PAGED, resolve(series(), shelf))
+    fun `Stufe 1 — Serien-Override schlaegt alles`() {
+        val result = resolve(series(override = ContentType.WEBTOON), book(BookFormat.CBZ), fallback = ContentType.MANGA)
+        assertEquals(ViewerType.WEBTOON, result)
     }
 
     @Test
-    fun `Webtoon-Regal ergibt WEBTOON`() {
-        val webtoonShelf = shelf.copy(contentType = ContentType.WEBTOON)
-        assertEquals(ViewerType.WEBTOON, resolve(series(), webtoonShelf))
+    fun `Stufe 2 — EPUB-Format ergibt EPUB`() {
+        val result = resolve(series(direction = ReadingDirection.WEBTOON), book(BookFormat.EPUB), fallback = null)
+        assertEquals(ViewerType.EPUB, result)
     }
 
     @Test
-    fun `Novel-Regal ergibt EPUB`() {
-        val novelShelf = shelf.copy(contentType = ContentType.NOVEL)
-        assertEquals(ViewerType.EPUB, resolve(series(), novelShelf))
+    fun `Stufe 3 — vertikale Leserichtung ergibt WEBTOON trotz Archiv-Format`() {
+        val result = resolve(series(direction = ReadingDirection.VERTICAL), book(BookFormat.CBZ), fallback = null)
+        assertEquals(ViewerType.WEBTOON, result)
     }
 
     @Test
-    fun `Manga-Regal ergibt PAGED`() {
-        val mangaShelf = shelf.copy(contentType = ContentType.MANGA)
-        assertEquals(ViewerType.PAGED, resolve(series(), mangaShelf))
+    fun `Stufe 4 — Archiv-Format ohne vertikale Richtung ergibt PAGED`() {
+        val result = resolve(series(direction = ReadingDirection.LTR), book(BookFormat.CBR), fallback = null)
+        assertEquals(ViewerType.PAGED, result)
     }
 
     @Test
-    fun `Serien-Override schlägt den Regal-Typ`() {
-        assertEquals(ViewerType.WEBTOON, resolve(series(ContentType.WEBTOON), shelf))
+    fun `Stufe 5 — Fallback-Typ greift bei Archiv-Format nicht vor Stufe 4`() {
+        val result = resolve(series(), book(BookFormat.PDF), fallback = ContentType.WEBTOON)
+        assertEquals(ViewerType.PAGED, result)
+    }
+
+    @Test
+    fun `Stufe 6 — kein Signal ergibt PAGED als Default`() {
+        val result = resolve(series(), book(BookFormat.CBZ), fallback = null)
+        assertEquals(ViewerType.PAGED, result)
     }
 }

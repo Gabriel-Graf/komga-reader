@@ -28,13 +28,13 @@ data class ServerEntity(
     val passwordIv: String? = null,
 )
 
-/** Nutzer-definiertes Regal (Gruppe). sourceIds als kommagetrennte Long-Werte. */
+/** Nutzer-definierte App-Bibliothek. [sources] kodiert (siehe ShelfSourceCodec). */
 @Entity(tableName = "shelves")
 data class ShelfEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val contentType: String,
-    val sourceIds: String,
+    val sources: String,
+    val defaultContentType: String? = null,
 )
 
 /** Lokal gespeichertes Buch (Download-Eintrag). */

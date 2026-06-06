@@ -6,8 +6,10 @@ import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.BrowsableSource
+import com.komgareader.domain.source.ContainerSource
 import com.komgareader.domain.source.PageRef
 import com.komgareader.domain.source.PagedResult
+import com.komgareader.domain.source.SourceContainer
 import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.source.SourceId
 import com.komgareader.domain.source.SyncingSource
@@ -29,14 +31,18 @@ class KomgaSource internal constructor(
     override val name: String,
     private val api: KomgaApi,
     private val mapper: KomgaMapper,
-) : BrowsableSource, SyncingSource {
+) : BrowsableSource, SyncingSource, ContainerSource {
 
     override val kind: SourceKind = SourceKind.KOMGA
 
     override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> {
-        val response = api.listSeries(page = page, size = PAGE_SIZE)
+        val libraryIds = filter.containerIds.ifEmpty { null }
+        val response = api.listSeries(page = page, size = PAGE_SIZE, libraryIds = libraryIds)
         return PagedResult(response.content.map(mapper::toSeries), hasNextPage = !response.last)
     }
+
+    override suspend fun listContainers(): List<SourceContainer> =
+        api.listLibraries().map { SourceContainer(id = it.id, name = it.name) }
 
     override suspend fun search(query: String, page: Int): PagedResult<Series> {
         val response = api.listSeries(page = page, size = PAGE_SIZE, search = query)

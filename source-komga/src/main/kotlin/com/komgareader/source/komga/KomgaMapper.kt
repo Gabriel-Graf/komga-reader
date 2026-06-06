@@ -3,6 +3,7 @@ package com.komgareader.source.komga
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.DownloadState
 import com.komgareader.domain.model.ReadProgress
+import com.komgareader.domain.model.ReadingDirection
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.source.PageRef
 import com.komgareader.source.komga.dto.BookDto
@@ -27,7 +28,16 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
         summary = dto.metadata.summary.ifBlank { null },
         status = dto.metadata.status.ifBlank { null },
         genres = dto.metadata.genres,
+        readingDirection = toReadingDirection(dto.metadata.readingDirection),
     )
+
+    private fun toReadingDirection(raw: String): ReadingDirection? = when (raw) {
+        "LEFT_TO_RIGHT" -> ReadingDirection.LTR
+        "RIGHT_TO_LEFT" -> ReadingDirection.RTL
+        "VERTICAL" -> ReadingDirection.VERTICAL
+        "WEBTOON" -> ReadingDirection.WEBTOON
+        else -> null
+    }
 
     fun toBook(dto: BookDto): Book = Book(
         id = UNASSIGNED_ID,

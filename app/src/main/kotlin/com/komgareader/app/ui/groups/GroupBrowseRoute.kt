@@ -47,7 +47,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
-import com.komgareader.app.ui.reader.ViewerMode
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.repository.ServerConfig
 
@@ -56,7 +55,7 @@ import com.komgareader.domain.repository.ServerConfig
 fun GroupBrowseRoute(
     shelfId: Long,
     onBack: () -> Unit,
-    onOpenSeries: (seriesId: String, viewerMode: String) -> Unit,
+    onOpenSeries: (seriesId: String) -> Unit,
     viewModel: GroupBrowseViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -116,7 +115,7 @@ fun GroupBrowseRoute(
                         GroupSeriesCover(
                             series = series,
                             serverConfig = current.serverConfig,
-                            onClick = { onOpenSeries(series.remoteId, current.viewerMode.name) },
+                            onClick = { onOpenSeries(series.remoteId) },
                         )
                     }
                 }

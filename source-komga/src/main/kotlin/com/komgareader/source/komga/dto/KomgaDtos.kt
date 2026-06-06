@@ -25,6 +25,7 @@ data class SeriesMetadataDto(
     val status: String = "",
     val summary: String = "",
     val genres: List<String> = emptyList(),
+    val readingDirection: String = "",
 )
 
 @Serializable
@@ -75,4 +76,10 @@ data class PageDto(
 data class ReadProgressUpdateDto(
     val page: Int,
     val completed: Boolean,
+)
+
+@Serializable
+data class LibraryDto(
+    val id: String,
+    val name: String = "",
 )

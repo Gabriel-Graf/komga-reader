@@ -82,8 +82,8 @@ class MainActivity : ComponentActivity() {
                         ) {
                             SeriesDetailScreen(
                                 onBack = { nav.popBackStack() },
-                                onOpenBook = { bookId, pageCount, format, forceStream ->
-                                    nav.navigate("reader/$bookId/$pageCount/$format/$forceStream")
+                                onOpenBook = { bookId, pageCount, format, forceStream, viewerMode ->
+                                    nav.navigate("reader/$bookId/$pageCount/$format/$forceStream/$viewerMode")
                                 },
                             )
                         }
@@ -95,22 +95,21 @@ class MainActivity : ComponentActivity() {
                             GroupBrowseRoute(
                                 shelfId = shelfId,
                                 onBack = { nav.popBackStack() },
-                                onOpenSeries = { seriesId, viewerMode ->
-                                    nav.navigate("series_vm/$seriesId/$viewerMode")
+                                onOpenSeries = { seriesId ->
+                                    nav.navigate("series_vm/$seriesId/$shelfId")
                                 },
                             )
                         }
                         composable(
-                            route = "series_vm/{seriesId}/{viewerMode}",
+                            route = "series_vm/{seriesId}/{shelfId}",
                             arguments = listOf(
                                 navArgument("seriesId") { type = NavType.StringType },
-                                navArgument("viewerMode") { type = NavType.StringType },
+                                navArgument("shelfId") { type = NavType.LongType },
                             ),
                         ) {
-                            val viewerMode = it.arguments?.getString("viewerMode") ?: "PAGED"
                             SeriesDetailScreen(
                                 onBack = { nav.popBackStack() },
-                                onOpenBook = { bookId, pageCount, format, forceStream ->
+                                onOpenBook = { bookId, pageCount, format, forceStream, viewerMode ->
                                     nav.navigate("reader/$bookId/$pageCount/$format/$forceStream/$viewerMode")
                                 },
                             )

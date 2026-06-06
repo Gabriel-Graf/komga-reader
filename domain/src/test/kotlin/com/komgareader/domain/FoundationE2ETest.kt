@@ -1,5 +1,7 @@
 package com.komgareader.domain
 
+import com.komgareader.domain.model.Book
+import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.Series
@@ -43,14 +45,15 @@ class FoundationE2ETest {
         assertTrue(missing is StubSource)
 
         // 3. Regal deklariert COMIC → Viewer ist deterministisch PAGED
-        val shelf = Shelf(id = 1, name = "Comics", contentType = ContentType.COMIC, sourceIds = listOf(komgaId))
+        val shelf = Shelf(id = 1, name = "Comics", sources = emptyList(), defaultContentType = ContentType.COMIC)
         val series = Series(id = 10, sourceId = komgaId, remoteId = "s-1", title = "Berserk")
+        val defaultBook = Book(id = 0, sourceId = komgaId, seriesId = 10, remoteId = "b-1", title = "Berserk #1", format = BookFormat.CBZ, pageCount = 200)
         val resolveViewer = ResolveViewerType()
-        assertEquals(ViewerType.PAGED, resolveViewer(series, shelf))
+        assertEquals(ViewerType.PAGED, resolveViewer(series, defaultBook, fallback = shelf.defaultContentType))
 
         // Eine als Webtoon markierte Serie überschreibt den Regal-Typ
         val webtoonSeries = series.copy(contentTypeOverride = ContentType.WEBTOON)
-        assertEquals(ViewerType.WEBTOON, resolveViewer(webtoonSeries, shelf))
+        assertEquals(ViewerType.WEBTOON, resolveViewer(webtoonSeries, defaultBook, fallback = shelf.defaultContentType))
 
         // 4. Offline-first-Sync: lokal weiter gelesen (neuer) gewinnt gegen Server
         val resolveConflict = ResolveProgressConflict()

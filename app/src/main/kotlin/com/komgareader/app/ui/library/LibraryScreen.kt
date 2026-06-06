@@ -1,32 +1,67 @@
 package com.komgareader.app.ui.library
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.domain.model.Series
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(onOpenSettings: () -> Unit) {
+fun LibraryScreen(
+    onOpenSettings: () -> Unit,
+    viewModel: LibraryViewModel = hiltViewModel(),
+) {
     val s = LocalStrings.current
+    val state by viewModel.state.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(s.libraryTitle) },
                 actions = {
+                    IconButton(onClick = { viewModel.refresh() }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = null)
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = s.settingsTitle)
                     }
@@ -34,8 +69,77 @@ fun LibraryScreen(onOpenSettings: () -> Unit) {
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            Text(s.libraryEmpty, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
+        when (val current = state) {
+            is LibraryUiState.NoServer -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    Text(s.libraryEmpty, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
+                }
+            }
+            is LibraryUiState.Loading -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is LibraryUiState.Error -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(current.message, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
+                        Button(onClick = { viewModel.refresh() }) {
+                            Text("Wiederholen")
+                        }
+                    }
+                }
+            }
+            is LibraryUiState.Content -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.fillMaxSize().padding(padding).padding(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    items(current.series) { series ->
+                        SeriesCover(series = series, apiKey = current.apiKey)
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun SeriesCover(series: Series, apiKey: String) {
+    val ctx = LocalContext.current
+    val request = remember(series.coverUrl, apiKey) {
+        ImageRequest.Builder(ctx).data(series.coverUrl)
+            .addHeader("X-API-Key", apiKey).crossfade(false).build()
+    }
+    Box(
+        Modifier
+            .aspectRatio(2f / 3f)
+            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
+    ) {
+        AsyncImage(
+            model = request,
+            contentDescription = series.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Icon(
+            Icons.Filled.CloudQueue,
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp),
+        )
+        Text(
+            series.title,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .background(Color.Black.copy(alpha = 0.7f))
+                .padding(2.dp),
+            color = Color.White,
+            fontSize = 10.sp,
+        )
     }
 }

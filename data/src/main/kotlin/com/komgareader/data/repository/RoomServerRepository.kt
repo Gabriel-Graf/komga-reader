@@ -13,12 +13,23 @@ class RoomServerRepository(
     private val credentials: CredentialStore,
 ) : ServerRepository {
     override val config: Flow<ServerConfig?> = dao.observe().map { e ->
-        e?.let { ServerConfig(it.name, it.baseUrl, credentials.getApiKey().orEmpty()) }
+        e?.let {
+            ServerConfig(
+                name = it.name,
+                baseUrl = it.baseUrl,
+                apiKey = credentials.getApiKey()?.takeIf { k -> k.isNotBlank() },
+                username = it.username,
+                password = credentials.getPassword()?.takeIf { p -> p.isNotBlank() },
+            )
+        }
     }
+
     override suspend fun save(config: ServerConfig) {
-        credentials.setApiKey(config.apiKey)
-        dao.save(ServerEntity(name = config.name, baseUrl = config.baseUrl))
+        credentials.setApiKey(config.apiKey.orEmpty())
+        credentials.setPassword(config.password.orEmpty())
+        dao.save(ServerEntity(name = config.name, baseUrl = config.baseUrl, username = config.username))
     }
+
     override suspend fun clear() {
         dao.clear()
         credentials.clear()

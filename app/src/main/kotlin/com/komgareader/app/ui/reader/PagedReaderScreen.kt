@@ -38,7 +38,7 @@ import coil.request.ImageRequest
 @Composable
 fun PagedReaderScreen(
     pages: List<com.komgareader.domain.source.PageRef>,
-    apiKey: String,
+    apiKey: String?,
     initialPage: Int,
     onBack: () -> Unit,
     onToggleMode: () -> Unit = {},
@@ -99,7 +99,7 @@ fun PagedReaderScreen(
                 val request = remember(pageRef.url, apiKey) {
                     ImageRequest.Builder(ctx)
                         .data(pageRef.url)
-                        .addHeader("X-API-Key", apiKey)
+                        .apply { if (!apiKey.isNullOrBlank()) addHeader("X-API-Key", apiKey) }
                         .crossfade(false)
                         .build()
                 }

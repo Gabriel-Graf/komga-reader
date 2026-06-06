@@ -14,8 +14,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -55,6 +57,8 @@ fun SettingsScreen(
     var nameInput by remember { mutableStateOf("") }
     var urlInput by remember { mutableStateOf("") }
     var apiKeyInput by remember { mutableStateOf("") }
+    var usernameInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -105,7 +109,7 @@ fun SettingsScreen(
             OutlinedTextField(
                 value = nameInput,
                 onValueChange = { nameInput = it },
-                label = { Text(s.serverName) },
+                label = { Text(s.serverDisplayName) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
@@ -114,6 +118,8 @@ fun SettingsScreen(
                 value = urlInput,
                 onValueChange = { urlInput = it },
                 label = { Text(s.serverUrl) },
+                placeholder = { Text(s.serverUrlHint) },
+                supportingText = { Text(s.serverUrlHelper) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
@@ -122,7 +128,35 @@ fun SettingsScreen(
             OutlinedTextField(
                 value = apiKeyInput,
                 onValueChange = { apiKeyInput = it },
-                label = { Text(s.serverApiKey) },
+                label = { Text(s.serverApiKeyOptional) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider()
+            Text(
+                text = s.orSeparator,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = 8.dp),
+            )
+            HorizontalDivider()
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = usernameInput,
+                onValueChange = { usernameInput = it },
+                label = { Text(s.serverUsername) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = passwordInput,
+                onValueChange = { passwordInput = it },
+                label = { Text(s.serverPassword) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
@@ -132,10 +166,12 @@ fun SettingsScreen(
             Row {
                 Button(
                     onClick = {
-                        viewModel.saveServer(nameInput, urlInput, apiKeyInput)
+                        viewModel.saveServer(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput)
                         nameInput = ""
                         urlInput = ""
                         apiKeyInput = ""
+                        usernameInput = ""
+                        passwordInput = ""
                     },
                     modifier = Modifier.padding(end = 8.dp),
                 ) {

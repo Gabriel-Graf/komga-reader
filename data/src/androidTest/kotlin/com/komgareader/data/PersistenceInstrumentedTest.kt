@@ -44,6 +44,25 @@ class PersistenceInstrumentedTest {
         assertNull(store.getApiKey())
     }
 
+    @Test fun server_mit_benutzername_passwort_wird_gespeichert_und_gelesen() = runTest {
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val store = EncryptedCredentialStore(ctx, "test-secrets-${System.nanoTime()}")
+        store.clear()
+        val repo = RoomServerRepository(db.serverDao(), store)
+        assertNull(repo.config.first())
+        repo.save(ServerConfig(name = "Heimserver", baseUrl = "https://home.local/api/v1/", username = "admin", password = "s3krit"))
+        val loaded = repo.config.first()!!
+        assertEquals("Heimserver", loaded.name)
+        assertEquals("admin", loaded.username)
+        assertEquals("s3krit", loaded.password)
+        assertNull(loaded.apiKey)
+        // Passwort darf NICHT in der Room-Entity liegen:
+        assertEquals("s3krit", store.getPassword())
+        repo.clear()
+        assertNull(repo.config.first())
+        assertNull(store.getPassword())
+    }
+
     @Test fun settings_default_und_ueberschreiben() = runTest {
         val repo = RoomSettingsRepository(db.settingsDao())
         assertEquals("SYSTEM", repo.themeMode.first())

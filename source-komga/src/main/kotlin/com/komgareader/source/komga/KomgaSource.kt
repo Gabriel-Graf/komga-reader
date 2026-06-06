@@ -76,10 +76,29 @@ object KomgaSourceFactory {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun create(name: String, baseUrl: String, apiKey: String): KomgaSource {
+    /**
+     * Erstellt eine [KomgaSource].
+     *
+     * Authentifizierungsreihenfolge:
+     * 1. [apiKey] gesetzt → API-Key-Header (`X-API-Key`)
+     * 2. [username] + [password] gesetzt → HTTP Basic Auth
+     * 3. Sonst → [IllegalArgumentException]
+     */
+    fun create(
+        name: String,
+        baseUrl: String,
+        apiKey: String? = null,
+        username: String? = null,
+        password: String? = null,
+    ): KomgaSource {
         val normalizedBase = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+        val authInterceptor = when {
+            !apiKey.isNullOrBlank() -> ApiKeyInterceptor(apiKey)
+            !username.isNullOrBlank() && !password.isNullOrBlank() -> BasicAuthInterceptor(username, password)
+            else -> throw IllegalArgumentException("Kein Auth: API-Key oder Benutzer+Passwort nötig")
+        }
         val client = OkHttpClient.Builder()
-            .addInterceptor(ApiKeyInterceptor(apiKey))
+            .addInterceptor(authInterceptor)
             .build()
         val retrofit = Retrofit.Builder()
             .baseUrl(normalizedBase)

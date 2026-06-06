@@ -25,6 +25,7 @@ data class SeriesMetadataDto(
     val status: String = "",
     val summary: String = "",
     val genres: List<String> = emptyList(),
+    val readingDirection: String = "",
 )
 
 @Serializable

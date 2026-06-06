@@ -18,4 +18,5 @@ data class Series(
     val summary: String? = null,
     val status: String? = null,
     val genres: List<String> = emptyList(),
+    val readingDirection: ReadingDirection? = null,
 )

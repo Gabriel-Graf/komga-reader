@@ -6,10 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.eink.HardwareButtonBus
+import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.render.Document
+import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.render.mupdf.MupdfDocumentFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +36,8 @@ class ReaderViewModel @Inject constructor(
     private val servers: ServerRepository,
     private val sourceProvider: KomgaSourceProvider,
     private val bus: HardwareButtonBus,
+    private val downloadRepository: DownloadRepository,
+    private val downloadManager: DownloadManager,
 ) : ViewModel() {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -55,7 +59,7 @@ class ReaderViewModel @Inject constructor(
 
     val viewerMode = MutableStateFlow(ViewerMode.PAGED)
 
-    // EPUB-Zustand
+    // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
     private var document: Document? = null
     private val renderCache = mutableMapOf<Int, Bitmap>()
     private val renderMutex = Mutex()
@@ -70,13 +74,28 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun loadBook() = viewModelScope.launch {
-        val config = servers.config.first()
-        val source = sourceProvider.from(config)
-        if (config == null || source == null) {
-            _content.value = ReaderContent.Error("Kein Server verbunden.")
-            return@launch
-        }
         runCatching {
+            // Zuerst prüfen ob lokal vorhanden
+            val localDownload = downloadRepository.get(bookId)
+            if (localDownload != null) {
+                val bytes = withContext(Dispatchers.IO) { downloadManager.bytesOf(localDownload) }
+                val ext = ".${localDownload.format.lowercase()}"
+                val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ext) }
+                document = doc
+                val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
+                _currentPage.value = 0
+                _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = 0)
+                return@launch
+            }
+
+            // Kein lokaler Download → Netzwerk-Pfad
+            val config = servers.config.first()
+            val source = sourceProvider.from(config)
+            if (config == null || source == null) {
+                _content.value = ReaderContent.Error("Kein Server verbunden.")
+                return@launch
+            }
+
             if (format == BookFormat.EPUB) {
                 val bytes = withContext(Dispatchers.IO) { source.downloadFile(bookId) }
                 val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ".epub") }
@@ -87,7 +106,7 @@ class ReaderViewModel @Inject constructor(
                     ?.let { progress -> (progress.page - 1).coerceIn(0, pageCount - 1) }
                     ?: 0
                 _currentPage.value = startPage
-                _content.value = ReaderContent.Epub(pageCount = pageCount, initialPage = startPage)
+                _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
             } else {
                 val pages = source.pages(bookId)
                 val startPage = runCatching { source.pullProgress(bookId) }
@@ -111,7 +130,7 @@ class ReaderViewModel @Inject constructor(
             val current = _currentPage.value
             val pageCount = when (val c = _content.value) {
                 is ReaderContent.Streamed -> c.pages.size
-                is ReaderContent.Epub -> c.pageCount
+                is ReaderContent.Rendered -> c.pageCount
                 else -> return@collect
             }
             val next = when (event.button) {
@@ -140,7 +159,7 @@ class ReaderViewModel @Inject constructor(
         _currentPage.value = index
         val pageCount = when (val c = _content.value) {
             is ReaderContent.Streamed -> c.pages.size
-            is ReaderContent.Epub -> c.pageCount
+            is ReaderContent.Rendered -> c.pageCount
             else -> return
         }
         viewModelScope.launch {

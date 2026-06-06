@@ -37,7 +37,7 @@ fun ReaderRoute(
                 Text(c.message, color = Color.White)
             }
         }
-        is ReaderContent.Epub -> {
+        is ReaderContent.Rendered -> {
             EpubReaderScreen(
                 pageCount = c.pageCount,
                 initialPage = c.initialPage,

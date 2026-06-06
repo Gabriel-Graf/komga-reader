@@ -318,11 +318,14 @@ private fun SeriesHeroCard(
                     Text(s.read, maxLines = 1)
                 }
                 when {
-                    isDownloading -> Box(
-                        modifier = Modifier.size(48.dp),
-                        contentAlignment = Alignment.Center,
+                    // Gleiche Breite (weight 1f) wie die Toggle-Buttons, nur in-place getauscht —
+                    // so dehnt sich der Lesen-Button beim Statuswechsel nicht aus.
+                    isDownloading -> OutlinedButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.weight(1f),
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     }
                     isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))

@@ -22,7 +22,9 @@ object DataModule {
 
     @Provides @Singleton
     fun database(@ApplicationContext ctx: Context): AppDatabase =
-        Room.databaseBuilder(ctx, AppDatabase::class.java, "komga-reader.db").build()
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "komga-reader.db")
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides @Singleton
     fun settingsRepository(db: AppDatabase): SettingsRepository = RoomSettingsRepository(db.settingsDao())

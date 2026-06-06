@@ -14,3 +14,15 @@ data class ServerEntity(
     val name: String,
     val baseUrl: String,
 )
+
+/** Lokal gespeichertes Buch (Download-Eintrag). */
+@Entity(tableName = "downloads")
+data class DownloadEntity(
+    @PrimaryKey val bookRemoteId: String,
+    val sourceId: Long,
+    val seriesRemoteId: String,
+    val title: String,
+    val format: String,
+    val localPath: String,
+    val totalPages: Int,
+)

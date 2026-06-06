@@ -49,6 +49,10 @@ class ReaderViewModel @Inject constructor(
     /** Wenn true, lokalen Download ignorieren und immer streamen. */
     private val forceStream: Boolean = savedStateHandle.get<Boolean>("stream") ?: false
 
+    private val initialViewerMode: ViewerMode = runCatching {
+        ViewerMode.valueOf(savedStateHandle.get<String>("viewerMode") ?: "PAGED")
+    }.getOrDefault(ViewerMode.PAGED)
+
     private val _content = MutableStateFlow<ReaderContent>(ReaderContent.Loading)
     val content: StateFlow<ReaderContent> = _content.asStateFlow()
 
@@ -61,7 +65,7 @@ class ReaderViewModel @Inject constructor(
 
     private val _currentPage = MutableStateFlow(0)
 
-    val viewerMode = MutableStateFlow(ViewerMode.PAGED)
+    val viewerMode = MutableStateFlow(initialViewerMode)
 
     // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
     private var document: Document? = null

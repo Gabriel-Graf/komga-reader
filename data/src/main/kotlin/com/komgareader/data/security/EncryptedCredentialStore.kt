@@ -12,16 +12,22 @@ import java.io.File
  *
  * Robustheit: Wenn das Keyset beim Start korrupt ist (z.B. nach einem Keystore-Reset
  * oder nach einer unvollständigen Migration), wird die Prefs-Datei gelöscht und einmalig
- * neu erstellt. Credentials gehen dann verloren, aber die App stürzt nicht ab.
+ * neu erstellt. Scheitert auch das, fällt der Store auf einen reinen **In-Memory-Speicher**
+ * zurück (Secrets nur im RAM für die Session) — Credentials werden **niemals unverschlüsselt
+ * auf Platte** geschrieben. Die App stürzt nicht ab; der Nutzer muss ggf. neu anmelden.
  */
 class EncryptedCredentialStore(
     private val context: Context,
     private val prefsFileName: String = "komga-reader-secrets",
 ) : CredentialStore {
 
-    private val prefs = openPrefs(isRetry = false)
+    /** Verschlüsselte Prefs, oder null wenn Verschlüsselung nicht verfügbar ist. */
+    private val prefs: android.content.SharedPreferences? = openPrefs(isRetry = false)
 
-    private fun openPrefs(isRetry: Boolean): android.content.SharedPreferences {
+    /** Nur-RAM-Fallback, wenn [prefs] null ist — verlässt nie den Prozess. */
+    private val memory = mutableMapOf<String, String>()
+
+    private fun openPrefs(isRetry: Boolean): android.content.SharedPreferences? {
         return try {
             EncryptedSharedPreferences.create(
                 context,
@@ -32,8 +38,9 @@ class EncryptedCredentialStore(
             )
         } catch (e: Exception) {
             if (isRetry) {
-                Log.e(TAG, "EncryptedSharedPreferences konnte nicht wiederhergestellt werden — Fallback auf PlainText", e)
-                context.getSharedPreferences(prefsFileName + "_fallback", Context.MODE_PRIVATE)
+                // KEIN Klartext-Fallback für Geheimnisse — nur RAM (kein Persistieren).
+                Log.e(TAG, "EncryptedSharedPreferences nicht verfügbar — Secrets nur im Speicher (keine Persistenz)", e)
+                null
             } else {
                 Log.w(TAG, "Keyset korrupt — lösche Prefs-Datei und versuche Neuanlage", e)
                 deletePrefsFile()
@@ -47,13 +54,29 @@ class EncryptedCredentialStore(
         if (prefsFile.exists()) prefsFile.delete()
     }
 
-    override fun getApiKey(): String? = runCatching { prefs.getString(KEY_API, null) }.getOrNull()
-    override fun setApiKey(value: String) { runCatching { prefs.edit().putString(KEY_API, value).commit() } }
+    private fun read(key: String): String? {
+        val p = prefs ?: return memory[key]
+        return runCatching { p.getString(key, null) }.getOrNull()
+    }
 
-    override fun getPassword(): String? = runCatching { prefs.getString(KEY_PASSWORD, null) }.getOrNull()
-    override fun setPassword(value: String) { runCatching { prefs.edit().putString(KEY_PASSWORD, value).commit() } }
+    private fun write(key: String, value: String) {
+        val p = prefs
+        if (p != null) runCatching { p.edit().putString(key, value).commit() }
+        else memory[key] = value
+    }
 
-    override fun clear() { runCatching { prefs.edit().remove(KEY_API).remove(KEY_PASSWORD).commit() } }
+    override fun getApiKey(): String? = read(KEY_API)
+    override fun setApiKey(value: String) = write(KEY_API, value)
+
+    override fun getPassword(): String? = read(KEY_PASSWORD)
+    override fun setPassword(value: String) = write(KEY_PASSWORD, value)
+
+    override fun clear() {
+        val p = prefs
+        if (p != null) runCatching { p.edit().remove(KEY_API).remove(KEY_PASSWORD).commit() }
+        memory.remove(KEY_API)
+        memory.remove(KEY_PASSWORD)
+    }
 
     private companion object {
         const val TAG = "EncryptedCredentialStore"

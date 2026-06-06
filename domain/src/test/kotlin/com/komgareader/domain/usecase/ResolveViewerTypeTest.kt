@@ -32,6 +32,12 @@ class ResolveViewerTypeTest {
     }
 
     @Test
+    fun `Manga-Regal ergibt PAGED`() {
+        val mangaShelf = shelf.copy(contentType = ContentType.MANGA)
+        assertEquals(ViewerType.PAGED, resolve(series(), mangaShelf))
+    }
+
+    @Test
     fun `Serien-Override schlägt den Regal-Typ`() {
         assertEquals(ViewerType.WEBTOON, resolve(series(ContentType.WEBTOON), shelf))
     }

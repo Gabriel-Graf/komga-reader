@@ -38,6 +38,22 @@ interface Strings {
     val createdLabel: String
     val modifiedLabel: String
     val pagesShort: String
+    // Gruppen-Tabs
+    val tabBrowse: String
+    val tabGroups: String
+    val newGroup: String
+    val groupName: String
+    val tag: String
+    val tagManga: String
+    val tagComic: String
+    val tagNovel: String
+    val tagWebtoon: String
+    val server: String
+    val create: String
+    val cancel: String
+    val noServerHint: String
+    val deleteGroup: String
+    val noGroupsHint: String
 }
 
 object StringsDe : Strings {
@@ -77,6 +93,22 @@ object StringsDe : Strings {
     override val createdLabel = "Erstellt"
     override val modifiedLabel = "Geändert"
     override val pagesShort = "S."
+    // Gruppen-Tabs
+    override val tabBrowse = "Stöbern"
+    override val tabGroups = "Gruppen"
+    override val newGroup = "Neue Gruppe"
+    override val groupName = "Name"
+    override val tag = "Typ"
+    override val tagManga = "Manga"
+    override val tagComic = "Comic"
+    override val tagNovel = "Roman"
+    override val tagWebtoon = "Webtoon"
+    override val server = "Server"
+    override val create = "Erstellen"
+    override val cancel = "Abbrechen"
+    override val noServerHint = "Kein Server verbunden. Bitte zuerst in den Einstellungen einen Server hinzufügen."
+    override val deleteGroup = "Gruppe löschen"
+    override val noGroupsHint = "Noch keine Gruppen. Tippe auf + um eine anzulegen."
 }
 
 object StringsEn : Strings {
@@ -116,6 +148,22 @@ object StringsEn : Strings {
     override val createdLabel = "Created"
     override val modifiedLabel = "Modified"
     override val pagesShort = "pp."
+    // Groups tabs
+    override val tabBrowse = "Browse"
+    override val tabGroups = "Groups"
+    override val newGroup = "New Group"
+    override val groupName = "Name"
+    override val tag = "Type"
+    override val tagManga = "Manga"
+    override val tagComic = "Comic"
+    override val tagNovel = "Novel"
+    override val tagWebtoon = "Webtoon"
+    override val server = "Server"
+    override val create = "Create"
+    override val cancel = "Cancel"
+    override val noServerHint = "No server connected. Please add a server in Settings first."
+    override val deleteGroup = "Delete group"
+    override val noGroupsHint = "No groups yet. Tap + to create one."
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

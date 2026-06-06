@@ -14,7 +14,7 @@ class ColorFilterMatrixTest {
     }
 
     @Test
-    fun `neutrale Werte ergeben die Identitaetsmatrix`() {
+    fun `neutrale Werte ergeben die Identitätsmatrix`() {
         val m = buildColorMatrix(saturation = 1f, contrast = 1f, brightness = 0f)
         val expected = floatArrayOf(
             1f, 0f, 0f, 0f, 0f,
@@ -26,7 +26,7 @@ class ColorFilterMatrixTest {
     }
 
     @Test
-    fun `Saettigung 0 mappt jeden Kanal auf die Rec709-Luminanz`() {
+    fun `Sättigung 0 mappt jeden Kanal auf die Rec709-Luminanz`() {
         val m = buildColorMatrix(saturation = 0f, contrast = 1f, brightness = 0f)
         listOf(0, 5, 10).forEach { row ->
             assertNear(0.213f, m[row + 0])
@@ -38,8 +38,14 @@ class ColorFilterMatrixTest {
     @Test
     fun `Kontrast 0_5 halbiert die Diagonale und versetzt um den Pivot`() {
         val m = buildColorMatrix(saturation = 1f, contrast = 0.5f, brightness = 0f)
-        assertNear(0.5f, m[0])
-        assertNear(0.5f * 127.5f, m[4])
+        // Diagonale: R, G, B je 0.5
+        assertNear(0.5f, m[0])   // R-Skalierung
+        assertNear(0.5f, m[6])   // G-Skalierung
+        assertNear(0.5f, m[12])  // B-Skalierung
+        // Pivot-Offset: (1 - contrast) * 127.5 = 0.5 * 127.5
+        assertNear(0.5f * 127.5f, m[4])   // R-Offset
+        assertNear(0.5f * 127.5f, m[9])   // G-Offset
+        assertNear(0.5f * 127.5f, m[14])  // B-Offset
     }
 
     @Test
@@ -51,7 +57,7 @@ class ColorFilterMatrixTest {
     }
 
     @Test
-    fun `Alpha-Zeile bleibt unveraendert`() {
+    fun `Alpha-Zeile bleibt unverändert`() {
         val m = buildColorMatrix(saturation = 1.4f, contrast = 1.2f, brightness = 0.1f)
         assertNear(0f, m[15]); assertNear(0f, m[16])
         assertNear(0f, m[17]); assertNear(1f, m[18]); assertNear(0f, m[19])

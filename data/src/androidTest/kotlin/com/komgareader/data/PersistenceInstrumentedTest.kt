@@ -72,4 +72,16 @@ class PersistenceInstrumentedTest {
         assertEquals("DARK", repo.themeMode.first())
         assertEquals("en", repo.language.first())
     }
+
+    @Test fun download_dir_setzen_und_zuruecksetzen() = runTest {
+        val repo = RoomSettingsRepository(db.settingsDao())
+        assertNull(repo.downloadDir.first())
+        repo.setDownloadDir("content://com.android.externalstorage/tree/primary%3ADownloads")
+        assertEquals(
+            "content://com.android.externalstorage/tree/primary%3ADownloads",
+            repo.downloadDir.first(),
+        )
+        repo.setDownloadDir(null)
+        assertNull(repo.downloadDir.first())
+    }
 }

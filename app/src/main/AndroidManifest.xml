@@ -3,7 +3,7 @@
 
     <application
         android:name=".KomgaReaderApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:label="Komga Reader"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar">

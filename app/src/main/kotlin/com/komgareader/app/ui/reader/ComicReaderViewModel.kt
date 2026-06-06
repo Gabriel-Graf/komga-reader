@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
+import com.komgareader.app.eink.HardwareButtonBus
+import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.guidedview.GuidedNavigator
 import com.komgareader.guidedview.GuidedPosition
 import com.komgareader.guidedview.NormRect
@@ -30,6 +32,7 @@ data class ComicUiState(
 class ComicReaderViewModel @Inject constructor(
     @ApplicationContext context: Context,
     imageLoader: ImageLoader,
+    private val bus: HardwareButtonBus,
 ) : ViewModel() {
 
     private val loader = ComicPageLoader(context, imageLoader)
@@ -42,6 +45,10 @@ class ComicReaderViewModel @Inject constructor(
     private var pageCount: Int = 0
     private var pages: List<String> = emptyList()
     private var headers: Map<String, String> = emptyMap()
+
+    init {
+        collectButtonEvents()
+    }
 
     fun init(pageUrls: List<String>, authHeaders: Map<String, String>, startPage: Int) {
         if (pageUrls.isEmpty()) {
@@ -99,6 +106,35 @@ class ComicReaderViewModel @Inject constructor(
     }
 
     fun zoomOut() { _uiState.value = _uiState.value.copy(zoomed = false) }
+
+    private fun collectButtonEvents() = viewModelScope.launch {
+        bus.events.collect { event ->
+            if (pageCount == 0) return@collect
+            val forward = when (event.button) {
+                HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN -> true
+                HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP -> false
+            }
+            if (_uiState.value.zoomed) {
+                if (forward) next() else previous()
+            } else {
+                pageRelative(if (forward) 1 else -1)
+            }
+        }
+    }
+
+    /** Ganze Seite blättern (nicht gezoomt). Der Screen zieht den Pager über position.page nach. */
+    private fun pageRelative(delta: Int) {
+        if (_uiState.value.zoomed) return
+        val target = (_uiState.value.position.page + delta).coerceIn(0, pageCount - 1)
+        if (target == _uiState.value.position.page) return
+        _uiState.value = _uiState.value.copy(
+            position = GuidedPosition(target, 0),
+            currentPanels = panelCache[target] ?: emptyList(),
+            zoomed = false,
+        )
+        ensurePanels(target)
+        ensurePanels(target + 1)
+    }
 
     fun toggleGuided() {
         val s = _uiState.value

@@ -205,6 +205,8 @@ class ReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
+            // Im Comic-Modus übernimmt der ComicReaderViewModel die Tasten.
+            if (viewerMode.value == ViewerMode.COMIC) return@collect
             // Im Webtoon-Modus bedeutet eine Taste einen Frame-Sprung (Pixel-Scroll),
             // nicht einen Seitenindex.
             if (viewerMode.value == ViewerMode.WEBTOON) {

@@ -100,6 +100,25 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
 }
 
 /**
+ * Seedet die mitgelieferten Farbfilter-Profile + den aktiven Pointer. Wird von der
+ * v6→v7-Migration (Upgrade) UND vom Fresh-Install-Callback (onCreate) genutzt, damit
+ * neue Installationen nicht mit leerer Profilliste starten.
+ */
+private fun seedColorProfiles(db: SupportSQLiteDatabase) {
+    db.execSQL(
+        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
+            "VALUES (1,'Aus',1.0,1.0,0.0,1)",
+    )
+    db.execSQL(
+        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
+            "VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)",
+    )
+    db.execSQL(
+        "INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')",
+    )
+}
+
+/**
  * v6 → v7: color_profiles-Tabelle für E-Ink-Farbfilter-Profile. Seedet zwei Built-ins
  * (Aus = neutral, Boox Go Color 7 Gen2 = Kaleido-getunt) und setzt das Go-7-Profil aktiv.
  */
@@ -115,16 +134,17 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
                 `builtIn` INTEGER NOT NULL
             )""",
         )
-        db.execSQL(
-            "INSERT INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
-                "VALUES (1,'Aus',1.0,1.0,0.0,1)",
-        )
-        db.execSQL(
-            "INSERT INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
-                "VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)",
-        )
-        db.execSQL(
-            "INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')",
-        )
+        seedColorProfiles(db)
+    }
+}
+
+/**
+ * Fresh-Install: Room legt die Tabellen direkt aus den Entities an — die Migration läuft
+ * dann NICHT. Daher hier die Built-in-Profile seeden.
+ */
+val SEED_CALLBACK = object : RoomDatabase.Callback() {
+    override fun onCreate(db: SupportSQLiteDatabase) {
+        super.onCreate(db)
+        seedColorProfiles(db)
     }
 }

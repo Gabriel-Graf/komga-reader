@@ -32,6 +32,11 @@ interface Strings {
     val downloadShort: String
     val downloaded: String
     val downloadedShort: String
+    val removeDownload: String
+    val downloadFolder: String
+    val chooseFolder: String
+    val defaultFolder: String
+    val resetFolder: String
     val sizeLabel: String
     val formatLabel: String
     val fileLabel: String
@@ -87,6 +92,11 @@ object StringsDe : Strings {
     override val downloadShort = "Laden"
     override val downloaded = "Heruntergeladen ✓"
     override val downloadedShort = "Gespeichert"
+    override val removeDownload = "Entfernen"
+    override val downloadFolder = "Download-Ordner"
+    override val chooseFolder = "Ordner wählen"
+    override val defaultFolder = "Standard (intern)"
+    override val resetFolder = "Zurücksetzen"
     override val sizeLabel = "Größe"
     override val formatLabel = "Format"
     override val fileLabel = "Datei"
@@ -142,6 +152,11 @@ object StringsEn : Strings {
     override val downloadShort = "Save"
     override val downloaded = "Downloaded ✓"
     override val downloadedShort = "Saved"
+    override val removeDownload = "Remove"
+    override val downloadFolder = "Download Folder"
+    override val chooseFolder = "Choose Folder"
+    override val defaultFolder = "Default (internal)"
+    override val resetFolder = "Reset"
     override val sizeLabel = "Size"
     override val formatLabel = "Format"
     override val fileLabel = "File"

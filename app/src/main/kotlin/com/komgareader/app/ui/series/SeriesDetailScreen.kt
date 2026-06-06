@@ -17,12 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
@@ -34,9 +34,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +48,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +71,16 @@ fun SeriesDetailScreen(
     val state by viewModel.state.collectAsState()
     val localIds by viewModel.localBookIds.collectAsState()
     val downloadingIds by viewModel.downloadingIds.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Fehler-Events als Snackbar anzeigen
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is SeriesDetailEvent.DownloadError -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -87,6 +99,7 @@ fun SeriesDetailScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when (val current = state) {
             is SeriesDetailUiState.Loading -> {
@@ -108,6 +121,7 @@ fun SeriesDetailScreen(
                 SeriesDetailContent(
                     books = current.books,
                     seriesTitle = current.seriesTitle,
+                    seriesRemoteId = current.seriesRemoteId,
                     serverConfig = current.serverConfig,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
@@ -127,6 +141,7 @@ fun SeriesDetailScreen(
 private fun SeriesDetailContent(
     books: List<Book>,
     seriesTitle: String,
+    seriesRemoteId: String,
     serverConfig: ServerConfig?,
     localIds: Set<String>,
     downloadingIds: Set<String>,
@@ -135,24 +150,24 @@ private fun SeriesDetailContent(
     onRemoveDownload: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val s = LocalStrings.current
     var selectedBook by rememberSaveable(books) { mutableStateOf(books.firstOrNull()?.remoteId) }
     var chaptersExpanded by rememberSaveable { mutableStateOf(true) }
 
     val currentBook = books.firstOrNull { it.remoteId == selectedBook } ?: books.firstOrNull()
 
     LazyColumn(modifier = modifier) {
-        // Header-Karte: Cover + Titel + Kapitelanzahl
+        // Header-Karte: Cover links, Titel + Kapitelanzahl rechts
         item {
             SeriesHeaderCard(
                 seriesTitle = seriesTitle,
                 bookCount = books.size,
+                seriesRemoteId = seriesRemoteId,
                 serverConfig = serverConfig,
                 modifier = Modifier.padding(12.dp),
             )
         }
 
-        // Ausgewähltes Buch: Metadaten + Aktionen
+        // Ausgewähltes Buch: Metadaten + Aktionen (Lesen + Download/Entfernen-Toggle)
         if (currentBook != null) {
             item {
                 SelectedBookBlock(
@@ -160,7 +175,6 @@ private fun SeriesDetailContent(
                     isLocal = currentBook.remoteId in localIds,
                     isDownloading = currentBook.remoteId in downloadingIds,
                     onRead = { onOpenBook(currentBook.remoteId, currentBook.pageCount, currentBook.format.name, false) },
-                    onStream = { onOpenBook(currentBook.remoteId, currentBook.pageCount, currentBook.format.name, true) },
                     onDownload = { onDownload(currentBook) },
                     onRemoveDownload = { onRemoveDownload(currentBook.remoteId) },
                     modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
@@ -187,6 +201,8 @@ private fun SeriesDetailContent(
                             isLocal = book.remoteId in localIds,
                             isDownloading = book.remoteId in downloadingIds,
                             onSelect = { selectedBook = book.remoteId },
+                            onDownload = { onDownload(book) },
+                            onRemoveDownload = { onRemoveDownload(book.remoteId) },
                         )
                         HorizontalDivider()
                     }
@@ -200,21 +216,40 @@ private fun SeriesDetailContent(
 private fun SeriesHeaderCard(
     seriesTitle: String,
     bookCount: Int,
+    seriesRemoteId: String,
     serverConfig: ServerConfig?,
     modifier: Modifier = Modifier,
 ) {
     val s = LocalStrings.current
-    // Cover-URL aus seriesId ableiten ist hier nicht direkt möglich ohne seriesRemoteId.
-    // Wir nutzen den seriesId aus der ViewModel-Route nicht direkt — stattdessen nutzen
-    // wir das Cover des ersten Buches (series/{seriesId}/thumbnail via ViewModel-State).
-    // Da wir hier keinen direkten Zugriff auf seriesId haben, zeigen wir den Titel + Count.
+    val ctx = LocalContext.current
+    val coverUrl = serverConfig?.let { "${it.baseUrl}series/$seriesRemoteId/thumbnail" }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Cover-Bild links
+        if (coverUrl != null) {
+            val authHeaders = AuthHeaders.forCovers(serverConfig)
+            AsyncImage(
+                model = ImageRequest.Builder(ctx)
+                    .data(coverUrl)
+                    .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                    .crossfade(true)
+                    .build(),
+                contentDescription = seriesTitle,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .width(72.dp)
+                    .aspectRatio(2f / 3f),
+            )
+        }
+
+        // Titel + Kapitelanzahl rechts
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 seriesTitle,
@@ -237,7 +272,6 @@ private fun SelectedBookBlock(
     isLocal: Boolean,
     isDownloading: Boolean,
     onRead: () -> Unit,
-    onStream: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     modifier: Modifier = Modifier,
@@ -266,32 +300,41 @@ private fun SelectedBookBlock(
         book.createdDate?.let { MetaRow(label = s.createdLabel, value = it.take(10)) }
         book.modifiedDate?.let { MetaRow(label = s.modifiedLabel, value = it.take(10)) }
 
-        // Aktionsschaltflächen
+        // Aktionsschaltflächen: Lesen (primär) + Download/Entfernen-Toggle
         Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // Primäre Aktion: Lesen (nutzt lokale Kopie wenn vorhanden, sonst Stream)
             Button(onClick = onRead, modifier = Modifier.weight(1f)) {
                 Text(s.read, maxLines = 1)
             }
-            OutlinedButton(onClick = onStream, modifier = Modifier.weight(1f)) {
-                Text(s.stream, maxLines = 1)
-            }
+
+            // Download/Entfernen-Toggle
             when {
-                isDownloading -> Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                isDownloading -> Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 }
-                isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
+                isLocal -> OutlinedButton(
+                    onClick = onRemoveDownload,
+                    modifier = Modifier.weight(1f),
+                ) {
                     Icon(
-                        Icons.Filled.CheckCircle,
+                        Icons.Filled.Delete,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text(s.downloadedShort, maxLines = 1)
+                    Text(s.removeDownload, maxLines = 1)
                 }
-                else -> OutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
+                else -> OutlinedButton(
+                    onClick = onDownload,
+                    modifier = Modifier.weight(1f),
+                ) {
                     Icon(
                         Icons.Filled.CloudDownload,
                         contentDescription = null,
@@ -359,6 +402,8 @@ private fun ChapterRow(
     isLocal: Boolean,
     isDownloading: Boolean,
     onSelect: () -> Unit,
+    onDownload: () -> Unit,
+    onRemoveDownload: () -> Unit,
 ) {
     val s = LocalStrings.current
     Row(
@@ -384,20 +429,28 @@ private fun ChapterRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        // Statusicon + Download/Entfernen-Aktion pro Zeile
         when {
-            isDownloading -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            isLocal -> Icon(
-                Icons.Filled.CheckCircle,
-                contentDescription = "Lokal gespeichert",
-                tint = MaterialTheme.colorScheme.onSurface,
+            isDownloading -> CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp,
             )
-            else -> Icon(
-                Icons.Filled.CloudDownload,
-                contentDescription = "Nicht heruntergeladen",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
+            isLocal -> IconButton(onClick = onRemoveDownload, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = s.removeDownload,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            else -> IconButton(onClick = onDownload, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Filled.CloudDownload,
+                    contentDescription = s.download,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }

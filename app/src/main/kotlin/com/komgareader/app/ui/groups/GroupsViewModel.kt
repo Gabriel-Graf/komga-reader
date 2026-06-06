@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
+import com.komgareader.domain.model.ShelfSource
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
@@ -40,15 +41,15 @@ class GroupsViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroupsUiState())
 
-    fun addGroup(name: String, contentType: ContentType) {
+    fun addGroup(name: String, defaultContentType: ContentType?) {
         val sourceId = state.value.serverSourceId ?: return
         viewModelScope.launch {
             shelfRepository.add(
                 Shelf(
                     id = 0,
                     name = name.trim(),
-                    contentType = contentType,
-                    sourceIds = listOf(sourceId),
+                    sources = listOf(ShelfSource(sourceId = sourceId, containerIds = emptyList())),
+                    defaultContentType = defaultContentType,
                 ),
             )
         }

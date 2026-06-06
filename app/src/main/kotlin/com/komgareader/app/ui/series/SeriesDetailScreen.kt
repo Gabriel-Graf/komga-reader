@@ -65,7 +65,7 @@ import com.komgareader.domain.repository.ServerConfig
 @Composable
 fun SeriesDetailScreen(
     onBack: () -> Unit,
-    onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean) -> Unit,
+    onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
@@ -127,6 +127,7 @@ fun SeriesDetailScreen(
                     seriesSummary = current.seriesSummary,
                     seriesStatus = current.seriesStatus,
                     seriesGenres = current.seriesGenres,
+                    viewerModes = current.viewerModes,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
                     onOpenBook = onOpenBook,
@@ -150,9 +151,10 @@ private fun SeriesDetailContent(
     seriesSummary: String?,
     seriesStatus: String?,
     seriesGenres: List<String>,
+    viewerModes: Map<String, String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
-    onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean) -> Unit,
+    onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     onDownload: (Book) -> Unit,
     onRemoveDownload: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -181,7 +183,10 @@ private fun SeriesDetailContent(
                 isDownloading = currentBook?.remoteId in downloadingIds,
                 onRead = {
                     currentBook?.let {
-                        onOpenBook(it.remoteId, it.pageCount, it.format.name, false)
+                        onOpenBook(
+                            it.remoteId, it.pageCount, it.format.name, false,
+                            viewerModes[it.remoteId] ?: "PAGED",
+                        )
                     }
                 },
                 onDownload = { currentBook?.let(onDownload) },

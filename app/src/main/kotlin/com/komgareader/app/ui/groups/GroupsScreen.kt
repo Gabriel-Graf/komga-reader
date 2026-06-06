@@ -103,8 +103,8 @@ fun GroupsScreen(
     if (showCreateDialog) {
         CreateGroupDialog(
             serverName = state.serverConfig?.name,
-            onCreate = { name, contentType ->
-                viewModel.addGroup(name, contentType)
+            onCreate = { name, defaultContentType ->
+                viewModel.addGroup(name, defaultContentType)
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false },
@@ -129,7 +129,7 @@ private fun GroupCard(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = iconForContentType(shelf.contentType),
+            imageVector = iconForContentType(shelf.defaultContentType),
             contentDescription = null,
             modifier = Modifier.size(24.dp),
             tint = MaterialTheme.colorScheme.primary,
@@ -138,7 +138,7 @@ private fun GroupCard(
         Column(Modifier.weight(1f)) {
             Text(shelf.name, style = MaterialTheme.typography.titleSmall)
             Text(
-                labelForContentType(shelf.contentType, s),
+                labelForContentType(shelf.defaultContentType, s),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -153,7 +153,7 @@ private fun GroupCard(
 @Composable
 private fun CreateGroupDialog(
     serverName: String?,
-    onCreate: (name: String, contentType: ContentType) -> Unit,
+    onCreate: (name: String, defaultContentType: ContentType?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val s = LocalStrings.current
@@ -220,16 +220,18 @@ private fun CreateGroupDialog(
     )
 }
 
-private fun iconForContentType(type: ContentType) = when (type) {
+private fun iconForContentType(type: ContentType?) = when (type) {
     ContentType.MANGA -> Icons.Filled.AutoStories
     ContentType.COMIC -> Icons.Filled.ImportContacts
     ContentType.NOVEL -> Icons.Filled.Book
     ContentType.WEBTOON -> Icons.Filled.ViewDay
+    null -> Icons.Filled.AutoStories
 }
 
-private fun labelForContentType(type: ContentType, s: com.komgareader.app.i18n.Strings) = when (type) {
+private fun labelForContentType(type: ContentType?, s: com.komgareader.app.i18n.Strings) = when (type) {
     ContentType.MANGA -> s.tagManga
     ContentType.COMIC -> s.tagComic
     ContentType.NOVEL -> s.tagNovel
     ContentType.WEBTOON -> s.tagWebtoon
+    null -> ""
 }

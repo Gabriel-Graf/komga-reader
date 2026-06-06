@@ -10,8 +10,6 @@ import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.source.SourceFilter
-import com.komgareader.domain.usecase.ResolveViewerType
-import com.komgareader.app.ui.reader.ViewerMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +28,6 @@ sealed interface GroupBrowseUiState {
         val shelf: Shelf,
         val series: List<Series>,
         val serverConfig: ServerConfig?,
-        val viewerMode: ViewerMode,
     ) : GroupBrowseUiState
     data class Error(val message: String) : GroupBrowseUiState
 }
@@ -46,7 +43,6 @@ class GroupBrowseViewModel @Inject constructor(
 
     private val shelfId: Long = checkNotNull(savedStateHandle["shelfId"])
     private val refreshTrigger = MutableStateFlow(0)
-    private val resolveViewerType = ResolveViewerType()
 
     val state: StateFlow<GroupBrowseUiState> = combine(
         shelfRepository.shelves,
@@ -57,7 +53,7 @@ class GroupBrowseViewModel @Inject constructor(
             flow {
                 val shelf = shelves.firstOrNull { it.id == shelfId }
                 if (shelf == null) {
-                    emit(GroupBrowseUiState.Error("Gruppe nicht gefunden"))
+                    emit(GroupBrowseUiState.Error("Bibliothek nicht gefunden"))
                     return@flow
                 }
                 emit(GroupBrowseUiState.Loading)
@@ -66,15 +62,17 @@ class GroupBrowseViewModel @Inject constructor(
                     emit(GroupBrowseUiState.NoServer)
                     return@flow
                 }
-                val mode = mapViewerType(resolveViewerType.forContentType(shelf.contentType))
-                emit(runCatching { source.browse(0, SourceFilter()) }
+                val containerIds = shelf.sources
+                    .firstOrNull { it.sourceId == source.id }
+                    ?.containerIds
+                    ?: emptyList()
+                emit(runCatching { source.browse(0, SourceFilter(containerIds = containerIds)) }
                     .fold(
                         { result ->
                             GroupBrowseUiState.Content(
                                 shelf = shelf,
                                 series = result.items,
                                 serverConfig = config,
-                                viewerMode = mode,
                             )
                         },
                         { GroupBrowseUiState.Error(it.message ?: "Verbindung fehlgeschlagen") },
@@ -84,9 +82,4 @@ class GroupBrowseViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroupBrowseUiState.Loading)
 
     fun refresh() { refreshTrigger.value++ }
-
-    private fun mapViewerType(type: com.komgareader.domain.model.ViewerType): ViewerMode = when (type) {
-        com.komgareader.domain.model.ViewerType.WEBTOON -> ViewerMode.WEBTOON
-        else -> ViewerMode.PAGED
-    }
 }

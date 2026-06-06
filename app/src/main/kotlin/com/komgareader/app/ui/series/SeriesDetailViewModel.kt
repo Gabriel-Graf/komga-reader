@@ -5,11 +5,17 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.ui.reader.ViewerMode
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.Book
+import com.komgareader.domain.model.ContentType
+import com.komgareader.domain.model.Series
+import com.komgareader.domain.model.ViewerType
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.ShelfRepository
+import com.komgareader.domain.usecase.ResolveViewerType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,6 +45,7 @@ sealed interface SeriesDetailUiState {
         val seriesSummary: String? = null,
         val seriesStatus: String? = null,
         val seriesGenres: List<String> = emptyList(),
+        val viewerModes: Map<String, String> = emptyMap(),
     ) : SeriesDetailUiState
     data class Error(val message: String) : SeriesDetailUiState
 }
@@ -59,9 +66,12 @@ class SeriesDetailViewModel @Inject constructor(
     private val sourceProvider: KomgaSourceProvider,
     private val downloadManager: DownloadManager,
     private val downloadRepository: DownloadRepository,
+    private val shelfRepository: ShelfRepository,
 ) : ViewModel() {
 
     private val seriesId: String = checkNotNull(savedStateHandle["seriesId"])
+    private val shelfId: Long? = savedStateHandle.get<Long>("shelfId")
+    private val resolveViewerType = ResolveViewerType()
 
     val state: StateFlow<SeriesDetailUiState> =
         servers.config.flatMapLatest { config ->
@@ -79,6 +89,16 @@ class SeriesDetailViewModel @Inject constructor(
                             val resolvedTitle = detail?.title?.takeIf { it.isNotBlank() }
                                 ?: books.firstOrNull()?.seriesTitle?.takeIf { it.isNotBlank() }
                                 ?: seriesId
+                            val fallback: ContentType? = shelfId
+                                ?.let { id -> shelfRepository.shelves.first().firstOrNull { it.id == id } }
+                                ?.defaultContentType
+                            val seriesForResolve: Series = detail
+                                ?: Series(id = 0, sourceId = 0, remoteId = seriesId, title = resolvedTitle)
+                            val viewerModes = books.associate { book ->
+                                book.remoteId to mapViewerMode(
+                                    resolveViewerType(seriesForResolve, book, fallback),
+                                ).name
+                            }
                             SeriesDetailUiState.Content(
                                 books = books,
                                 seriesTitle = resolvedTitle,
@@ -87,6 +107,7 @@ class SeriesDetailViewModel @Inject constructor(
                                 seriesSummary = detail?.summary,
                                 seriesStatus = detail?.status,
                                 seriesGenres = detail?.genres ?: emptyList(),
+                                viewerModes = viewerModes,
                             )
                         },
                         { SeriesDetailUiState.Error(it.message ?: "Bücher konnten nicht geladen werden") },
@@ -152,6 +173,11 @@ class SeriesDetailViewModel @Inject constructor(
                 _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Löschen fehlgeschlagen"))
             }
         }
+    }
+
+    private fun mapViewerMode(type: ViewerType): ViewerMode = when (type) {
+        ViewerType.WEBTOON -> ViewerMode.WEBTOON
+        else -> ViewerMode.PAGED // PAGED und EPUB lesen paginiert; EPUB-Buch wählt Reader per Format
     }
 
     companion object {

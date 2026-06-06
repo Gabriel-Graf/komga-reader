@@ -29,7 +29,6 @@ class ComicPageLoader(
 ) {
     private val context: Context = context.applicationContext
 
-
     data class PageDetection(val panels: List<PanelRect>, val pageWidth: Int, val pageHeight: Int)
 
     suspend fun detect(pageUrl: String, headers: Map<String, String>): PageDetection =

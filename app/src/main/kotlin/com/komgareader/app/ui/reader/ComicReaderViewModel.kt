@@ -44,6 +44,11 @@ class ComicReaderViewModel @Inject constructor(
     private var headers: Map<String, String> = emptyMap()
 
     fun init(pageUrls: List<String>, authHeaders: Map<String, String>, startPage: Int) {
+        if (pageUrls.isEmpty()) {
+            pages = emptyList(); headers = emptyMap(); pageCount = 0
+            _uiState.value = ComicUiState()
+            return
+        }
         pages = pageUrls
         headers = authHeaders
         pageCount = pageUrls.size

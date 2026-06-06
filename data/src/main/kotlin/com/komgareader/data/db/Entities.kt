@@ -7,12 +7,13 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "settings")
 data class SettingEntity(@PrimaryKey val key: String, val value: String)
 
-/** Einzelne Server-Verbindung (id fix = 1 im MVP). Kein apiKey – liegt Keystore-verschlüsselt. */
+/** Einzelne Server-Verbindung (id fix = 1 im MVP). Credentials liegen Keystore-verschlüsselt. */
 @Entity(tableName = "server")
 data class ServerEntity(
     @PrimaryKey val id: Int = 1,
     val name: String,
     val baseUrl: String,
+    val username: String? = null,
 )
 
 /** Lokal gespeichertes Buch (Download-Eintrag). */

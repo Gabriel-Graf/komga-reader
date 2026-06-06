@@ -19,7 +19,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.theme.EinkTokens
 
@@ -172,3 +175,36 @@ fun SubPageScaffold(
 
 /** Inhalts-Padding-Helfer, falls eine Unterseite eigenes Scroll-/Listen-Layout braucht. */
 val SubPageContentPadding = PaddingValues(EinkTokens.screenPadding)
+
+/**
+ * Diskrete ±-Regelzeile (kein kontinuierlicher Slider — ruckelt auf E-Ink). Label links,
+ * aktueller Wert mittig, − / + Buttons rechts. [enabled] sperrt z. B. bei Built-in-Profilen.
+ */
+@Composable
+fun StepperRow(
+    label: String,
+    valueText: String,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        IconButton(onClick = onDecrement, enabled = enabled) {
+            Icon(Icons.Outlined.Remove, contentDescription = "−", modifier = Modifier.size(22.dp))
+        }
+        Text(
+            valueText,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(56.dp),
+            textAlign = TextAlign.Center,
+        )
+        IconButton(onClick = onIncrement, enabled = enabled) {
+            Icon(Icons.Outlined.Add, contentDescription = "+", modifier = Modifier.size(22.dp))
+        }
+    }
+}

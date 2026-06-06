@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChromeReaderMode
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Contrast
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
@@ -35,7 +36,7 @@ import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
 
 /** Die einzelnen Settings-Unterseiten — Routing in MainActivity. */
-enum class SettingsPage { CONNECTION, APPEARANCE, READER, DOWNLOADS, LANGUAGE, ABOUT }
+enum class SettingsPage { CONNECTION, APPEARANCE, COLOR_FILTER, READER, DOWNLOADS, LANGUAGE, ABOUT }
 
 private data class SettingsTileModel(
     val page: SettingsPage,
@@ -118,6 +119,10 @@ private fun buildTiles(
     SettingsTileModel(
         SettingsPage.APPEARANCE, Icons.Outlined.Contrast, s.settingsAppearance, themeLabel,
         "${s.settingsAppearance} ${s.settingsTheme} ${s.themeLight} ${s.themeDark} ${s.themeSystem}",
+    ),
+    SettingsTileModel(
+        SettingsPage.COLOR_FILTER, Icons.Outlined.Palette, s.settingsColorFilter, s.colorFilterSummary,
+        "${s.settingsColorFilter} ${s.colorFilterProfiles} ${s.colorFilterSaturation} ${s.colorFilterContrast} ${s.colorFilterBrightness}",
     ),
     SettingsTileModel(
         SettingsPage.READER, Icons.Outlined.ChromeReaderMode, s.settingsReader, displayLabel,

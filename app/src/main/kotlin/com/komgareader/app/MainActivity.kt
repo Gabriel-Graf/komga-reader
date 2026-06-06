@@ -29,6 +29,7 @@ import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
 import com.komgareader.app.ui.settings.AboutScreen
 import com.komgareader.app.ui.settings.AppearanceSettingsScreen
+import com.komgareader.app.ui.settings.ColorFilterSettingsScreen
 import com.komgareader.app.ui.settings.ConnectionSettingsScreen
 import com.komgareader.app.ui.settings.DownloadsSettingsScreen
 import com.komgareader.app.ui.settings.LanguageSettingsScreen
@@ -109,6 +110,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("settings/appearance") {
                             AppearanceSettingsScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("settings/colorfilter") {
+                            ColorFilterSettingsScreen(onBack = { nav.popBackStack() })
                         }
                         composable("settings/reader") {
                             ReaderSettingsScreen(onBack = { nav.popBackStack() })
@@ -194,6 +198,7 @@ class MainActivity : ComponentActivity() {
 private fun settingsRoute(page: SettingsPage): String = when (page) {
     SettingsPage.CONNECTION -> "settings/connection"
     SettingsPage.APPEARANCE -> "settings/appearance"
+    SettingsPage.COLOR_FILTER -> "settings/colorfilter"
     SettingsPage.READER -> "settings/reader"
     SettingsPage.DOWNLOADS -> "settings/downloads"
     SettingsPage.LANGUAGE -> "settings/language"

@@ -38,6 +38,13 @@ class ResolveViewerType {
         return ViewerType.PAGED
     }
 
+    /**
+     * Regal-Default-Viewer ohne konkretes Buch (z. B. fürs Browsen einer Gruppe):
+     * leitet allein aus dem Regal-Inhaltstyp ab. Per-Buch-Signale (Format, Leserichtung)
+     * greifen erst in [invoke], wenn ein Buch geöffnet wird.
+     */
+    fun forContentType(type: ContentType): ViewerType = map(type)
+
     private fun map(type: ContentType): ViewerType = when (type) {
         ContentType.MANGA -> ViewerType.PAGED
         ContentType.COMIC -> ViewerType.PAGED

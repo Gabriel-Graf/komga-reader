@@ -66,7 +66,7 @@ class GroupBrowseViewModel @Inject constructor(
                     emit(GroupBrowseUiState.NoServer)
                     return@flow
                 }
-                val mode = mapViewerType(resolveViewerType(shelfToSeries(shelf), shelf))
+                val mode = mapViewerType(resolveViewerType.forContentType(shelf.contentType))
                 emit(runCatching { source.browse(0, SourceFilter()) }
                     .fold(
                         { result ->
@@ -89,13 +89,4 @@ class GroupBrowseViewModel @Inject constructor(
         com.komgareader.domain.model.ViewerType.WEBTOON -> ViewerMode.WEBTOON
         else -> ViewerMode.PAGED
     }
-
-    /** Erstellt eine Dummy-Series ohne Override, damit ResolveViewerType den Regal-Typ nutzt. */
-    private fun shelfToSeries(shelf: Shelf) = com.komgareader.domain.model.Series(
-        id = 0,
-        sourceId = shelf.sourceIds.firstOrNull() ?: 0L,
-        remoteId = "",
-        title = "",
-        contentTypeOverride = null,
-    )
 }

@@ -10,9 +10,14 @@ description: Use when touching Viewer-/Reader-Mode selection in the Komga-Reader
 1. `series.contentTypeOverride` → map
 2. `book.format == EPUB` → EPUB
 3. `readingDirection ∈ {VERTICAL, WEBTOON}` → WEBTOON
-4. `book.format ∈ {CBZ, CBR, PDF}` → PAGED
-5. `fallback (shelf.defaultContentType)` → map
+4. `fallback (shelf.defaultContentType)` → map
+5. `book.format ∈ {CBZ, CBR, PDF}` → PAGED
 6. sonst → PAGED
+
+**Stufe 4 (Bibliotheks-Default) steht VOR Stufe 5 (Format-Default):** Webtoons
+liegen fast immer als CBZ vor; ein explizites WEBTOON-Bibliothek-Tag muss den
+Format-Default (PAGED) schlagen, sonst bliebe der Bibliotheks-Default für Comics
+wirkungslos (CBZ erzwänge sonst immer PAGED).
 
 `map`: MANGA/COMIC → PAGED, WEBTOON → WEBTOON, NOVEL → EPUB.
 

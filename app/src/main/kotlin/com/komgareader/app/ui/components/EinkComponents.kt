@@ -107,13 +107,14 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 
 /**
  * Auswahlzeile mit Häkchen rechts statt RadioButton-Kreis (ruhiger auf E-Ink).
- * Für Theme-/Sprach-/Modus-Auswahl.
+ * Für Theme-/Sprach-/Modus-Auswahl. [query] markiert Suchtreffer im Label.
  */
 @Composable
 fun ChoiceRow(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    query: String = "",
     onSelect: () -> Unit,
 ) {
     Row(
@@ -123,7 +124,12 @@ fun ChoiceRow(
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        HighlightText(
+            text = label,
+            query = query,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
         if (selected) {
             Icon(
                 Icons.Outlined.Check,

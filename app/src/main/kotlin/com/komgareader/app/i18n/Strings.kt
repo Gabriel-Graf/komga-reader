@@ -11,6 +11,14 @@ interface Strings {
     val themeLight: String
     val themeDark: String
     val themeSystem: String
+    val settingsServer: String
+    val serverName: String
+    val serverUrl: String
+    val serverApiKey: String
+    val connect: String
+    val disconnect: String
+    val connected: String
+    val notConnected: String
 }
 
 object StringsDe : Strings {
@@ -23,6 +31,14 @@ object StringsDe : Strings {
     override val themeLight = "Hell"
     override val themeDark = "Dunkel"
     override val themeSystem = "System"
+    override val settingsServer = "Komga-Server"
+    override val serverName = "Name"
+    override val serverUrl = "URL"
+    override val serverApiKey = "API-Schlüssel"
+    override val connect = "Verbinden"
+    override val disconnect = "Trennen"
+    override val connected = "Verbunden"
+    override val notConnected = "Nicht verbunden"
 }
 
 object StringsEn : Strings {
@@ -35,6 +51,14 @@ object StringsEn : Strings {
     override val themeLight = "Light"
     override val themeDark = "Dark"
     override val themeSystem = "System"
+    override val settingsServer = "Komga Server"
+    override val serverName = "Name"
+    override val serverUrl = "URL"
+    override val serverApiKey = "API Key"
+    override val connect = "Connect"
+    override val disconnect = "Disconnect"
+    override val connected = "Connected"
+    override val notConnected = "Not connected"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

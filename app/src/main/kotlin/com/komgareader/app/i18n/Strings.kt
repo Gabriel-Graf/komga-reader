@@ -93,6 +93,10 @@ interface Strings {
     val searchSettingsHint: String
     val searchAction: String
     val searchNoResults: String
+    // Reader-Einstellungen
+    val settingsWebtoon: String
+    val webtoonOverlapHelper: String
+    val webtoonOverlap: String
 }
 
 object StringsDe : Strings {
@@ -187,6 +191,10 @@ object StringsDe : Strings {
     override val searchSettingsHint = "Einstellungen durchsuchen"
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
+    // Reader-Einstellungen
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
+    override val webtoonOverlap = "Überlappung"
 }
 
 object StringsEn : Strings {
@@ -281,6 +289,10 @@ object StringsEn : Strings {
     override val searchSettingsHint = "Search settings"
     override val searchAction = "Search"
     override val searchNoResults = "No results"
+    // Reader settings
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
+    override val webtoonOverlap = "Overlap"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

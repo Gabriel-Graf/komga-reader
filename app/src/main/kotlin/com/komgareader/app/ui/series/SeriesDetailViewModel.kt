@@ -11,6 +11,7 @@ import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface SeriesDetailUiState {
@@ -104,18 +106,21 @@ class SeriesDetailViewModel @Inject constructor(
             }
             _downloadingIds.update { it + book.remoteId }
             runCatching {
-                val bytes = source.downloadFile(book.remoteId)
-                check(bytes.isNotEmpty()) { "Server lieferte leere Datei für ${book.remoteId}" }
-                downloadManager.store(
-                    bookRemoteId = book.remoteId,
-                    sourceId = book.sourceId,
-                    seriesRemoteId = seriesId,
-                    title = book.title,
-                    format = book.format.name,
-                    totalPages = book.pageCount,
-                    bytes = bytes,
-                )
-                Log.i(TAG, "Download gespeichert: ${book.title} (${bytes.size} Bytes)")
+                // Netzwerk + Datei-I/O explizit auf IO-Dispatcher ausführen
+                withContext(Dispatchers.IO) {
+                    val bytes = source.downloadFile(book.remoteId)
+                    check(bytes.isNotEmpty()) { "Server lieferte leere Datei für ${book.remoteId}" }
+                    downloadManager.store(
+                        bookRemoteId = book.remoteId,
+                        sourceId = book.sourceId,
+                        seriesRemoteId = seriesId,
+                        title = book.title,
+                        format = book.format.name,
+                        totalPages = book.pageCount,
+                        bytes = bytes,
+                    )
+                    Log.i(TAG, "Download gespeichert: ${book.title} (${bytes.size} Bytes)")
+                }
             }.onFailure { e ->
                 Log.e(TAG, "Download fehlgeschlagen: ${book.title}", e)
                 _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Download fehlgeschlagen"))

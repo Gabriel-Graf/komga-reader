@@ -9,6 +9,7 @@ import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.source.SourceFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed interface LibraryUiState {
@@ -71,19 +73,21 @@ class LibraryViewModel @Inject constructor(
             val config = servers.config.first() ?: return@launch
             val source = sourceProvider.from(config) ?: return@launch
             runCatching {
-                val books = source.books(series.remoteId)
+                val books = withContext(Dispatchers.IO) { source.books(series.remoteId) }
                 events.emit(LibraryEvent.DownloadStarted(books.size))
                 for (book in books) {
-                    val bytes = source.downloadFile(book.remoteId)
-                    downloadManager.store(
-                        bookRemoteId = book.remoteId,
-                        sourceId = book.sourceId,
-                        seriesRemoteId = series.remoteId,
-                        title = book.title,
-                        format = book.format.name,
-                        totalPages = book.pageCount,
-                        bytes = bytes,
-                    )
+                    withContext(Dispatchers.IO) {
+                        val bytes = source.downloadFile(book.remoteId)
+                        downloadManager.store(
+                            bookRemoteId = book.remoteId,
+                            sourceId = book.sourceId,
+                            seriesRemoteId = series.remoteId,
+                            title = book.title,
+                            format = book.format.name,
+                            totalPages = book.pageCount,
+                            bytes = bytes,
+                        )
+                    }
                 }
                 events.emit(LibraryEvent.DownloadComplete)
             }.onFailure { e ->

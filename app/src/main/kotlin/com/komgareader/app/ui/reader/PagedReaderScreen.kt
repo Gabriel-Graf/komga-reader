@@ -29,10 +29,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.komgareader.eink.onyx.OnyxRefresher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,10 +45,12 @@ fun PagedReaderScreen(
     onBack: () -> Unit,
     onToggleMode: () -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel(),
+    refresher: OnyxRefresher? = null,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val requestedPage by viewModel.requestedPage.collectAsState()
     val ctx = LocalContext.current
+    val rootView = LocalView.current
 
     val pageCount = pages.size
     if (pageCount == 0) return
@@ -60,9 +64,16 @@ fun PagedReaderScreen(
         }
     }
 
-    // Fortschritt pushen wenn Seite gesettled
+    // Fortschritt pushen wenn Seite gesettled + periodischen GC-Refresh auslösen
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onPageSettled(pagerState.currentPage)
+        // Alle N Seitenumbrüche: GC-Full-Refresh gegen Ghosting (nur Boox)
+        if (refresher != null && triggerGhostClearIfNeeded(pagerState.currentPage, refresher)) {
+            refresher.fullRefreshIfNeeded(
+                view = rootView,
+                pagesSinceLastRefresh = OnyxRefresher.GHOST_CLEAR_INTERVAL,
+            )
+        }
     }
 
     Scaffold(

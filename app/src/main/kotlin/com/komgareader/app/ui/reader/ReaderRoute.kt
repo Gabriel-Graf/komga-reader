@@ -12,16 +12,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.eink.onyx.OnyxRefresher
 
 /**
  * Reader-Host: holt den ReaderViewModel und wählt je nach ReaderContent
  * zwischen EpubReaderScreen, PagedReaderScreen und WebtoonReaderScreen.
+ *
+ * Aktiviert außerdem den E-Ink-Schnell-Modus (A2/DW) für Onyx-Geräte
+ * und stellt ihn beim Verlassen wieder her (No-Op auf Nicht-Boox).
  */
 @Composable
 fun ReaderRoute(
     onBack: () -> Unit,
     viewModel: ReaderViewModel = hiltViewModel(),
+    einkHolder: ReaderEinkHolder = hiltViewModel(),
 ) {
+    val refresher: OnyxRefresher = einkHolder.refresher
+
+    // E-Ink-Fast-Modus aktivieren, beim Verlassen deaktivieren
+    EinkReaderEffect(refresher)
+
     val content by viewModel.content.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val mode by viewModel.viewerMode.collectAsState()
@@ -54,6 +64,7 @@ fun ReaderRoute(
                     onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,
                     viewModel = viewModel,
+                    refresher = refresher,
                 )
                 ViewerMode.WEBTOON -> WebtoonReaderScreen(
                     pages = c.pages,
@@ -64,6 +75,7 @@ fun ReaderRoute(
                     onBack = onBack,
                     onPageVisible = viewModel::onPageSettled,
                     onToggleMode = viewModel::toggleViewerMode,
+                    refresher = refresher,
                 )
             }
         }

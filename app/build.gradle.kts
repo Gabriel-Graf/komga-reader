@@ -32,6 +32,7 @@ android {
 dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
+    implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
     implementation(project(":render-core"))
     implementation(libs.coil.compose)

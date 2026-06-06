@@ -57,6 +57,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.i18n.localizedSeriesStatus
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.repository.ServerConfig
 
@@ -123,6 +124,9 @@ fun SeriesDetailScreen(
                     seriesTitle = current.seriesTitle,
                     seriesRemoteId = current.seriesRemoteId,
                     serverConfig = current.serverConfig,
+                    seriesSummary = current.seriesSummary,
+                    seriesStatus = current.seriesStatus,
+                    seriesGenres = current.seriesGenres,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
                     onOpenBook = onOpenBook,
@@ -143,6 +147,9 @@ private fun SeriesDetailContent(
     seriesTitle: String,
     seriesRemoteId: String,
     serverConfig: ServerConfig?,
+    seriesSummary: String?,
+    seriesStatus: String?,
+    seriesGenres: List<String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
     onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean) -> Unit,
@@ -154,32 +161,33 @@ private fun SeriesDetailContent(
     var chaptersExpanded by rememberSaveable { mutableStateOf(true) }
 
     val currentBook = books.firstOrNull { it.remoteId == selectedBook } ?: books.firstOrNull()
+    // Beschreibung: Serien-Summary hat Vorrang, sonst Summary des ausgewählten Buchs.
+    val description = seriesSummary?.takeIf { it.isNotBlank() }
+        ?: currentBook?.summary?.takeIf { it.isNotBlank() }
 
     LazyColumn(modifier = modifier) {
-        // Header-Karte: Cover links, Titel + Kapitelanzahl rechts
+        // Fusionierte Hero-Karte: großes Cover, Titel, Status/Genres, Beschreibung, Aktionen.
         item {
-            SeriesHeaderCard(
+            SeriesHeroCard(
                 seriesTitle = seriesTitle,
                 bookCount = books.size,
                 seriesRemoteId = seriesRemoteId,
                 serverConfig = serverConfig,
+                status = seriesStatus,
+                genres = seriesGenres,
+                description = description,
+                currentBook = currentBook,
+                isLocal = currentBook?.remoteId in localIds,
+                isDownloading = currentBook?.remoteId in downloadingIds,
+                onRead = {
+                    currentBook?.let {
+                        onOpenBook(it.remoteId, it.pageCount, it.format.name, false)
+                    }
+                },
+                onDownload = { currentBook?.let(onDownload) },
+                onRemoveDownload = { currentBook?.let { onRemoveDownload(it.remoteId) } },
                 modifier = Modifier.padding(12.dp),
             )
-        }
-
-        // Ausgewähltes Buch: Metadaten + Aktionen (Lesen + Download/Entfernen-Toggle)
-        if (currentBook != null) {
-            item {
-                SelectedBookBlock(
-                    book = currentBook,
-                    isLocal = currentBook.remoteId in localIds,
-                    isDownloading = currentBook.remoteId in downloadingIds,
-                    onRead = { onOpenBook(currentBook.remoteId, currentBook.pageCount, currentBook.format.name, false) },
-                    onDownload = { onDownload(currentBook) },
-                    onRemoveDownload = { onRemoveDownload(currentBook.remoteId) },
-                    modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
-                )
-            }
         }
 
         // Kollabierbare Kapitelliste
@@ -212,63 +220,21 @@ private fun SeriesDetailContent(
     }
 }
 
+/**
+ * Fusionierte Hero-Karte: großes Cover trägt Titel + Status/Genres, darunter die
+ * Serien-Beschreibung (falls vorhanden) und die Lese-/Download-Aktionen. Ersetzt die
+ * frühere kleine Cover-Karte plus den separaten Kapitel-Detailblock.
+ */
 @Composable
-private fun SeriesHeaderCard(
+private fun SeriesHeroCard(
     seriesTitle: String,
     bookCount: Int,
     seriesRemoteId: String,
     serverConfig: ServerConfig?,
-    modifier: Modifier = Modifier,
-) {
-    val s = LocalStrings.current
-    val ctx = LocalContext.current
-    val coverUrl = serverConfig?.let { "${it.baseUrl}series/$seriesRemoteId/thumbnail" }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        // Cover-Bild links
-        if (coverUrl != null) {
-            val authHeaders = AuthHeaders.forCovers(serverConfig)
-            AsyncImage(
-                model = ImageRequest.Builder(ctx)
-                    .data(coverUrl)
-                    .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
-                    .crossfade(true)
-                    .build(),
-                contentDescription = seriesTitle,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(72.dp)
-                    .aspectRatio(2f / 3f),
-            )
-        }
-
-        // Titel + Kapitelanzahl rechts
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                seriesTitle,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "$bookCount ${s.chapters}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SelectedBookBlock(
-    book: Book,
+    status: String?,
+    genres: List<String>,
+    description: String?,
+    currentBook: Book?,
     isLocal: Boolean,
     isDownloading: Boolean,
     onRead: () -> Unit,
@@ -277,94 +243,115 @@ private fun SelectedBookBlock(
     modifier: Modifier = Modifier,
 ) {
     val s = LocalStrings.current
+    val ctx = LocalContext.current
+    val coverUrl = serverConfig?.let { "${it.baseUrl}series/$seriesRemoteId/thumbnail" }
+    val statusText = status?.takeIf { it.isNotBlank() }?.let { s.localizedSeriesStatus(it) }
+    val subtitle = listOfNotNull("$bookCount ${s.chapters}", statusText).joinToString(" · ")
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
             .padding(12.dp),
     ) {
-        Text(book.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(4.dp))
-        Text("${book.pageCount} ${s.pagesShort}", style = MaterialTheme.typography.bodySmall)
-
-        // Metadaten-Mini-Tabelle
-        Spacer(Modifier.height(8.dp))
-        MetaRow(label = s.formatLabel, value = book.format.name)
-        if (book.sizeBytes > 0L) {
-            MetaRow(label = s.sizeLabel, value = SeriesDetailViewModel.humanReadableSize(book.sizeBytes))
-        }
-        book.fileUrl?.let { url ->
-            val fileName = url.substringAfterLast('/', url.substringAfterLast('\\', url))
-            MetaRow(label = s.fileLabel, value = fileName.take(40))
-        }
-        book.createdDate?.let { MetaRow(label = s.createdLabel, value = it.take(10)) }
-        book.modifiedDate?.let { MetaRow(label = s.modifiedLabel, value = it.take(10)) }
-
-        // Aktionsschaltflächen: Lesen (primär) + Download/Entfernen-Toggle
-        Spacer(Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // Primäre Aktion: Lesen (nutzt lokale Kopie wenn vorhanden, sonst Stream)
-            Button(onClick = onRead, modifier = Modifier.weight(1f)) {
-                Text(s.read, maxLines = 1)
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Großes Cover links
+            if (coverUrl != null) {
+                val authHeaders = AuthHeaders.forCovers(serverConfig)
+                AsyncImage(
+                    model = ImageRequest.Builder(ctx)
+                        .data(coverUrl)
+                        .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = seriesTitle,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .width(118.dp)
+                        .aspectRatio(2f / 3f),
+                )
             }
 
-            // Download/Entfernen-Toggle
-            when {
-                isDownloading -> Box(
-                    modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            // Titel + Kapitel/Status + Genre-Chips
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    seriesTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (genres.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    GenreChips(genres = genres)
                 }
-                isLocal -> OutlinedButton(
-                    onClick = onRemoveDownload,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(
-                        Icons.Filled.Delete,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(s.removeDownload, maxLines = 1)
+            }
+        }
+
+        // Beschreibung (Serie, Fallback ausgewähltes Buch) — nur wenn vorhanden
+        if (description != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        // Aktionsschaltflächen: Lesen (primär) + Download/Entfernen-Toggle
+        if (currentBook != null) {
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(onClick = onRead, modifier = Modifier.weight(1f)) {
+                    Text(s.read, maxLines = 1)
                 }
-                else -> OutlinedButton(
-                    onClick = onDownload,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(
-                        Icons.Filled.CloudDownload,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(s.downloadShort, maxLines = 1)
+                when {
+                    isDownloading -> Box(
+                        modifier = Modifier.size(48.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    }
+                    isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(s.removeDownload, maxLines = 1)
+                    }
+                    else -> OutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(s.downloadShort, maxLines = 1)
+                    }
                 }
             }
         }
     }
 }
 
+/** Genre-Chips als E-Ink-Border-Tags (max. 3, Rest abgeschnitten). */
 @Composable
-private fun MetaRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 1.dp),
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(80.dp),
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodySmall,
-        )
+private fun GenreChips(genres: List<String>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        genres.take(3).forEach { genre ->
+            Box(
+                modifier = Modifier
+                    .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 9.dp, vertical = 2.dp),
+            ) {
+                Text(
+                    genre,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 

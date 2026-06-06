@@ -47,6 +47,11 @@ interface Strings {
     val createdLabel: String
     val modifiedLabel: String
     val pagesShort: String
+    // Serien-Status (lokalisiert)
+    val statusOngoing: String
+    val statusEnded: String
+    val statusAbandoned: String
+    val statusHiatus: String
     // Gruppen-Tabs
     val tabBrowse: String
     val tabGroups: String
@@ -111,6 +116,11 @@ object StringsDe : Strings {
     override val createdLabel = "Erstellt"
     override val modifiedLabel = "Geändert"
     override val pagesShort = "S."
+    // Serien-Status
+    override val statusOngoing = "Laufend"
+    override val statusEnded = "Abgeschlossen"
+    override val statusAbandoned = "Abgebrochen"
+    override val statusHiatus = "Pausiert"
     // Gruppen-Tabs
     override val tabBrowse = "Stöbern"
     override val tabGroups = "Gruppen"
@@ -175,6 +185,11 @@ object StringsEn : Strings {
     override val createdLabel = "Created"
     override val modifiedLabel = "Modified"
     override val pagesShort = "pp."
+    // Series status
+    override val statusOngoing = "Ongoing"
+    override val statusEnded = "Ended"
+    override val statusAbandoned = "Abandoned"
+    override val statusHiatus = "Hiatus"
     // Groups tabs
     override val tabBrowse = "Browse"
     override val tabGroups = "Groups"
@@ -198,4 +213,16 @@ enum class Language(val code: String) { DE("de"), EN("en") }
 fun stringsFor(language: Language): Strings = when (language) {
     Language.DE -> StringsDe
     Language.EN -> StringsEn
+}
+
+/**
+ * Übersetzt den quellen-gelieferten Status-Rohwert (Komga: ONGOING/ENDED/…) in
+ * lokalisierten Text. Unbekannte Werte werden unverändert durchgereicht (Title-Case).
+ */
+fun Strings.localizedSeriesStatus(raw: String): String = when (raw.uppercase()) {
+    "ONGOING" -> statusOngoing
+    "ENDED" -> statusEnded
+    "ABANDONED" -> statusAbandoned
+    "HIATUS" -> statusHiatus
+    else -> raw.lowercase().replaceFirstChar { it.uppercase() }
 }

@@ -52,6 +52,14 @@ class OpdsSource internal constructor(
             .map { it.toBook() }
     }
 
+    /**
+     * OPDS-Atom-Einträge tragen keine reichhaltigen Serien-Metadaten (kein Summary,
+     * Status oder Genre). Liefert daher höchstens das aus dem Feed bekannte Minimum
+     * (Titel + Cover) oder `null`, wenn kein passender Eintrag existiert.
+     */
+    override suspend fun seriesDetail(seriesRemoteId: String): Series? =
+        fetchFeed(catalogUrl).firstOrNull { it.id == seriesRemoteId }?.toSeries()
+
     override suspend fun pages(bookRemoteId: String): List<PageRef> = emptyList()
 
     override suspend fun openPage(ref: PageRef): ByteArray =

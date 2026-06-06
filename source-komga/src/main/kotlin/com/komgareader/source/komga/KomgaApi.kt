@@ -23,6 +23,9 @@ interface KomgaApi {
         @Query("search") search: String? = null,
     ): KomgaPage<SeriesDto>
 
+    @GET("series/{id}")
+    suspend fun getSeries(@Path("id") seriesId: String): SeriesDto
+
     @GET("series/{id}/books")
     suspend fun listBooks(
         @Path("id") seriesId: String,

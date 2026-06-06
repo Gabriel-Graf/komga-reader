@@ -23,6 +23,8 @@ data class SeriesDto(
 data class SeriesMetadataDto(
     val title: String = "",
     val status: String = "",
+    val summary: String = "",
+    val genres: List<String> = emptyList(),
 )
 
 @Serializable
@@ -49,6 +51,8 @@ data class BookMediaDto(
 @Serializable
 data class BookMetadataDto(
     val title: String = "",
+    val summary: String = "",
+    val number: String = "",
 )
 
 @Serializable

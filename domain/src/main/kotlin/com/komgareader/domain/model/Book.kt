@@ -14,4 +14,6 @@ data class Book(
     val fileUrl: String? = null,
     val createdDate: String? = null,
     val modifiedDate: String? = null,
+    val summary: String? = null,
+    val number: String? = null,
 )

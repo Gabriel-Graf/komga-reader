@@ -34,6 +34,14 @@ interface BrowsableSource : MediaSource {
     suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series>
     suspend fun search(query: String, page: Int): PagedResult<Series>
     suspend fun books(seriesRemoteId: String): List<Book>
+
+    /**
+     * Reichhaltige Metadaten zu einer einzelnen Serie (Beschreibung, Status, Genres).
+     * Quellen, die kein eigenes Serien-Detail liefern können, geben `null` zurück;
+     * die UI fällt dann auf das aus [books] abgeleitete Minimum zurück.
+     */
+    suspend fun seriesDetail(seriesRemoteId: String): Series?
+
     suspend fun pages(bookRemoteId: String): List<PageRef>
     /** Liefert die rohen Bytes einer Seite (Stream) oder des Buchs (Download). */
     suspend fun openPage(ref: PageRef): ByteArray

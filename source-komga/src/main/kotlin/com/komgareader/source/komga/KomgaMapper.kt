@@ -24,6 +24,9 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
         remoteId = dto.id,
         title = dto.metadata.title.ifBlank { dto.name },
         coverUrl = "${baseUrl}series/${dto.id}/thumbnail",
+        summary = dto.metadata.summary.ifBlank { null },
+        status = dto.metadata.status.ifBlank { null },
+        genres = dto.metadata.genres,
     )
 
     fun toBook(dto: BookDto): Book = Book(
@@ -40,6 +43,8 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
         fileUrl = dto.url.ifBlank { null },
         createdDate = dto.created,
         modifiedDate = dto.lastModified,
+        summary = dto.metadata.summary.ifBlank { null },
+        number = dto.metadata.number.ifBlank { null },
     )
 
     fun toPageRefs(bookRemoteId: String, pages: List<PageDto>): List<PageRef> =

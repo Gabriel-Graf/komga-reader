@@ -4,6 +4,7 @@ import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DownloadState
 import com.komgareader.source.komga.dto.BookDto
 import com.komgareader.source.komga.dto.BookMediaDto
+import com.komgareader.source.komga.dto.BookMetadataDto
 import com.komgareader.source.komga.dto.PageDto
 import com.komgareader.source.komga.dto.ReadProgressDto
 import com.komgareader.source.komga.dto.SeriesDto
@@ -44,6 +45,55 @@ class KomgaMapperTest {
         assertEquals(BookFormat.CBZ, book.format)
         assertEquals(220, book.pageCount)
         assertEquals(DownloadState.REMOTE, book.downloadState)
+    }
+
+    @Test
+    fun `Series übernimmt Summary, Status und Genres aus Metadaten`() {
+        val dto = SeriesDto(
+            id = "S1", name = "Berserk",
+            metadata = SeriesMetadataDto(
+                title = "Berserk",
+                status = "ONGOING",
+                summary = "Guts zieht durch eine düstere Welt.",
+                genres = listOf("Dark Fantasy", "Seinen"),
+            ),
+        )
+        val series = mapper.toSeries(dto)
+        assertEquals("Guts zieht durch eine düstere Welt.", series.summary)
+        assertEquals("ONGOING", series.status)
+        assertEquals(listOf("Dark Fantasy", "Seinen"), series.genres)
+    }
+
+    @Test
+    fun `Series-Summary und -Status sind null wenn leer`() {
+        val dto = SeriesDto(id = "S2", name = "Leer")
+        val series = mapper.toSeries(dto)
+        assertNull(series.summary)
+        assertNull(series.status)
+        assertEquals(emptyList(), series.genres)
+    }
+
+    @Test
+    fun `Book übernimmt Summary und Kapitelnummer`() {
+        val dto = BookDto(
+            id = "B1", seriesId = "S1", name = "Vol. 1",
+            media = BookMediaDto(mediaType = "application/zip", pagesCount = 10),
+            metadata = BookMetadataDto(summary = "Erster Band.", number = "1"),
+        )
+        val book = mapper.toBook(dto)
+        assertEquals("Erster Band.", book.summary)
+        assertEquals("1", book.number)
+    }
+
+    @Test
+    fun `Book-Summary und -Nummer sind null wenn leer`() {
+        val dto = BookDto(
+            id = "B2", seriesId = "S1", name = "Vol. 2",
+            media = BookMediaDto(mediaType = "application/zip", pagesCount = 10),
+        )
+        val book = mapper.toBook(dto)
+        assertNull(book.summary)
+        assertNull(book.number)
     }
 
     @Test

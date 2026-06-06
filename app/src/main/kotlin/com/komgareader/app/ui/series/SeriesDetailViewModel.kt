@@ -36,6 +36,9 @@ sealed interface SeriesDetailUiState {
         val seriesTitle: String,
         val seriesRemoteId: String,
         val serverConfig: ServerConfig?,
+        val seriesSummary: String? = null,
+        val seriesStatus: String? = null,
+        val seriesGenres: List<String> = emptyList(),
     ) : SeriesDetailUiState
     data class Error(val message: String) : SeriesDetailUiState
 }
@@ -69,11 +72,22 @@ class SeriesDetailViewModel @Inject constructor(
                 emit(runCatching { source.books(seriesId) }
                     .fold(
                         { books ->
-                            // Serientitel aus dem ersten Buch ableiten (seriesTitle-Feld),
-                            // Fallback auf seriesId wenn leer
-                            val resolvedTitle = books.firstOrNull()?.seriesTitle
-                                ?.takeIf { it.isNotBlank() } ?: seriesId
-                            SeriesDetailUiState.Content(books, resolvedTitle, seriesId, config)
+                            // Reichhaltige Serien-Metadaten optional nachladen (Naht A).
+                            // Ältere/abweichende Quellen können das nicht — dann Fallback.
+                            val detail = runCatching { source.seriesDetail(seriesId) }.getOrNull()
+                            // Serientitel: Serien-Detail > erstes Buch (seriesTitle) > seriesId
+                            val resolvedTitle = detail?.title?.takeIf { it.isNotBlank() }
+                                ?: books.firstOrNull()?.seriesTitle?.takeIf { it.isNotBlank() }
+                                ?: seriesId
+                            SeriesDetailUiState.Content(
+                                books = books,
+                                seriesTitle = resolvedTitle,
+                                seriesRemoteId = seriesId,
+                                serverConfig = config,
+                                seriesSummary = detail?.summary,
+                                seriesStatus = detail?.status,
+                                seriesGenres = detail?.genres ?: emptyList(),
+                            )
                         },
                         { SeriesDetailUiState.Error(it.message ?: "Bücher konnten nicht geladen werden") },
                     ))

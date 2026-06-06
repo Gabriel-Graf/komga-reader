@@ -43,6 +43,9 @@ class KomgaSource internal constructor(
         return PagedResult(response.content.map(mapper::toSeries), hasNextPage = !response.last)
     }
 
+    override suspend fun seriesDetail(seriesRemoteId: String): Series =
+        mapper.toSeries(api.getSeries(seriesRemoteId))
+
     override suspend fun books(seriesRemoteId: String): List<Book> {
         val response = api.listBooks(seriesRemoteId)
         check(response.last) {

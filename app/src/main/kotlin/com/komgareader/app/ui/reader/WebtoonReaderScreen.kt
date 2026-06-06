@@ -29,10 +29,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.komgareader.domain.source.PageRef
+import com.komgareader.eink.onyx.OnyxRefresher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,14 +47,22 @@ fun WebtoonReaderScreen(
     onBack: () -> Unit,
     onPageVisible: (Int) -> Unit,
     onToggleMode: () -> Unit,
+    refresher: OnyxRefresher? = null,
 ) {
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialPage)
     val ctx = LocalContext.current
+    val rootView = LocalView.current
     val pageCount = pages.size
 
-    // Fortschritt tracken anhand des ersten sichtbaren Index
+    // Fortschritt tracken + periodischen GC-Refresh auslösen (nur Boox)
     LaunchedEffect(listState.firstVisibleItemIndex) {
         onPageVisible(listState.firstVisibleItemIndex)
+        if (refresher != null && triggerGhostClearIfNeeded(listState.firstVisibleItemIndex, refresher)) {
+            refresher.fullRefreshIfNeeded(
+                view = rootView,
+                pagesSinceLastRefresh = OnyxRefresher.GHOST_CLEAR_INTERVAL,
+            )
+        }
     }
 
     Scaffold(

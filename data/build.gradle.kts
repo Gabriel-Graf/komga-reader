@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.documentfile)
     testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.kotlinx.coroutines.test)

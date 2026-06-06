@@ -22,11 +22,13 @@ import kotlinx.coroutines.withContext
  * über die tatsächlichen Detektions-Maße (siehe [PageDetection]).
  */
 class ComicPageLoader(
-    private val context: Context,
+    context: Context,
     private val imageLoader: ImageLoader,
     private val detector: PanelDetector = PanelDetector(),
     private val detectionWidth: Int = 1000,
 ) {
+    private val context: Context = context.applicationContext
+
 
     data class PageDetection(val panels: List<PanelRect>, val pageWidth: Int, val pageHeight: Int)
 

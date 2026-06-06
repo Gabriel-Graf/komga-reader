@@ -2,6 +2,7 @@ package com.komgareader.app.di
 
 import android.content.Context
 import android.os.Build
+import coil.ImageLoader
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.eink.NoOpEinkController
 import com.komgareader.domain.eink.EinkController
@@ -17,6 +18,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun imageLoader(@ApplicationContext ctx: Context): ImageLoader = ImageLoader(ctx)
 
     @Provides
     @Singleton

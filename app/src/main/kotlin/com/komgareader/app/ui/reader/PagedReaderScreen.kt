@@ -10,6 +10,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +38,7 @@ import coil.request.ImageRequest
 @Composable
 fun PagedReaderScreen(
     onBack: () -> Unit,
+    onToggleMode: () -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -83,6 +85,14 @@ fun PagedReaderScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onToggleMode) {
+                            Icon(
+                                Icons.Filled.ViewDay,
+                                contentDescription = "Zu Webtoon-Modus wechseln",
+                            )
                         }
                     },
                 )

@@ -18,7 +18,7 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
 import com.komgareader.app.ui.library.LibraryScreen
-import com.komgareader.app.ui.reader.PagedReaderScreen
+import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
 import com.komgareader.app.ui.settings.SettingsScreen
 import com.komgareader.app.ui.settings.SettingsViewModel
@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
                                 navArgument("pageCount") { type = NavType.IntType },
                             ),
                         ) {
-                            PagedReaderScreen(onBack = { nav.popBackStack() })
+                            ReaderRoute(onBack = { nav.popBackStack() })
                         }
                     }
                 }

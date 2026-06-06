@@ -10,17 +10,32 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.BookFormat
+import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
+import com.komgareader.domain.reader.WebtoonChapter
+import com.komgareader.domain.reader.WebtoonStrip
 import com.komgareader.domain.render.Document
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.source.PageRef
 import com.komgareader.render.mupdf.MupdfDocumentFactory
+import com.komgareader.source.komga.KomgaSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -39,6 +54,7 @@ class ReaderViewModel @Inject constructor(
     private val bus: HardwareButtonBus,
     private val downloadRepository: DownloadRepository,
     private val downloadManager: DownloadManager,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -66,6 +82,18 @@ class ReaderViewModel @Inject constructor(
     private val _currentPage = MutableStateFlow(0)
 
     val viewerMode = MutableStateFlow(initialViewerMode)
+
+    /** App-weiter Anzeige-Modus (EINK/SMARTPHONE) für den Reader. */
+    val displayMode: StateFlow<DisplayMode> = settings.displayMode
+        .map { runCatching { DisplayMode.valueOf(it) }.getOrDefault(DisplayMode.EINK) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, DisplayMode.EINK)
+
+    /**
+     * Frame-Sprünge im Webtoon-Modus (Hardware-/Lautstärke-Tasten): +1 = vorwärts,
+     * -1 = rückwärts. Der WebtoonReaderScreen scrollt darauf um ~1 Bildschirmhöhe.
+     */
+    private val _frameStep = MutableSharedFlow<Int>(extraBufferCapacity = 8)
+    val frameStep: SharedFlow<Int> = _frameStep.asSharedFlow()
 
     // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
     private var document: Document? = null
@@ -118,6 +146,8 @@ class ReaderViewModel @Inject constructor(
                     ?: 0
                 _currentPage.value = startPage
                 _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
+            } else if (initialViewerMode == ViewerMode.WEBTOON) {
+                loadWebtoonStrip(source, authHeaders)
             } else {
                 val pages = source.pages(bookId)
                 val startPage = runCatching { source.pullProgress(bookId) }
@@ -136,11 +166,55 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Lädt alle Kapitel der Serie und baut den nahtlosen, kapitelübergreifenden
+     * Webtoon-Strip. Seitenlisten werden parallel geholt (reines JSON); die
+     * Bilder lädt die LazyColumn/Coil erst beim Sichtbarwerden.
+     */
+    private suspend fun loadWebtoonStrip(source: KomgaSource, authHeaders: Map<String, String>) {
+        val seriesId = withContext(Dispatchers.IO) { source.seriesIdOf(bookId) }
+        val books = withContext(Dispatchers.IO) { source.books(seriesId) }
+        val perChapter: List<List<PageRef>> = withContext(Dispatchers.IO) {
+            coroutineScope { books.map { async { source.pages(it.remoteId) } }.awaitAll() }
+        }
+        val strip = WebtoonStrip(
+            books.mapIndexed { i, b -> WebtoonChapter(b.remoteId, perChapter[i].size) },
+        )
+        val flat = perChapter.flatten()
+
+        val openedIdx = books.indexOfFirst { it.remoteId == bookId }.coerceAtLeast(0)
+        val openedPageCount = perChapter.getOrNull(openedIdx)?.size ?: 0
+        val localStart = runCatching { source.pullProgress(bookId) }
+            .getOrNull()
+            ?.let { (it.page - 1).coerceIn(0, (openedPageCount - 1).coerceAtLeast(0)) }
+            ?: 0
+        val initialGlobal = if (strip.totalPages == 0) 0 else strip.globalIndex(openedIdx, localStart)
+
+        _currentPage.value = initialGlobal
+        _content.value = ReaderContent.Webtoon(
+            pages = flat,
+            authHeaders = authHeaders,
+            initialPage = initialGlobal,
+            strip = strip,
+        )
+    }
+
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
+            // Im Webtoon-Modus bedeutet eine Taste einen Frame-Sprung (Pixel-Scroll),
+            // nicht einen Seitenindex.
+            if (viewerMode.value == ViewerMode.WEBTOON) {
+                val dir = when (event.button) {
+                    HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN -> 1
+                    HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP -> -1
+                }
+                _frameStep.tryEmit(dir)
+                return@collect
+            }
             val current = _currentPage.value
             val pageCount = when (val c = _content.value) {
                 is ReaderContent.Streamed -> c.pages.size
+                is ReaderContent.Webtoon -> c.pages.size
                 is ReaderContent.Rendered -> c.pageCount
                 else -> return@collect
             }
@@ -168,21 +242,32 @@ class ReaderViewModel @Inject constructor(
 
     fun onPageSettled(index: Int) {
         _currentPage.value = index
-        val pageCount = when (val c = _content.value) {
-            is ReaderContent.Streamed -> c.pages.size
-            is ReaderContent.Rendered -> c.pageCount
-            else -> return
+        // Im Webtoon-Strip wird der globale Index auf Kapitel + Seite abgebildet,
+        // damit der Fortschritt für das richtige Kapitel gepusht wird.
+        when (val c = _content.value) {
+            is ReaderContent.Webtoon -> {
+                if (c.strip.totalPages == 0) return
+                val pos = c.strip.locate(index)
+                val chapterPages = c.strip.chapters[pos.chapterIndex].pageCount
+                pushProgress(pos.bookRemoteId, page = pos.pageInChapter + 1, totalPages = chapterPages)
+            }
+            is ReaderContent.Streamed -> pushProgress(bookId, page = index + 1, totalPages = c.pages.size)
+            is ReaderContent.Rendered -> pushProgress(bookId, page = index + 1, totalPages = c.pageCount)
+            else -> Unit
         }
+    }
+
+    private fun pushProgress(targetBookId: String, page: Int, totalPages: Int) {
         viewModelScope.launch {
             val config = servers.config.first()
             val source = sourceProvider.from(config) ?: return@launch
             runCatching {
                 source.pushProgress(
-                    bookId,
+                    targetBookId,
                     ReadProgress(
                         bookId = 0,
-                        page = index + 1,
-                        totalPages = pageCount,
+                        page = page,
+                        totalPages = totalPages,
                         updatedAt = System.currentTimeMillis(),
                     ),
                 )

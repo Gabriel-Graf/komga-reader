@@ -11,6 +11,10 @@ interface Strings {
     val themeLight: String
     val themeDark: String
     val themeSystem: String
+    val settingsDisplayMode: String
+    val displayModeHelper: String
+    val displayEink: String
+    val displaySmartphone: String
     val settingsServer: String
     val serverDisplayName: String
     val serverUrl: String
@@ -66,6 +70,10 @@ object StringsDe : Strings {
     override val themeLight = "Hell"
     override val themeDark = "Dunkel"
     override val themeSystem = "System"
+    override val settingsDisplayMode = "Anzeige-Modus"
+    override val displayModeHelper = "Optimiert die App für E-Ink (Frame-Sprünge, keine Animationen) oder Smartphone."
+    override val displayEink = "E-Ink"
+    override val displaySmartphone = "Smartphone"
     override val settingsServer = "Komga-Server"
     override val serverDisplayName = "Anzeigename"
     override val serverUrl = "Server-URL"
@@ -121,6 +129,10 @@ object StringsEn : Strings {
     override val themeLight = "Light"
     override val themeDark = "Dark"
     override val themeSystem = "System"
+    override val settingsDisplayMode = "Display Mode"
+    override val displayModeHelper = "Optimises the app for E-Ink (frame jumps, no animations) or smartphone."
+    override val displayEink = "E-Ink"
+    override val displaySmartphone = "Smartphone"
     override val settingsServer = "Komga Server"
     override val serverDisplayName = "Display Name"
     override val serverUrl = "Server URL"

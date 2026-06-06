@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 interface SettingsRepository {
     val themeMode: Flow<String>   // "LIGHT" | "DARK" | "SYSTEM"
     val language: Flow<String>    // "de" | "en"
+    val displayMode: Flow<String> // "EINK" | "SMARTPHONE"
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
+    suspend fun setDisplayMode(value: String)
 }

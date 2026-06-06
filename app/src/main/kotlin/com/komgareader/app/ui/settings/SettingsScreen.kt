@@ -47,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.theme.ThemeMode
+import com.komgareader.domain.model.DisplayMode
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -59,8 +60,11 @@ fun SettingsScreen(
     val languageStr by viewModel.language.collectAsState()
     val server by viewModel.server.collectAsState()
 
+    val displayModeStr by viewModel.displayMode.collectAsState()
+
     val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
     val language = if (languageStr == "en") Language.EN else Language.DE
+    val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
 
     var nameInput by remember { mutableStateOf("") }
     var urlInput by remember { mutableStateOf("") }
@@ -94,6 +98,20 @@ fun SettingsScreen(
                     ThemeMode.SYSTEM -> s.themeSystem
                 }
                 OptionRow(label, selected = mode == themeMode) { viewModel.setTheme(mode.name) }
+            }
+
+            Text(s.settingsDisplayMode, modifier = Modifier.padding(top = 16.dp))
+            Text(
+                s.displayModeHelper,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            DisplayMode.entries.forEach { dm ->
+                val label = when (dm) {
+                    DisplayMode.EINK -> s.displayEink
+                    DisplayMode.SMARTPHONE -> s.displaySmartphone
+                }
+                OptionRow(label, selected = dm == displayMode) { viewModel.setDisplayMode(dm.name) }
             }
 
             Text(s.settingsLanguage, modifier = Modifier.padding(top = 16.dp))

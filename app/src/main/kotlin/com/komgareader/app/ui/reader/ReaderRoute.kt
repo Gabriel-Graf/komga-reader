@@ -35,6 +35,7 @@ fun ReaderRoute(
     val content by viewModel.content.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val mode by viewModel.viewerMode.collectAsState()
+    val displayMode by viewModel.displayMode.collectAsState()
 
     when (val c = content) {
         is ReaderContent.Loading -> {
@@ -70,6 +71,34 @@ fun ReaderRoute(
                     pages = c.pages,
                     authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
+                    displayMode = displayMode,
+                    frameSteps = viewModel.frameStep,
+                    chromeVisible = uiState.chromeVisible,
+                    onToggleChrome = viewModel::toggleChrome,
+                    onBack = onBack,
+                    onPageVisible = viewModel::onPageSettled,
+                    onToggleMode = viewModel::toggleViewerMode,
+                    refresher = refresher,
+                )
+            }
+        }
+        is ReaderContent.Webtoon -> {
+            when (mode) {
+                ViewerMode.PAGED -> PagedReaderScreen(
+                    pages = c.pages,
+                    authHeaders = c.authHeaders,
+                    initialPage = c.initialPage,
+                    onBack = onBack,
+                    onToggleMode = viewModel::toggleViewerMode,
+                    viewModel = viewModel,
+                    refresher = refresher,
+                )
+                ViewerMode.WEBTOON -> WebtoonReaderScreen(
+                    pages = c.pages,
+                    authHeaders = c.authHeaders,
+                    initialPage = c.initialPage,
+                    displayMode = displayMode,
+                    frameSteps = viewModel.frameStep,
                     chromeVisible = uiState.chromeVisible,
                     onToggleChrome = viewModel::toggleChrome,
                     onBack = onBack,

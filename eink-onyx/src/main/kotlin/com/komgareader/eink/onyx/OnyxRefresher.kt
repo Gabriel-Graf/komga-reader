@@ -41,6 +41,11 @@ class OnyxRefresher @Inject constructor() {
         }
     }
 
+    /** Sofortiger GC-Full-Refresh — für den E-Ink-Webtoon-Frame-Sprung (ein Refresh pro Frame). */
+    fun fullRefreshNow(view: View) {
+        controller?.fullRefresh(view)
+    }
+
     companion object {
         /** Alle N Seitenumbrüche wird ein GC-Full-Refresh ausgelöst. */
         const val GHOST_CLEAR_INTERVAL = 6

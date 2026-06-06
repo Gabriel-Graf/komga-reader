@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,5 +53,21 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
                 `sourceIds` TEXT NOT NULL
             )""",
         )
+    }
+}
+
+/**
+ * v4 → v5: Keystore-verschlüsselte Credential-Spalten in der server-Tabelle.
+ * Ersetzt EncryptedSharedPreferences durch AndroidKeyStore + AES/GCM-Blobs.
+ * Bestehende Zeilen erhalten NULL in allen neuen Spalten — der Nutzer muss nach dem
+ * Update einmalig die Credentials neu eingeben (Migration aus EncryptedSharedPreferences
+ * nicht möglich, da der Schlüssel gerätespezifisch ist und Chiffrierung sich ändert).
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `apiKeyCiphertext` TEXT")
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `apiKeyIv` TEXT")
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `passwordCiphertext` TEXT")
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `passwordIv` TEXT")
     }
 }

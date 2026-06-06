@@ -67,6 +67,10 @@ class ReaderViewModel @Inject constructor(
         ViewerMode.valueOf(savedStateHandle.get<String>("viewerMode") ?: "PAGED")
     }.getOrDefault(ViewerMode.PAGED)
 
+    /** Der Nicht-Webtoon-Modus, in dem geöffnet wurde (PAGED oder COMIC); Ziel beim Zurück-Togglen. */
+    private val pagedFamilyMode: ViewerMode =
+        if (initialViewerMode == ViewerMode.WEBTOON) ViewerMode.PAGED else initialViewerMode
+
     private val _content = MutableStateFlow<ReaderContent>(ReaderContent.Loading)
     val content: StateFlow<ReaderContent> = _content.asStateFlow()
 
@@ -99,10 +103,7 @@ class ReaderViewModel @Inject constructor(
     private val renderMutex = Mutex()
 
     fun toggleViewerMode() {
-        viewerMode.value = when (viewerMode.value) {
-            ViewerMode.WEBTOON -> ViewerMode.PAGED
-            else -> ViewerMode.WEBTOON
-        }
+        viewerMode.value = if (viewerMode.value == ViewerMode.WEBTOON) pagedFamilyMode else ViewerMode.WEBTOON
     }
 
     init {

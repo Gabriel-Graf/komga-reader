@@ -66,43 +66,68 @@ class ComicReaderViewModel @Inject constructor(
     /** Anzahl Navigations-Einheiten einer Seite (>=1). Unbekannt → 1 (Vollseite). */
     private fun unitsAt(page: Int): Int = unitsPerPage[page] ?: 1
 
+    /** Detektiert die Panels einer Seite (idempotent gecacht) und gibt sie normalisiert zurück. */
+    private suspend fun loadPanels(page: Int): List<NormRect> {
+        if (page !in 0 until pageCount) return emptyList()
+        panelCache[page]?.let { return it }
+        val det = loader.detect(pages[page], headers)
+        val norms = det.panels.map { PanelGeometry.normalize(it, det.pageWidth, det.pageHeight) }
+        panelCache[page] = norms
+        unitsPerPage[page] = if (norms.size < 2) 1 else norms.size
+        return norms
+    }
+
     private fun ensurePanels(page: Int) {
         if (panelCache.containsKey(page) || page !in 0 until pageCount) return
         viewModelScope.launch {
-            val det = loader.detect(pages[page], headers)
-            val norms = det.panels.map { PanelGeometry.normalize(it, det.pageWidth, det.pageHeight) }
-            panelCache[page] = norms
-            unitsPerPage[page] = if (norms.size < 2) 1 else norms.size
+            val norms = loadPanels(page)
             if (_uiState.value.position.page == page) {
                 _uiState.value = _uiState.value.copy(currentPanels = norms)
             }
         }
     }
 
-    /** Tap auf normalisierten Punkt der Vollseite: Panel treffen → dort zoomen. */
+    /** Tap auf normalisierten Punkt der Vollseite. */
     fun onPageTap(xNorm: Float, yNorm: Float) {
         val s = _uiState.value
-        if (!s.guidedEnabled || s.currentPanels.size < 2) { toggleChrome(); return }
-        val hit = PanelGeometry.hitTest(xNorm, yNorm, s.currentPanels)
-        if (hit == null) { toggleChrome(); return }
-        _uiState.value = s.copy(zoomed = true, position = s.position.copy(unit = hit), chromeVisible = false)
+        if (s.guidedEnabled && s.currentPanels.size >= 2) {
+            // Guided: getipptes Panel zoomen, Gutter/Rand → Chrome.
+            val hit = PanelGeometry.hitTest(xNorm, yNorm, s.currentPanels)
+            if (hit != null) {
+                _uiState.value = s.copy(zoomed = true, position = s.position.copy(unit = hit), chromeVisible = false)
+            } else {
+                toggleChrome()
+            }
+            return
+        }
+        // Fallback (0/1 Panel) oder Guided aus: Drittel-Zonen zum Seitenblättern.
+        when {
+            xNorm < 1f / 3f -> pageRelative(-1)
+            xNorm > 2f / 3f -> pageRelative(1)
+            else -> toggleChrome()
+        }
     }
 
     fun next() = step(forward = true)
     fun previous() = step(forward = false)
 
     private fun step(forward: Boolean) {
-        val s = _uiState.value
-        if (!s.zoomed) return // Vollseiten-Blättern macht der Screen über den Pager
-        val target = if (forward) GuidedNavigator.next(s.position, pageCount, ::unitsAt)
-                     else GuidedNavigator.previous(s.position, pageCount, ::unitsAt)
-        target ?: return
-        ensurePanels(target.page)
-        val panels = panelCache[target.page] ?: emptyList()
-        // Zielseite ohne erkennbare Panels → Vollseite zeigen (Fallback), nicht zoomen.
-        val zoomed = panels.size >= 2
-        _uiState.value = s.copy(position = target, currentPanels = panels, zoomed = zoomed)
-        ensurePanels(target.page + 1) // Nachbar vorausladen
+        if (!_uiState.value.zoomed) return // Vollseiten-Blättern macht der Screen über den Pager
+        viewModelScope.launch {
+            val s = _uiState.value
+            // Nachbarseite zuerst sicher detektieren, damit unitsAt() korrekt ist
+            // (Rückwärts muss auf dem ECHTEN letzten Panel der Vorseite landen, nicht auf 0).
+            val neighbor = if (forward) s.position.page + 1 else s.position.page - 1
+            if (neighbor in 0 until pageCount) loadPanels(neighbor)
+            val target = (if (forward) GuidedNavigator.next(s.position, pageCount, ::unitsAt)
+                          else GuidedNavigator.previous(s.position, pageCount, ::unitsAt))
+                ?: return@launch
+            val panels = panelCache[target.page] ?: emptyList()
+            // Zielseite ohne erkennbare Panels → Vollseite (Fallback), sonst Panel zeigen.
+            val zoomed = panels.size >= 2
+            _uiState.value = _uiState.value.copy(position = target, currentPanels = panels, zoomed = zoomed)
+            ensurePanels(target.page + 1) // Nachbar vorausladen
+        }
     }
 
     fun zoomOut() { _uiState.value = _uiState.value.copy(zoomed = false) }

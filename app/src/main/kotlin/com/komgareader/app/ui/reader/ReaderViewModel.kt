@@ -45,6 +45,12 @@ class ReaderViewModel @Inject constructor(
 
     private val _currentPage = MutableStateFlow(0)
 
+    val viewerMode = MutableStateFlow(ViewerMode.PAGED)
+
+    fun toggleViewerMode() {
+        viewerMode.value = if (viewerMode.value == ViewerMode.PAGED) ViewerMode.WEBTOON else ViewerMode.PAGED
+    }
+
     init {
         loadBook()
         collectButtonEvents()

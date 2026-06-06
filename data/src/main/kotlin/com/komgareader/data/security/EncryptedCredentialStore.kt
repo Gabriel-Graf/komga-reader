@@ -8,11 +8,14 @@ import androidx.security.crypto.MasterKey
  * Speichert Geheimnisse in EncryptedSharedPreferences, verschlüsselt mit einem
  * Android-Keystore-MasterKey (AES256-GCM). Klartext-Secrets liegen nie auf Platte.
  */
-class EncryptedCredentialStore(context: Context) : CredentialStore {
+class EncryptedCredentialStore(
+    context: Context,
+    prefsFileName: String = "komga-reader-secrets",
+) : CredentialStore {
 
     private val prefs = EncryptedSharedPreferences.create(
         context,
-        "komga-reader-secrets",
+        prefsFileName,
         MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,

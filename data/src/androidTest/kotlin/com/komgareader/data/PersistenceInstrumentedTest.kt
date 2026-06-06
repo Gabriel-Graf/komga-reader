@@ -29,7 +29,7 @@ class PersistenceInstrumentedTest {
 
     @Test fun server_wird_gespeichert_und_gelesen() = runTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val store = EncryptedCredentialStore(ctx)
+        val store = EncryptedCredentialStore(ctx, "test-secrets-${System.nanoTime()}")
         store.clear()
         val repo = RoomServerRepository(db.serverDao(), store)
         assertNull(repo.config.first())

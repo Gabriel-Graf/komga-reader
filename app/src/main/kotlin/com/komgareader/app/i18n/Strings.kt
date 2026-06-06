@@ -62,12 +62,19 @@ interface Strings {
     val tagComic: String
     val tagNovel: String
     val tagWebtoon: String
+    val tagAuto: String
     val server: String
     val create: String
     val cancel: String
+    val save: String
     val noServerHint: String
     val deleteGroup: String
     val noGroupsHint: String
+    // Bibliothek-Modal
+    val createLibrary: String
+    val editLibrary: String
+    val selectLibraries: String
+    val fallbackType: String
 }
 
 object StringsDe : Strings {
@@ -121,22 +128,29 @@ object StringsDe : Strings {
     override val statusEnded = "Abgeschlossen"
     override val statusAbandoned = "Abgebrochen"
     override val statusHiatus = "Pausiert"
-    // Gruppen-Tabs
-    override val tabBrowse = "Stöbern"
-    override val tabGroups = "Gruppen"
-    override val newGroup = "Neue Gruppe"
+    // Bibliotheken-Tabs
+    override val tabBrowse = "Browsen"
+    override val tabGroups = "Bibliotheken"
+    override val newGroup = "Neue Bibliothek"
     override val groupName = "Name"
     override val tag = "Typ"
     override val tagManga = "Manga"
     override val tagComic = "Comic"
     override val tagNovel = "Roman"
     override val tagWebtoon = "Webtoon"
+    override val tagAuto = "Auto"
     override val server = "Server"
     override val create = "Erstellen"
     override val cancel = "Abbrechen"
+    override val save = "Speichern"
     override val noServerHint = "Kein Server verbunden. Bitte zuerst in den Einstellungen einen Server hinzufügen."
-    override val deleteGroup = "Gruppe löschen"
-    override val noGroupsHint = "Noch keine Gruppen. Tippe auf + um eine anzulegen."
+    override val deleteGroup = "Bibliothek löschen"
+    override val noGroupsHint = "Noch keine Bibliotheken. Tippe auf + um eine anzulegen."
+    // Bibliothek-Modal
+    override val createLibrary = "Bibliothek erstellen"
+    override val editLibrary = "Bibliothek bearbeiten"
+    override val selectLibraries = "Komga-Libraries"
+    override val fallbackType = "Fallback-Typ (optional)"
 }
 
 object StringsEn : Strings {
@@ -190,22 +204,29 @@ object StringsEn : Strings {
     override val statusEnded = "Ended"
     override val statusAbandoned = "Abandoned"
     override val statusHiatus = "Hiatus"
-    // Groups tabs
+    // Libraries tabs
     override val tabBrowse = "Browse"
-    override val tabGroups = "Groups"
-    override val newGroup = "New Group"
+    override val tabGroups = "Libraries"
+    override val newGroup = "New Library"
     override val groupName = "Name"
     override val tag = "Type"
     override val tagManga = "Manga"
     override val tagComic = "Comic"
     override val tagNovel = "Novel"
     override val tagWebtoon = "Webtoon"
+    override val tagAuto = "Auto"
     override val server = "Server"
     override val create = "Create"
     override val cancel = "Cancel"
+    override val save = "Save"
     override val noServerHint = "No server connected. Please add a server in Settings first."
-    override val deleteGroup = "Delete group"
-    override val noGroupsHint = "No groups yet. Tap + to create one."
+    override val deleteGroup = "Delete library"
+    override val noGroupsHint = "No libraries yet. Tap + to create one."
+    // Library modal
+    override val createLibrary = "Create library"
+    override val editLibrary = "Edit library"
+    override val selectLibraries = "Komga libraries"
+    override val fallbackType = "Fallback type (optional)"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

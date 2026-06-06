@@ -2,9 +2,14 @@ pluginManagement {
     repositories { google(); mavenCentral(); gradlePluginPortal() }
 }
 dependencyResolutionManagement {
-    repositories { google(); mavenCentral() }
+    repositories {
+        maven { url = uri("https://maven.ghostscript.com") }
+        google()
+        mavenCentral()
+    }
 }
 rootProject.name = "komga-reader"
 include(":domain")
 include(":source-komga")
 include(":app")
+include(":render-core")

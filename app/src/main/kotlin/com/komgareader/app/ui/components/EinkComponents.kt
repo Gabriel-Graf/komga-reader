@@ -3,6 +3,7 @@ package com.komgareader.app.ui.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.theme.EinkTokens
 
@@ -128,6 +132,57 @@ fun ChoiceRow(
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }
+    }
+}
+
+/**
+ * Zeile mit ±-Steppern für einen numerischen Wert — E-Ink-tauglich (kein Slider,
+ * der auf E-Ink schlecht zeichnet). Label links, [−] Wert [+] rechts. [display]
+ * formatiert den Wert (z. B. "25 %").
+ */
+@Composable
+fun StepperRow(
+    label: String,
+    value: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier,
+    canDecrement: Boolean = true,
+    canIncrement: Boolean = true,
+    display: (Int) -> String = { it.toString() },
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        StepperButton(Icons.Outlined.Remove, enabled = canDecrement, contentDescription = "−", onClick = onDecrement)
+        Text(
+            text = display(value),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(64.dp).padding(horizontal = 8.dp),
+        )
+        StepperButton(Icons.Outlined.Add, enabled = canIncrement, contentDescription = "+", onClick = onIncrement)
+    }
+}
+
+@Composable
+private fun StepperButton(
+    icon: ImageVector,
+    enabled: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    val tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .border(EinkTokens.hairline, tint, RoundedCornerShape(6.dp))
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(22.dp))
     }
 }
 

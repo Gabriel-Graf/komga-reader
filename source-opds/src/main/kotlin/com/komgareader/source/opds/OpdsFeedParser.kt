@@ -16,7 +16,17 @@ private const val REL_ACQUISITION = "http://opds-spec.org/acquisition"
 class OpdsFeedParser {
 
     fun parse(xml: String): List<OpdsEntry> {
-        val factory = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
+        // XXE-Härtung: OPDS-Feeds kommen von fremden Servern → DTDs und externe
+        // Entitäten komplett deaktivieren (verhindert Datei-Leak/SSRF).
+        val factory = DocumentBuilderFactory.newInstance().apply {
+            isNamespaceAware = true
+            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            setFeature("http://xml.org/sax/features/external-general-entities", false)
+            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+            isXIncludeAware = false
+            isExpandEntityReferences = false
+        }
         val doc = factory.newDocumentBuilder().parse(xml.byteInputStream())
         val entryNodes: NodeList = doc.getElementsByTagNameNS(ATOM_NS, "entry")
         return (0 until entryNodes.length).map { i ->

@@ -1,0 +1,9 @@
+Komga E-Ink Reader
+Copyright (C) 2026 Gabriel Graf
+
+Lizenziert unter AGPL-3.0-or-later (siehe LICENSE).
+
+Drittsoftware:
+- MuPDF (Render-Engine, cbz/cbr/pdf/epub) — AGPL-3.0, Artifex Software Inc.
+  https://mupdf.com  — Diese App nutzt MuPDF via JNI; deshalb ist die App AGPL.
+- Material Symbols (Icons) — Apache-2.0, Google.

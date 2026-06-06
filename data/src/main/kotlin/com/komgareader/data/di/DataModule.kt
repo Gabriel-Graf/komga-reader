@@ -3,6 +3,8 @@ package com.komgareader.data.di
 import android.content.Context
 import androidx.room.Room
 import com.komgareader.data.db.AppDatabase
+import com.komgareader.data.db.MIGRATION_1_2
+import com.komgareader.data.db.MIGRATION_2_3
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.repository.RoomSettingsRepository
@@ -25,6 +27,7 @@ object DataModule {
     @Provides @Singleton
     fun database(@ApplicationContext ctx: Context): AppDatabase =
         Room.databaseBuilder(ctx, AppDatabase::class.java, "komga-reader.db")
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .fallbackToDestructiveMigration()
             .build()
 

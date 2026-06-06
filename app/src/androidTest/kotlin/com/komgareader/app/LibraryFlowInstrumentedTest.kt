@@ -6,7 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.data.db.AppDatabase
 import com.komgareader.data.repository.RoomServerRepository
-import com.komgareader.data.security.EncryptedCredentialStore
+import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.SourceFilter
 import kotlinx.coroutines.flow.first
@@ -21,7 +21,7 @@ class LibraryFlowInstrumentedTest {
     @Test fun laedt_echte_serien_von_lokaler_komga() = runTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
-        val store = EncryptedCredentialStore(ctx, "test-secrets-${System.nanoTime()}")
+        val store = KeystoreCredentialStore("test-cred-key-${System.nanoTime()}")
         val repo = RoomServerRepository(db.serverDao(), store)
         repo.save(ServerConfig(
             name = "Test", baseUrl = "http://10.0.2.2:25600/api/v1/",

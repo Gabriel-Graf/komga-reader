@@ -13,6 +13,7 @@ class ResolveViewerType {
 
     operator fun invoke(series: Series, shelf: Shelf): ViewerType =
         when (series.contentTypeOverride ?: shelf.contentType) {
+            ContentType.MANGA -> ViewerType.PAGED
             ContentType.COMIC -> ViewerType.PAGED
             ContentType.WEBTOON -> ViewerType.WEBTOON
             ContentType.NOVEL -> ViewerType.EPUB

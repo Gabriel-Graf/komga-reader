@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
+        android:name=".KomgaReaderApp"
         android:allowBackup="true"
         android:label="Komga Reader"
         android:supportsRtl="true"

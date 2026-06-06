@@ -1,5 +1,7 @@
 package com.komgareader.app.ui.reader
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -10,7 +12,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ViewDay
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,34 +24,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PagedReaderScreen(
-    pages: List<com.komgareader.domain.source.PageRef>,
-    apiKey: String,
+fun EpubReaderScreen(
+    pageCount: Int,
     initialPage: Int,
     onBack: () -> Unit,
-    onToggleMode: () -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val requestedPage by viewModel.requestedPage.collectAsState()
-    val ctx = LocalContext.current
-
-    val pageCount = pages.size
-    if (pageCount == 0) return
 
     val pagerState = rememberPagerState(initialPage = initialPage) { pageCount }
 
@@ -75,40 +69,39 @@ fun PagedReaderScreen(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
                         }
                     },
-                    actions = {
-                        IconButton(onClick = onToggleMode) {
-                            Icon(
-                                Icons.Filled.ViewDay,
-                                contentDescription = "Zu Webtoon-Modus wechseln",
-                            )
-                        }
-                    },
                 )
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.White),
+        ) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
                     .padding(if (uiState.chromeVisible) padding else PaddingValues(0.dp)),
             ) { pageIndex ->
-                val pageRef = pages[pageIndex]
-                val request = remember(pageRef.url, apiKey) {
-                    ImageRequest.Builder(ctx)
-                        .data(pageRef.url)
-                        .addHeader("X-API-Key", apiKey)
-                        .crossfade(false)
-                        .build()
+                val bmp by produceState<Bitmap?>(initialValue = null, key1 = pageIndex) {
+                    value = viewModel.renderEpubPage(pageIndex)
                 }
-                AsyncImage(
-                    model = request,
-                    contentDescription = "Seite ${pageIndex + 1}",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize(),
-                )
+                Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (bmp != null) {
+                        Image(
+                            bitmap = bmp!!.asImageBitmap(),
+                            contentDescription = "Seite ${pageIndex + 1}",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        CircularProgressIndicator()
+                    }
+                }
             }
 
             // Transparente Tap-Zonen über dem Pager
@@ -137,12 +130,12 @@ fun PagedReaderScreen(
             if (uiState.chromeVisible) {
                 Text(
                     text = "${pagerState.currentPage + 1} / $pageCount",
-                    color = Color.White,
+                    color = Color.Black,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 16.dp)
-                        .background(Color.Black.copy(alpha = 0.6f))
+                        .background(Color.LightGray.copy(alpha = 0.6f))
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                 )
             }

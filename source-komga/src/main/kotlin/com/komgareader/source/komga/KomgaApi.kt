@@ -42,6 +42,10 @@ interface KomgaApi {
         @Path("number") pageNumber: Int,
     ): ResponseBody
 
+    @GET("books/{id}/file")
+    @Streaming
+    suspend fun getFile(@Path("id") bookId: String): ResponseBody
+
     @PATCH("books/{id}/read-progress")
     suspend fun updateProgress(
         @Path("id") bookId: String,

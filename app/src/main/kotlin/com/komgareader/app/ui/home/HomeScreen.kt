@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Dashboard
@@ -37,8 +37,7 @@ import com.komgareader.app.ui.groups.GroupsScreen
 import com.komgareader.app.ui.library.LibraryScreen
 import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
-import com.komgareader.app.ui.settings.SettingsLandingScreen
-import com.komgareader.app.ui.settings.SettingsPage
+import com.komgareader.app.ui.settings.SettingsScreen
 
 private const val TAB_LIBRARY = 0
 private const val TAB_GROUPS = 1
@@ -55,7 +54,6 @@ private const val TAB_SETTINGS = 3
 fun HomeScreen(
     onOpenSeries: (seriesId: String) -> Unit,
     onOpenGroup: (shelfId: Long, serverSourceId: Long) -> Unit,
-    onOpenSettingsPage: (SettingsPage) -> Unit,
 ) {
     val s = LocalStrings.current
     var selected by rememberSaveable { mutableIntStateOf(TAB_LIBRARY) }
@@ -94,7 +92,7 @@ fun HomeScreen(
                             onSubmit = { submitSearch() },
                             placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
                             actionLabel = s.searchAction,
-                            modifier = Modifier.width(360.dp),
+                            modifier = Modifier.fillMaxWidth(0.6f).widthIn(max = 360.dp),
                         )
                         Box(Modifier.align(Alignment.CenterEnd)) {
                             when (selected) {
@@ -132,7 +130,7 @@ fun HomeScreen(
                     onDismissCreate = { showCreateGroup = false },
                 )
                 TAB_PLUGINS -> PluginsScreen()
-                else -> SettingsLandingScreen(query = submitted, onOpenPage = onOpenSettingsPage)
+                else -> SettingsScreen(query = if (onSettingsTab) query else submitted)
             }
         }
     }

@@ -142,4 +142,5 @@ fun ColorFilterSettingsScreen(
     }
 }
 
-private fun format(v: Float): String = ((v * 100).toInt() / 100f).toString()
+private fun format(v: Float): String =
+    java.util.Locale.US.let { "%.2f".format(it, v) }.trimEnd('0').trimEnd('.')

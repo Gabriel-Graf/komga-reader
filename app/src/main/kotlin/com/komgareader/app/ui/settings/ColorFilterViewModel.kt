@@ -96,7 +96,10 @@ class ColorFilterViewModel @Inject constructor(
         _edit.value = null
     }
 
-    fun delete(id: Long) = viewModelScope.launch { colorProfiles.delete(id) }
+    fun delete(id: Long) = viewModelScope.launch {
+        colorProfiles.delete(id)
+        if (_edit.value?.baseProfileId == id) _edit.value = null
+    }
 
     private fun mutate(f: (EditState) -> EditState) { _edit.value = _edit.value?.let(f) }
     private fun clamp(v: Float, lo: Float, hi: Float) = v.coerceIn(lo, hi)

@@ -63,6 +63,22 @@ interface Strings {
     val noServerHint: String
     val deleteGroup: String
     val noGroupsHint: String
+    // Navigation
+    val navPlugins: String
+    val pluginsComingSoon: String
+    // Settings-Landing (Kachel-Titel)
+    val settingsConnection: String
+    val settingsAppearance: String
+    val settingsReader: String
+    val settingsDownloads: String
+    val settingsAbout: String
+    val aboutDevice: String
+    val versionLabel: String
+    // Suche
+    val searchMediaHint: String
+    val searchSettingsHint: String
+    val searchAction: String
+    val searchNoResults: String
 }
 
 object StringsDe : Strings {
@@ -127,6 +143,22 @@ object StringsDe : Strings {
     override val noServerHint = "Kein Server verbunden. Bitte zuerst in den Einstellungen einen Server hinzufügen."
     override val deleteGroup = "Gruppe löschen"
     override val noGroupsHint = "Noch keine Gruppen. Tippe auf + um eine anzulegen."
+    // Navigation
+    override val navPlugins = "Plugins"
+    override val pluginsComingSoon = "Bald verfügbar — externe Quellen-Plugins laden."
+    // Settings-Landing
+    override val settingsConnection = "Verbindung"
+    override val settingsAppearance = "Darstellung"
+    override val settingsReader = "Reader"
+    override val settingsDownloads = "Downloads"
+    override val settingsAbout = "Über"
+    override val aboutDevice = "Optimiert für Onyx Boox Go Color 7 Gen2"
+    override val versionLabel = "Version"
+    // Suche
+    override val searchMediaHint = "Bibliothek durchsuchen"
+    override val searchSettingsHint = "Einstellungen durchsuchen"
+    override val searchAction = "Suchen"
+    override val searchNoResults = "Keine Treffer"
 }
 
 object StringsEn : Strings {
@@ -191,6 +223,22 @@ object StringsEn : Strings {
     override val noServerHint = "No server connected. Please add a server in Settings first."
     override val deleteGroup = "Delete group"
     override val noGroupsHint = "No groups yet. Tap + to create one."
+    // Navigation
+    override val navPlugins = "Plugins"
+    override val pluginsComingSoon = "Coming soon — load external source plugins."
+    // Settings landing
+    override val settingsConnection = "Connection"
+    override val settingsAppearance = "Appearance"
+    override val settingsReader = "Reader"
+    override val settingsDownloads = "Downloads"
+    override val settingsAbout = "About"
+    override val aboutDevice = "Optimised for Onyx Boox Go Color 7 Gen2"
+    override val versionLabel = "Version"
+    // Search
+    override val searchMediaHint = "Search library"
+    override val searchSettingsHint = "Search settings"
+    override val searchAction = "Search"
+    override val searchNoResults = "No results"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

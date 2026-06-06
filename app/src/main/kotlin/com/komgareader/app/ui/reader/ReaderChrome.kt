@@ -1,6 +1,5 @@
 package com.komgareader.app.ui.reader
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -16,38 +15,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-
-/**
- * Versteckt System-Status- und Navigationsleiste, solange der Reader sichtbar ist
- * (echtes Vollbild). Stellt beide beim Verlassen wieder her. Die Bars lassen sich
- * weiterhin per Wisch transient einblenden.
- */
-@Composable
-fun ImmersiveFullscreenEffect() {
-    val view = LocalView.current
-    DisposableEffect(Unit) {
-        val window = (view.context as? Activity)?.window
-            ?: return@DisposableEffect onDispose {}
-        val controller = WindowCompat.getInsetsController(window, view)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        onDispose {
-            controller.show(WindowInsetsCompat.Type.systemBars())
-            WindowCompat.setDecorFitsSystemWindows(window, true)
-        }
-    }
-}
 
 /**
  * Durchscheinende Reader-Leiste, die **über** dem Inhalt schwebt (kein Reflow, die

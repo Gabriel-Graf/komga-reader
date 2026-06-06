@@ -29,8 +29,7 @@ fun ReaderRoute(
 ) {
     val refresher: OnyxRefresher = einkHolder.refresher
 
-    // Echtes Vollbild: System-Bars verstecken, solange der Reader offen ist
-    ImmersiveFullscreenEffect()
+    // Vollbild wird app-weit in MainActivity erzwungen — kein eigener Reader-Effekt nötig.
 
     // E-Ink-Fast-Modus aktivieren, beim Verlassen deaktivieren
     EinkReaderEffect(refresher)

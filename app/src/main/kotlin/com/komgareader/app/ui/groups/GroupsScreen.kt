@@ -20,22 +20,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ImportContacts
 import androidx.compose.material.icons.filled.ViewDay
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,53 +44,46 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 
 @Composable
 fun GroupsScreen(
     onOpenGroup: (shelfId: Long, serverSourceId: Long) -> Unit,
+    showCreateDialog: Boolean,
+    onDismissCreate: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GroupsViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
     val state by viewModel.state.collectAsState()
-    var showCreateDialog by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = modifier,
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showCreateDialog = true }) {
-                Icon(Icons.Filled.Add, contentDescription = s.newGroup)
-            }
-        },
-    ) { padding ->
-        if (state.shelves.isEmpty()) {
-            Box(
-                Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    s.noGroupsHint,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(32.dp),
+    if (state.shelves.isEmpty()) {
+        Box(
+            modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                s.noGroupsHint,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(32.dp),
+            )
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(state.shelves, key = { it.id }) { shelf ->
+                GroupCard(
+                    shelf = shelf,
+                    onClick = {
+                        val sourceId = state.serverSourceId ?: return@GroupCard
+                        onOpenGroup(shelf.id, sourceId)
+                    },
+                    onDelete = { viewModel.deleteGroup(shelf.id) },
                 )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.shelves, key = { it.id }) { shelf ->
-                    GroupCard(
-                        shelf = shelf,
-                        onClick = {
-                            val sourceId = state.serverSourceId ?: return@GroupCard
-                            onOpenGroup(shelf.id, sourceId)
-                        },
-                        onDelete = { viewModel.deleteGroup(shelf.id) },
-                    )
-                }
             }
         }
     }
@@ -105,9 +93,9 @@ fun GroupsScreen(
             serverName = state.serverConfig?.name,
             onCreate = { name, contentType ->
                 viewModel.addGroup(name, contentType)
-                showCreateDialog = false
+                onDismissCreate()
             },
-            onDismiss = { showCreateDialog = false },
+            onDismiss = onDismissCreate,
         )
     }
 }
@@ -167,57 +155,43 @@ private fun CreateGroupDialog(
         ContentType.WEBTOON to s.tagWebtoon,
     )
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(s.newGroup) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(s.groupName) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(s.tag, style = MaterialTheme.typography.labelMedium)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    tagOptions.forEach { (type, label) ->
-                        FilterChip(
-                            selected = selectedType == type,
-                            onClick = { selectedType = type },
-                            label = { Text(label) },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(s.server, style = MaterialTheme.typography.labelMedium)
-                Text(
-                    text = serverName ?: s.noServerHint,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (serverName != null) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    },
+    EinkModal(
+        title = s.newGroup,
+        onDismiss = onDismiss,
+        confirmLabel = s.create,
+        onConfirm = { if (name.isNotBlank() && serverName != null) onCreate(name, selectedType) },
+        confirmEnabled = name.isNotBlank() && serverName != null,
+        dismissLabel = s.cancel,
+    ) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text(s.groupName) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(s.tag, style = MaterialTheme.typography.labelMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            tagOptions.forEach { (type, label) ->
+                FilterChip(
+                    selected = selectedType == type,
+                    onClick = { selectedType = type },
+                    label = { Text(label) },
                 )
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (name.isNotBlank() && serverName != null) onCreate(name, selectedType) },
-                enabled = name.isNotBlank() && serverName != null,
-            ) {
-                Text(s.create)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(s.cancel)
-            }
-        },
-    )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(s.server, style = MaterialTheme.typography.labelMedium)
+        Text(
+            text = serverName ?: s.noServerHint,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (serverName != null) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+        )
+    }
 }
 
 private fun iconForContentType(type: ContentType) = when (type) {

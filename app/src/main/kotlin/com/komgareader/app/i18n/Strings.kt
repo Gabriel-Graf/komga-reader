@@ -24,6 +24,18 @@ interface Strings {
     val disconnect: String
     val connected: String
     val notConnected: String
+    // Detail-Screen
+    val chapters: String
+    val read: String
+    val stream: String
+    val download: String
+    val downloaded: String
+    val sizeLabel: String
+    val formatLabel: String
+    val fileLabel: String
+    val createdLabel: String
+    val modifiedLabel: String
+    val pagesShort: String
 }
 
 object StringsDe : Strings {
@@ -49,6 +61,18 @@ object StringsDe : Strings {
     override val disconnect = "Trennen"
     override val connected = "Verbunden"
     override val notConnected = "Nicht verbunden"
+    // Detail-Screen
+    override val chapters = "Kapitel"
+    override val read = "Lesen"
+    override val stream = "Stream"
+    override val download = "Herunterladen"
+    override val downloaded = "Heruntergeladen ✓"
+    override val sizeLabel = "Größe"
+    override val formatLabel = "Format"
+    override val fileLabel = "Datei"
+    override val createdLabel = "Erstellt"
+    override val modifiedLabel = "Geändert"
+    override val pagesShort = "S."
 }
 
 object StringsEn : Strings {
@@ -74,6 +98,18 @@ object StringsEn : Strings {
     override val disconnect = "Disconnect"
     override val connected = "Connected"
     override val notConnected = "Not connected"
+    // Detail-Screen
+    override val chapters = "Chapters"
+    override val read = "Read"
+    override val stream = "Stream"
+    override val download = "Download"
+    override val downloaded = "Downloaded ✓"
+    override val sizeLabel = "Size"
+    override val formatLabel = "Format"
+    override val fileLabel = "File"
+    override val createdLabel = "Created"
+    override val modifiedLabel = "Modified"
+    override val pagesShort = "pp."
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

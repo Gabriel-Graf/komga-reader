@@ -7,6 +7,7 @@ import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.repository.DownloadRepository
+import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,7 +26,11 @@ import javax.inject.Inject
 sealed interface SeriesDetailUiState {
     data object Loading : SeriesDetailUiState
     data object NoServer : SeriesDetailUiState
-    data class Content(val books: List<Book>, val seriesTitle: String, val apiKey: String?) : SeriesDetailUiState
+    data class Content(
+        val books: List<Book>,
+        val seriesTitle: String,
+        val serverConfig: ServerConfig?,
+    ) : SeriesDetailUiState
     data class Error(val message: String) : SeriesDetailUiState
 }
 
@@ -52,7 +57,13 @@ class SeriesDetailViewModel @Inject constructor(
                 if (config == null || source == null) { emit(SeriesDetailUiState.NoServer); return@flow }
                 emit(runCatching { source.books(seriesId) }
                     .fold(
-                        { SeriesDetailUiState.Content(it, seriesId, config.apiKey) },
+                        { books ->
+                            // Serientitel aus dem ersten Buch ableiten (seriesTitle-Feld),
+                            // Fallback auf seriesId wenn leer
+                            val resolvedTitle = books.firstOrNull()?.seriesTitle
+                                ?.takeIf { it.isNotBlank() } ?: seriesId
+                            SeriesDetailUiState.Content(books, resolvedTitle, config)
+                        },
                         { SeriesDetailUiState.Error(it.message ?: "Bücher konnten nicht geladen werden") },
                     ))
             }
@@ -92,6 +103,15 @@ class SeriesDetailViewModel @Inject constructor(
     fun removeDownload(bookRemoteId: String) {
         viewModelScope.launch {
             downloadManager.delete(bookRemoteId)
+        }
+    }
+
+    companion object {
+        /** Wandelt Bytes in menschenlesbare Größenangabe (KiB/MiB) um. */
+        fun humanReadableSize(bytes: Long): String = when {
+            bytes <= 0L -> "–"
+            bytes < 1024L * 1024L -> "${bytes / 1024} KiB"
+            else -> String.format("%.1f MiB", bytes / (1024.0 * 1024.0))
         }
     }
 }

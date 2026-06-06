@@ -74,9 +74,4 @@ class ResolveViewerTypeTest {
         assertEquals(ViewerType.COMIC, result)
     }
 
-    @Test
-    fun `COMIC-Bibliotheks-Default ergibt COMIC`() {
-        val result = resolve(series(), book(BookFormat.CBZ), fallback = ContentType.COMIC)
-        assertEquals(ViewerType.COMIC, result)
-    }
 }

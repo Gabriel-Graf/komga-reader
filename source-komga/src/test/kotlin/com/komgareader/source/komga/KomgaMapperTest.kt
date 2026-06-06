@@ -17,7 +17,7 @@ class KomgaMapperTest {
     private val mapper = KomgaMapper(sourceId = 77, baseUrl = "https://nas.local/api/v1/")
 
     @Test
-    fun `Series uebernimmt remoteId, Titel und baut Cover-URL`() {
+    fun `Series übernimmt remoteId, Titel und baut Cover-URL`() {
         val dto = SeriesDto(id = "S1", name = "Berserk", metadata = SeriesMetadataDto(title = "Berserk Deluxe"))
         val series = mapper.toSeries(dto)
         assertEquals(77, series.sourceId)
@@ -27,7 +27,7 @@ class KomgaMapperTest {
     }
 
     @Test
-    fun `Series faellt auf name zurueck wenn metadata-title leer`() {
+    fun `Series fällt auf name zurück wenn metadata-title leer`() {
         val dto = SeriesDto(id = "S2", name = "Solo Leveling")
         assertEquals("Solo Leveling", mapper.toSeries(dto).title)
     }
@@ -57,7 +57,7 @@ class KomgaMapperTest {
     }
 
     @Test
-    fun `ReadProgress wird uebernommen wenn vorhanden`() {
+    fun `ReadProgress wird übernommen wenn vorhanden`() {
         val dto = BookDto(
             id = "B1", seriesId = "S1", name = "x",
             media = BookMediaDto(mediaType = "application/zip", pagesCount = 100),
@@ -72,7 +72,7 @@ class KomgaMapperTest {
     }
 
     @Test
-    fun `ReadProgress ist null wenn Buch nie geoeffnet`() {
+    fun `ReadProgress ist null wenn Buch nie geöffnet`() {
         val dto = BookDto(id = "B1", seriesId = "S1", name = "x",
             media = BookMediaDto(mediaType = "application/pdf", pagesCount = 10))
         assertNull(mapper.toReadProgress(dto, localBookId = 9, updatedAt = 1))

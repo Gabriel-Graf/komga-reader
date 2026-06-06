@@ -17,7 +17,6 @@ class ApiKeyInterceptorTest {
     @Test
     fun `setzt X-API-Key-Header auf jede Anfrage`() {
         server.enqueue(MockResponse().setBody("ok"))
-        server.start()
         val client = OkHttpClient.Builder().addInterceptor(ApiKeyInterceptor("geheim123")).build()
 
         client.newCall(Request.Builder().url(server.url("/api/v1/series")).build()).execute().close()

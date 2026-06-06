@@ -43,17 +43,19 @@ class KomgaSource internal constructor(
         return PagedResult(response.content.map(mapper::toSeries), hasNextPage = !response.last)
     }
 
-    override suspend fun books(seriesRemoteId: String): List<Book> =
-        api.listBooks(seriesRemoteId).content.map(mapper::toBook)
+    override suspend fun books(seriesRemoteId: String): List<Book> {
+        val response = api.listBooks(seriesRemoteId)
+        check(response.last) {
+            "Komga lieferte trotz unpaged=true paginierte Bücher für Serie $seriesRemoteId"
+        }
+        return response.content.map(mapper::toBook)
+    }
 
     override suspend fun pages(bookRemoteId: String): List<PageRef> =
         mapper.toPageRefs(bookRemoteId, api.listPages(bookRemoteId))
 
-    override suspend fun openPage(ref: PageRef): ByteArray {
-        val number = ref.url.substringAfterLast("/").toInt()
-        val bookId = ref.url.substringBeforeLast("/pages/").substringAfterLast("/books/")
-        return api.getPage(bookId, number).bytes()
-    }
+    override suspend fun openPage(ref: PageRef): ByteArray =
+        api.getPage(ref.bookRemoteId, ref.pageNumber).bytes()
 
     override suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress) {
         api.updateProgress(bookRemoteId, ReadProgressUpdateDto(progress.page, progress.completed))

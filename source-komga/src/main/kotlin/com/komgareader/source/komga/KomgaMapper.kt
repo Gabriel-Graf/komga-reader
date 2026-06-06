@@ -39,7 +39,12 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
 
     fun toPageRefs(bookRemoteId: String, pages: List<PageDto>): List<PageRef> =
         pages.map { p ->
-            PageRef(index = p.number - 1, url = "${baseUrl}books/$bookRemoteId/pages/${p.number}")
+            PageRef(
+                index = p.number - 1,
+                bookRemoteId = bookRemoteId,
+                pageNumber = p.number,
+                url = "${baseUrl}books/$bookRemoteId/pages/${p.number}",
+            )
         }
 
     fun toReadProgress(dto: BookDto, localBookId: Long, updatedAt: Long): ReadProgress? {

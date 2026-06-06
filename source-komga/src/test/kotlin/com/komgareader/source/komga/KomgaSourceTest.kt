@@ -78,9 +78,9 @@ class KomgaSourceTest {
     }
 
     @Test
-    fun `openPage laedt die rohen Seiten-Bytes`() = runTest {
+    fun `openPage lädt die rohen Seiten-Bytes`() = runTest {
         server.enqueue(MockResponse().setBody("BILDBYTES"))
-        val ref = PageRef(index = 0, url = server.url("/api/v1/books/B1/pages/1").toString())
+        val ref = PageRef(index = 0, bookRemoteId = "B1", pageNumber = 1, url = server.url("/api/v1/books/B1/pages/1").toString())
         val bytes = source().openPage(ref)
         assertEquals("BILDBYTES", bytes.decodeToString())
     }

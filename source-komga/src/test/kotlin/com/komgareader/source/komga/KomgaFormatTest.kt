@@ -28,7 +28,7 @@ class KomgaFormatTest {
     }
 
     @Test
-    fun `unbekannter Typ faellt auf CBZ zurueck`() {
+    fun `unbekannter Typ fällt auf CBZ zurück`() {
         assertEquals(BookFormat.CBZ, mediaTypeToFormat("application/octet-stream"))
     }
 }

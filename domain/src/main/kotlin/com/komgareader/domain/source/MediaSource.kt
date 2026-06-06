@@ -18,8 +18,16 @@ data class PagedResult<T>(val items: List<T>, val hasNextPage: Boolean)
 /** Filter für [BrowsableSource.browse]. Wächst in späteren Plänen. */
 data class SourceFilter(val seriesId: String? = null)
 
-/** Verweis auf eine einzelne Seite (Bild) eines Buchs. */
-data class PageRef(val index: Int, val url: String)
+/**
+ * Verweis auf eine einzelne Seite (Bild) eines Buchs. [index] ist 0-basiert
+ * (interne Position), [pageNumber] 1-basiert (wie von der Quelle adressiert).
+ */
+data class PageRef(
+    val index: Int,
+    val bookRemoteId: String,
+    val pageNumber: Int,
+    val url: String,
+)
 
 /** Quelle, die durchsucht und gelesen werden kann. */
 interface BrowsableSource : MediaSource {

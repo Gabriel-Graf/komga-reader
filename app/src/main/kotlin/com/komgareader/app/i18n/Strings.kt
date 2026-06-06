@@ -12,9 +12,14 @@ interface Strings {
     val themeDark: String
     val themeSystem: String
     val settingsServer: String
-    val serverName: String
+    val serverDisplayName: String
     val serverUrl: String
-    val serverApiKey: String
+    val serverUrlHint: String
+    val serverUrlHelper: String
+    val serverApiKeyOptional: String
+    val orSeparator: String
+    val serverUsername: String
+    val serverPassword: String
     val connect: String
     val disconnect: String
     val connected: String
@@ -32,9 +37,14 @@ object StringsDe : Strings {
     override val themeDark = "Dunkel"
     override val themeSystem = "System"
     override val settingsServer = "Komga-Server"
-    override val serverName = "Name"
-    override val serverUrl = "URL"
-    override val serverApiKey = "API-Schlüssel"
+    override val serverDisplayName = "Anzeigename"
+    override val serverUrl = "Server-URL"
+    override val serverUrlHint = "https://komga.example.org"
+    override val serverUrlHelper = "/api/v1/ wird automatisch ergänzt"
+    override val serverApiKeyOptional = "API-Schlüssel (optional)"
+    override val orSeparator = "— oder —"
+    override val serverUsername = "Benutzername"
+    override val serverPassword = "Passwort"
     override val connect = "Verbinden"
     override val disconnect = "Trennen"
     override val connected = "Verbunden"
@@ -52,9 +62,14 @@ object StringsEn : Strings {
     override val themeDark = "Dark"
     override val themeSystem = "System"
     override val settingsServer = "Komga Server"
-    override val serverName = "Name"
-    override val serverUrl = "URL"
-    override val serverApiKey = "API Key"
+    override val serverDisplayName = "Display Name"
+    override val serverUrl = "Server URL"
+    override val serverUrlHint = "https://komga.example.org"
+    override val serverUrlHelper = "/api/v1/ is appended automatically"
+    override val serverApiKeyOptional = "API Key (optional)"
+    override val orSeparator = "— or —"
+    override val serverUsername = "Username"
+    override val serverPassword = "Password"
     override val connect = "Connect"
     override val disconnect = "Disconnect"
     override val connected = "Connected"

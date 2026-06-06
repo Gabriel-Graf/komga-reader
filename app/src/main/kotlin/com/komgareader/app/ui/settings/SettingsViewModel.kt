@@ -2,6 +2,7 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -22,8 +23,24 @@ class SettingsViewModel @Inject constructor(
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
-    fun saveServer(name: String, baseUrl: String, apiKey: String) = viewModelScope.launch {
-        servers.save(ServerConfig(name = name, baseUrl = baseUrl.trimEnd('/') + "/", apiKey = apiKey))
+    fun saveServer(
+        name: String,
+        baseUrl: String,
+        apiKey: String,
+        username: String,
+        password: String,
+    ) = viewModelScope.launch {
+        servers.save(
+            ServerConfig(
+                name = name,
+                baseUrl = KomgaUrl.normalize(baseUrl),
+                apiKey = apiKey.trimToNull(),
+                username = username.trimToNull(),
+                password = password.trimToNull(),
+            )
+        )
     }.let {}
+
+    private fun String.trimToNull(): String? = trim().ifBlank { null }
     fun disconnect() = viewModelScope.launch { servers.clear() }.let {}
 }

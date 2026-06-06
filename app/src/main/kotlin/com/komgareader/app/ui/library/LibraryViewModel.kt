@@ -20,7 +20,7 @@ import javax.inject.Inject
 sealed interface LibraryUiState {
     data object NoServer : LibraryUiState
     data object Loading : LibraryUiState
-    data class Content(val series: List<Series>, val apiKey: String) : LibraryUiState
+    data class Content(val series: List<Series>, val apiKey: String?) : LibraryUiState
     data class Error(val message: String) : LibraryUiState
 }
 

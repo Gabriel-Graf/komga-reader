@@ -113,11 +113,12 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun SeriesCover(series: Series, apiKey: String, onClick: () -> Unit = {}) {
+private fun SeriesCover(series: Series, apiKey: String?, onClick: () -> Unit = {}) {
     val ctx = LocalContext.current
     val request = remember(series.coverUrl, apiKey) {
         ImageRequest.Builder(ctx).data(series.coverUrl)
-            .addHeader("X-API-Key", apiKey).crossfade(false).build()
+            .apply { if (!apiKey.isNullOrBlank()) addHeader("X-API-Key", apiKey) }
+            .crossfade(false).build()
     }
     Box(
         Modifier

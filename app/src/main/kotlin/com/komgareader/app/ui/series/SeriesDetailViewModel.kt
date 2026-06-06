@@ -25,7 +25,7 @@ import javax.inject.Inject
 sealed interface SeriesDetailUiState {
     data object Loading : SeriesDetailUiState
     data object NoServer : SeriesDetailUiState
-    data class Content(val books: List<Book>, val seriesTitle: String, val apiKey: String) : SeriesDetailUiState
+    data class Content(val books: List<Book>, val seriesTitle: String, val apiKey: String?) : SeriesDetailUiState
     data class Error(val message: String) : SeriesDetailUiState
 }
 

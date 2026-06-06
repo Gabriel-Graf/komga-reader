@@ -54,11 +54,14 @@ class EncryptedCredentialStore(
         if (prefsFile.exists()) prefsFile.delete()
     }
 
-    private fun read(key: String): String? =
-        if (prefs != null) runCatching { prefs.getString(key, null) }.getOrNull() else memory[key]
+    private fun read(key: String): String? {
+        val p = prefs ?: return memory[key]
+        return runCatching { p.getString(key, null) }.getOrNull()
+    }
 
     private fun write(key: String, value: String) {
-        if (prefs != null) runCatching { prefs.edit().putString(key, value).commit() }
+        val p = prefs
+        if (p != null) runCatching { p.edit().putString(key, value).commit() }
         else memory[key] = value
     }
 
@@ -69,7 +72,8 @@ class EncryptedCredentialStore(
     override fun setPassword(value: String) = write(KEY_PASSWORD, value)
 
     override fun clear() {
-        if (prefs != null) runCatching { prefs.edit().remove(KEY_API).remove(KEY_PASSWORD).commit() }
+        val p = prefs
+        if (p != null) runCatching { p.edit().remove(KEY_API).remove(KEY_PASSWORD).commit() }
         memory.remove(KEY_API)
         memory.remove(KEY_PASSWORD)
     }

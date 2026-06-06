@@ -9,4 +9,9 @@ data class Book(
     val format: BookFormat,
     val pageCount: Int,
     val downloadState: DownloadState = DownloadState.REMOTE,
+    val seriesTitle: String = "",
+    val sizeBytes: Long = 0L,
+    val fileUrl: String? = null,
+    val createdDate: String? = null,
+    val modifiedDate: String? = null,
 )

@@ -1,8 +1,9 @@
 package com.komgareader.app.ui.library
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudQueue
@@ -26,9 +28,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,8 +49,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.domain.model.Series
+import com.komgareader.domain.repository.ServerConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +63,19 @@ fun LibraryScreen(
 ) {
     val s = LocalStrings.current
     val state by viewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            val message = when (event) {
+                is LibraryEvent.DownloadStarted -> "Lade ${event.count} Kapitel…"
+                is LibraryEvent.DownloadComplete -> "Serie heruntergeladen."
+                is LibraryEvent.DownloadError -> "Fehler: ${event.message}"
+            }
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,6 +90,7 @@ fun LibraryScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when (val current = state) {
             is LibraryUiState.NoServer -> {
@@ -102,8 +123,9 @@ fun LibraryScreen(
                     items(current.series) { series ->
                         SeriesCover(
                             series = series,
-                            apiKey = current.apiKey,
+                            serverConfig = current.serverConfig,
                             onClick = { onOpenSeries(series.remoteId) },
+                            onLongClick = { viewModel.downloadSeries(series) },
                         )
                     }
                 }
@@ -112,19 +134,26 @@ fun LibraryScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SeriesCover(series: Series, apiKey: String?, onClick: () -> Unit = {}) {
+private fun SeriesCover(
+    series: Series,
+    serverConfig: ServerConfig?,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+) {
     val ctx = LocalContext.current
-    val request = remember(series.coverUrl, apiKey) {
+    val headers = remember(serverConfig) { AuthHeaders.forCovers(serverConfig) }
+    val request = remember(series.coverUrl, serverConfig) {
         ImageRequest.Builder(ctx).data(series.coverUrl)
-            .apply { if (!apiKey.isNullOrBlank()) addHeader("X-API-Key", apiKey) }
+            .apply { headers.forEach { addHeader(it.key, it.value) } }
             .crossfade(false).build()
     }
     Box(
         Modifier
             .aspectRatio(2f / 3f)
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         AsyncImage(
             model = request,
@@ -132,11 +161,25 @@ private fun SeriesCover(series: Series, apiKey: String?, onClick: () -> Unit = {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
-        Icon(
-            Icons.Filled.CloudQueue,
-            contentDescription = null,
-            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(20.dp),
-        )
+
+        // Cloud-Badge mit opaquem Hintergrund (damit auf jedem Cover sichtbar)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .size(24.dp)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), CircleShape)
+                .padding(3.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.CloudQueue,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
         Text(
             series.title,
             maxLines = 1,

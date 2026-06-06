@@ -38,7 +38,7 @@ import com.komgareader.domain.source.PageRef
 @Composable
 fun WebtoonReaderScreen(
     pages: List<PageRef>,
-    apiKey: String?,
+    authHeaders: Map<String, String>,
     initialPage: Int,
     chromeVisible: Boolean,
     onToggleChrome: () -> Unit,
@@ -88,10 +88,10 @@ fun WebtoonReaderScreen(
                 contentPadding = PaddingValues(0.dp),
             ) {
                 itemsIndexed(pages) { index, pageRef ->
-                    val request = remember(pageRef.url, apiKey) {
+                    val request = remember(pageRef.url, authHeaders) {
                         ImageRequest.Builder(ctx)
                             .data(pageRef.url)
-                            .apply { if (!apiKey.isNullOrBlank()) addHeader("X-API-Key", apiKey) }
+                            .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
                             .crossfade(false)
                             .build()
                     }

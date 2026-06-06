@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.data.download.DownloadManager
@@ -45,6 +46,9 @@ class ReaderViewModel @Inject constructor(
         BookFormat.valueOf(savedStateHandle.get<String>("format") ?: "CBZ")
     }.getOrDefault(BookFormat.CBZ)
 
+    /** Wenn true, lokalen Download ignorieren und immer streamen. */
+    private val forceStream: Boolean = savedStateHandle.get<Boolean>("stream") ?: false
+
     private val _content = MutableStateFlow<ReaderContent>(ReaderContent.Loading)
     val content: StateFlow<ReaderContent> = _content.asStateFlow()
 
@@ -75,26 +79,29 @@ class ReaderViewModel @Inject constructor(
 
     private fun loadBook() = viewModelScope.launch {
         runCatching {
-            // Zuerst prüfen ob lokal vorhanden
-            val localDownload = downloadRepository.get(bookId)
-            if (localDownload != null) {
-                val bytes = withContext(Dispatchers.IO) { downloadManager.bytesOf(localDownload) }
-                val ext = ".${localDownload.format.lowercase()}"
-                val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ext) }
-                document = doc
-                val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
-                _currentPage.value = 0
-                _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = 0)
-                return@launch
+            // Zuerst prüfen ob lokal vorhanden — außer wenn forceStream gesetzt ist
+            if (!forceStream) {
+                val localDownload = downloadRepository.get(bookId)
+                if (localDownload != null) {
+                    val bytes = withContext(Dispatchers.IO) { downloadManager.bytesOf(localDownload) }
+                    val ext = ".${localDownload.format.lowercase()}"
+                    val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ext) }
+                    document = doc
+                    val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
+                    _currentPage.value = 0
+                    _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = 0)
+                    return@launch
+                }
             }
 
-            // Kein lokaler Download → Netzwerk-Pfad
+            // Kein lokaler Download (oder forceStream) → Netzwerk-Pfad
             val config = servers.config.first()
             val source = sourceProvider.from(config)
             if (config == null || source == null) {
                 _content.value = ReaderContent.Error("Kein Server verbunden.")
                 return@launch
             }
+            val authHeaders = AuthHeaders.forCovers(config)
 
             if (format == BookFormat.EPUB) {
                 val bytes = withContext(Dispatchers.IO) { source.downloadFile(bookId) }
@@ -116,7 +123,7 @@ class ReaderViewModel @Inject constructor(
                 _currentPage.value = startPage
                 _content.value = ReaderContent.Streamed(
                     pages = pages,
-                    apiKey = config.apiKey,
+                    authHeaders = authHeaders,
                     initialPage = startPage,
                 )
             }

@@ -35,6 +35,11 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
         format = mediaTypeToFormat(dto.media.mediaType),
         pageCount = dto.media.pagesCount,
         downloadState = DownloadState.REMOTE,
+        seriesTitle = dto.seriesTitle,
+        sizeBytes = dto.sizeBytes,
+        fileUrl = dto.url.ifBlank { null },
+        createdDate = dto.created,
+        modifiedDate = dto.lastModified,
     )
 
     fun toPageRefs(bookRemoteId: String, pages: List<PageDto>): List<PageRef> =

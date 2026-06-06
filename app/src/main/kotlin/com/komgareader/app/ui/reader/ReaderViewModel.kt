@@ -99,7 +99,10 @@ class ReaderViewModel @Inject constructor(
     private val renderMutex = Mutex()
 
     fun toggleViewerMode() {
-        viewerMode.value = if (viewerMode.value == ViewerMode.PAGED) ViewerMode.WEBTOON else ViewerMode.PAGED
+        viewerMode.value = when (viewerMode.value) {
+            ViewerMode.WEBTOON -> ViewerMode.PAGED
+            else -> ViewerMode.WEBTOON
+        }
     }
 
     init {

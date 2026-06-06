@@ -82,6 +82,14 @@ fun ReaderRoute(
                     onToggleMode = viewModel::toggleViewerMode,
                     refresher = refresher,
                 )
+                ViewerMode.COMIC -> ComicReaderScreen(
+                    pages = c.pages,
+                    authHeaders = c.authHeaders,
+                    initialPage = c.initialPage,
+                    onBack = onBack,
+                    onToggleMode = viewModel::toggleViewerMode,
+                    refresher = refresher,
+                )
             }
         }
         is ReaderContent.Webtoon -> {
@@ -105,6 +113,14 @@ fun ReaderRoute(
                     onToggleChrome = viewModel::toggleChrome,
                     onBack = onBack,
                     onPageVisible = viewModel::onPageSettled,
+                    onToggleMode = viewModel::toggleViewerMode,
+                    refresher = refresher,
+                )
+                ViewerMode.COMIC -> ComicReaderScreen(
+                    pages = c.pages,
+                    authHeaders = c.authHeaders,
+                    initialPage = c.initialPage,
+                    onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,
                     refresher = refresher,
                 )

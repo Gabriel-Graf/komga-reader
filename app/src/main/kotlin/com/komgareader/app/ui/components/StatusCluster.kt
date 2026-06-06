@@ -56,7 +56,8 @@ fun StatusCluster(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.heightIn(max = 40.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.Start,
+        // Uhrzeit mittig über der (breiteren) Akku-Zeile → symmetrischer Block.
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(time, style = MaterialTheme.typography.labelMedium, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically) {

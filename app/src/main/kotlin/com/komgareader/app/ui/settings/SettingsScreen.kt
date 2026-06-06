@@ -1,5 +1,9 @@
 package com.komgareader.app.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +44,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -55,9 +60,24 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
+    val ctx = LocalContext.current
     val themeModeStr by viewModel.themeMode.collectAsState()
     val languageStr by viewModel.language.collectAsState()
+    val downloadDir by viewModel.downloadDir.collectAsState()
     val server by viewModel.server.collectAsState()
+
+    // SAF-Ordner-Picker: persistiert die Uri-Berechtigung und speichert sie in den Settings
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            ctx.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.setDownloadDir(uri.toString())
+        }
+    }
 
     val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
     val language = if (languageStr == "en") Language.EN else Language.DE
@@ -100,6 +120,36 @@ fun SettingsScreen(
             Language.entries.forEach { lang ->
                 OptionRow(lang.code.uppercase(), selected = lang == language) {
                     viewModel.setLanguage(lang.code)
+                }
+            }
+
+            // Download-Ordner (SAF)
+            Spacer(Modifier.height(16.dp))
+            Text(s.downloadFolder)
+            Spacer(Modifier.height(8.dp))
+            val folderLabel = if (downloadDir != null) {
+                // Lesbaren Pfad-Anteil aus der URI ableiten
+                runCatching { Uri.parse(downloadDir).lastPathSegment ?: downloadDir!! }.getOrElse { downloadDir!! }
+            } else {
+                s.defaultFolder
+            }
+            Text(
+                folderLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            Row {
+                Button(
+                    onClick = { folderPickerLauncher.launch(null) },
+                    modifier = Modifier.padding(end = 8.dp),
+                ) {
+                    Text(s.chooseFolder)
+                }
+                if (downloadDir != null) {
+                    OutlinedButton(onClick = { viewModel.setDownloadDir(null) }) {
+                        Text(s.resetFolder)
+                    }
                 }
             }
 

@@ -43,7 +43,8 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class ReaderUiState(
-    val chromeVisible: Boolean = true,
+    // Reader startet im Vollbild; das Overlay erscheint erst auf Tipp.
+    val chromeVisible: Boolean = false,
 )
 
 @HiltViewModel

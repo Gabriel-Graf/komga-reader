@@ -5,21 +5,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,7 +26,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EpubReaderScreen(
     pageCount: Int,
@@ -59,86 +50,74 @@ fun EpubReaderScreen(
         viewModel.onPageSettled(pagerState.currentPage)
     }
 
-    Scaffold(
-        topBar = {
-            if (uiState.chromeVisible) {
-                TopAppBar(
-                    title = { Text("${pagerState.currentPage + 1} / $pageCount") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
-                        }
-                    },
-                )
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.White),
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { pageIndex ->
+            val bmp by produceState<Bitmap?>(initialValue = null, key1 = pageIndex) {
+                value = viewModel.renderEpubPage(pageIndex)
             }
-        },
-    ) { padding ->
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (bmp != null) {
+                    Image(
+                        bitmap = bmp!!.asImageBitmap(),
+                        contentDescription = "Seite ${pageIndex + 1}",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+
+        // Transparente Tap-Zonen über dem Pager
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.White),
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(if (uiState.chromeVisible) padding else PaddingValues(0.dp)),
-            ) { pageIndex ->
-                val bmp by produceState<Bitmap?>(initialValue = null, key1 = pageIndex) {
-                    value = viewModel.renderEpubPage(pageIndex)
-                }
-                Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (bmp != null) {
-                        Image(
-                            bitmap = bmp!!.asImageBitmap(),
-                            contentDescription = "Seite ${pageIndex + 1}",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        CircularProgressIndicator()
-                    }
-                }
-            }
-
-            // Transparente Tap-Zonen über dem Pager
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .pointerInput(pageCount) {
-                        detectTapGestures { offset ->
-                            val width = size.width.toFloat()
-                            when {
-                                offset.x < width / 3f -> {
-                                    val prev = (pagerState.currentPage - 1).coerceAtLeast(0)
-                                    viewModel.navigateTo(prev)
-                                }
-                                offset.x > width * 2f / 3f -> {
-                                    val next = (pagerState.currentPage + 1).coerceAtMost(pageCount - 1)
-                                    viewModel.navigateTo(next)
-                                }
-                                else -> viewModel.toggleChrome()
+                .pointerInput(pageCount) {
+                    detectTapGestures { offset ->
+                        val width = size.width.toFloat()
+                        when {
+                            offset.x < width / 3f -> {
+                                val prev = (pagerState.currentPage - 1).coerceAtLeast(0)
+                                viewModel.navigateTo(prev)
                             }
+                            offset.x > width * 2f / 3f -> {
+                                val next = (pagerState.currentPage + 1).coerceAtMost(pageCount - 1)
+                                viewModel.navigateTo(next)
+                            }
+                            else -> viewModel.toggleChrome()
                         }
-                    },
-            )
+                    }
+                },
+        )
 
-            // Seitenzähler unten
-            if (uiState.chromeVisible) {
-                Text(
-                    text = "${pagerState.currentPage + 1} / $pageCount",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.LightGray.copy(alpha = 0.6f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
-            }
+        ReaderChromeOverlay(
+            visible = uiState.chromeVisible,
+            title = "${pagerState.currentPage + 1} / $pageCount",
+            onBack = onBack,
+        )
+
+        if (uiState.chromeVisible) {
+            Text(
+                text = "${pagerState.currentPage + 1} / $pageCount",
+                color = Color.Black,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                    .background(Color.LightGray.copy(alpha = 0.6f))
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+            )
         }
     }
 }

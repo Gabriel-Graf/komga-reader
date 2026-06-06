@@ -3,21 +3,16 @@ package com.komgareader.app.ui.reader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ViewDay
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,7 +31,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.komgareader.eink.onyx.OnyxRefresher
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PagedReaderScreen(
     pages: List<com.komgareader.domain.source.PageRef>,
@@ -76,87 +70,71 @@ fun PagedReaderScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            if (uiState.chromeVisible) {
-                TopAppBar(
-                    title = { Text("${pagerState.currentPage + 1} / $pageCount") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = onToggleMode) {
-                            Icon(
-                                Icons.Filled.ViewDay,
-                                contentDescription = "Zu Webtoon-Modus wechseln",
-                            )
-                        }
-                    },
-                )
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { pageIndex ->
+            val pageRef = pages[pageIndex]
+            val request = remember(pageRef.url, authHeaders) {
+                ImageRequest.Builder(ctx)
+                    .data(pageRef.url)
+                    .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
+                    .crossfade(false)
+                    .build()
             }
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize()) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
-                    .padding(if (uiState.chromeVisible) padding else PaddingValues(0.dp)),
-            ) { pageIndex ->
-                val pageRef = pages[pageIndex]
-                val request = remember(pageRef.url, authHeaders) {
-                    ImageRequest.Builder(ctx)
-                        .data(pageRef.url)
-                        .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
-                        .crossfade(false)
-                        .build()
-                }
-                AsyncImage(
-                    model = request,
-                    contentDescription = "Seite ${pageIndex + 1}",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-
-            // Transparente Tap-Zonen über dem Pager
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .pointerInput(pageCount) {
-                        detectTapGestures { offset ->
-                            val width = size.width.toFloat()
-                            when {
-                                offset.x < width / 3f -> {
-                                    val prev = (pagerState.currentPage - 1).coerceAtLeast(0)
-                                    viewModel.navigateTo(prev)
-                                }
-                                offset.x > width * 2f / 3f -> {
-                                    val next = (pagerState.currentPage + 1).coerceAtMost(pageCount - 1)
-                                    viewModel.navigateTo(next)
-                                }
-                                else -> viewModel.toggleChrome()
-                            }
-                        }
-                    },
+            AsyncImage(
+                model = request,
+                contentDescription = "Seite ${pageIndex + 1}",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
             )
+        }
 
-            // Seitenzähler unten
-            if (uiState.chromeVisible) {
-                Text(
-                    text = "${pagerState.currentPage + 1} / $pageCount",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
-            }
+        // Transparente Tap-Zonen über dem Pager
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pointerInput(pageCount) {
+                    detectTapGestures { offset ->
+                        val width = size.width.toFloat()
+                        when {
+                            offset.x < width / 3f -> {
+                                val prev = (pagerState.currentPage - 1).coerceAtLeast(0)
+                                viewModel.navigateTo(prev)
+                            }
+                            offset.x > width * 2f / 3f -> {
+                                val next = (pagerState.currentPage + 1).coerceAtMost(pageCount - 1)
+                                viewModel.navigateTo(next)
+                            }
+                            else -> viewModel.toggleChrome()
+                        }
+                    }
+                },
+        )
+
+        ReaderChromeOverlay(
+            visible = uiState.chromeVisible,
+            title = "${pagerState.currentPage + 1} / $pageCount",
+            onBack = onBack,
+            actions = {
+                IconButton(onClick = onToggleMode) {
+                    Icon(Icons.Filled.ViewDay, contentDescription = "Zu Webtoon-Modus wechseln", tint = Color.White)
+                }
+            },
+        )
+
+        if (uiState.chromeVisible) {
+            Text(
+                text = "${pagerState.currentPage + 1} / $pageCount",
+                color = Color.White,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+            )
         }
     }
 }

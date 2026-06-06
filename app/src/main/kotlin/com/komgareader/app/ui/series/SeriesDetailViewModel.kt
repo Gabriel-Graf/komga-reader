@@ -177,6 +177,7 @@ class SeriesDetailViewModel @Inject constructor(
 
     private fun mapViewerMode(type: ViewerType): ViewerMode = when (type) {
         ViewerType.WEBTOON -> ViewerMode.WEBTOON
+        ViewerType.COMIC -> ViewerMode.COMIC
         else -> ViewerMode.PAGED // PAGED und EPUB lesen paginiert; EPUB-Buch wählt Reader per Format
     }
 

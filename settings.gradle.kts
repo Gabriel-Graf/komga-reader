@@ -11,6 +11,7 @@ dependencyResolutionManagement {
 rootProject.name = "komga-reader"
 include(":domain")
 include(":source-komga")
+include(":source-opds")
 include(":app")
 include(":render-core")
 include(":data")

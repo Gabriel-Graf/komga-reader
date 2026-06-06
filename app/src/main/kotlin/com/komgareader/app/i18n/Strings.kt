@@ -93,6 +93,19 @@ interface Strings {
     val searchSettingsHint: String
     val searchAction: String
     val searchNoResults: String
+    // Farbfilter
+    val settingsColorFilter: String
+    val colorFilterSummary: String
+    val colorFilterProfiles: String
+    val colorFilterAdjust: String
+    val colorFilterSaturation: String
+    val colorFilterContrast: String
+    val colorFilterBrightness: String
+    val colorFilterSaveAsNew: String
+    val colorFilterUpdate: String
+    val colorFilterDelete: String
+    val colorFilterProfileName: String
+    val colorFilterPreview: String
 }
 
 object StringsDe : Strings {
@@ -187,6 +200,19 @@ object StringsDe : Strings {
     override val searchSettingsHint = "Einstellungen durchsuchen"
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
+    // Farbfilter
+    override val settingsColorFilter = "Farbfilter"
+    override val colorFilterSummary = "Bilder fürs E-Ink-Display anpassen"
+    override val colorFilterProfiles = "Profile"
+    override val colorFilterAdjust = "Anpassen"
+    override val colorFilterSaturation = "Sättigung"
+    override val colorFilterContrast = "Kontrast"
+    override val colorFilterBrightness = "Helligkeit"
+    override val colorFilterSaveAsNew = "Als neues Profil speichern"
+    override val colorFilterUpdate = "Profil aktualisieren"
+    override val colorFilterDelete = "Profil löschen"
+    override val colorFilterProfileName = "Profilname"
+    override val colorFilterPreview = "Vorschau"
 }
 
 object StringsEn : Strings {
@@ -281,6 +307,19 @@ object StringsEn : Strings {
     override val searchSettingsHint = "Search settings"
     override val searchAction = "Search"
     override val searchNoResults = "No results"
+    // Color filter
+    override val settingsColorFilter = "Color Filter"
+    override val colorFilterSummary = "Tune images for the e-ink display"
+    override val colorFilterProfiles = "Profiles"
+    override val colorFilterAdjust = "Adjust"
+    override val colorFilterSaturation = "Saturation"
+    override val colorFilterContrast = "Contrast"
+    override val colorFilterBrightness = "Brightness"
+    override val colorFilterSaveAsNew = "Save as new profile"
+    override val colorFilterUpdate = "Update profile"
+    override val colorFilterDelete = "Delete profile"
+    override val colorFilterProfileName = "Profile name"
+    override val colorFilterPreview = "Preview"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

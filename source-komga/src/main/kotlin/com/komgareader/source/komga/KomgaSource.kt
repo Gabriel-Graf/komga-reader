@@ -60,6 +60,10 @@ class KomgaSource internal constructor(
     suspend fun downloadFile(bookRemoteId: String): ByteArray =
         api.getFile(bookRemoteId).bytes()
 
+    /** Auflösen, zu welcher Serie ein Buch gehört (für die Kapitel-Liste des Webtoon-Strips). */
+    suspend fun seriesIdOf(bookRemoteId: String): String =
+        api.getBook(bookRemoteId).seriesId
+
     override suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress) {
         api.updateProgress(bookRemoteId, ReadProgressUpdateDto(progress.page, progress.completed))
     }

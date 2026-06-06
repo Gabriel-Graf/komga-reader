@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.guidedview.PanelGeometry
 
@@ -53,6 +54,8 @@ fun ComicReaderScreen(
     val rootView = LocalView.current
     val pageCount = pages.size
     if (pageCount == 0) return
+
+    val s = LocalStrings.current
 
     LaunchedEffect(Unit) {
         comicVm.init(pages.map { it.url }, authHeaders, initialPage)
@@ -137,7 +140,7 @@ fun ComicReaderScreen(
                 IconButton(onClick = { comicVm.toggleGuided() }) {
                     Icon(
                         Icons.Filled.GridView,
-                        contentDescription = if (state.guidedEnabled) "Panel-Modus aus" else "Panel-Modus an",
+                        contentDescription = if (state.guidedEnabled) s.readerPanelModeOff else s.readerPanelModeOn,
                         tint = if (state.guidedEnabled) Color.White else Color.Gray,
                     )
                 }

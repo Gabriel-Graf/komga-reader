@@ -93,6 +93,11 @@ interface Strings {
     val searchSettingsHint: String
     val searchAction: String
     val searchNoResults: String
+    // Comic-Reader
+    /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
+    val readerPanelModeOn: String
+    /** Angezeigt, wenn Panel-Modus AN ist (Tippen schaltet ihn AUS). */
+    val readerPanelModeOff: String
 }
 
 object StringsDe : Strings {
@@ -187,6 +192,9 @@ object StringsDe : Strings {
     override val searchSettingsHint = "Einstellungen durchsuchen"
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
+    // Comic-Reader
+    override val readerPanelModeOn = "Panel-Modus an"
+    override val readerPanelModeOff = "Panel-Modus aus"
 }
 
 object StringsEn : Strings {
@@ -281,6 +289,9 @@ object StringsEn : Strings {
     override val searchSettingsHint = "Search settings"
     override val searchAction = "Search"
     override val searchNoResults = "No results"
+    // Comic reader
+    override val readerPanelModeOn = "Panel mode on"
+    override val readerPanelModeOff = "Panel mode off"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

@@ -109,4 +109,28 @@ class KomgaSourceTest {
         assertEquals(80, progress.page)
         assertEquals(220, progress.totalPages)
     }
+
+    @Test
+    fun `listContainers mappt die Komga-Libraries`() = runTest {
+        server.enqueue(MockResponse().setBody("""
+            [{"id":"L1","name":"Manga"},{"id":"L2","name":"Comics"}]
+        """.trimIndent()).addHeader("Content-Type", "application/json"))
+
+        val containers = source().listContainers()
+
+        assertEquals(2, containers.size)
+        assertEquals("L1", containers[0].id)
+        assertEquals("Comics", containers[1].name)
+        val req = server.takeRequest()
+        assertTrue(req.path!!.startsWith("/api/v1/libraries"), "Pfad war: ${req.path}")
+    }
+
+    @Test
+    fun `browse mit containerIds setzt library_id-Filter`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"content":[],"last":true,"number":0,"totalPages":0}"""))
+        source().browse(page = 0, filter = SourceFilter(containerIds = listOf("L1", "L2")))
+        val req = server.takeRequest()
+        assertTrue(req.path!!.contains("library_id=L1"), "Pfad war: ${req.path}")
+        assertTrue(req.path!!.contains("library_id=L2"), "Pfad war: ${req.path}")
+    }
 }

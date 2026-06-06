@@ -77,3 +77,9 @@ data class ReadProgressUpdateDto(
     val page: Int,
     val completed: Boolean,
 )
+
+@Serializable
+data class LibraryDto(
+    val id: String,
+    val name: String = "",
+)

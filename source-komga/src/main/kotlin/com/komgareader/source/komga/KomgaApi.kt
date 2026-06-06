@@ -2,6 +2,7 @@ package com.komgareader.source.komga
 
 import com.komgareader.source.komga.dto.BookDto
 import com.komgareader.source.komga.dto.KomgaPage
+import com.komgareader.source.komga.dto.LibraryDto
 import com.komgareader.source.komga.dto.PageDto
 import com.komgareader.source.komga.dto.ReadProgressUpdateDto
 import com.komgareader.source.komga.dto.SeriesDto
@@ -21,7 +22,11 @@ interface KomgaApi {
         @Query("page") page: Int,
         @Query("size") size: Int,
         @Query("search") search: String? = null,
+        @Query("library_id") libraryIds: List<String>? = null,
     ): KomgaPage<SeriesDto>
+
+    @GET("libraries")
+    suspend fun listLibraries(): List<LibraryDto>
 
     @GET("series/{id}")
     suspend fun getSeries(@Path("id") seriesId: String): SeriesDto

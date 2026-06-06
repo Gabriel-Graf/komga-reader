@@ -22,12 +22,12 @@ class EncryptedCredentialStore(
     )
 
     override fun getApiKey(): String? = prefs.getString(KEY_API, null)
-    override fun setApiKey(value: String) = prefs.edit().putString(KEY_API, value).apply()
+    override fun setApiKey(value: String) { prefs.edit().putString(KEY_API, value).commit() }
 
     override fun getPassword(): String? = prefs.getString(KEY_PASSWORD, null)
-    override fun setPassword(value: String) = prefs.edit().putString(KEY_PASSWORD, value).apply()
+    override fun setPassword(value: String) { prefs.edit().putString(KEY_PASSWORD, value).commit() }
 
-    override fun clear() = prefs.edit().remove(KEY_API).remove(KEY_PASSWORD).apply()
+    override fun clear() { prefs.edit().remove(KEY_API).remove(KEY_PASSWORD).commit() }
 
     private companion object {
         const val KEY_API = "komga_api_key"

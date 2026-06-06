@@ -10,12 +10,14 @@ import javax.inject.Singleton
 @Singleton
 class KomgaSourceProvider @Inject constructor() {
     fun from(config: ServerConfig?): KomgaSource? = config?.let {
-        KomgaSourceFactory.create(
-            name = it.name,
-            baseUrl = it.baseUrl,
-            apiKey = it.apiKey,
-            username = it.username,
-            password = it.password,
-        )
+        runCatching {
+            KomgaSourceFactory.create(
+                name = it.name,
+                baseUrl = it.baseUrl,
+                apiKey = it.apiKey,
+                username = it.username,
+                password = it.password,
+            )
+        }.getOrNull()
     }
 }

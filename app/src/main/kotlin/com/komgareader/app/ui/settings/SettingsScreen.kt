@@ -31,7 +31,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.autofill.AutofillType
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -40,7 +48,7 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.theme.ThemeMode
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -145,19 +153,55 @@ fun SettingsScreen(
             )
             HorizontalDivider()
             Spacer(Modifier.height(12.dp))
+            val autofill = LocalAutofill.current
+            val autofillTree = LocalAutofillTree.current
+
+            val usernameAutofillNode = remember {
+                AutofillNode(
+                    autofillTypes = listOf(AutofillType.Username),
+                    onFill = { usernameInput = it },
+                )
+            }
+            autofillTree += usernameAutofillNode
+
             OutlinedTextField(
                 value = usernameInput,
                 onValueChange = { usernameInput = it },
                 label = { Text(s.serverUsername) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { usernameAutofillNode.boundingBox = it.boundsInWindow() }
+                    .onFocusChanged { focus ->
+                        autofill?.run {
+                            if (focus.isFocused) requestAutofillForNode(usernameAutofillNode)
+                            else cancelAutofillForNode(usernameAutofillNode)
+                        }
+                    },
                 singleLine = true,
             )
             Spacer(Modifier.height(8.dp))
+
+            val passwordAutofillNode = remember {
+                AutofillNode(
+                    autofillTypes = listOf(AutofillType.Password),
+                    onFill = { passwordInput = it },
+                )
+            }
+            autofillTree += passwordAutofillNode
+
             OutlinedTextField(
                 value = passwordInput,
                 onValueChange = { passwordInput = it },
                 label = { Text(s.serverPassword) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { passwordAutofillNode.boundingBox = it.boundsInWindow() }
+                    .onFocusChanged { focus ->
+                        autofill?.run {
+                            if (focus.isFocused) requestAutofillForNode(passwordAutofillNode)
+                            else cancelAutofillForNode(passwordAutofillNode)
+                        }
+                    },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),

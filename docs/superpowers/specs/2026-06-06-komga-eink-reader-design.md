@@ -203,6 +203,9 @@ interface Viewer { fun bind(book: Book, progress: ReadProgress); fun onButton(e:
 ## 10. Tech-Stack
 Kotlin · Jetpack Compose (Material3, flach) · Room · Coroutines/Flow · MuPDF (NDK/JNI, C++) · OpenCV (Phase 2, Guided View) · Onyx-Boox-SDK (gekapselt) · DI (Hilt oder Koin — Entscheidung in der Plan-Phase) · OkHttp/Ktor + kotlinx.serialization für Komga-REST · Material Symbols (`material-icons-extended`).
 
+## 10a. Lizenz (Design-Entscheidung 2026-06-06)
+Die App nutzt **MuPDF** als einzige Render-Engine (cbz/cbr/pdf/epub aus einer Hand). MuPDF ist **AGPL-3.0**. Entscheidung: **AGPL akzeptiert — die App wird unter AGPL-3.0-or-later Open Source** (passt zum offenen Plugin-Ökosystem). Konsequenz: jede Verteilung muss den App-Quellcode unter AGPL offenlegen. `LICENSE` (AGPL-3.0-Volltext) und `NOTICE` (Drittsoftware) liegen im Repo-Root. Alternativen (Pdfium-Split, kommerzielle Artifex-Lizenz) wurden verworfen.
+
 ## 11. Phasen-Roadmap
 Jede Phase = eigene Spec→Plan→Bau-Runde, jede für sich lauffähig.
 

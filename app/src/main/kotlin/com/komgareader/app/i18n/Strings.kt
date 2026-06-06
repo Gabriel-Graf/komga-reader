@@ -53,6 +53,7 @@ interface Strings {
     val cancel: String
     val noServerHint: String
     val deleteGroup: String
+    val noGroupsHint: String
 }
 
 object StringsDe : Strings {
@@ -107,6 +108,7 @@ object StringsDe : Strings {
     override val cancel = "Abbrechen"
     override val noServerHint = "Kein Server verbunden. Bitte zuerst in den Einstellungen einen Server hinzufügen."
     override val deleteGroup = "Gruppe löschen"
+    override val noGroupsHint = "Noch keine Gruppen. Tippe auf + um eine anzulegen."
 }
 
 object StringsEn : Strings {
@@ -161,6 +163,7 @@ object StringsEn : Strings {
     override val cancel = "Cancel"
     override val noServerHint = "No server connected. Please add a server in Settings first."
     override val deleteGroup = "Delete group"
+    override val noGroupsHint = "No groups yet. Tap + to create one."
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

@@ -76,7 +76,7 @@ fun GroupsScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "Noch keine Gruppen. Tippe auf + um eine anzulegen.",
+                    s.noGroupsHint,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(32.dp),
                 )
@@ -119,6 +119,7 @@ private fun GroupCard(
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val s = LocalStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -137,13 +138,13 @@ private fun GroupCard(
         Column(Modifier.weight(1f)) {
             Text(shelf.name, style = MaterialTheme.typography.titleSmall)
             Text(
-                labelForContentType(shelf.contentType),
+                labelForContentType(shelf.contentType, s),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         IconButton(onClick = onDelete) {
-            Icon(Icons.Filled.Delete, contentDescription = "Gruppe löschen")
+            Icon(Icons.Filled.Delete, contentDescription = s.deleteGroup)
         }
     }
 }
@@ -226,9 +227,9 @@ private fun iconForContentType(type: ContentType) = when (type) {
     ContentType.WEBTOON -> Icons.Filled.ViewDay
 }
 
-private fun labelForContentType(type: ContentType) = when (type) {
-    ContentType.MANGA -> "Manga"
-    ContentType.COMIC -> "Comic"
-    ContentType.NOVEL -> "Roman"
-    ContentType.WEBTOON -> "Webtoon"
+private fun labelForContentType(type: ContentType, s: com.komgareader.app.i18n.Strings) = when (type) {
+    ContentType.MANGA -> s.tagManga
+    ContentType.COMIC -> s.tagComic
+    ContentType.NOVEL -> s.tagNovel
+    ContentType.WEBTOON -> s.tagWebtoon
 }

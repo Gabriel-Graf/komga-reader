@@ -72,6 +72,7 @@ fun SeriesDetailScreen(
     val state by viewModel.state.collectAsState()
     val localIds by viewModel.localBookIds.collectAsState()
     val downloadingIds by viewModel.downloadingIds.collectAsState()
+    val isEink by viewModel.isEink.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Fehler-Events als Snackbar anzeigen
@@ -130,6 +131,7 @@ fun SeriesDetailScreen(
                     viewerModes = current.viewerModes,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
+                    isEink = isEink,
                     onOpenBook = onOpenBook,
                     onDownload = viewModel::download,
                     onRemoveDownload = viewModel::removeDownload,
@@ -154,6 +156,7 @@ private fun SeriesDetailContent(
     viewerModes: Map<String, String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
+    isEink: Boolean,
     onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     onDownload: (Book) -> Unit,
     onRemoveDownload: (String) -> Unit,
@@ -181,6 +184,7 @@ private fun SeriesDetailContent(
                 currentBook = currentBook,
                 isLocal = currentBook?.remoteId in localIds,
                 isDownloading = currentBook?.remoteId in downloadingIds,
+                isEink = isEink,
                 onRead = {
                     currentBook?.let {
                         onOpenBook(
@@ -242,6 +246,7 @@ private fun SeriesHeroCard(
     currentBook: Book?,
     isLocal: Boolean,
     isDownloading: Boolean,
+    isEink: Boolean,
     onRead: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
@@ -320,12 +325,17 @@ private fun SeriesHeroCard(
                 when {
                     // Gleiche Breite (weight 1f) wie die Toggle-Buttons, nur in-place getauscht —
                     // so dehnt sich der Lesen-Button beim Statuswechsel nicht aus.
+                    // E-Ink: statischer „Lädt…"-Text (kein ghostender Spinner); Smartphone: Spinner.
                     isDownloading -> OutlinedButton(
                         onClick = {},
                         enabled = false,
                         modifier = Modifier.weight(1f),
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        if (isEink) {
+                            Text(s.loading, maxLines = 1)
+                        } else {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        }
                     }
                     isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))

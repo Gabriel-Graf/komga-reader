@@ -14,6 +14,7 @@ import com.komgareader.domain.model.ViewerType
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.usecase.ResolveViewerType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,11 +68,17 @@ class SeriesDetailViewModel @Inject constructor(
     private val downloadManager: DownloadManager,
     private val downloadRepository: DownloadRepository,
     private val shelfRepository: ShelfRepository,
+    settings: SettingsRepository,
 ) : ViewModel() {
 
     private val seriesId: String = checkNotNull(savedStateHandle["seriesId"])
     private val shelfId: Long? = savedStateHandle.get<Long>("shelfId")
     private val resolveViewerType = ResolveViewerType()
+
+    /** E-Ink-Modus aktiv? Steuert, ob statt eines Spinners ein „Lädt…"-Text gezeigt wird. */
+    val isEink: StateFlow<Boolean> = settings.displayMode
+        .map { it == "EINK" }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     val state: StateFlow<SeriesDetailUiState> =
         servers.config.flatMapLatest { config ->
@@ -99,6 +106,12 @@ class SeriesDetailViewModel @Inject constructor(
                                     resolveViewerType(seriesForResolve, book, fallback),
                                 ).name
                             }
+                            Log.i(
+                                TAG,
+                                "resolve override=${seriesForResolve.contentTypeOverride} " +
+                                    "dir=${seriesForResolve.readingDirection} fallback=$fallback " +
+                                    "shelfId=$shelfId firstFormat=${books.firstOrNull()?.format} modes=$viewerModes",
+                            )
                             SeriesDetailUiState.Content(
                                 books = books,
                                 seriesTitle = resolvedTitle,

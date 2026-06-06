@@ -4,6 +4,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.data.db.AppDatabase
+import com.komgareader.data.db.MIGRATION_1_2
+import com.komgareader.data.db.MIGRATION_2_3
 import com.komgareader.data.db.ServerEntity
 import com.komgareader.data.security.EncryptedCredentialStore
 import kotlinx.coroutines.Dispatchers
@@ -24,8 +26,9 @@ class SetupServerTest {
     @Test
     fun speichert_server_konfiguration() = runBlocking {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        // Gleicher DB-Name wie DataModule.database()
+        // Gleicher DB-Name und gleiche Migrationen wie DataModule.database()
         val db = Room.databaseBuilder(ctx, AppDatabase::class.java, "komga-reader.db")
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .fallbackToDestructiveMigration()
             .build()
         withContext(Dispatchers.IO) {

@@ -29,7 +29,9 @@ interface Strings {
     val read: String
     val stream: String
     val download: String
+    val downloadShort: String
     val downloaded: String
+    val downloadedShort: String
     val sizeLabel: String
     val formatLabel: String
     val fileLabel: String
@@ -66,7 +68,9 @@ object StringsDe : Strings {
     override val read = "Lesen"
     override val stream = "Stream"
     override val download = "Herunterladen"
+    override val downloadShort = "Laden"
     override val downloaded = "Heruntergeladen ✓"
+    override val downloadedShort = "Gespeichert"
     override val sizeLabel = "Größe"
     override val formatLabel = "Format"
     override val fileLabel = "Datei"
@@ -103,7 +107,9 @@ object StringsEn : Strings {
     override val read = "Read"
     override val stream = "Stream"
     override val download = "Download"
+    override val downloadShort = "Save"
     override val downloaded = "Downloaded ✓"
+    override val downloadedShort = "Saved"
     override val sizeLabel = "Size"
     override val formatLabel = "Format"
     override val fileLabel = "File"

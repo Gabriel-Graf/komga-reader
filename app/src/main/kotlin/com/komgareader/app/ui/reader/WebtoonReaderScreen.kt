@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -38,8 +40,8 @@ import com.komgareader.eink.onyx.OnyxRefresher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-/** Anteil eines Bildschirms, der beim Frame-Sprung als Überlappung erhalten bleibt. */
-private const val FRAME_OVERLAP = 0.12f
+/** Anteil eines Bildschirms, der beim Frame-Sprung als Überlappung erhalten bleibt (≈30%). */
+private const val FRAME_OVERLAP = 0.30f
 
 /**
  * Webtoon-Reader: alle Kapitel nahtlos untereinander (FillWidth, volle Breite),
@@ -71,6 +73,12 @@ fun WebtoonReaderScreen(
     val scope = rememberCoroutineScope()
     val pageCount = pages.size
     val eink = displayMode == DisplayMode.EINK
+
+    // Platzhalter-Höhe für noch nicht geladene Seiten: ≈ ein Bildschirm. Damit
+    // reserviert jedes Item Platz, bevor das Bild da ist — die LazyColumn
+    // komponiert nur die sichtbaren + nächsten Items und löst nicht Hunderte
+    // gleichzeitiger Bild-Requests aus (sonst Lade-Sturm bei langen Strips).
+    val placeholderHeight = LocalConfiguration.current.screenHeightDp.dp
 
     // Frame-Sprung: ~1 Bildschirmhöhe (mit Überlappung). E-Ink ohne Animation,
     // danach ein GC-Full-Refresh; Smartphone animiert.
@@ -112,7 +120,7 @@ fun WebtoonReaderScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(0.dp),
         ) {
-            itemsIndexed(pages) { index, pageRef ->
+            itemsIndexed(pages, key = { _, pageRef -> pageRef.url }) { index, pageRef ->
                 val request = remember(pageRef.url, authHeaders) {
                     ImageRequest.Builder(ctx)
                         .data(pageRef.url)
@@ -124,7 +132,9 @@ fun WebtoonReaderScreen(
                     model = request,
                     contentDescription = "Seite ${index + 1}",
                     contentScale = ContentScale.FillWidth,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = placeholderHeight),
                 )
             }
         }

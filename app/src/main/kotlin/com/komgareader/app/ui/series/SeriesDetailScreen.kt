@@ -26,7 +26,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.komgareader.app.ui.components.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -72,7 +72,6 @@ fun SeriesDetailScreen(
     val state by viewModel.state.collectAsState()
     val localIds by viewModel.localBookIds.collectAsState()
     val downloadingIds by viewModel.downloadingIds.collectAsState()
-    val isEink by viewModel.isEink.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Fehler-Events als Snackbar anzeigen
@@ -106,7 +105,7 @@ fun SeriesDetailScreen(
         when (val current = state) {
             is SeriesDetailUiState.Loading -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    LoadingIndicator()
                 }
             }
             is SeriesDetailUiState.NoServer -> {
@@ -131,7 +130,6 @@ fun SeriesDetailScreen(
                     viewerModes = current.viewerModes,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
-                    isEink = isEink,
                     onOpenBook = onOpenBook,
                     onDownload = viewModel::download,
                     onRemoveDownload = viewModel::removeDownload,
@@ -156,13 +154,15 @@ private fun SeriesDetailContent(
     viewerModes: Map<String, String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
-    isEink: Boolean,
     onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     onDownload: (Book) -> Unit,
     onRemoveDownload: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selectedBook by rememberSaveable(books) { mutableStateOf(books.firstOrNull()?.remoteId) }
+    // „Weiterlesen": erstes noch nicht abgeschlossenes Kapitel (laufendes oder nächstes
+    // ungelesenes); sind alle gelesen, das erste. So öffnet „Lesen" das richtige Kapitel.
+    val continueBookId = books.firstOrNull { !it.readCompleted }?.remoteId ?: books.firstOrNull()?.remoteId
+    var selectedBook by rememberSaveable(books) { mutableStateOf(continueBookId) }
     var chaptersExpanded by rememberSaveable { mutableStateOf(true) }
 
     val currentBook = books.firstOrNull { it.remoteId == selectedBook } ?: books.firstOrNull()
@@ -184,7 +184,6 @@ private fun SeriesDetailContent(
                 currentBook = currentBook,
                 isLocal = currentBook?.remoteId in localIds,
                 isDownloading = currentBook?.remoteId in downloadingIds,
-                isEink = isEink,
                 onRead = {
                     currentBook?.let {
                         onOpenBook(
@@ -246,7 +245,6 @@ private fun SeriesHeroCard(
     currentBook: Book?,
     isLocal: Boolean,
     isDownloading: Boolean,
-    isEink: Boolean,
     onRead: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
@@ -331,11 +329,7 @@ private fun SeriesHeroCard(
                         enabled = false,
                         modifier = Modifier.weight(1f),
                     ) {
-                        if (isEink) {
-                            Text(s.loading, maxLines = 1)
-                        } else {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        }
+                        LoadingIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     }
                     isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -423,20 +417,42 @@ private fun ChapterRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (book.readCompleted) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = s.statusRead,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
+                Text(
+                    book.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    // Gelesene Kapitel etwas zurückgenommen darstellen.
+                    color = if (book.readCompleted) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+            }
+            val subtitle = when {
+                book.readCompleted -> s.statusRead
+                book.lastReadPage != null -> "${s.pagesShort} ${book.lastReadPage}/${book.pageCount}"
+                else -> "${book.pageCount} ${s.pagesShort}"
+            }
             Text(
-                book.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            )
-            Text(
-                "${book.pageCount} ${s.pagesShort}",
+                subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         // Statusicon + Download/Entfernen-Aktion pro Zeile
         when {
-            isDownloading -> CircularProgressIndicator(
+            isDownloading -> LoadingIndicator(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp,
             )

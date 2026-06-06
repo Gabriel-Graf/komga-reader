@@ -63,6 +63,14 @@ class KomgaSource internal constructor(
     override suspend fun pages(bookRemoteId: String): List<PageRef> =
         mapper.toPageRefs(bookRemoteId, api.listPages(bookRemoteId))
 
+    /**
+     * Seiten-Refs eines Buchs allein aus der bekannten [pageCount] — ohne
+     * Netzwerk-Call. Für den Webtoon-Strip, der so alle Kapitel ohne einen
+     * einzigen Pro-Kapitel-Request aufbauen kann.
+     */
+    fun pageRefsFromCount(bookRemoteId: String, pageCount: Int): List<PageRef> =
+        mapper.toPageRefs(bookRemoteId, pageCount)
+
     override suspend fun openPage(ref: PageRef): ByteArray =
         api.getPage(ref.bookRemoteId, ref.pageNumber).bytes()
 

@@ -55,6 +55,8 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
         modifiedDate = dto.lastModified,
         summary = dto.metadata.summary.ifBlank { null },
         number = dto.metadata.number.ifBlank { null },
+        lastReadPage = dto.readProgress?.page,
+        readCompleted = dto.readProgress?.completed ?: false,
     )
 
     fun toPageRefs(bookRemoteId: String, pages: List<PageDto>): List<PageRef> =
@@ -64,6 +66,22 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
                 bookRemoteId = bookRemoteId,
                 pageNumber = p.number,
                 url = "${baseUrl}books/$bookRemoteId/pages/${p.number}",
+            )
+        }
+
+    /**
+     * Baut Seiten-Refs allein aus der bekannten Seitenzahl — ohne Netzwerk-Call.
+     * Komga nummeriert Seiten zusammenhängend 1..[pageCount] unter
+     * `books/{id}/pages/{n}`, daher genügt [pageCount] (aus `books(seriesId)`),
+     * um den gesamten Webtoon-Strip aufzubauen; die Bilder lädt Coil lazy.
+     */
+    fun toPageRefs(bookRemoteId: String, pageCount: Int): List<PageRef> =
+        (1..pageCount).map { n ->
+            PageRef(
+                index = n - 1,
+                bookRemoteId = bookRemoteId,
+                pageNumber = n,
+                url = "${baseUrl}books/$bookRemoteId/pages/$n",
             )
         }
 

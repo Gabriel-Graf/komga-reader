@@ -23,9 +23,6 @@ import com.komgareader.render.mupdf.MupdfDocumentFactory
 import com.komgareader.source.komga.KomgaSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -121,8 +118,14 @@ class ReaderViewModel @Inject constructor(
                     val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ext) }
                     document = doc
                     val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
-                    _currentPage.value = 0
-                    _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = 0)
+                    // Auch beim lokalen Download auf der letzten Seite fortsetzen:
+                    // Server-Progress best-effort holen (offline → Seite 0).
+                    val startPage = runCatching {
+                        val source = sourceProvider.from(servers.config.first())
+                        source?.pullProgress(bookId)?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
+                    }.getOrNull() ?: 0
+                    _currentPage.value = startPage
+                    _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
                     return@launch
                 }
             }
@@ -168,23 +171,20 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Lädt alle Kapitel der Serie und baut den nahtlosen, kapitelübergreifenden
-     * Webtoon-Strip. Seitenlisten werden parallel geholt (reines JSON); die
-     * Bilder lädt die LazyColumn/Coil erst beim Sichtbarwerden.
+     * Baut den nahtlosen, kapitelübergreifenden Webtoon-Strip aus EINEM
+     * `books(seriesId)`-Call: Die Seiten-Refs werden deterministisch aus der
+     * Seitenzahl jedes Kapitels gebaut (kein Pro-Kapitel-Request!), die Bilder
+     * lädt die LazyColumn/Coil erst beim Sichtbarwerden. So entsteht kein
+     * Lade-Sturm bei Serien mit vielen Kapiteln.
      */
     private suspend fun loadWebtoonStrip(source: KomgaSource, authHeaders: Map<String, String>) {
         val seriesId = withContext(Dispatchers.IO) { source.seriesIdOf(bookId) }
         val books = withContext(Dispatchers.IO) { source.books(seriesId) }
-        val perChapter: List<List<PageRef>> = withContext(Dispatchers.IO) {
-            coroutineScope { books.map { async { source.pages(it.remoteId) } }.awaitAll() }
-        }
-        val strip = WebtoonStrip(
-            books.mapIndexed { i, b -> WebtoonChapter(b.remoteId, perChapter[i].size) },
-        )
-        val flat = perChapter.flatten()
+        val strip = WebtoonStrip(books.map { WebtoonChapter(it.remoteId, it.pageCount) })
+        val flat = books.flatMap { source.pageRefsFromCount(it.remoteId, it.pageCount) }
 
         val openedIdx = books.indexOfFirst { it.remoteId == bookId }.coerceAtLeast(0)
-        val openedPageCount = perChapter.getOrNull(openedIdx)?.size ?: 0
+        val openedPageCount = books.getOrNull(openedIdx)?.pageCount ?: 0
         val localStart = runCatching { source.pullProgress(bookId) }
             .getOrNull()
             ?.let { (it.page - 1).coerceIn(0, (openedPageCount - 1).coerceAtLeast(0)) }

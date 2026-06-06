@@ -43,14 +43,22 @@ class ResolveViewerTypeTest {
     }
 
     @Test
-    fun `Stufe 4 — Archiv-Format ohne vertikale Richtung ergibt PAGED`() {
-        val result = resolve(series(direction = ReadingDirection.LTR), book(BookFormat.CBR), fallback = null)
+    fun `Stufe 4 — Bibliotheks-Default WEBTOON ergibt WEBTOON trotz CBZ`() {
+        // Der entscheidende Fall: Webtoons liegen als CBZ vor; das Bibliotheks-Tag
+        // muss den Format-Default (PAGED) schlagen.
+        val result = resolve(series(), book(BookFormat.CBZ), fallback = ContentType.WEBTOON)
+        assertEquals(ViewerType.WEBTOON, result)
+    }
+
+    @Test
+    fun `Stufe 4 — Bibliotheks-Default COMIC ergibt PAGED bei CBZ`() {
+        val result = resolve(series(), book(BookFormat.CBZ), fallback = ContentType.COMIC)
         assertEquals(ViewerType.PAGED, result)
     }
 
     @Test
-    fun `Stufe 5 — Fallback-Typ greift bei Archiv-Format nicht vor Stufe 4`() {
-        val result = resolve(series(), book(BookFormat.PDF), fallback = ContentType.WEBTOON)
+    fun `Stufe 5 — Archiv-Format ohne Bibliotheks-Default ergibt PAGED`() {
+        val result = resolve(series(direction = ReadingDirection.LTR), book(BookFormat.CBR), fallback = null)
         assertEquals(ViewerType.PAGED, result)
     }
 

@@ -8,11 +8,18 @@ Lese-Modus. Die Reihenfolge ist verbindlich — nicht umsortieren.
 | 1 | `series.contentTypeOverride != null` | map(override) |
 | 2 | `book.format == EPUB` | EPUB |
 | 3 | `series.readingDirection ∈ {VERTICAL, WEBTOON}` | WEBTOON |
-| 4 | `book.format ∈ {CBZ, CBR, PDF}` | PAGED |
-| 5 | `fallback != null` | map(fallback) |
+| 4 | `fallback != null` | map(fallback) |
+| 5 | `book.format ∈ {CBZ, CBR, PDF}` | PAGED |
 | 6 | sonst | PAGED |
 
 `map`: MANGA/COMIC → PAGED, WEBTOON → WEBTOON, NOVEL → EPUB.
+
+**Warum Stufe 4 (Bibliotheks-Default) vor Stufe 5 (Format-Default):** Webtoons
+liegen fast immer als CBZ vor. Stünde der Format-Default (CBZ → PAGED) vorher,
+würde er den Bibliotheks-Default für jede CBZ kurzschließen — das WEBTOON-Tag
+einer Bibliothek bliebe für Comics wirkungslos. Daher schlägt das explizite
+Bibliotheks-Tag den Format-Default. Serien-Override (1) und Komga-Leserichtung
+(3) bleiben höher priorisiert.
 
 ## Komga-Feld-Mapping (Naht A)
 
@@ -25,7 +32,7 @@ Lese-Modus. Die Reihenfolge ist verbindlich — nicht umsortieren.
 
 Komgas Default-Leserichtung ist `LEFT_TO_RIGHT`. Schlecht getaggte Webtoons
 zeigen daher Paged, bis entweder (a) die Serie in Komga korrekt getaggt ist,
-(b) der Bibliotheks-Default (Stufe 5) greift, oder (c) ein Serien-Override
+(b) der Bibliotheks-Default (Stufe 4) greift, oder (c) ein Serien-Override
 (Stufe 1) gesetzt wird.
 
 ## App-Mapping (ViewerMode)

@@ -16,4 +16,8 @@ data class Book(
     val modifiedDate: String? = null,
     val summary: String? = null,
     val number: String? = null,
+    /** Letzte vom Server gemeldete gelesene Seite (1-basiert); `null` = nie geöffnet. */
+    val lastReadPage: Int? = null,
+    /** Vom Server als vollständig gelesen markiert. */
+    val readCompleted: Boolean = false,
 )

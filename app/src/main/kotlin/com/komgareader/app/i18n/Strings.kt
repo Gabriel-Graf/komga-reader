@@ -38,6 +38,7 @@ interface Strings {
     val downloadedShort: String
     val removeDownload: String
     val loading: String
+    val statusRead: String
     val downloadFolder: String
     val chooseFolder: String
     val defaultFolder: String
@@ -131,6 +132,7 @@ object StringsDe : Strings {
     override val downloadedShort = "Gespeichert"
     override val removeDownload = "Entfernen"
     override val loading = "Lädt…"
+    override val statusRead = "Gelesen"
     override val downloadFolder = "Download-Ordner"
     override val chooseFolder = "Ordner wählen"
     override val defaultFolder = "Standard (intern)"
@@ -224,6 +226,7 @@ object StringsEn : Strings {
     override val downloadedShort = "Saved"
     override val removeDownload = "Remove"
     override val loading = "Loading…"
+    override val statusRead = "Read"
     override val downloadFolder = "Download Folder"
     override val chooseFolder = "Choose Folder"
     override val defaultFolder = "Default (internal)"

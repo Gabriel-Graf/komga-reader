@@ -98,6 +98,39 @@ class KomgaMapperTest {
     }
 
     @Test
+    fun `Book übernimmt Read-Progress vom Server`() {
+        val inProgress = mapper.toBook(
+            BookDto(
+                id = "B1", seriesId = "S1", name = "v01",
+                media = BookMediaDto(mediaType = "application/zip", pagesCount = 187),
+                readProgress = ReadProgressDto(page = 45, completed = false),
+            ),
+        )
+        val finished = mapper.toBook(
+            BookDto(
+                id = "B2", seriesId = "S1", name = "v02",
+                media = BookMediaDto(mediaType = "application/zip", pagesCount = 187),
+                readProgress = ReadProgressDto(page = 187, completed = true),
+            ),
+        )
+        assertEquals(45, inProgress.lastReadPage)
+        assertEquals(false, inProgress.readCompleted)
+        assertEquals(187, finished.lastReadPage)
+        assertEquals(true, finished.readCompleted)
+    }
+
+    @Test
+    fun `Book ohne Read-Progress ist ungelesen`() {
+        val dto = BookDto(
+            id = "B3", seriesId = "S1", name = "v03",
+            media = BookMediaDto(mediaType = "application/zip", pagesCount = 10),
+        )
+        val book = mapper.toBook(dto)
+        assertNull(book.lastReadPage)
+        assertEquals(false, book.readCompleted)
+    }
+
+    @Test
     fun `PageRefs verweisen auf den Seiten-Endpunkt (1-basiert)`() {
         val pages = listOf(PageDto(number = 1), PageDto(number = 2))
         val refs = mapper.toPageRefs(bookRemoteId = "B1", pages = pages)
@@ -105,6 +138,21 @@ class KomgaMapperTest {
         assertEquals(0, refs[0].index) // 0-basierter interner Index
         assertEquals("https://nas.local/api/v1/books/B1/pages/1", refs[0].url)
         assertEquals("https://nas.local/api/v1/books/B1/pages/2", refs[1].url)
+    }
+
+    @Test
+    fun `PageRefs aus Seitenzahl bauen denselben Endpunkt ohne PageDtos`() {
+        val refs = mapper.toPageRefs(bookRemoteId = "B7", pageCount = 3)
+        assertEquals(3, refs.size)
+        assertEquals(0, refs[0].index)
+        assertEquals(1, refs[0].pageNumber)
+        assertEquals("https://nas.local/api/v1/books/B7/pages/1", refs[0].url)
+        assertEquals("https://nas.local/api/v1/books/B7/pages/3", refs[2].url)
+    }
+
+    @Test
+    fun `PageRefs aus Seitenzahl 0 ergeben leere Liste`() {
+        assertEquals(emptyList(), mapper.toPageRefs(bookRemoteId = "B0", pageCount = 0))
     }
 
     @Test

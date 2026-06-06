@@ -56,7 +56,8 @@ fun EinkBottomBar(
                 .clip(barShape)
                 .background(MaterialTheme.colorScheme.surface)
                 .border(EinkTokens.strongBorder, MaterialTheme.colorScheme.outline, barShape)
-                .padding(vertical = 12.dp),
+                // Padding reduziert, damit die Bar trotz größerer Icons/Labels gleich hoch bleibt.
+                .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             items.forEachIndexed { index, item ->
@@ -115,9 +116,10 @@ private fun NavCell(
         Spacer(Modifier.height(2.dp))
         Text(
             text = item.label,
-            fontSize = 11.sp,
+            fontSize = 15.sp,
             textAlign = TextAlign.Center,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            // Auch ungewählt mind. Medium — auf E-Ink sind dünne Schriften schwer lesbar.
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             color = tint,
         )
     }

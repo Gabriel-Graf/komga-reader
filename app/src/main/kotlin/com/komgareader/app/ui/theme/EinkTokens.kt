@@ -27,5 +27,5 @@ object EinkTokens {
     val tileGap = 8.dp
 
     /** Icon-Größe in der Bottom-Menubar. */
-    val navIcon = 28.dp
+    val navIcon = 34.dp
 }

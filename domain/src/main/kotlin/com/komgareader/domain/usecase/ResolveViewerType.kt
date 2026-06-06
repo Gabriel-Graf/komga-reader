@@ -14,9 +14,14 @@ import com.komgareader.domain.model.ViewerType
  * 1. Serien-Override (manuell)        → map(override)
  * 2. Buch-Format EPUB                 → EPUB
  * 3. Leserichtung VERTICAL/WEBTOON    → WEBTOON
- * 4. Archiv-Format (CBZ/CBR/PDF)      → PAGED
- * 5. Bibliotheks-Default (Fallback)   → map(fallback)
+ * 4. Bibliotheks-Default (Fallback)   → map(fallback)
+ * 5. Archiv-Format (CBZ/CBR/PDF)      → PAGED
  * 6. sonst                            → PAGED
+ *
+ * Der Bibliotheks-Default (Stufe 4) steht bewusst VOR dem Format-Default
+ * (Stufe 5): Webtoons liegen fast immer als CBZ vor, daher muss ein
+ * explizites WEBTOON-Bibliothek-Tag den Format-Default (PAGED) schlagen —
+ * sonst bliebe der Bibliotheks-Default für Comics wirkungslos.
  */
 class ResolveViewerType {
 
@@ -28,13 +33,13 @@ class ResolveViewerType {
         ) {
             return ViewerType.WEBTOON
         }
+        fallback?.let { return map(it) }
         if (book.format == BookFormat.CBZ ||
             book.format == BookFormat.CBR ||
             book.format == BookFormat.PDF
         ) {
             return ViewerType.PAGED
         }
-        fallback?.let { return map(it) }
         return ViewerType.PAGED
     }
 

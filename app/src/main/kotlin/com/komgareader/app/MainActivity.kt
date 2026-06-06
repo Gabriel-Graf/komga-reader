@@ -20,6 +20,7 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
+import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
 import com.komgareader.app.ui.reader.ReaderRoute
@@ -79,11 +80,16 @@ class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeModeStr by settingsViewModel.themeMode.collectAsState()
             val languageStr by settingsViewModel.language.collectAsState()
+            val displayModeStr by settingsViewModel.displayMode.collectAsState()
 
             val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
             val language = if (languageStr == "en") Language.EN else Language.DE
+            val isEink = displayModeStr != "SMARTPHONE" // Default E-Ink
 
-            CompositionLocalProvider(LocalStrings provides stringsFor(language)) {
+            CompositionLocalProvider(
+                LocalStrings provides stringsFor(language),
+                LocalEinkMode provides isEink,
+            ) {
                 KomgaReaderTheme(themeMode = themeMode) {
                     val nav = rememberNavController()
                     NavHost(navController = nav, startDestination = "home") {

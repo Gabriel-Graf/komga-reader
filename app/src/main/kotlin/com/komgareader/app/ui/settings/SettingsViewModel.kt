@@ -19,10 +19,13 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
+    val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val server = servers.config.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
+    fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
+
     fun saveServer(
         name: String,
         baseUrl: String,

@@ -145,7 +145,7 @@ object StringsDe : Strings {
     override val statusAbandoned = "Abgebrochen"
     override val statusHiatus = "Pausiert"
     // Bibliotheken-Tabs
-    override val tabBrowse = "Browsen"
+    override val tabBrowse = "Stöbern"
     override val tabGroups = "Bibliotheken"
     override val newGroup = "Neue Bibliothek"
     override val groupName = "Name"

@@ -1,8 +1,6 @@
 package com.komgareader.app.ui.home
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -68,7 +66,7 @@ fun HomeScreen(
 
     val items = remember(s) {
         listOf(
-            BottomNavItem(Icons.Outlined.LibraryBooks, s.libraryTitle),
+            BottomNavItem(Icons.Outlined.LibraryBooks, s.tabBrowse),
             BottomNavItem(Icons.Outlined.Dashboard, s.tabGroups),
             BottomNavItem(Icons.Outlined.Extension, s.navPlugins),
             BottomNavItem(Icons.Outlined.Settings, s.settingsTitle),
@@ -86,27 +84,27 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                // Volle Breite: Status links, Suche echt mittig (feste Breite), Aktion rechts.
                 title = {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        StatusCluster()
-                        Spacer(Modifier.width(12.dp))
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        StatusCluster(modifier = Modifier.align(Alignment.CenterStart))
                         EinkSearchBar(
                             query = query,
                             onQueryChange = { query = it },
                             onSubmit = { submitSearch() },
                             placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
                             actionLabel = s.searchAction,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.width(360.dp),
                         )
-                    }
-                },
-                actions = {
-                    when (selected) {
-                        TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
-                            Icon(Icons.Outlined.Sync, contentDescription = null)
-                        }
-                        TAB_GROUPS -> IconButton(onClick = { showCreateGroup = true }) {
-                            Icon(Icons.Outlined.Add, contentDescription = s.newGroup)
+                        Box(Modifier.align(Alignment.CenterEnd)) {
+                            when (selected) {
+                                TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
+                                    Icon(Icons.Outlined.Sync, contentDescription = null)
+                                }
+                                TAB_GROUPS -> IconButton(onClick = { showCreateGroup = true }) {
+                                    Icon(Icons.Outlined.Add, contentDescription = s.newGroup)
+                                }
+                            }
                         }
                     }
                 },

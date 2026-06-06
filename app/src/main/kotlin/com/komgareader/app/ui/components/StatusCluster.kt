@@ -5,8 +5,11 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -30,9 +33,10 @@ import kotlinx.coroutines.delay
 import java.util.Date
 
 /**
- * Ersetzt den (jetzt überflüssigen) TopBar-Titel der Top-Level-Tabs: links die
- * Uhrzeit, daneben der Akkustand mit Prozent. Vorher kam diese Info aus der
- * System-Statusleiste, die im Vollbild-Modus ausgeblendet ist.
+ * Ersetzt den (jetzt überflüssigen) TopBar-Titel der Top-Level-Tabs: kompakter
+ * vertikaler Block — **Uhrzeit oben, Akkustand unten**. Bewusst klein gehalten
+ * (≤ 40 dp), damit er nicht höher als die übrigen TopBar-Elemente (Suchzeile) ist.
+ * Vorher kam diese Info aus der System-Statusleiste, die im Vollbild ausgeblendet ist.
  */
 @Composable
 fun StatusCluster(modifier: Modifier = Modifier) {
@@ -49,18 +53,23 @@ fun StatusCluster(modifier: Modifier = Modifier) {
         }
     }
 
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        Text(time, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.width(12.dp))
-        Icon(
-            Icons.Outlined.BatteryStd,
-            contentDescription = null,
-            // BatteryStd ist senkrecht — 90° drehen für waagerechte Akku-Darstellung (Nub rechts).
-            modifier = Modifier.size(20.dp).rotate(90f),
-            tint = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.width(2.dp))
-        Text("$battery %", style = MaterialTheme.typography.titleMedium)
+    Column(
+        modifier = modifier.heightIn(max = 40.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.Start,
+    ) {
+        Text(time, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Outlined.BatteryStd,
+                contentDescription = null,
+                // BatteryStd ist senkrecht — 90° drehen für waagerechte Akku-Darstellung (Nub rechts).
+                modifier = Modifier.size(14.dp).rotate(90f),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.width(2.dp))
+            Text("$battery %", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        }
     }
 }
 

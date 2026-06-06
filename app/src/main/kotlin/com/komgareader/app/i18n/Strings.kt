@@ -75,6 +75,22 @@ interface Strings {
     val editLibrary: String
     val selectLibraries: String
     val fallbackType: String
+    // Navigation
+    val navPlugins: String
+    val pluginsComingSoon: String
+    // Settings-Landing (Kachel-Titel)
+    val settingsConnection: String
+    val settingsAppearance: String
+    val settingsReader: String
+    val settingsDownloads: String
+    val settingsAbout: String
+    val aboutDevice: String
+    val versionLabel: String
+    // Suche
+    val searchMediaHint: String
+    val searchSettingsHint: String
+    val searchAction: String
+    val searchNoResults: String
 }
 
 object StringsDe : Strings {
@@ -151,6 +167,22 @@ object StringsDe : Strings {
     override val editLibrary = "Bibliothek bearbeiten"
     override val selectLibraries = "Komga-Libraries"
     override val fallbackType = "Fallback-Typ (optional)"
+    // Navigation
+    override val navPlugins = "Plugins"
+    override val pluginsComingSoon = "Bald verfügbar — externe Quellen-Plugins laden."
+    // Settings-Landing
+    override val settingsConnection = "Verbindung"
+    override val settingsAppearance = "Darstellung"
+    override val settingsReader = "Reader"
+    override val settingsDownloads = "Downloads"
+    override val settingsAbout = "Über"
+    override val aboutDevice = "Optimiert für Onyx Boox Go Color 7 Gen2"
+    override val versionLabel = "Version"
+    // Suche
+    override val searchMediaHint = "Bibliothek durchsuchen"
+    override val searchSettingsHint = "Einstellungen durchsuchen"
+    override val searchAction = "Suchen"
+    override val searchNoResults = "Keine Treffer"
 }
 
 object StringsEn : Strings {
@@ -227,6 +259,22 @@ object StringsEn : Strings {
     override val editLibrary = "Edit library"
     override val selectLibraries = "Komga libraries"
     override val fallbackType = "Fallback type (optional)"
+    // Navigation
+    override val navPlugins = "Plugins"
+    override val pluginsComingSoon = "Coming soon — load external source plugins."
+    // Settings landing
+    override val settingsConnection = "Connection"
+    override val settingsAppearance = "Appearance"
+    override val settingsReader = "Reader"
+    override val settingsDownloads = "Downloads"
+    override val settingsAbout = "About"
+    override val aboutDevice = "Optimised for Onyx Boox Go Color 7 Gen2"
+    override val versionLabel = "Version"
+    // Search
+    override val searchMediaHint = "Search library"
+    override val searchSettingsHint = "Search settings"
+    override val searchAction = "Search"
+    override val searchNoResults = "No results"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

@@ -25,6 +25,7 @@ private val LightEink = lightColorScheme(
     surfaceVariant = Color(0xFFE8E8E8),
     onSurfaceVariant = Color(0xFF222222),
     outline = Color.Black,
+    outlineVariant = Color(0xFFCCCCCC),
 )
 
 private val DarkEink = darkColorScheme(
@@ -37,6 +38,7 @@ private val DarkEink = darkColorScheme(
     surfaceVariant = Color(0xFF1A1A1A),
     onSurfaceVariant = Color(0xFFDDDDDD),
     outline = Color.White,
+    outlineVariant = Color(0xFF444444),
 )
 
 private val EinkShapes = Shapes(

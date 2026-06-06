@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,10 +21,16 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
 import com.komgareader.app.ui.groups.GroupBrowseRoute
-import com.komgareader.app.ui.library.LibraryScreen
+import com.komgareader.app.ui.home.HomeScreen
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
-import com.komgareader.app.ui.settings.SettingsScreen
+import com.komgareader.app.ui.settings.AboutScreen
+import com.komgareader.app.ui.settings.AppearanceSettingsScreen
+import com.komgareader.app.ui.settings.ConnectionSettingsScreen
+import com.komgareader.app.ui.settings.DownloadsSettingsScreen
+import com.komgareader.app.ui.settings.LanguageSettingsScreen
+import com.komgareader.app.ui.settings.ReaderSettingsScreen
+import com.komgareader.app.ui.settings.SettingsPage
 import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
@@ -49,8 +58,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Blendet Status- UND Navigationsleiste dauerhaft aus → echtes Vollbild ohne weiße System-Streifen. */
+    private fun enterFullscreen() {
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) enterFullscreen()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        enterFullscreen()
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeModeStr by settingsViewModel.themeMode.collectAsState()
@@ -62,19 +86,31 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalStrings provides stringsFor(language)) {
                 KomgaReaderTheme(themeMode = themeMode) {
                     val nav = rememberNavController()
-                    NavHost(navController = nav, startDestination = "library") {
-                        composable("library") {
-                            LibraryScreen(
-                                onOpenSettings = { nav.navigate("settings") },
+                    NavHost(navController = nav, startDestination = "home") {
+                        composable("home") {
+                            HomeScreen(
                                 onOpenSeries = { seriesId -> nav.navigate("series/$seriesId") },
-                                onOpenGroup = { shelfId, _ ->
-                                    // Gruppe öffnen: navigiere zur gruppen-spezifischen Serien-Liste
-                                    nav.navigate("group/$shelfId")
-                                },
+                                onOpenGroup = { shelfId, _ -> nav.navigate("group/$shelfId") },
+                                onOpenSettingsPage = { page -> nav.navigate(settingsRoute(page)) },
                             )
                         }
-                        composable("settings") {
-                            SettingsScreen(onBack = { nav.popBackStack() })
+                        composable("settings/connection") {
+                            ConnectionSettingsScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("settings/appearance") {
+                            AppearanceSettingsScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("settings/reader") {
+                            ReaderSettingsScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("settings/downloads") {
+                            DownloadsSettingsScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("settings/language") {
+                            LanguageSettingsScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("settings/about") {
+                            AboutScreen(onBack = { nav.popBackStack() })
                         }
                         composable(
                             route = "series/{seriesId}",
@@ -142,4 +178,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+/** Mappt eine Settings-Unterseite auf ihre NavHost-Route. */
+private fun settingsRoute(page: SettingsPage): String = when (page) {
+    SettingsPage.CONNECTION -> "settings/connection"
+    SettingsPage.APPEARANCE -> "settings/appearance"
+    SettingsPage.READER -> "settings/reader"
+    SettingsPage.DOWNLOADS -> "settings/downloads"
+    SettingsPage.LANGUAGE -> "settings/language"
+    SettingsPage.ABOUT -> "settings/about"
 }

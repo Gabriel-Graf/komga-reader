@@ -49,7 +49,7 @@ fun ReaderRoute(
             when (mode) {
                 ViewerMode.PAGED -> PagedReaderScreen(
                     pages = c.pages,
-                    apiKey = c.apiKey,
+                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,
@@ -57,7 +57,7 @@ fun ReaderRoute(
                 )
                 ViewerMode.WEBTOON -> WebtoonReaderScreen(
                     pages = c.pages,
-                    apiKey = c.apiKey,
+                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     chromeVisible = uiState.chromeVisible,
                     onToggleChrome = viewModel::toggleChrome,

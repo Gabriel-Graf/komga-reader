@@ -38,7 +38,7 @@ import coil.request.ImageRequest
 @Composable
 fun PagedReaderScreen(
     pages: List<com.komgareader.domain.source.PageRef>,
-    apiKey: String?,
+    authHeaders: Map<String, String>,
     initialPage: Int,
     onBack: () -> Unit,
     onToggleMode: () -> Unit = {},
@@ -96,10 +96,10 @@ fun PagedReaderScreen(
                     .padding(if (uiState.chromeVisible) padding else PaddingValues(0.dp)),
             ) { pageIndex ->
                 val pageRef = pages[pageIndex]
-                val request = remember(pageRef.url, apiKey) {
+                val request = remember(pageRef.url, authHeaders) {
                     ImageRequest.Builder(ctx)
                         .data(pageRef.url)
-                        .apply { if (!apiKey.isNullOrBlank()) addHeader("X-API-Key", apiKey) }
+                        .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
                         .crossfade(false)
                         .build()
                 }

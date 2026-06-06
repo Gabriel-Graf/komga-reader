@@ -1,28 +1,30 @@
 package com.komgareader.app.ui.reader
 
+import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.ReadProgress
+import com.komgareader.domain.render.Document
 import com.komgareader.domain.repository.ServerRepository
-import com.komgareader.domain.source.PageRef
+import com.komgareader.render.mupdf.MupdfDocumentFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class ReaderUiState(
-    val pages: List<PageRef> = emptyList(),
-    val apiKey: String = "",
-    val initialPage: Int = 0,
-    val isLoading: Boolean = true,
-    val error: String? = null,
     val chromeVisible: Boolean = true,
 )
 
@@ -35,9 +37,15 @@ class ReaderViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
+    private val format: BookFormat = runCatching {
+        BookFormat.valueOf(savedStateHandle.get<String>("format") ?: "CBZ")
+    }.getOrDefault(BookFormat.CBZ)
 
-    private val _state = MutableStateFlow(ReaderUiState())
-    val state: StateFlow<ReaderUiState> = _state.asStateFlow()
+    private val _content = MutableStateFlow<ReaderContent>(ReaderContent.Loading)
+    val content: StateFlow<ReaderContent> = _content.asStateFlow()
+
+    private val _uiState = MutableStateFlow(ReaderUiState())
+    val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
 
     /** Von Buttons angeforderte Seite; Pager beobachtet dies und scrollt. */
     private val _requestedPage = MutableStateFlow(-1)
@@ -46,6 +54,11 @@ class ReaderViewModel @Inject constructor(
     private val _currentPage = MutableStateFlow(0)
 
     val viewerMode = MutableStateFlow(ViewerMode.PAGED)
+
+    // EPUB-Zustand
+    private var document: Document? = null
+    private val renderCache = mutableMapOf<Int, Bitmap>()
+    private val renderMutex = Mutex()
 
     fun toggleViewerMode() {
         viewerMode.value = if (viewerMode.value == ViewerMode.PAGED) ViewerMode.WEBTOON else ViewerMode.PAGED
@@ -60,38 +73,50 @@ class ReaderViewModel @Inject constructor(
         val config = servers.config.first()
         val source = sourceProvider.from(config)
         if (config == null || source == null) {
-            _state.value = _state.value.copy(isLoading = false, error = "Kein Server verbunden.")
+            _content.value = ReaderContent.Error("Kein Server verbunden.")
             return@launch
         }
         runCatching {
-            val pages = source.pages(bookId)
-            val startPage = runCatching { source.pullProgress(bookId) }
-                .getOrNull()
-                ?.let { progress -> (progress.page - 1).coerceIn(0, pages.size - 1) }
-                ?: 0
-            _state.value = _state.value.copy(
-                pages = pages,
-                apiKey = config.apiKey,
-                initialPage = startPage,
-                isLoading = false,
-            )
-            _currentPage.value = startPage
+            if (format == BookFormat.EPUB) {
+                val bytes = withContext(Dispatchers.IO) { source.downloadFile(bookId) }
+                val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ".epub") }
+                document = doc
+                val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
+                val startPage = runCatching { source.pullProgress(bookId) }
+                    .getOrNull()
+                    ?.let { progress -> (progress.page - 1).coerceIn(0, pageCount - 1) }
+                    ?: 0
+                _currentPage.value = startPage
+                _content.value = ReaderContent.Epub(pageCount = pageCount, initialPage = startPage)
+            } else {
+                val pages = source.pages(bookId)
+                val startPage = runCatching { source.pullProgress(bookId) }
+                    .getOrNull()
+                    ?.let { progress -> (progress.page - 1).coerceIn(0, pages.size - 1) }
+                    ?: 0
+                _currentPage.value = startPage
+                _content.value = ReaderContent.Streamed(
+                    pages = pages,
+                    apiKey = config.apiKey,
+                    initialPage = startPage,
+                )
+            }
         }.onFailure { e ->
-            _state.value = _state.value.copy(
-                isLoading = false,
-                error = e.message ?: "Seiten konnten nicht geladen werden",
-            )
+            _content.value = ReaderContent.Error(e.message ?: "Buch konnte nicht geladen werden")
         }
     }
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
-            val pages = _state.value.pages
-            if (pages.isEmpty()) return@collect
             val current = _currentPage.value
+            val pageCount = when (val c = _content.value) {
+                is ReaderContent.Streamed -> c.pages.size
+                is ReaderContent.Epub -> c.pageCount
+                else -> return@collect
+            }
             val next = when (event.button) {
                 HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN ->
-                    (current + 1).coerceAtMost(pages.size - 1)
+                    (current + 1).coerceAtMost(pageCount - 1)
                 HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP ->
                     (current - 1).coerceAtLeast(0)
             }
@@ -102,10 +127,22 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
+    suspend fun renderEpubPage(index: Int): Bitmap = withContext(Dispatchers.IO) {
+        renderMutex.withLock {
+            renderCache.getOrPut(index) {
+                val rp = document!!.renderPage(index, zoom = 2f, rotation = 0)
+                Bitmap.createBitmap(rp.pixels, rp.width, rp.height, Bitmap.Config.ARGB_8888)
+            }
+        }
+    }
+
     fun onPageSettled(index: Int) {
         _currentPage.value = index
-        val pages = _state.value.pages
-        if (pages.isEmpty()) return
+        val pageCount = when (val c = _content.value) {
+            is ReaderContent.Streamed -> c.pages.size
+            is ReaderContent.Epub -> c.pageCount
+            else -> return
+        }
         viewModelScope.launch {
             val config = servers.config.first()
             val source = sourceProvider.from(config) ?: return@launch
@@ -115,7 +152,7 @@ class ReaderViewModel @Inject constructor(
                     ReadProgress(
                         bookId = 0,
                         page = index + 1,
-                        totalPages = pages.size,
+                        totalPages = pageCount,
                         updatedAt = System.currentTimeMillis(),
                     ),
                 )
@@ -132,6 +169,12 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun toggleChrome() {
-        _state.value = _state.value.copy(chromeVisible = !_state.value.chromeVisible)
+        _uiState.value = _uiState.value.copy(chromeVisible = !_uiState.value.chromeVisible)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        document?.close()
+        renderCache.clear()
     }
 }

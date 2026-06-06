@@ -32,7 +32,7 @@ import com.komgareader.domain.model.Book
 @Composable
 fun SeriesDetailScreen(
     onBack: () -> Unit,
-    onOpenBook: (bookId: String, pageCount: Int) -> Unit,
+    onOpenBook: (bookId: String, pageCount: Int, format: String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -74,7 +74,10 @@ fun SeriesDetailScreen(
             is SeriesDetailUiState.Content -> {
                 LazyColumn(Modifier.fillMaxSize().padding(padding)) {
                     items(current.books) { book ->
-                        BookRow(book = book, onClick = { onOpenBook(book.remoteId, book.pageCount) })
+                        BookRow(
+                            book = book,
+                            onClick = { onOpenBook(book.remoteId, book.pageCount, book.format.name) },
+                        )
                         HorizontalDivider()
                     }
                 }
@@ -92,6 +95,6 @@ private fun BookRow(book: Book, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(book.title, style = MaterialTheme.typography.bodyLarge)
-        Text("${book.pageCount} Seiten", style = MaterialTheme.typography.bodySmall)
+        Text("${book.pageCount} Seiten · ${book.format.name}", style = MaterialTheme.typography.bodySmall)
     }
 }

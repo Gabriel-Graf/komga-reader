@@ -77,16 +77,17 @@ class MainActivity : ComponentActivity() {
                         ) {
                             SeriesDetailScreen(
                                 onBack = { nav.popBackStack() },
-                                onOpenBook = { bookId, pageCount ->
-                                    nav.navigate("reader/$bookId/$pageCount")
+                                onOpenBook = { bookId, pageCount, format ->
+                                    nav.navigate("reader/$bookId/$pageCount/$format")
                                 },
                             )
                         }
                         composable(
-                            route = "reader/{bookId}/{pageCount}",
+                            route = "reader/{bookId}/{pageCount}/{format}",
                             arguments = listOf(
                                 navArgument("bookId") { type = NavType.StringType },
                                 navArgument("pageCount") { type = NavType.IntType },
+                                navArgument("format") { type = NavType.StringType },
                             ),
                         ) {
                             ReaderRoute(onBack = { nav.popBackStack() })

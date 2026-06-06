@@ -2,6 +2,7 @@ package com.komgareader.app.ui.library
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ import com.komgareader.domain.model.Series
 @Composable
 fun LibraryScreen(
     onOpenSettings: () -> Unit,
+    onOpenSeries: (seriesId: String) -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
@@ -98,7 +100,11 @@ fun LibraryScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     items(current.series) { series ->
-                        SeriesCover(series = series, apiKey = current.apiKey)
+                        SeriesCover(
+                            series = series,
+                            apiKey = current.apiKey,
+                            onClick = { onOpenSeries(series.remoteId) },
+                        )
                     }
                 }
             }
@@ -107,7 +113,7 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun SeriesCover(series: Series, apiKey: String) {
+private fun SeriesCover(series: Series, apiKey: String, onClick: () -> Unit = {}) {
     val ctx = LocalContext.current
     val request = remember(series.coverUrl, apiKey) {
         ImageRequest.Builder(ctx).data(series.coverUrl)
@@ -116,7 +122,8 @@ private fun SeriesCover(series: Series, apiKey: String) {
     Box(
         Modifier
             .aspectRatio(2f / 3f)
-            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
+            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick),
     ) {
         AsyncImage(
             model = request,

@@ -29,7 +29,7 @@ interface Document : AutoCloseable {
     fun renderPage(index: Int, zoom: Float, rotation: Int): RenderedPage
 }
 
-/** Öffnet ein Dokument aus rohen Bytes. Implementierung in :render-core (Plan 2). */
+/** Öffnet ein Dokument aus rohen Bytes. [formatHint] = Dateiendung (z.B. ".cbz"). */
 interface DocumentFactory {
-    fun open(bytes: ByteArray): Document
+    fun open(bytes: ByteArray, formatHint: String): Document
 }

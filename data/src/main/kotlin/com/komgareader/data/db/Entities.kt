@@ -16,6 +16,15 @@ data class ServerEntity(
     val username: String? = null,
 )
 
+/** Nutzer-definiertes Regal (Gruppe). sourceIds als kommagetrennte Long-Werte. */
+@Entity(tableName = "shelves")
+data class ShelfEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val contentType: String,
+    val sourceIds: String,
+)
+
 /** Lokal gespeichertes Buch (Download-Eintrag). */
 @Entity(tableName = "downloads")
 data class DownloadEntity(

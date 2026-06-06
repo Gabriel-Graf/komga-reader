@@ -21,6 +21,8 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
 import com.komgareader.app.ui.components.LocalEinkMode
+import com.komgareader.app.ui.components.LocalImageFilter
+import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
 import com.komgareader.app.ui.reader.ReaderRoute
@@ -81,6 +83,7 @@ class MainActivity : ComponentActivity() {
             val themeModeStr by settingsViewModel.themeMode.collectAsState()
             val languageStr by settingsViewModel.language.collectAsState()
             val displayModeStr by settingsViewModel.displayMode.collectAsState()
+            val activeColorProfile by settingsViewModel.activeColorProfile.collectAsState()
 
             val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
             val language = if (languageStr == "en") Language.EN else Language.DE
@@ -89,6 +92,7 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalStrings provides stringsFor(language),
                 LocalEinkMode provides isEink,
+                LocalImageFilter provides activeColorProfile.toColorFilterOrNull(),
             ) {
                 KomgaReaderTheme(themeMode = themeMode) {
                     val nav = rememberNavController()

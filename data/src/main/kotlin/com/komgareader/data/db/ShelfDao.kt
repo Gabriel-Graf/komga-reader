@@ -12,7 +12,7 @@ interface ShelfDao {
     fun observeAll(): Flow<List<ShelfEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(entity: ShelfEntity)
+    suspend fun insert(entity: ShelfEntity): Long
 
     @Query("DELETE FROM shelves WHERE id = :id")
     suspend fun deleteById(id: Long)

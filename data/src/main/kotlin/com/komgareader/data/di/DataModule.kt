@@ -7,6 +7,7 @@ import com.komgareader.data.db.MIGRATION_1_2
 import com.komgareader.data.db.MIGRATION_2_3
 import com.komgareader.data.db.MIGRATION_3_4
 import com.komgareader.data.db.MIGRATION_4_5
+import com.komgareader.data.db.MIGRATION_5_6
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.repository.RoomSettingsRepository
@@ -31,7 +32,7 @@ object DataModule {
     @Provides @Singleton
     fun database(@ApplicationContext ctx: Context): AppDatabase =
         Room.databaseBuilder(ctx, AppDatabase::class.java, "komga-reader.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .fallbackToDestructiveMigration()
             .build()
 

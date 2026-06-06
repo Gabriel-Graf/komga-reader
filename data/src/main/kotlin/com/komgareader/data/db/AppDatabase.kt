@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -69,5 +69,31 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         db.execSQL("ALTER TABLE `server` ADD COLUMN `apiKeyIv` TEXT")
         db.execSQL("ALTER TABLE `server` ADD COLUMN `passwordCiphertext` TEXT")
         db.execSQL("ALTER TABLE `server` ADD COLUMN `passwordIv` TEXT")
+    }
+}
+
+/**
+ * v5 → v6: shelves-Tabelle restrukturiert. `contentType`+`sourceIds` (CSV)
+ * werden zu `sources` (kodiert `id=container,…|…`) und nullable `defaultContentType`.
+ * Bestehende Gruppen bleiben erhalten: alte sourceIds werden als „ganze Quelle"
+ * übernommen, der alte contentType wird zum Viewer-Default.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `shelves_new` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `sources` TEXT NOT NULL,
+                `defaultContentType` TEXT
+            )""",
+        )
+        db.execSQL(
+            """INSERT INTO `shelves_new` (`id`, `name`, `sources`, `defaultContentType`)
+               SELECT `id`, `name`, REPLACE(`sourceIds`, ',', '=|') || '=', `contentType`
+               FROM `shelves`""",
+        )
+        db.execSQL("DROP TABLE `shelves`")
+        db.execSQL("ALTER TABLE `shelves_new` RENAME TO `shelves`")
     }
 }

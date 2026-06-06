@@ -273,20 +273,32 @@ private fun SelectedBookBlock(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Button(onClick = onRead, modifier = Modifier.weight(1f)) {
-                Text(s.read)
+                Text(s.read, maxLines = 1)
             }
             OutlinedButton(onClick = onStream, modifier = Modifier.weight(1f)) {
-                Text(s.stream)
+                Text(s.stream, maxLines = 1)
             }
             when {
                 isDownloading -> Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 }
                 isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
-                    Text(s.downloaded, maxLines = 1)
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(s.downloadedShort, maxLines = 1)
                 }
                 else -> OutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
-                    Text(s.download)
+                    Icon(
+                        Icons.Filled.CloudDownload,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(s.downloadShort, maxLines = 1)
                 }
             }
         }

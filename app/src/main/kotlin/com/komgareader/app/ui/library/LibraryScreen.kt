@@ -30,13 +30,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,6 +56,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.groups.GroupsScreen
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.repository.ServerConfig
 
@@ -59,11 +65,13 @@ import com.komgareader.domain.repository.ServerConfig
 fun LibraryScreen(
     onOpenSettings: () -> Unit,
     onOpenSeries: (seriesId: String) -> Unit = {},
+    onOpenGroup: (shelfId: Long, serverSourceId: Long) -> Unit = { _, _ -> },
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -78,56 +86,96 @@ fun LibraryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(s.libraryTitle) },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = null)
-                    }
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = s.settingsTitle)
-                    }
-                },
-            )
+            Column {
+                TopAppBar(
+                    title = { Text(s.libraryTitle) },
+                    actions = {
+                        if (selectedTab == 0) {
+                            IconButton(onClick = { viewModel.refresh() }) {
+                                Icon(Icons.Filled.Refresh, contentDescription = null)
+                            }
+                        }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(Icons.Filled.Settings, contentDescription = s.settingsTitle)
+                        }
+                    },
+                )
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text(s.tabBrowse) },
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text(s.tabGroups) },
+                    )
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        when (val current = state) {
-            is LibraryUiState.NoServer -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text(s.libraryEmpty, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
-                }
+        when (selectedTab) {
+            0 -> BrowseTab(
+                state = state,
+                onOpenSeries = onOpenSeries,
+                onRefresh = viewModel::refresh,
+                onDownload = viewModel::downloadSeries,
+                modifier = Modifier.fillMaxSize().padding(padding),
+            )
+            else -> GroupsScreen(
+                onOpenGroup = onOpenGroup,
+                modifier = Modifier.fillMaxSize().padding(padding),
+            )
+        }
+    }
+}
+
+@Composable
+private fun BrowseTab(
+    state: LibraryUiState,
+    onOpenSeries: (seriesId: String) -> Unit,
+    onRefresh: () -> Unit,
+    onDownload: (Series) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val s = LocalStrings.current
+    when (val current = state) {
+        is LibraryUiState.NoServer -> {
+            Box(modifier, contentAlignment = Alignment.Center) {
+                Text(s.libraryEmpty, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
             }
-            is LibraryUiState.Loading -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+        }
+        is LibraryUiState.Loading -> {
+            Box(modifier, contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
-            is LibraryUiState.Error -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(current.message, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
-                        Button(onClick = { viewModel.refresh() }) {
-                            Text("Wiederholen")
-                        }
+        }
+        is LibraryUiState.Error -> {
+            Box(modifier, contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(current.message, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
+                    Button(onClick = onRefresh) {
+                        Text("Wiederholen")
                     }
                 }
             }
-            is LibraryUiState.Content -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    modifier = Modifier.fillMaxSize().padding(padding).padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    items(current.series) { series ->
-                        SeriesCover(
-                            series = series,
-                            serverConfig = current.serverConfig,
-                            onClick = { onOpenSeries(series.remoteId) },
-                            onLongClick = { viewModel.downloadSeries(series) },
-                        )
-                    }
+        }
+        is LibraryUiState.Content -> {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = modifier.padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                items(current.series) { series ->
+                    SeriesCover(
+                        series = series,
+                        serverConfig = current.serverConfig,
+                        onClick = { onOpenSeries(series.remoteId) },
+                        onLongClick = { onDownload(series) },
+                    )
                 }
             }
         }

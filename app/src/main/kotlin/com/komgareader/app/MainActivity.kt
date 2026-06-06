@@ -17,6 +17,7 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
+import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.library.LibraryScreen
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
@@ -66,6 +67,10 @@ class MainActivity : ComponentActivity() {
                             LibraryScreen(
                                 onOpenSettings = { nav.navigate("settings") },
                                 onOpenSeries = { seriesId -> nav.navigate("series/$seriesId") },
+                                onOpenGroup = { shelfId, _ ->
+                                    // Gruppe öffnen: navigiere zur gruppen-spezifischen Serien-Liste
+                                    nav.navigate("group/$shelfId")
+                                },
                             )
                         }
                         composable("settings") {
@@ -83,12 +88,52 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(
+                            route = "group/{shelfId}",
+                            arguments = listOf(navArgument("shelfId") { type = NavType.LongType }),
+                        ) { backEntry ->
+                            val shelfId = backEntry.arguments?.getLong("shelfId") ?: return@composable
+                            GroupBrowseRoute(
+                                shelfId = shelfId,
+                                onBack = { nav.popBackStack() },
+                                onOpenSeries = { seriesId, viewerMode ->
+                                    nav.navigate("series_vm/$seriesId/$viewerMode")
+                                },
+                            )
+                        }
+                        composable(
+                            route = "series_vm/{seriesId}/{viewerMode}",
+                            arguments = listOf(
+                                navArgument("seriesId") { type = NavType.StringType },
+                                navArgument("viewerMode") { type = NavType.StringType },
+                            ),
+                        ) {
+                            val viewerMode = it.arguments?.getString("viewerMode") ?: "PAGED"
+                            SeriesDetailScreen(
+                                onBack = { nav.popBackStack() },
+                                onOpenBook = { bookId, pageCount, format, forceStream ->
+                                    nav.navigate("reader/$bookId/$pageCount/$format/$forceStream/$viewerMode")
+                                },
+                            )
+                        }
+                        composable(
                             route = "reader/{bookId}/{pageCount}/{format}/{stream}",
                             arguments = listOf(
                                 navArgument("bookId") { type = NavType.StringType },
                                 navArgument("pageCount") { type = NavType.IntType },
                                 navArgument("format") { type = NavType.StringType },
                                 navArgument("stream") { type = NavType.BoolType; defaultValue = false },
+                            ),
+                        ) {
+                            ReaderRoute(onBack = { nav.popBackStack() })
+                        }
+                        composable(
+                            route = "reader/{bookId}/{pageCount}/{format}/{stream}/{viewerMode}",
+                            arguments = listOf(
+                                navArgument("bookId") { type = NavType.StringType },
+                                navArgument("pageCount") { type = NavType.IntType },
+                                navArgument("format") { type = NavType.StringType },
+                                navArgument("stream") { type = NavType.BoolType; defaultValue = false },
+                                navArgument("viewerMode") { type = NavType.StringType; defaultValue = "PAGED" },
                             ),
                         ) {
                             ReaderRoute(onBack = { nav.popBackStack() })

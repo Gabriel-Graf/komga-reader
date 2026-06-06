@@ -18,7 +18,9 @@ import com.komgareader.app.ui.library.LibraryScreen
 import com.komgareader.app.ui.settings.SettingsScreen
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

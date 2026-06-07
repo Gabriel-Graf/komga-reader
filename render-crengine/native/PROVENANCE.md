@@ -128,6 +128,22 @@ cd native
   den exakten Pin fest).
 - Keine NonCommercial-, Gated- oder ToS-only-Quellen.
 
+## Phase 1c — JNI-Bridge + Test-Assets
+
+Der JNI-Bridge-Code (`src/main/cpp/`) und die Test-Assets:
+
+| Quelle | URL | Lizenz | Verwendung |
+|--------|-----|--------|------------|
+| **LxReader** (`jnigraphicslib.cpp/.h`, `lvcolordrawbufex.cpp/.h`) | https://gitlab.com/coolreader-ng/lxreader | GPL-3.0-or-later | Bitmap-Lock + BGRX→RGBA-Konvertierung, 1:1 übernommen (basierend auf CoolReader, Vadim Lopatin). `cr3_bridge.cpp` ist eigener Code, adaptiert deren Muster. |
+| **DejaVu Sans** (`src/androidTest/assets/fonts/DejaVuSans.ttf`) | https://dejavu-fonts.github.io | Bitstream-Vera + Public-Domain-Erweiterungen (permissiv, kein Copyleft) | **Nur** Test-Asset (Font-Registrierung im Instrumented-Render-Test). Nicht ins App-Release gebündelt. |
+| **sample.epub** (`src/androidTest/assets/`) | — | eigene Test-Fixture (Kopie aus `render-core`) | Reflow-Render-Gate. |
+
+- **LxReader** ist `GPL-3.0-or-later` — die Gesamt-App ist bereits
+  **AGPL-3.0-or-later**, also verträglich. `cr3_bridge.cpp` trägt einen
+  AGPL-Header.
+- **DejaVu Sans** ist permissiv und attributionsfrei verwendbar; hier reines
+  Test-Asset, kein Risiko.
+
 ---
 
-Letzte Komplettrevision: 2026-06-07 (Phase 1b crengine-ng-Cross-Build, arm64-v8a).
+Letzte Komplettrevision: 2026-06-07 (Phase 1c JNI-Render arm64-v8a; +Phase 1b Cross-Build).

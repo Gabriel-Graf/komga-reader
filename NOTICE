@@ -8,3 +8,7 @@ Drittsoftware:
   https://mupdf.com  — Diese App nutzt MuPDF via JNI; deshalb ist die App AGPL.
 - Lucide (Icons) — ISC, Lucide Contributors.
   https://github.com/lucide-icons/lucide — als ImageVectors generiert via tools/icons, Stroke E-Ink-getunt.
+- crengine-ng (EPUB-Reflow-Engine, render-crengine) — GPL-2.0-or-later, coolreader-ng.
+  https://gitlab.com/coolreader-ng/crengine-ng — via JNI; arm64-v8a cross-kompiliert (siehe render-crengine/native/PROVENANCE.md).
+- LxReader (JNI-Bitmap-Bridge in render-crengine/src/main/cpp) — GPL-3.0-or-later, Aleksey Chernov, basierend auf CoolReader (Vadim Lopatin).
+  https://gitlab.com/coolreader-ng/lxreader

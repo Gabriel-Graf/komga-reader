@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.DitherMode
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.source.SourceFilter
@@ -27,6 +28,13 @@ data class EditState(
     val saturation: Float,
     val contrast: Float,
     val brightness: Float,
+    val blackPoint: Float,
+    val whitePoint: Float,
+    val gamma: Float,
+    val sharpenAmount: Float,
+    val sharpenRadius: Int,
+    val ditherMode: DitherMode,
+    val ditherLevels: Int,
     val builtIn: Boolean,
 )
 
@@ -94,8 +102,10 @@ class ColorFilterViewModel @Inject constructor(
     fun beginEdit(profile: ColorProfile) {
         _edit.value = EditState(
             baseProfileId = profile.id, name = profile.name,
-            saturation = profile.saturation, contrast = profile.contrast,
-            brightness = profile.brightness, builtIn = profile.builtIn,
+            saturation = profile.saturation, contrast = profile.contrast, brightness = profile.brightness,
+            blackPoint = profile.blackPoint, whitePoint = profile.whitePoint, gamma = profile.gamma,
+            sharpenAmount = profile.sharpenAmount, sharpenRadius = profile.sharpenRadius,
+            ditherMode = profile.ditherMode, ditherLevels = profile.ditherLevels, builtIn = profile.builtIn,
         )
     }
 
@@ -108,8 +118,10 @@ class ColorFilterViewModel @Inject constructor(
         val base = active.value
         _edit.value = EditState(
             baseProfileId = 0L, name = "",
-            saturation = base.saturation, contrast = base.contrast,
-            brightness = base.brightness, builtIn = false,
+            saturation = base.saturation, contrast = base.contrast, brightness = base.brightness,
+            blackPoint = base.blackPoint, whitePoint = base.whitePoint, gamma = base.gamma,
+            sharpenAmount = base.sharpenAmount, sharpenRadius = base.sharpenRadius,
+            ditherMode = base.ditherMode, ditherLevels = base.ditherLevels, builtIn = false,
         )
     }
 
@@ -118,13 +130,18 @@ class ColorFilterViewModel @Inject constructor(
     fun updateSaturation(delta: Float) = mutate { it.copy(saturation = clamp(it.saturation + delta, 0.5f, 2f)) }
     fun updateContrast(delta: Float) = mutate { it.copy(contrast = clamp(it.contrast + delta, 0.5f, 2f)) }
     fun updateBrightness(delta: Float) = mutate { it.copy(brightness = clamp(it.brightness + delta, -0.5f, 0.5f)) }
+    fun updateBlackPoint(delta: Float) = mutate { it.copy(blackPoint = clamp(it.blackPoint + delta, 0f, 0.4f)) }
+    fun updateWhitePoint(delta: Float) = mutate { it.copy(whitePoint = clamp(it.whitePoint + delta, 0.6f, 1f)) }
+    fun updateGamma(delta: Float) = mutate { it.copy(gamma = clamp(it.gamma + delta, 0.4f, 2.5f)) }
+    fun updateSharpen(delta: Float) = mutate { it.copy(sharpenAmount = clamp(it.sharpenAmount + delta, 0f, 2f)) }
+    fun updateSharpenRadius(delta: Int) = mutate { it.copy(sharpenRadius = (it.sharpenRadius + delta).coerceIn(1, 3)) }
+    fun setDitherMode(mode: DitherMode) = mutate { it.copy(ditherMode = mode) }
+    fun updateDitherLevels(delta: Int) = mutate { it.copy(ditherLevels = (it.ditherLevels + delta).coerceIn(2, 64)) }
 
     /** Aktuelle Editor-Werte als neues Custom-Profil speichern und aktiv setzen. */
     fun saveAsNew(name: String) = viewModelScope.launch {
         val e = _edit.value ?: return@launch
-        val id = colorProfiles.upsert(
-            ColorProfile(0, name.ifBlank { "Profil" }, e.saturation, e.contrast, e.brightness, builtIn = false),
-        )
+        val id = colorProfiles.upsert(e.toProfile(id = 0L, name = name.ifBlank { "Profil" }))
         colorProfiles.setActive(id)
         _edit.value = null
     }
@@ -133,9 +150,16 @@ class ColorFilterViewModel @Inject constructor(
     fun updateExisting() = viewModelScope.launch {
         val e = _edit.value ?: return@launch
         if (e.builtIn) return@launch
-        colorProfiles.upsert(ColorProfile(e.baseProfileId, e.name, e.saturation, e.contrast, e.brightness, builtIn = false))
+        colorProfiles.upsert(e.toProfile(id = e.baseProfileId, name = e.name))
         _edit.value = null
     }
+
+    private fun EditState.toProfile(id: Long, name: String) = ColorProfile(
+        id = id, name = name, saturation = saturation, contrast = contrast, brightness = brightness,
+        blackPoint = blackPoint, whitePoint = whitePoint, gamma = gamma,
+        sharpenAmount = sharpenAmount, sharpenRadius = sharpenRadius,
+        ditherMode = ditherMode, ditherLevels = ditherLevels, builtIn = false,
+    )
 
     fun delete(id: Long) = viewModelScope.launch {
         colorProfiles.delete(id)

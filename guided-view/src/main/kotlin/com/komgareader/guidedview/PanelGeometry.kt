@@ -37,4 +37,26 @@ object PanelGeometry {
         val largest = maxOf(panel.width, panel.height).coerceAtLeast(0.0001f)
         return (1f - 2f * marginFraction) / largest
     }
+
+    /** Größter normalisierter Flächenanteil (w*h) unter den Panels; 0 wenn leer. */
+    fun maxAreaFraction(panels: List<NormRect>): Float =
+        panels.maxOfOrNull { it.width * it.height } ?: 0f
+
+    /**
+     * Skalierungsfaktor, mit dem [panel] (bild-normalisiert) im Viewport bildschirmfüllend wird,
+     * unter Berücksichtigung des bei ContentScale.Fit dargestellten Content-Rechtecks
+     * ([contentW]x[contentH]) innerhalb des Viewports ([viewportW]x[viewportH]). Pivot = Panel-Mitte.
+     */
+    fun fitScale(
+        panel: NormRect,
+        contentW: Float, contentH: Float,
+        viewportW: Float, viewportH: Float,
+        marginFraction: Float,
+    ): Float {
+        val panelW = (panel.width * contentW).coerceAtLeast(1f)
+        val panelH = (panel.height * contentH).coerceAtLeast(1f)
+        val sx = viewportW / panelW
+        val sy = viewportH / panelH
+        return (1f - 2f * marginFraction) * minOf(sx, sy)
+    }
 }

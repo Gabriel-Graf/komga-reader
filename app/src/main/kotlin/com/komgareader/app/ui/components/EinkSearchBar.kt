@@ -4,15 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +43,9 @@ fun EinkSearchBar(
     placeholder: String,
     actionLabel: String,
     modifier: Modifier = Modifier,
+    clearLabel: String? = null,
+    onClear: (() -> Unit)? = null,
+    leading: @Composable (RowScope.() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(20.dp)
     BasicTextField(
@@ -57,9 +64,13 @@ fun EinkSearchBar(
                     .height(40.dp)
                     .background(MaterialTheme.colorScheme.surface, shape)
                     .border(1.5.dp, MaterialTheme.colorScheme.outline, shape)
-                    .padding(start = 14.dp, end = 2.dp),
+                    .padding(start = if (leading != null) 10.dp else 14.dp, end = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                if (leading != null) {
+                    leading()
+                    Spacer(Modifier.width(6.dp))
+                }
                 Box(Modifier.weight(1f)) {
                     if (query.isEmpty()) {
                         Text(
@@ -69,6 +80,16 @@ fun EinkSearchBar(
                         )
                     }
                     inner()
+                }
+                if (onClear != null && query.isNotEmpty()) {
+                    IconButton(onClick = onClear, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Outlined.Close,
+                            contentDescription = clearLabel,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 IconButton(onClick = onSubmit, modifier = Modifier.size(36.dp)) {
                     Icon(

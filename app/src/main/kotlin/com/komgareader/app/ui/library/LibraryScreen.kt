@@ -48,12 +48,14 @@ import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.repository.ServerConfig
 
 @Composable
 fun LibraryScreen(
     query: String = "",
+    typeFilter: Set<ContentType> = emptySet(),
     onOpenSeries: (seriesId: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
@@ -80,6 +82,7 @@ fun LibraryScreen(
         BrowseTab(
             state = state,
             query = query,
+            typeFilter = typeFilter,
             localSeriesIds = localSeriesIds,
             onOpenSeries = onOpenSeries,
             onRefresh = viewModel::refresh,
@@ -93,6 +96,7 @@ fun LibraryScreen(
 private fun BrowseTab(
     state: LibraryUiState,
     query: String,
+    typeFilter: Set<ContentType>,
     localSeriesIds: Set<String>,
     onOpenSeries: (seriesId: String) -> Unit,
     onRefresh: () -> Unit,
@@ -122,11 +126,18 @@ private fun BrowseTab(
             }
         }
         is LibraryUiState.Content -> {
-            val shown = remember(current.series, query) {
-                if (query.isBlank()) current.series
-                else current.series.filter { it.title.contains(query, ignoreCase = true) }
+            val shown = remember(current.series, query, typeFilter) {
+                filterSeries(current.series, query, typeFilter)
             }
-            if (shown.isEmpty() && query.isNotBlank()) {
+            if (shown.isEmpty() && typeFilter.isNotEmpty()) {
+                Box(modifier, contentAlignment = Alignment.Center) {
+                    Text(
+                        s.filterTypePlaceholder,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(32.dp),
+                    )
+                }
+            } else if (shown.isEmpty() && query.isNotBlank()) {
                 Box(modifier, contentAlignment = Alignment.Center) {
                     Text(s.searchNoResults, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
                 }

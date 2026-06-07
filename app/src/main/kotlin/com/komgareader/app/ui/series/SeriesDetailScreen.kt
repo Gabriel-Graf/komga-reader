@@ -23,22 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.CloudDownload
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.automirrored.outlined.ViewList
+import com.komgareader.app.ui.icons.AppIcons
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -133,7 +118,7 @@ fun SeriesDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(AppIcons.Back, contentDescription = "Zurück")
                     }
                 },
             )
@@ -481,7 +466,7 @@ private fun SeriesHeroCard(
                         )
                     },
             ) {
-                Icon(Icons.Filled.MoreVert, contentDescription = s.assignType)
+                Icon(AppIcons.Overflow, contentDescription = s.assignType)
             }
         }
 
@@ -536,19 +521,19 @@ private fun SeriesHeroCard(
                             modifier = Modifier.width(48.dp),
                         ) {
                             Icon(
-                                Icons.Filled.Stop,
+                                AppIcons.Stop,
                                 contentDescription = s.cancel,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
                     }
                     allLocal -> EinkOutlinedButton(onClick = onRemoveAll, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(AppIcons.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(s.removeDownload, maxLines = 1)
                     }
                     else -> EinkOutlinedButton(onClick = onDownloadAll, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(s.downloadAll, maxLines = 1)
                     }
@@ -622,7 +607,7 @@ private fun TypeMenu(
                 )
                 if (type == current) {
                     Icon(
-                        Icons.Filled.Check,
+                        AppIcons.Check,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp),
@@ -676,7 +661,7 @@ private fun ChaptersSectionHeader(
         // Toggle Liste ⇄ Kachel: zeigt das Ziel-Layout-Icon. Sofortiger Wechsel (E-Ink).
         IconButton(onClick = onToggleViewMode) {
             Icon(
-                if (gridMode) Icons.AutoMirrored.Outlined.ViewList else Icons.Outlined.GridView,
+                if (gridMode) AppIcons.ListView else AppIcons.GridView,
                 contentDescription =
                     if (gridMode) s.chapterViewSwitchToList else s.chapterViewSwitchToGrid,
                 tint = MaterialTheme.colorScheme.onSurface,
@@ -753,7 +738,7 @@ private fun ChapterInfoHero(
             }
             // Zurück zur Serien-Hero-Karte.
             IconButton(onClick = onBack, modifier = Modifier.align(Alignment.TopEnd)) {
-                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = s.backToSeries)
+                Icon(AppIcons.Back, contentDescription = s.backToSeries)
             }
         }
         // Lese-/Download-Aktionen — beziehen sich auf dieses Kapitel.
@@ -776,12 +761,12 @@ private fun ChapterInfoHero(
                     Text("$downloadPercent%", maxLines = 1, color = MaterialTheme.colorScheme.onSurface)
                 }
                 isLocal -> EinkOutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(AppIcons.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(s.removeDownload, maxLines = 1)
                 }
                 else -> EinkOutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(s.download, maxLines = 1)
                 }
@@ -927,7 +912,7 @@ private fun ChapterRow(
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onShowInfo, modifier = Modifier.size(36.dp)) {
                 Icon(
-                    Icons.Outlined.Info,
+                    AppIcons.Info,
                     contentDescription = s.chapterInfo,
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
@@ -935,7 +920,7 @@ private fun ChapterRow(
             }
             if (showBookmark) {
                 Icon(
-                    Icons.Filled.Bookmark,
+                    AppIcons.Bookmark,
                     contentDescription = s.resumeHere,
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
@@ -944,7 +929,7 @@ private fun ChapterRow(
             }
             if (book.readCompleted) {
                 Icon(
-                    Icons.Filled.Check,
+                    AppIcons.Check,
                     contentDescription = s.statusRead,
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
@@ -955,7 +940,7 @@ private fun ChapterRow(
                 isDownloading -> LoadingIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 isLocal -> IconButton(onClick = onRemoveDownload, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        Icons.Filled.Delete,
+                        AppIcons.Delete,
                         contentDescription = s.removeDownload,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp),
@@ -963,7 +948,7 @@ private fun ChapterRow(
                 }
                 else -> IconButton(onClick = onDownload, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        Icons.Filled.CloudDownload,
+                        AppIcons.Download,
                         contentDescription = s.download,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp),
@@ -1062,7 +1047,7 @@ private fun ChapterTile(
             Box(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
                 CoverBadge(onClick = onShowInfo) {
                     Icon(
-                        Icons.Outlined.Info,
+                        AppIcons.Info,
                         contentDescription = s.chapterInfo,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp),
@@ -1076,7 +1061,7 @@ private fun ChapterTile(
             ) {
                 if (showBookmark) CoverBadge {
                     Icon(
-                        Icons.Outlined.Bookmark,
+                        AppIcons.Bookmark,
                         contentDescription = s.resumeHere,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp),
@@ -1084,7 +1069,7 @@ private fun ChapterTile(
                 }
                 if (book.readCompleted) CoverBadge {
                     Icon(
-                        Icons.Outlined.Check,
+                        AppIcons.Check,
                         contentDescription = s.statusRead,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp),
@@ -1103,7 +1088,7 @@ private fun ChapterTile(
                     }
                     isLocal -> CoverBadge(onClick = onRemoveDownload) {
                         Icon(
-                            Icons.Outlined.Delete,
+                            AppIcons.Delete,
                             contentDescription = s.removeDownload,
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp),
@@ -1111,7 +1096,7 @@ private fun ChapterTile(
                     }
                     else -> CoverBadge(onClick = onDownload) {
                         Icon(
-                            Icons.Outlined.CloudDownload,
+                            AppIcons.Download,
                             contentDescription = s.download,
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp),

@@ -19,16 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +54,7 @@ import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
@@ -127,7 +118,7 @@ fun ColorFilterSettingsContent(
             ) {
                 Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
                     if (canGoBack) {
-                        CompactIcon(Icons.AutoMirrored.Outlined.ArrowBack, s.colorFilterPrevImage) {
+                        CompactIcon(AppIcons.Back, s.colorFilterPrevImage) {
                             viewModel.previousPreview()
                         }
                     }
@@ -144,7 +135,7 @@ fun ColorFilterSettingsContent(
                         .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
                 )
                 Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
-                    CompactIcon(Icons.AutoMirrored.Outlined.ArrowForward, s.colorFilterNextImage) {
+                    CompactIcon(AppIcons.Forward, s.colorFilterNextImage) {
                         viewModel.nextPreview()
                     }
                 }
@@ -175,9 +166,9 @@ fun ColorFilterSettingsContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        CompactIcon(Icons.Outlined.Info, active.name) { infoProfile = active }
+                        CompactIcon(AppIcons.Info, active.name) { infoProfile = active }
                         Icon(
-                            if (profilesExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            if (profilesExpanded) AppIcons.ChevronUp else AppIcons.ChevronDown,
                             contentDescription = null,
                         )
                     }
@@ -231,7 +222,7 @@ fun ColorFilterSettingsContent(
                         .clickable { viewModel.beginNewProfile() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Outlined.Add, contentDescription = s.colorFilterNewProfile, modifier = Modifier.size(24.dp))
+                    Icon(AppIcons.Plus, contentDescription = s.colorFilterNewProfile, modifier = Modifier.size(24.dp))
                 }
             }
         }
@@ -402,14 +393,14 @@ private fun ProfileRow(
     ) {
         Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-            if (selected) Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+            if (selected) Icon(AppIcons.Check, contentDescription = null, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(4.dp))
         if (editable) {
-            CompactIcon(Icons.Outlined.Settings, name, onEdit)
+            CompactIcon(AppIcons.Edit, name, onEdit)
             Spacer(Modifier.width(4.dp))
         }
-        CompactIcon(Icons.Outlined.Info, name, onInfo)
+        CompactIcon(AppIcons.Info, name, onInfo)
     }
 }
 
@@ -426,14 +417,14 @@ private fun CompactStepperRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        CompactIcon(Icons.Outlined.Remove, "−", onDecrement)
+        CompactIcon(AppIcons.Minus, "−", onDecrement)
         Text(
             valueText,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.width(52.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
-        CompactIcon(Icons.Outlined.Add, "+", onIncrement)
+        CompactIcon(AppIcons.Plus, "+", onIncrement)
     }
 }
 
@@ -477,7 +468,7 @@ private fun DitherSelectorRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge)
-        CompactIcon(Icons.Outlined.Info, label, onInfo)
+        CompactIcon(AppIcons.Info, label, onInfo)
         Spacer(Modifier.weight(1f))
         val modes = listOf(
             DitherMode.NONE to labels.first,

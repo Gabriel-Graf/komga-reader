@@ -8,9 +8,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -33,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.guidedview.PanelGeometry
 
@@ -186,13 +184,13 @@ fun ComicReaderScreen(
             actions = {
                 IconButton(onClick = { comicVm.toggleGuided() }) {
                     Icon(
-                        Icons.Filled.GridView,
+                        AppIcons.PanelMode,
                         contentDescription = if (state.guidedEnabled) s.readerPanelModeOff else s.readerPanelModeOn,
                         tint = if (state.guidedEnabled) Color.White else Color.Gray,
                     )
                 }
                 IconButton(onClick = onToggleMode) {
-                    Icon(Icons.Filled.ViewDay, contentDescription = "Zu Webtoon-Modus wechseln", tint = Color.White)
+                    Icon(AppIcons.ReaderMode, contentDescription = "Zu Webtoon-Modus wechseln", tint = Color.White)
                 }
             },
         )

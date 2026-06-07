@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
+import com.komgareader.app.ui.icons.AppIcons
 import coil.request.ImageRequest
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.source.PageRef
@@ -162,7 +161,7 @@ fun WebtoonReaderScreen(
             onBack = onBack,
             actions = {
                 IconButton(onClick = onToggleMode) {
-                    Icon(Icons.Filled.ViewDay, contentDescription = "Zu Paged-Modus wechseln", tint = Color.White)
+                    Icon(AppIcons.ReaderMode, contentDescription = "Zu Paged-Modus wechseln", tint = Color.White)
                 }
             },
         )

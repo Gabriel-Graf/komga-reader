@@ -24,9 +24,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -58,6 +55,7 @@ import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkModal
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.repository.ServerConfig
@@ -232,8 +230,8 @@ private fun CornerActions(
             .border(1.5.dp, MaterialTheme.colorScheme.outline, shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CornerAction(Icons.Filled.Settings, s.editLibrary, onEdit)
-        CornerAction(Icons.Filled.Delete, s.deleteGroup, onDelete)
+        CornerAction(AppIcons.Edit, s.editLibrary, onEdit)
+        CornerAction(AppIcons.Delete, s.deleteGroup, onDelete)
     }
 }
 

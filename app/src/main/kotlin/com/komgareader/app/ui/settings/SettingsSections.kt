@@ -1,17 +1,10 @@
 package com.komgareader.app.ui.settings
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ChromeReaderMode
-import androidx.compose.material.icons.outlined.Cloud
-import androidx.compose.material.icons.outlined.Contrast
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.komgareader.app.BuildConfig
 import com.komgareader.app.i18n.Strings
+import com.komgareader.app.ui.icons.AppIcons
 
 /** Die einzelnen Settings-Sektionen. Reihenfolge = Sidebar-/Accordion-Reihenfolge. */
 enum class SettingsSectionId { CONNECTION, APPEARANCE, COLOR_FILTER, READER, DOWNLOADS, LANGUAGE, ABOUT }
@@ -40,7 +33,7 @@ data class SettingsSection(
 fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<SettingsSection> = listOf(
     SettingsSection(
         id = SettingsSectionId.CONNECTION,
-        icon = Icons.Outlined.Cloud,
+        icon = AppIcons.Connection,
         title = s.settingsConnection,
         searchTerms = listOf(
             s.settingsConnection, s.settingsServer, s.serverDisplayName, s.serverUrl, s.serverUrlHelper,
@@ -50,14 +43,14 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
     ),
     SettingsSection(
         id = SettingsSectionId.APPEARANCE,
-        icon = Icons.Outlined.Contrast,
+        icon = AppIcons.Contrast,
         title = s.settingsAppearance,
         searchTerms = listOf(s.settingsAppearance, s.settingsTheme, s.themeLight, s.themeDark, s.themeSystem),
         content = { q -> AppearanceSettingsContent(viewModel, q) },
     ),
     SettingsSection(
         id = SettingsSectionId.COLOR_FILTER,
-        icon = Icons.Outlined.Palette,
+        icon = AppIcons.Palette,
         title = s.settingsColorFilter,
         searchTerms = listOf(
             s.settingsColorFilter, s.colorFilterSummary, s.colorFilterProfiles,
@@ -69,7 +62,7 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
     ),
     SettingsSection(
         id = SettingsSectionId.READER,
-        icon = Icons.Outlined.ChromeReaderMode,
+        icon = AppIcons.Reader,
         title = s.settingsReader,
         searchTerms = listOf(
             s.settingsReader, s.settingsWebtoon, s.webtoonOverlap, s.webtoonOverlapHelper,
@@ -79,21 +72,21 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
     ),
     SettingsSection(
         id = SettingsSectionId.DOWNLOADS,
-        icon = Icons.Outlined.Download,
+        icon = AppIcons.Download,
         title = s.settingsDownloads,
         searchTerms = listOf(s.settingsDownloads, s.downloadFolder, s.chooseFolder, s.resetFolder, s.defaultFolder),
         content = { q -> DownloadsSettingsContent(viewModel, q) },
     ),
     SettingsSection(
         id = SettingsSectionId.LANGUAGE,
-        icon = Icons.Outlined.Language,
+        icon = AppIcons.Language,
         title = s.settingsLanguage,
         searchTerms = listOf(s.settingsLanguage, "Deutsch", "English"),
         content = { q -> LanguageSettingsContent(viewModel, q) },
     ),
     SettingsSection(
         id = SettingsSectionId.ABOUT,
-        icon = Icons.Outlined.Info,
+        icon = AppIcons.Info,
         title = s.settingsAbout,
         searchTerms = listOf(s.settingsAbout, s.appName, s.aboutDevice, s.versionLabel, BuildConfig.VERSION_NAME),
         content = { q -> AboutContent(q) },

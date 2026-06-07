@@ -185,6 +185,10 @@ Referenz: `TruncatedDescription` / `DescriptionModal` in `SeriesDetailScreen.kt`
   über die `EinkTypography` (`Theme.kt`, an `MaterialTheme(typography=…)` übergeben): Body → Medium
   (500), Labels + kleine Titel → SemiBold (600); große Überschriften bleiben (Größe trägt den
   Kontrast). Neue kleine/sekundäre Texte erben das automatisch — eine Quelle der Wahrheit.
+- **Disabled-Text zu blass.** Material dämpft die Content-Farbe in **disabled** Buttons/Controls auf
+  Grau — auf E-Ink kaum lesbar. Muss der Text trotzdem lesbar bleiben (z. B. der Fortschritt
+  `x/y · Speed` bzw. `nn%` in einem nicht-klickbaren Fortschritts-Button), die Textfarbe **explizit**
+  `MaterialTheme.colorScheme.onSurface` setzen (überschreibt die disabled-`LocalContentColor`).
 - Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
 - **Asymmetrie bei Geschwister-Elementen.** Elemente in **derselben Zeile** oder mit **gleicher Rolle**
   müssen sich Maße teilen: ein Button neben einem Eingabefeld/Dropdown ist **gleich hoch** (gemeinsame

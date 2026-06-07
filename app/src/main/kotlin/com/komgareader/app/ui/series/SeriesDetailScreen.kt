@@ -528,7 +528,12 @@ private fun SeriesHeroCard(
                             } else {
                                 ""
                             }
-                            Text("${p.current}/${p.total}$speed", maxLines = 1)
+                            // Voller Kontrast trotz disabled-Button (E-Ink: graues disabled = zu blass).
+                            Text(
+                                "${p.current}/${p.total}$speed",
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                         // Abbrechen-Rechteck rechts: stoppt den Serien-Download (kein weiteres Kapitel).
                         EinkOutlinedButton(
@@ -773,7 +778,8 @@ private fun ChapterInfoHero(
                     modifier = Modifier.weight(1f),
                 ) {
                     // Fortschritt in % (≤1 fps) statt nur „Lädt"; Button behält Maße (weight 1f).
-                    Text("$downloadPercent%", maxLines = 1)
+                    // Voller Kontrast trotz disabled-Button (E-Ink: graues disabled = zu blass).
+                    Text("$downloadPercent%", maxLines = 1, color = MaterialTheme.colorScheme.onSurface)
                 }
                 isLocal -> EinkOutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))

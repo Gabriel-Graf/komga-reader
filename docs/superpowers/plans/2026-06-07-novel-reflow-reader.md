@@ -575,6 +575,18 @@ class ReflowCssTest {
 
 ---
 
+## STATUS: ✅ KOMPLETT (2026-06-08)
+
+Alle Phasen gebaut, finaler Code-Review + Fixes, **E2E auf echter Boox bestanden**
+(echtes EPUB → reflowte Prosa, Schriftgröße→Reflow persistiert, TOC/Suche/Resume).
+Emulator bestätigt App-Flow + die erwartete arm64-Engine-Grenze. Branch
+`feat/novel-reflow-reader`, noch nicht gemergt.
+
+**Offene Follow-ups (nicht blockierend):** (1) `:render-crengine`-Instrumented-Batch
+flaket auf prozessweitem Engine-Singleton (einzeln grün) → CI-Härtung; (2)
+`EpubReaderScreen` → `OfflineRenderedReaderScreen` umbenennen (ist Offline-Reader für
+alle Formate, nicht EPUB-only); (3) x86_64-Prefix falls Emulator-Engine-Runs gewünscht.
+
 ## Abschluss-Checks
 
 - [ ] `./gradlew test` (alle Module) grün.

@@ -1,0 +1,32 @@
+
+# Example configuration file for the deploy.sh script.
+# Copy this file to "make.conf" and modify if necessary.
+
+# custom CFLAGS to add
+CFLAGS="-fPIC -DPIC"
+
+# custom CXXFLAGS to add
+CXXFLAGS="$CFLAGS"
+
+# make options
+MAKEOPTS=-j10
+
+#CMAKE_IGNORE_PREFIX_PATH=<some_path>
+
+# options for Android builds (linux host)
+ANDROID_HOME=/opt/android-sdk-update-manager
+ANDROID_NDK_HOST_TAG=linux-x86_64
+
+# options for Android builds (Windows host)
+#ANDROID_HOME=/d/android-sdk
+#ANDROID_NDK_HOST_TAG=windows-x86_64
+
+# options for Android builds (MacOS host)
+#ANDROID_HOME=/Users/<user>/Library/Android/sdk
+#ANDROID_NDK_HOST_TAG=darwin-x86_64
+
+ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/27.2.12479018
+ANDROID_CMAKE=${ANDROID_HOME}/cmake/3.31.6
+
+# Enable support 16 KB page sizes (Android only)
+ANDROID_PAGE_SIZE_16K=ON

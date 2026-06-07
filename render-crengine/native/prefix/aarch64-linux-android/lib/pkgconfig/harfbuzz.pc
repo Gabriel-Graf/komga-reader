@@ -1,0 +1,13 @@
+prefix=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: harfbuzz
+Description: HarfBuzz text shaping library
+Version: 12.1.0
+
+Libs: -L${libdir} -lharfbuzz
+Libs.private: -lm -pthread
+Requires.private: freetype2 >= 12.0.6
+Cflags: -I${includedir}/harfbuzz

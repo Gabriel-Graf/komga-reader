@@ -96,7 +96,7 @@ fun ColorFilterSettingsContent(
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
         val previewProfile = edit?.let {
-            ColorProfile(it.baseProfileId, it.name, it.saturation, it.contrast, it.brightness, it.builtIn)
+            ColorProfile(id = it.baseProfileId, name = it.name, saturation = it.saturation, contrast = it.contrast, brightness = it.brightness, builtIn = it.builtIn)
         } ?: active
         preview?.let { p ->
             val request = remember(p.url) {

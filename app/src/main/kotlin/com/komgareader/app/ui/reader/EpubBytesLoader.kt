@@ -4,6 +4,7 @@ import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.usecase.NovelProgressMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -20,7 +21,29 @@ class EpubBytesLoader @Inject constructor(
     private val sourceProvider: KomgaSourceProvider,
     private val downloadRepository: DownloadRepository,
     private val downloadManager: DownloadManager,
+    private val novelProgressMapper: NovelProgressMapper,
 ) {
+
+    /**
+     * Id der aktiven Quelle (für den quellen-übergreifenden `novel_progress`-Schlüssel),
+     * oder `null` wenn nicht verbunden.
+     */
+    suspend fun activeSourceId(): Long? = withContext(Dispatchers.IO) {
+        sourceProvider.from(servers.config.first())?.id
+    }
+
+    /**
+     * Pusht den groben Leseanteil [fraction] als Prozent zu Komga — über **denselben**
+     * `pushProgress`-Pfad wie die anderen Reader (kein paralleler Sync-Weg). Best-effort:
+     * scheitert der Push (offline), bleibt der lokale `novel_progress`-Eintrag `dirty`.
+     * Gibt `true` zurück, wenn der Push gelang (Aufrufer darf dann `markSynced`).
+     */
+    suspend fun pushNovelFraction(bookId: String, fraction: Float): Boolean = withContext(Dispatchers.IO) {
+        val source = sourceProvider.from(servers.config.first()) ?: return@withContext false
+        runCatching {
+            source.pushProgress(bookId, novelProgressMapper.toReadProgress(fraction))
+        }.isSuccess
+    }
 
     /** Roh-Bytes des Buchs [bookId]; lokaler Download bevorzugt, außer [forceStream]. */
     suspend fun load(bookId: String, forceStream: Boolean): ByteArray = withContext(Dispatchers.IO) {

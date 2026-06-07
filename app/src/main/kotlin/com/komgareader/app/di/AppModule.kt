@@ -6,6 +6,7 @@ import coil.ImageLoader
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.eink.NoOpEinkController
 import com.komgareader.domain.eink.EinkController
+import com.komgareader.domain.usecase.NovelProgressMapper
 import com.komgareader.eink.onyx.OnyxEinkController
 import com.komgareader.eink.onyx.OnyxRefresher
 import dagger.Module
@@ -22,6 +23,10 @@ object AppModule {
     @Provides
     @Singleton
     fun imageLoader(@ApplicationContext ctx: Context): ImageLoader = ImageLoader(ctx)
+
+    @Provides
+    @Singleton
+    fun novelProgressMapper(): NovelProgressMapper = NovelProgressMapper()
 
     @Provides
     @Singleton

@@ -9,12 +9,15 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
+import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.render.crengine.CrengineDocument
 import com.komgareader.render.crengine.CrengineNative
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,6 +60,7 @@ class NovelReaderViewModel @Inject constructor(
     private val bytesLoader: EpubBytesLoader,
     private val bus: HardwareButtonBus,
     private val settings: SettingsRepository,
+    private val novelProgress: NovelProgressRepository,
 ) : ViewModel(), ReaderChromeState {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -97,6 +101,12 @@ class NovelReaderViewModel @Inject constructor(
     private val renderMutex = Mutex()
     private var opened = false
 
+    /** Id der aktiven Quelle (quellen-übergreifender `novel_progress`-Schlüssel). */
+    private var sourceId: Long? = null
+
+    /** Zuletzt persistierter Anker — verhindert redundante Schreib-/Push-Vorgänge je Seite. */
+    private var lastSavedAnchor: String? = null
+
     /** Zuletzt auf das Dokument angewandte Typografie — verhindert ein redundantes
      *  Re-Layout für die bereits beim Öffnen verwendete Konfiguration. */
     private var appliedConfig: ReflowConfig? = null
@@ -118,7 +128,13 @@ class NovelReaderViewModel @Inject constructor(
             runCatching {
                 ensureFontManager()
                 val bytes = bytesLoader.load(bookId, forceStream)
-                val startFraction = bytesLoader.startProgressFraction(bookId)
+                sourceId = bytesLoader.activeSourceId()
+                // EINE kohärente Wiederaufnahme: der lokale Xpointer ist die Wahrheit (exakt,
+                // Schrift-/Viewport-unabhängig). Fehlt er, fällt es auf den groben Komga-%-Stand
+                // zurück (geräteübergreifend). Anker hat IMMER Vorrang vor dem Anteil.
+                val local = sourceId?.let { novelProgress.get(it, bookId) }
+                val savedAnchor = local?.anchor?.takeIf { it.isNotEmpty() }
+                val fallbackFraction = local?.fraction ?: bytesLoader.startProgressFraction(bookId)
                 // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
                 // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
                 val initialConfig = reflowConfig.first()
@@ -126,9 +142,11 @@ class NovelReaderViewModel @Inject constructor(
                 val doc = withContext(Dispatchers.IO) {
                     CrengineDocument(bytes, ".epub", viewportWidth, viewportHeight).also {
                         it.applyLayout(initialConfig)
-                        it.seekToProgress(startFraction)
+                        if (savedAnchor != null) it.seekToAnchor(savedAnchor)
+                        else it.seekToProgress(fallbackFraction)
                     }
                 }
+                lastSavedAnchor = savedAnchor
                 document = doc
                 val (pageCount, startPage) = withContext(Dispatchers.IO) {
                     doc.pageCount() to doc.currentPage()
@@ -212,6 +230,35 @@ class NovelReaderViewModel @Inject constructor(
         if (page != _uiState.value.currentPage) {
             _uiState.value = _uiState.value.copy(currentPage = page)
         }
+        persistProgress(page)
+    }
+
+    /**
+     * Schreibt den Roman-Fortschritt **lokal zuerst** (Xpointer + grober Anteil, `dirty = true`)
+     * und pusht denselben Anteil als Prozent zu Komga — über denselben `pushProgress`-Pfad wie
+     * die anderen Reader. Gelingt der Push, wird der Eintrag als synchronisiert markiert; sonst
+     * bleibt er `dirty` (offline-first). Redundante Schreibvorgänge auf demselben Anker werden
+     * übersprungen.
+     */
+    private fun persistProgress(page: Int) {
+        val doc = document ?: return
+        val src = sourceId ?: return
+        viewModelScope.launch {
+            val anchor = withContext(Dispatchers.IO) { doc.currentAnchor() }
+            if (anchor.isEmpty() || anchor == lastSavedAnchor) return@launch
+            lastSavedAnchor = anchor
+            val fraction = readingFraction(page)
+            novelProgress.save(src, bookId, anchor, fraction)
+            if (bytesLoader.pushNovelFraction(bookId, fraction)) {
+                novelProgress.markSynced(src, bookId)
+            }
+        }
+    }
+
+    /** Leseanteil 0.0..1.0 aus Seitenindex und Seitenzahl. Letzte Seite = 1.0, sonst index/(N-1). */
+    private fun readingFraction(page: Int): Float {
+        val lastIndex = (_uiState.value.pageCount - 1).coerceAtLeast(1)
+        return (page.toFloat() / lastIndex).coerceIn(0f, 1f)
     }
 
     override fun toggleChrome() {
@@ -245,9 +292,28 @@ class NovelReaderViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        // Letzten Stand beim Schließen sichern: den Anker SYNCHRON lesen, solange das Dokument
+        // noch offen ist; die (suspendierende) Persistenz + der %-Push laufen in einem vom
+        // VM-Lifecycle entkoppelten Scope, da [viewModelScope] hier bereits abgebrochen wird.
+        persistOnClose()
         document?.close()
         document = null
         renderCache.clear()
+    }
+
+    private fun persistOnClose() {
+        val doc = document ?: return
+        val src = sourceId ?: return
+        val anchor = doc.currentAnchor()
+        if (anchor.isEmpty() || anchor == lastSavedAnchor) return
+        lastSavedAnchor = anchor
+        val fraction = readingFraction(_uiState.value.currentPage)
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            novelProgress.save(src, bookId, anchor, fraction)
+            if (bytesLoader.pushNovelFraction(bookId, fraction)) {
+                novelProgress.markSynced(src, bookId)
+            }
+        }
     }
 
     private companion object {

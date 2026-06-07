@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,11 +53,14 @@ import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ColorProfile
 
 private const val STEP = 0.05f
-private val NAV_BUTTON_PLACEHOLDER = 40.dp
+
+/** Feste Breite der Pfeil-Slots links/rechts — symmetrisch, damit das Cover exakt zentriert ist. */
+private val NAV_SLOT = 72.dp
 
 /**
  * Farbfilter-Sektion im Master-Detail-Settings-Host (kein eigenes Scaffold — der Host liefert
- * Titel + Scroll). Live-Vorschau (durchblätterbar) + Profil-Auswahl + editierbarer Entwurf.
+ * Titel + Scroll). Kompakt gehalten, damit beim Anlegen eines Profils nichts gescrollt werden muss:
+ * zentrierte Vorschau, eng gestellte Regler, Profile in einem aufklappbaren Selektor.
  */
 @Composable
 fun ColorFilterSettingsContent(
@@ -72,9 +78,11 @@ fun ColorFilterSettingsContent(
     var showSaveDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
     var infoProfile by remember { mutableStateOf<ColorProfile?>(null) }
+    var profilesExpanded by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        // Live-Vorschau: Cover + eng anliegende Blätter-Buttons (Vorheriges nur wenn vorhanden).
+        // Zentrierte Vorschau: Cover mittig, Blätter-Pfeile in symmetrischen Slots daneben
+        // (Vorheriges nur, wenn ein Verlauf existiert).
         val previewProfile = edit?.let {
             ColorProfile(it.baseProfileId, it.name, it.saturation, it.contrast, it.brightness, it.builtIn)
         } ?: active
@@ -86,15 +94,15 @@ fun ColorFilterSettingsContent(
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (canGoBack) {
-                    PreviewNavButton(Icons.AutoMirrored.Outlined.ArrowBack, s.colorFilterPrevImage) {
-                        viewModel.previousPreview()
+                Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
+                    if (canGoBack) {
+                        PreviewNavButton(Icons.AutoMirrored.Outlined.ArrowBack, s.colorFilterPrevImage) {
+                            viewModel.previousPreview()
+                        }
                     }
-                } else {
-                    Box(Modifier.size(NAV_BUTTON_PLACEHOLDER))
                 }
                 FilteredAsyncImage(
                     model = request,
@@ -103,41 +111,43 @@ fun ColorFilterSettingsContent(
                     colorFilterOverride = previewProfile.toColorFilterOrNull(),
                     useOverride = true,
                     modifier = Modifier
-                        .height(180.dp)
+                        .height(240.dp)
                         .aspectRatio(2f / 3f)
                         .clip(RoundedCornerShape(4.dp))
                         .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
                 )
-                PreviewNavButton(Icons.AutoMirrored.Outlined.ArrowForward, s.colorFilterNextImage) {
-                    viewModel.nextPreview()
+                Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
+                    PreviewNavButton(Icons.AutoMirrored.Outlined.ArrowForward, s.colorFilterNextImage) {
+                        viewModel.nextPreview()
+                    }
                 }
             }
         }
 
-        // Editor direkt unter der Vorschau — Cover + Regler beieinander, beim Tunen sichtbar.
+        // Editor direkt unter der Vorschau, eng gestellt (kein sectionGap zwischen den Reglern).
         // Nur für editierbare Zustände (neuer Entwurf oder Custom-Profil), nie für Built-ins.
         edit?.takeIf { !it.builtIn }?.let { e ->
             val isNewDraft = e.baseProfileId == 0L
-            SectionHeader(s.colorFilterAdjust)
-            StepperRow(
-                label = s.colorFilterSaturation,
-                valueText = format(e.saturation),
-                onDecrement = { viewModel.updateSaturation(-STEP) },
-                onIncrement = { viewModel.updateSaturation(STEP) },
-            )
-            StepperRow(
-                label = s.colorFilterContrast,
-                valueText = format(e.contrast),
-                onDecrement = { viewModel.updateContrast(-STEP) },
-                onIncrement = { viewModel.updateContrast(STEP) },
-            )
-            StepperRow(
-                label = s.colorFilterBrightness,
-                valueText = format(e.brightness),
-                onDecrement = { viewModel.updateBrightness(-STEP) },
-                onIncrement = { viewModel.updateBrightness(STEP) },
-            )
-            Column(Modifier.padding(top = 8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                SectionHeader(s.colorFilterAdjust)
+                StepperRow(
+                    label = s.colorFilterSaturation,
+                    valueText = format(e.saturation),
+                    onDecrement = { viewModel.updateSaturation(-STEP) },
+                    onIncrement = { viewModel.updateSaturation(STEP) },
+                )
+                StepperRow(
+                    label = s.colorFilterContrast,
+                    valueText = format(e.contrast),
+                    onDecrement = { viewModel.updateContrast(-STEP) },
+                    onIncrement = { viewModel.updateContrast(STEP) },
+                )
+                StepperRow(
+                    label = s.colorFilterBrightness,
+                    valueText = format(e.brightness),
+                    onDecrement = { viewModel.updateBrightness(-STEP) },
+                    onIncrement = { viewModel.updateBrightness(STEP) },
+                )
                 ChoiceRow(label = s.colorFilterSaveAsNew, selected = false) {
                     newName = if (isNewDraft) "" else "${e.name}${s.colorFilterCopySuffix}"
                     showSaveDialog = true
@@ -150,24 +160,48 @@ fun ColorFilterSettingsContent(
             }
         }
 
-        SectionHeader(s.colorFilterProfiles)
-        profiles.forEach { profile ->
-            ChoiceRow(
-                label = profile.name,
-                selected = profile.id == active.id,
-                query = query,
-                // Info-Button: Werte des Profils (auch der gesperrten Presets) read-only ansehen.
-                trailing = {
-                    IconButton(onClick = { infoProfile = profile }) {
-                        Icon(Icons.Outlined.Info, contentDescription = profile.name)
-                    }
-                },
+        // Profile als aufklappbarer Selektor — eingeklappt nur das aktive Profil (Liste wächst nicht).
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            SectionHeader(s.colorFilterProfiles)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                    .clickable { profilesExpanded = !profilesExpanded }
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                viewModel.setActive(profile.id)
-                // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
-                if (profile.builtIn) viewModel.cancelEdit() else viewModel.beginEdit(profile)
+                Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                IconButton(onClick = { infoProfile = active }) {
+                    Icon(Icons.Outlined.Info, contentDescription = active.name)
+                }
+                Icon(
+                    if (profilesExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                )
+            }
+            if (profilesExpanded) {
+                profiles.forEach { profile ->
+                    ChoiceRow(
+                        label = profile.name,
+                        selected = profile.id == active.id,
+                        query = query,
+                        trailing = {
+                            IconButton(onClick = { infoProfile = profile }) {
+                                Icon(Icons.Outlined.Info, contentDescription = profile.name)
+                            }
+                        },
+                    ) {
+                        viewModel.setActive(profile.id)
+                        // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
+                        if (profile.builtIn) viewModel.cancelEdit() else viewModel.beginEdit(profile)
+                        profilesExpanded = false
+                    }
+                }
             }
         }
+
         // Eigenständige, umrandete Aktion (kein Profil-Look) → klar als „anlegen" erkennbar.
         SettingsTile(
             icon = Icons.Outlined.Add,
@@ -226,7 +260,7 @@ private fun PreviewNavButton(
         modifier = modifier
             .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
-            .padding(8.dp),
+            .padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))

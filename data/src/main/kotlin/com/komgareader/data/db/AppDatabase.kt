@@ -169,6 +169,10 @@ private fun seedColorProfiles(db: SupportSQLiteDatabase) {
  */
 val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        // Robust gegen eine inkompatible Alt-Tabelle aus parallelem Branch-Testen (z. B. ein
+        // `color_profiles` mit zusätzlicher NOT-NULL-Spalte): vor dem Anlegen verwerfen. In der
+        // master-Lineage existiert die Tabelle vor v10 nicht → für saubere DBs ein No-Op.
+        db.execSQL("DROP TABLE IF EXISTS `color_profiles`")
         db.execSQL(
             """CREATE TABLE IF NOT EXISTS `color_profiles` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

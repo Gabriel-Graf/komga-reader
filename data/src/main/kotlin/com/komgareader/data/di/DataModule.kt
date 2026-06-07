@@ -13,9 +13,11 @@ import com.komgareader.data.db.MIGRATION_7_8
 import com.komgareader.data.db.MIGRATION_8_9
 import com.komgareader.data.db.MIGRATION_9_10
 import com.komgareader.data.db.MIGRATION_10_11
+import com.komgareader.data.db.MIGRATION_11_12
 import com.komgareader.data.db.SEED_CALLBACK
 import com.komgareader.data.repository.RoomColorProfileRepository
 import com.komgareader.data.repository.RoomDownloadRepository
+import com.komgareader.data.repository.RoomNovelProgressRepository
 import com.komgareader.data.repository.RoomReadProgressRepository
 import com.komgareader.data.repository.RoomSeriesOverrideRepository
 import com.komgareader.data.repository.RoomServerRepository
@@ -24,6 +26,7 @@ import com.komgareader.data.repository.RoomShelfRepository
 import com.komgareader.data.security.CredentialStore
 import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.domain.repository.DownloadRepository
+import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.ReadProgressRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
@@ -47,6 +50,7 @@ object DataModule {
             .addMigrations(
                 MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
                 MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+                MIGRATION_11_12,
             )
             .addCallback(SEED_CALLBACK)
             .fallbackToDestructiveMigration()
@@ -81,6 +85,10 @@ object DataModule {
     @Provides @Singleton
     fun readProgressRepository(db: AppDatabase): ReadProgressRepository =
         RoomReadProgressRepository(db.readProgressDao())
+
+    @Provides @Singleton
+    fun novelProgressRepository(db: AppDatabase): NovelProgressRepository =
+        RoomNovelProgressRepository(db.novelProgressDao())
 
     @Provides @Singleton
     fun colorProfileRepository(

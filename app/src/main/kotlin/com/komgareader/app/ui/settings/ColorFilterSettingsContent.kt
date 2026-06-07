@@ -202,6 +202,8 @@ fun ColorFilterSettingsContent(
                 ) {
                     if (isNewDraft) {
                         Button(onClick = { newName = ""; showSaveDialog = true }) { Text(s.save) }
+                        // Abbrechen: Editor verbergen, Entwurf verwerfen — das aktive Profil bleibt.
+                        OutlinedButton(onClick = { viewModel.cancelEdit() }) { Text(s.cancel) }
                     } else {
                         Button(onClick = { viewModel.updateExisting() }) { Text(s.colorFilterUpdate) }
                         OutlinedButton(onClick = { viewModel.delete(e.baseProfileId) }) { Text(s.colorFilterDelete) }

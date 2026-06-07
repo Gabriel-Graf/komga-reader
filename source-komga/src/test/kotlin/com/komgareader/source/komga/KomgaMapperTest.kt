@@ -35,6 +35,18 @@ class KomgaMapperTest {
     }
 
     @Test
+    fun `Series übernimmt libraryId für die Regal-Zuordnung`() {
+        val dto = SeriesDto(id = "S3", name = "Spider-Man", libraryId = "LIB42")
+        assertEquals("LIB42", mapper.toSeries(dto).libraryId)
+    }
+
+    @Test
+    fun `Series-libraryId ist null wenn leer`() {
+        val dto = SeriesDto(id = "S4", name = "X")
+        assertEquals(null, mapper.toSeries(dto).libraryId)
+    }
+
+    @Test
     fun `Book mappt Format, Seitenzahl und remoteIds`() {
         val dto = BookDto(
             id = "B1", seriesId = "S1", name = "Vol. 1",

@@ -15,6 +15,7 @@ import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.ShelfRepository
+import com.komgareader.domain.usecase.ResolveShelfContentType
 import com.komgareader.domain.usecase.ResolveViewerType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,7 @@ class SeriesDetailViewModel @Inject constructor(
     private val seriesId: String = checkNotNull(savedStateHandle["seriesId"])
     private val shelfId: Long? = savedStateHandle.get<Long>("shelfId")
     private val resolveViewerType = ResolveViewerType()
+    private val resolveShelfContentType = ResolveShelfContentType()
 
     val state: StateFlow<SeriesDetailUiState> =
         servers.config.flatMapLatest { config ->
@@ -89,11 +91,16 @@ class SeriesDetailViewModel @Inject constructor(
                             val resolvedTitle = detail?.title?.takeIf { it.isNotBlank() }
                                 ?: books.firstOrNull()?.seriesTitle?.takeIf { it.isNotBlank() }
                                 ?: seriesId
-                            val fallback: ContentType? = shelfId
-                                ?.let { id -> shelfRepository.shelves.first().firstOrNull { it.id == id } }
-                                ?.defaultContentType
                             val seriesForResolve: Series = detail
                                 ?: Series(id = 0, sourceId = 0, remoteId = seriesId, title = resolvedTitle)
+                            // Regal-Tag pfad-unabhängig anwenden: explizite shelfId (durchs Regal geöffnet)
+                            // ODER — bei Öffnen über Stöbern/Suche ohne shelfId — das Regal über die
+                            // Library-Zugehörigkeit der Serie finden. So greift COMIC/MANGA/WEBTOON/NOVEL
+                            // unabhängig vom Navigationspfad.
+                            val allShelves = shelfRepository.shelves.first()
+                            val fallback: ContentType? =
+                                shelfId?.let { id -> allShelves.firstOrNull { it.id == id } }?.defaultContentType
+                                    ?: resolveShelfContentType(seriesForResolve, allShelves)
                             val viewerModes = books.associate { book ->
                                 book.remoteId to mapViewerMode(
                                     resolveViewerType(seriesForResolve, book, fallback),

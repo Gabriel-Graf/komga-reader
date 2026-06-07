@@ -19,4 +19,6 @@ data class Series(
     val status: String? = null,
     val genres: List<String> = emptyList(),
     val readingDirection: ReadingDirection? = null,
+    /** Container (Komga-Library), zu dem die Serie gehört; für die pfad-unabhängige Regal-Zuordnung. */
+    val libraryId: String? = null,
 )

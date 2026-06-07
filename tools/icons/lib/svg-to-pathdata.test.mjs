@@ -49,9 +49,18 @@ test("ellipse → zwei Halb-Arcs mit rx/ry", () => {
   );
 });
 
-test("svgToPathData konkateniert alle Kinder", () => {
+test("svgToPathData konkateniert alle Kinder (path-Stücke absolut normalisiert)", () => {
   const svg = '<svg viewBox="0 0 24 24"><path d="M4 4h2"/><line x1="1" y1="1" x2="2" y2="2"/></svg>';
-  assert.equal(svgToPathData(svg), "M4 4h2 M1 1L2 2");
+  assert.equal(svgToPathData(svg), "M4 4H6 M1 1L2 2");
+});
+
+test("relativer Folge-Pfad (Lucide search) wird absolut — Griff bleibt im Viewport", () => {
+  // circle + path mit relativem Start-m: beim Verketten darf m NICHT relativ ans
+  // Kreis-Ende laufen, sonst landet der Griff außerhalb 24x24 und ist unsichtbar.
+  const svg = '<svg><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>';
+  const d = svgToPathData(svg);
+  assert.ok(d.includes("M21 21"), `Griff sollte absolut bei 21,21 starten: ${d}`);
+  assert.ok(!/ m21 21/.test(d), `kein relatives m21 im Ergebnis: ${d}`);
 });
 
 test("svgToPathData mischt rect+circle+path (echte Lucide-Form)", () => {

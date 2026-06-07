@@ -24,7 +24,7 @@ private class FakeBrowsable : BrowsableSource {
 
 class BrowsableSourceContractTest {
     @Test
-    fun `downloadFile und seriesIdOf erfuellbar ueber das interface`() = runTest {
+    fun `downloadFile und seriesIdOf erfüllbar über das interface`() = runTest {
         val s: BrowsableSource = FakeBrowsable()
         assertEquals("epub:b1", String(s.downloadFile("b1")))
         assertEquals("s-b1", s.seriesIdOf("b1"))

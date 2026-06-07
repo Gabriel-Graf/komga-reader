@@ -111,6 +111,14 @@ class KomgaSourceTest {
     }
 
     @Test
+    fun `seriesIdOf liest seriesId aus getBook`() = runTest {
+        server.enqueue(MockResponse().setBody("""{"id":"B1","seriesId":"S42","name":"v01","media":{"mediaType":"application/zip","pagesCount":10}}"""))
+        assertEquals("S42", source().seriesIdOf("B1"))
+        val req = server.takeRequest()
+        assertTrue(req.path!!.endsWith("/books/B1"))
+    }
+
+    @Test
     fun `listContainers mappt die Komga-Libraries`() = runTest {
         server.enqueue(MockResponse().setBody("""
             [{"id":"L1","name":"Manga"},{"id":"L2","name":"Comics"}]

@@ -1,9 +1,11 @@
 # render-crengine — Native-Dependency-Provenance
 
-Cross-gebaute native Bibliotheken, die crengine-ng (Phase 1b) als Build-Inputs
-benötigt. **Alle hier gelisteten Quellen wurden am 2026-06-07 für Android
-`arm64-v8a` (`aarch64-linux-android`, `ANDROID_PLATFORM=android-21`,
-`ANDROID_STL=c++_static`) cross-kompiliert.**
+Die EPUB-Reflow-Engine **crengine-ng** (Phase 1b) plus die ~10 nativen
+Bibliotheken, die sie als Build-Inputs benötigt (Phase 1a). **Alle hier
+gelisteten Quellen wurden am 2026-06-07 für Android `arm64-v8a`
+(`aarch64-linux-android`, `ANDROID_PLATFORM=android-21`,
+`ANDROID_STL=c++_static`) cross-kompiliert** und landen im selben Prefix
+`native/prefix/aarch64-linux-android/`.
 
 ## Build-Setup
 
@@ -64,6 +66,44 @@ cd native/thirdparty/thirdparty-bldtool
   (über die SHA512-Prüfsumme des Rezepts verifiziert). Siehe
   `thirdparty/thirdparty-bldtool/repo/zlib.meta.sh`.
 
+## Engine: crengine-ng (Phase 1b)
+
+Die EPUB-Reflow-Engine selbst, gebaut **gegen** den obigen Dependency-Prefix und
+**in** denselben Prefix installiert (damit `find_package(crengine-ng CONFIG)` in
+Phase 1c auflöst).
+
+| Name | Pinned Commit | Upstream-URL | Lizenz (SPDX) | Build-Datum | Static-Lib |
+|------|---------------|--------------|---------------|-------------|------------|
+| crengine-ng | `ec57cc1` (`ec57cc1d16c47237c10ac6f3cfa491791e23a952`) | https://gitlab.com/coolreader-ng/crengine-ng | `GPL-2.0-or-later` | 2026-06-07 | `libcrengine-ng.a` |
+
+- **Rezept:** reproduziert LxReaders `tools/crengine-ng-build/build-all.sh`
+  (`gitlab.com/coolreader-ng/lxreader`, GPL-3.0), auf eine ABI (arm64-v8a)
+  reduziert. Build-Skript: `native/build-crengine.sh`.
+- **Decisive Flag `-DUSE_FONTCONFIG=OFF`** — auf Android gibt es kein fontconfig;
+  Fonts werden später app-seitig registriert. Ebenso `-DCRE_BUILD_SHARED=OFF`,
+  `-DCRE_BUILD_STATIC=ON`, `-DUSE_FONTCONFIG=OFF`,
+  `-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON` (16-KB-Page-Geräte),
+  `-DWITH_LIBJXL=OFF` (libjxl nicht gebaut). Alle übrigen `WITH_*` aktiv
+  (freetype, harfbuzz, fribidi, libunibreak, png, jpeg, webp, utf8proc, zlib,
+  zstd) — gegen den Prefix via `-DCMAKE_FIND_ROOT_PATH=<prefix>`.
+- **Patch nicht nötig:** Der LxReader-Patch `0.9.13-account-find-root-path.patch`
+  (CMAKE_FIND_ROOT_PATH → Interface-Link-Dirs) ist im gepinnten Commit `ec57cc1`
+  bereits upstream gemergt.
+- **Host-CMake-Workaround:** Die gebündelte SDK-CMake `3.22.1` honoriert
+  `CMAKE_REQUIRED_LINK_DIRECTORIES` in `CHECK_INCLUDE_FILE` noch nicht (kam erst
+  in CMake 3.31, das LxReader nutzt). WebPConfig exportiert seine Libs als bloße
+  Namen (`webp;webpdecoder;…`), wodurch der `hb-ft.h`-Feature-Test sie als
+  `-lwebp` ohne Suchpfad linkt und scheitert. Fix: Prefix-`lib/` global auf den
+  Linker-Suchpfad gelegt (`-DCMAKE_LIBRARY_PATH` + `-DCMAKE_EXE_LINKER_FLAGS=-L…`)
+  — keine crengine-ng-Quellenänderung.
+
+### Reproduzieren (crengine-ng)
+
+```bash
+cd native
+./build-crengine.sh    # klont den Pin, konfiguriert, baut crengine-ng_static, installiert in den Prefix
+```
+
 ## Integritäts-Verifikation (2026-06-07)
 
 - Alle Archive sind `elf64-littleaarch64` (arm64-v8a).
@@ -71,6 +111,10 @@ cd native/thirdparty/thirdparty-bldtool
   `hb_ft_face_create`) — `hb-ft` ist vorhanden.
 - `libfreetype.a` referenziert HarfBuzz-Symbole (`hb_buffer_*`) — die finale
   FreeType-Stufe ist korrekt mit HarfBuzz gebaut (Auto-Hinting via HarfBuzz).
+- `libcrengine-ng.a` ist `elf64-littleaarch64`, enthält die crengine-Symbole
+  (`LVDocView`, `LVFileParserBase` u. a.) und installiert das CMake-Paket
+  `lib/cmake/crengine-ng/` mit dem Imported-Target
+  `crengine-ng::crengine-ng_static` → `find_package(crengine-ng CONFIG)` löst auf.
 
 ## Risk-Register
 
@@ -78,8 +122,12 @@ cd native/thirdparty/thirdparty-bldtool
   bereits **AGPL-3.0-or-later** (MuPDF), womit GPL-Verträglichkeit gegeben ist.
 - **zstd** und **libjpeg-turbo** sind ebenfalls dual/mehrteilig lizenziert; alle
   Teile sind permissiv bzw. GPL-2.0-kompatibel und damit AGPL-verträglich.
+- **crengine-ng** ist `GPL-2.0-or-later`. Die Gesamt-App ist bereits
+  **AGPL-3.0-or-later** (MuPDF) — GPL-2.0-or-later ist nach oben mit GPL-3.0/AGPL-3.0
+  verträglich. Jede Verteilung legt den Quellcode offen (`build-crengine.sh` hält
+  den exakten Pin fest).
 - Keine NonCommercial-, Gated- oder ToS-only-Quellen.
 
 ---
 
-Letzte Komplettrevision: 2026-06-07 (Phase 1a Dependency-Cross-Build, arm64-v8a).
+Letzte Komplettrevision: 2026-06-07 (Phase 1b crengine-ng-Cross-Build, arm64-v8a).

@@ -95,13 +95,7 @@ class CrengineDocument(
 
     override fun currentAnchor(): String = CrengineNative.nativeCurrentAnchor(handle)
 
-    /**
-     * Seitenindex der aktuell sichtbaren Stelle im aktuellen Layout. Nach einem
-     * [applyLayout] + [seekToAnchor] liefert dies den Index, auf den die zuvor
-     * gemerkte Stelle nun fällt — damit der Reader die Leseposition über das
-     * Re-Layout hinweg hält.
-     */
-    fun currentPage(): Int = CrengineNative.nativeCurrentPage(handle)
+    override fun currentPage(): Int = CrengineNative.nativeCurrentPage(handle)
 
     override fun seekToAnchor(anchor: String) {
         CrengineNative.nativeSeekToAnchor(handle, anchor)

@@ -79,4 +79,12 @@ class PixelPipelineTest {
         applyPixelPipeline(px, 1, 1, profile(gamma = 2.2f))
         assertTrue(r(px[0]) > 128 && g(px[0]) > 128 && b(px[0]) > 128)
     }
+
+    @Test
+    fun `Unsharp-Mask erhöht den Kontrast an einer Kante`() {
+        val px = intArrayOf(argb(100, 100, 100), argb(100, 100, 100), argb(160, 160, 160), argb(160, 160, 160))
+        applyPixelPipeline(px, width = 4, height = 1, profile(sharpenAmount = 1.0f, sharpenRadius = 1))
+        assertTrue(g(px[1]) < 100, "Kanten-Pixel dunkle Seite: ${g(px[1])} < 100")
+        assertTrue(g(px[2]) > 160, "Kanten-Pixel helle Seite: ${g(px[2])} > 160")
+    }
 }

@@ -31,6 +31,7 @@ fun applyPixelPipeline(px: IntArray, width: Int, height: Int, profile: ColorProf
     if (profile.blackPoint > 0f || profile.whitePoint < 1f || profile.gamma != 1f) {
         applyToneLut(px, buildToneLut(profile.blackPoint, profile.whitePoint, profile.gamma))
     }
+    if (profile.sharpenAmount > 0f) applyUnsharp(px, width, height, profile.sharpenAmount, profile.sharpenRadius)
 }
 
 /** Levels (Schwarz-/Weißpunkt-Streckung) gefolgt von Gamma, als kombinierte 256-LUT. */
@@ -56,6 +57,57 @@ private fun applyToneLut(px: IntArray, lut: IntArray) {
         val b = lut[p and 0xFF]
         px[idx] = a or (r shl 16) or (g shl 8) or b
     }
+}
+
+/**
+ * Unsharp-Mask: out = clamp(in + amount * (in - blur)). [radius] = Box-Blur-Radius in px.
+ * Arbeitet pro Kanal auf einer Blur-Kopie der Eingangswerte (kein In-place-Feedback).
+ */
+private fun applyUnsharp(px: IntArray, width: Int, height: Int, amount: Float, radius: Int) {
+    val n = px.size
+    val rIn = IntArray(n); val gIn = IntArray(n); val bIn = IntArray(n)
+    for (i in 0 until n) {
+        val p = px[i]
+        rIn[i] = (p shr 16) and 0xFF; gIn[i] = (p shr 8) and 0xFF; bIn[i] = p and 0xFF
+    }
+    val rBlur = boxBlur(rIn, width, height, radius)
+    val gBlur = boxBlur(gIn, width, height, radius)
+    val bBlur = boxBlur(bIn, width, height, radius)
+    for (i in 0 until n) {
+        val a = px[i] and -0x1000000
+        val r = (rIn[i] + amount * (rIn[i] - rBlur[i])).roundToInt().coerceIn(0, 255)
+        val g = (gIn[i] + amount * (gIn[i] - gBlur[i])).roundToInt().coerceIn(0, 255)
+        val b = (bIn[i] + amount * (bIn[i] - bBlur[i])).roundToInt().coerceIn(0, 255)
+        px[i] = a or (r shl 16) or (g shl 8) or b
+    }
+}
+
+/** Einfacher (separabler) Box-Blur über ein Kanal-Array. */
+private fun boxBlur(src: IntArray, width: Int, height: Int, radius: Int): IntArray {
+    val tmp = IntArray(src.size)
+    val out = IntArray(src.size)
+    for (y in 0 until height) {
+        val row = y * width
+        for (x in 0 until width) {
+            var sum = 0; var cnt = 0
+            for (dx in -radius..radius) {
+                val xx = x + dx
+                if (xx in 0 until width) { sum += src[row + xx]; cnt++ }
+            }
+            tmp[row + x] = sum / cnt
+        }
+    }
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            var sum = 0; var cnt = 0
+            for (dy in -radius..radius) {
+                val yy = y + dy
+                if (yy in 0 until height) { sum += tmp[yy * width + x]; cnt++ }
+            }
+            out[y * width + x] = sum / cnt
+        }
+    }
+    return out
 }
 
 /** Wendet die lineare ColorMatrix (siehe [buildColorMatrix]) pro Pixel an, geklemmt 0..255. */

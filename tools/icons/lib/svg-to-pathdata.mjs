@@ -1,5 +1,6 @@
 // Pure SVG-Primitive → Path-`d`. Lucide nutzt nur path/line/polyline/polygon/rect/circle.
 // Stroke-Stil ist über alle Kinder gleich → ein konkatenierter d-String pro Icon genügt.
+import svgpath from "svgpath";
 
 const num = (v, d = 0) => (v === undefined ? d : parseFloat(v));
 
@@ -59,7 +60,9 @@ export function svgToPathData(svg) {
   )) {
     const tag = m[1];
     const a = parseAttrs(m[2]);
-    if (tag === "path") parts.push(a.d.trim());
+    // path-d zu ABSOLUT normalisieren: beim Verketten mehrerer Subpfade darf ein
+    // relatives Start-m nicht relativ ans Ende des Vorgänger-Subpfads laufen.
+    if (tag === "path") parts.push(svgpath(a.d.trim()).abs().toString());
     else if (tag === "line") parts.push(lineToPath(a));
     else if (tag === "polyline") parts.push(polyToPath(a, false));
     else if (tag === "polygon") parts.push(polyToPath(a, true));

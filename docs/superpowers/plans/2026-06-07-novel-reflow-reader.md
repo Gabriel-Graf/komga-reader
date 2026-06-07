@@ -88,7 +88,12 @@ Bei Grün zusätzlich in `NOTICE` + Provenance-Datei: crengine-Quelle (Permalink
 
 ---
 
-## Phase 1 — crengine-ng NDK-Spike (de-risk, TDD-exempt: Spike)
+## Phase 1 — crengine-ng NDK-Spike (de-risk, TDD-exempt: Spike) — ✅ ERLEDIGT
+
+> **Ergebnis (2026-06-07):** Pipeline läuft end-to-end. 1a Dep-Cross-Build
+> (`1a2ca5b`), 1b crengine-ng (`8cb72d4`), 1c JNI-Render (`49eb2cf`). Instrumented-
+> Test `rendert_reflowte_epub_seite_mit_text` PASS — reflowte EPUB-Seite als Bitmap.
+> Modul `render-crengine` (arm64-v8a, NDK 28.2). Perf-Verifikation noch auf echter Boox.
 
 > **Referenz-Rezept: LxReader** (`gitlab.com/coolreader-ng/lxreader`, GPL-3.0,
 > lizenzkompatibel) — die Android-App der crengine-ng-Autoren. Sie baut crengine-ng

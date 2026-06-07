@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -63,12 +64,12 @@ fun EinkSearchBar(
                     .height(40.dp)
                     .background(MaterialTheme.colorScheme.surface, shape)
                     .border(1.5.dp, MaterialTheme.colorScheme.outline, shape)
-                    .padding(start = 10.dp, end = 2.dp),
+                    .padding(start = if (leading != null) 10.dp else 14.dp, end = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (leading != null) {
                     leading()
-                    Spacer(Modifier.size(6.dp))
+                    Spacer(Modifier.width(6.dp))
                 }
                 Box(Modifier.weight(1f)) {
                     if (query.isEmpty()) {

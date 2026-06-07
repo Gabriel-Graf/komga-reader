@@ -83,6 +83,7 @@ fun HomeScreen(
             restore = { mutableStateOf(it.map(ContentType::valueOf).toSet()) },
         ),
     ) { mutableStateOf(emptySet()) }
+    var downloadedOnly by rememberSaveable { mutableStateOf(false) }
     var filterMenuOpen by remember { mutableStateOf(false) }
     var filterAnchor by remember { mutableStateOf(IntOffset.Zero) }
     var showCreateGroup by remember { mutableStateOf(false) }
@@ -125,12 +126,18 @@ fun HomeScreen(
                                 actionLabel = s.searchAction,
                                 clearLabel = s.clearSearch,
                                 onClear = { query = ""; submitted = "" },
-                                leading = if (selected == TAB_LIBRARY && typeFilter.value.isNotEmpty()) {
+                                leading = if (selected == TAB_LIBRARY && (typeFilter.value.isNotEmpty() || downloadedOnly)) {
                                     {
                                         typeFilter.value.forEach { type ->
                                             TypeFilterChip(
                                                 label = s.localizedContentType(type),
                                                 onRemove = { typeFilter.value = typeFilter.value - type },
+                                            )
+                                        }
+                                        if (downloadedOnly) {
+                                            TypeFilterChip(
+                                                label = s.filterDownloaded,
+                                                onRemove = { downloadedOnly = false },
                                             )
                                         }
                                     }
@@ -173,6 +180,8 @@ fun HomeScreen(
                                         if (type in typeFilter.value) typeFilter.value - type
                                         else typeFilter.value + type
                                 },
+                                downloadedSelected = downloadedOnly,
+                                onToggleDownloaded = { downloadedOnly = !downloadedOnly },
                                 onDismiss = { filterMenuOpen = false },
                             )
                         }
@@ -189,6 +198,7 @@ fun HomeScreen(
                     query = ""
                     submitted = ""
                     typeFilter.value = emptySet()
+                    downloadedOnly = false
                     filterMenuOpen = false
                     showCreateGroup = false
                 },
@@ -200,6 +210,7 @@ fun HomeScreen(
                 TAB_LIBRARY -> LibraryScreen(
                     query = submitted,
                     typeFilter = typeFilter.value,
+                    downloadedOnly = downloadedOnly,
                     onOpenSeries = onOpenSeries,
                     viewModel = libraryVm,
                 )

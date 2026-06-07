@@ -109,6 +109,8 @@ interface Strings {
     val clearSearch: String
     val filterByType: String
     val filterTypePlaceholder: String
+    val filterDownloaded: String
+    val filterDownloadedEmpty: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -273,6 +275,11 @@ object StringsDe : Strings {
             "\"Bibliotheken\" fest (Bibliothek bearbeiten → Werk-Typ wählen — gilt für alle " +
             "Werke darin) oder einzeln in den Serien-Details über das Drei-Punkte-Menü oben " +
             "rechts → \"Typ zuweisen\"."
+    override val filterDownloaded = "Heruntergeladen"
+    override val filterDownloadedEmpty =
+        "Keine heruntergeladenen Werke.\n\n" +
+            "Lade ein Werk herunter (langes Tippen auf ein Cover oder in den Serien-Details " +
+            "über „Alle herunterladen“), dann erscheint es hier — auch offline."
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -435,6 +442,11 @@ object StringsEn : Strings {
             "\"Libraries\" tab (edit a library → choose work type — applies to everything " +
             "in it) or per series in the series details via the three-dot menu in the top " +
             "right → \"Assign type\"."
+    override val filterDownloaded = "Downloaded"
+    override val filterDownloadedEmpty =
+        "No downloaded works.\n\n" +
+            "Download a work (long-press a cover or use \"Download all\" in the series " +
+            "details), then it shows up here — even offline."
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

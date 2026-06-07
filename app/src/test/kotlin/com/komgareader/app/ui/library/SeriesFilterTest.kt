@@ -67,7 +67,7 @@ class SeriesFilterTest {
         val effective = mapOf("Tower of God" to ContentType.WEBTOON, "Berserk" to ContentType.MANGA)
         assertEquals(
             listOf("Tower of God"),
-            filterSeries(list, "", setOf(ContentType.WEBTOON)) { effective[it.remoteId] }.map { it.title },
+            filterSeries(list, "", setOf(ContentType.WEBTOON), typeOf = { effective[it.remoteId] }).map { it.title },
         )
     }
 
@@ -75,7 +75,42 @@ class SeriesFilterTest {
         val list = listOf(series("Ohne Tag"))
         assertEquals(
             emptyList<String>(),
-            filterSeries(list, "", setOf(ContentType.WEBTOON)) { null }.map { it.title },
+            filterSeries(list, "", setOf(ContentType.WEBTOON), typeOf = { null }).map { it.title },
+        )
+    }
+
+    // --- Heruntergeladen-Filter ---
+
+    @Test fun `downloaded filter keeps only locally available series`() {
+        val downloaded = setOf("Berserk")
+        assertEquals(
+            listOf("Berserk"),
+            filterSeries(all, "", emptySet(), downloadedOnly = true) { it.remoteId in downloaded }
+                .let { result -> result.map { it.title } },
+        )
+    }
+
+    @Test fun `downloaded filter inactive keeps all`() {
+        assertEquals(all.size, filterSeries(all, "", emptySet(), downloadedOnly = false).size)
+    }
+
+    @Test fun `downloaded combines with type and query`() {
+        val downloaded = setOf("Berserk", "Saga")
+        // Typ Manga + heruntergeladen → nur Berserk (Saga ist Comic).
+        assertEquals(
+            listOf("Berserk"),
+            filterSeries(
+                all, "", setOf(ContentType.MANGA),
+                downloadedOnly = true,
+                isDownloaded = { it.remoteId in downloaded },
+            ).map { it.title },
+        )
+    }
+
+    @Test fun `downloaded filter with nothing local returns empty`() {
+        assertEquals(
+            emptyList<String>(),
+            filterSeries(all, "", emptySet(), downloadedOnly = true) { false }.map { it.title },
         )
     }
 }

@@ -56,6 +56,7 @@ import com.komgareader.domain.repository.ServerConfig
 fun LibraryScreen(
     query: String = "",
     typeFilter: Set<ContentType> = emptySet(),
+    downloadedOnly: Boolean = false,
     onOpenSeries: (seriesId: String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
@@ -83,6 +84,7 @@ fun LibraryScreen(
             state = state,
             query = query,
             typeFilter = typeFilter,
+            downloadedOnly = downloadedOnly,
             localSeriesIds = localSeriesIds,
             onOpenSeries = onOpenSeries,
             onRefresh = viewModel::refresh,
@@ -97,6 +99,7 @@ private fun BrowseTab(
     state: LibraryUiState,
     query: String,
     typeFilter: Set<ContentType>,
+    downloadedOnly: Boolean,
     localSeriesIds: Set<String>,
     onOpenSeries: (seriesId: String) -> Unit,
     onRefresh: () -> Unit,
@@ -126,8 +129,13 @@ private fun BrowseTab(
             }
         }
         is LibraryUiState.Content -> {
-            val shown = remember(current.series, query, typeFilter, current.effectiveTypes) {
-                filterSeries(current.series, query, typeFilter) { current.effectiveTypes[it.remoteId] }
+            val shown = remember(current.series, query, typeFilter, downloadedOnly, current.effectiveTypes, localSeriesIds) {
+                filterSeries(
+                    current.series, query, typeFilter,
+                    downloadedOnly = downloadedOnly,
+                    typeOf = { current.effectiveTypes[it.remoteId] },
+                    isDownloaded = { it.remoteId in localSeriesIds },
+                )
             }
             if (shown.isEmpty() && typeFilter.isNotEmpty()) {
                 Box(modifier, contentAlignment = Alignment.Center) {
@@ -136,6 +144,10 @@ private fun BrowseTab(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(32.dp),
                     )
+                }
+            } else if (shown.isEmpty() && downloadedOnly) {
+                Box(modifier, contentAlignment = Alignment.Center) {
+                    Text(s.filterDownloadedEmpty, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
                 }
             } else if (shown.isEmpty() && query.isNotBlank()) {
                 Box(modifier, contentAlignment = Alignment.Center) {

@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -96,6 +97,7 @@ fun ColorFilterSettingsContent(
     var showSaveDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
     var infoProfile by remember { mutableStateOf<ColorProfile?>(null) }
+    var showDitherInfo by remember { mutableStateOf(false) }
     var profilesExpanded by remember { mutableStateOf(false) }
     var selectorSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -260,6 +262,7 @@ fun ColorFilterSettingsContent(
                     selected = e.ditherMode,
                     labels = Triple(s.colorFilterDitherNone, s.colorFilterDitherFloyd, s.colorFilterDitherOrdered),
                     label = s.colorFilterDither,
+                    onInfo = { showDitherInfo = true },
                     onSelect = { viewModel.setDitherMode(it) },
                 )
                 if (e.ditherMode != DitherMode.NONE) {
@@ -352,6 +355,32 @@ fun ColorFilterSettingsContent(
             }
         }
     }
+
+    // Read-only-Erklärung zu Dithering + den Modi (über das Info-Icon der Dither-Zeile).
+    if (showDitherInfo) {
+        EinkInfoDialog(title = s.colorFilterDither, onDismiss = { showDitherInfo = false }, closeLabel = s.close) {
+            Text(s.colorFilterDitherAbout, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(12.dp))
+            DitherModeInfo(s.colorFilterDitherNone, s.colorFilterDitherNoneDesc)
+            DitherModeInfo(s.colorFilterDitherFloyd, s.colorFilterDitherFloydDesc)
+            DitherModeInfo(s.colorFilterDitherOrdered, s.colorFilterDitherOrderedDesc)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                s.colorFilterDitherLevelsAbout,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** Ein Modus-Block im Dither-Info-Modal: fetter Name + Beschreibung. */
+@Composable
+private fun DitherModeInfo(name: String, description: String) {
+    Column(Modifier.padding(bottom = 10.dp)) {
+        Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+        Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 /** Kompakte Profil-Zeile (≈40 dp). Zahnrad öffnet den Editor (nur editierbare Profile), Tippen wählt nur aus. */
@@ -440,13 +469,16 @@ private fun DitherSelectorRow(
     selected: DitherMode,
     labels: Triple<String, String, String>,
     label: String,
+    onInfo: () -> Unit,
     onSelect: (DitherMode) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+        CompactIcon(Icons.Outlined.Info, label, onInfo)
+        Spacer(Modifier.weight(1f))
         val modes = listOf(
             DitherMode.NONE to labels.first,
             DitherMode.FLOYD_STEINBERG to labels.second,

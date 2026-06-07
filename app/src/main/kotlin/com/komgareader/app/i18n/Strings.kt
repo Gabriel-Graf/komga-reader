@@ -123,6 +123,11 @@ interface Strings {
     val colorFilterDitherOrdered: String
     val colorFilterDitherLevels: String
     val colorFilterReaderOnlyHint: String
+    val colorFilterDitherAbout: String
+    val colorFilterDitherNoneDesc: String
+    val colorFilterDitherFloydDesc: String
+    val colorFilterDitherOrderedDesc: String
+    val colorFilterDitherLevelsAbout: String
     val close: String
     // Reader-Einstellungen
     val settingsWebtoon: String
@@ -252,6 +257,11 @@ object StringsDe : Strings {
     override val colorFilterDitherOrdered = "Ordered"
     override val colorFilterDitherLevels = "Stufen"
     override val colorFilterReaderOnlyHint = "Wirkt nur beim Lesen, nicht auf Bibliotheks-Cover. Erhöht den Akku-Verbrauch."
+    override val colorFilterDitherAbout = "Dithering reduziert das Bild auf wenige Helligkeitsstufen pro Farbkanal und verteilt den dabei entstehenden Rundungsfehler auf die Nachbarpixel. So entsteht aus wenigen echten Tönen der Eindruck weicher Verläufe — das vermeidet sichtbare Stufen (Banding) und kaschiert das Farbraster des Kaleido-Displays. Kostet zusätzliche Rechenzeit und damit etwas Akku."
+    override val colorFilterDitherNoneDesc = "Keine Reduktion — das Bild wird unverändert durchgereicht (Standard, kein Mehrverbrauch)."
+    override val colorFilterDitherFloydDesc = "Fehlerdiffusion: Der Rundungsfehler wird gewichtet an die folgenden Pixel weitergegeben. Beste Ergebnisse bei Verläufen und Hauttönen, wirkt am natürlichsten. Läuft pixelweise nacheinander, daher am rechenintensivsten (höchster Akku-Verbrauch)."
+    override val colorFilterDitherOrderedDesc = "Feste Bayer-Rastermatrix als Schwellwert. Deutlich billiger und parallel berechenbar, hinterlässt aber ein leichtes, regelmäßiges Punktmuster. Gut, wenn Akku wichtiger ist als maximale Glätte."
+    override val colorFilterDitherLevelsAbout = "Stufen: Anzahl der Helligkeitswerte pro Kanal, auf die reduziert wird (2 = sehr grob und stark sichtbar, 64 = fein und dezent). Niedriger = stärkerer Dither-Effekt."
     override val close = "Schließen"
     // Reader-Einstellungen
     override val settingsWebtoon = "Webtoon"
@@ -381,6 +391,11 @@ object StringsEn : Strings {
     override val colorFilterDitherOrdered = "Ordered"
     override val colorFilterDitherLevels = "Levels"
     override val colorFilterReaderOnlyHint = "Applies only while reading, not to library covers. Increases battery use."
+    override val colorFilterDitherAbout = "Dithering reduces the image to a few brightness levels per colour channel and spreads the resulting rounding error across neighbouring pixels. A handful of real tones then read as smooth gradients — avoiding visible banding and masking the Kaleido display's colour grid. It costs extra computation and therefore some battery."
+    override val colorFilterDitherNoneDesc = "No reduction — the image passes through unchanged (default, no extra cost)."
+    override val colorFilterDitherFloydDesc = "Error diffusion: the rounding error is passed on, weighted, to the following pixels. Best results on gradients and skin tones, looks most natural. Runs pixel by pixel in sequence, so it is the most compute-heavy (highest battery use)."
+    override val colorFilterDitherOrderedDesc = "A fixed Bayer threshold matrix. Much cheaper and computable in parallel, but leaves a faint regular dot pattern. Good when battery matters more than maximum smoothness."
+    override val colorFilterDitherLevelsAbout = "Levels: how many brightness values per channel the image is reduced to (2 = very coarse and strong, 64 = fine and subtle). Lower = stronger dithering."
     override val close = "Close"
     // Reader settings
     override val settingsWebtoon = "Webtoon"

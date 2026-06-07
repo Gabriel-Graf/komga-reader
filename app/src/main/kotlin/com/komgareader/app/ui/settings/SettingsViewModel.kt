@@ -21,12 +21,14 @@ class SettingsViewModel @Inject constructor(
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
     val displayMode = settings.displayMode.stateIn(viewModelScope, SharingStarted.Eagerly, "EINK")
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val server = servers.config.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
     fun setDisplayMode(value: String) = viewModelScope.launch { settings.setDisplayMode(value) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
+    fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
     fun saveServer(
         name: String,
         baseUrl: String,

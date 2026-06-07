@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.guidedview.GuidedNavigator
 import com.komgareader.guidedview.GuidedPosition
 import com.komgareader.guidedview.NormRect
@@ -13,8 +14,10 @@ import com.komgareader.guidedview.PanelGeometry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,6 +38,7 @@ class ComicReaderViewModel @Inject constructor(
     @ApplicationContext context: Context,
     imageLoader: ImageLoader,
     private val bus: HardwareButtonBus,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private val loader = ComicPageLoader(context, imageLoader)
@@ -44,6 +48,10 @@ class ComicReaderViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ComicUiState())
     val uiState: StateFlow<ComicUiState> = _uiState.asStateFlow()
+
+    /** Debug: erkannte Panel-Rahmen als farbige Rechtecke über die Seite legen. */
+    val showPanelOverlay: StateFlow<Boolean> =
+        settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private var pageCount: Int = 0
     private var pages: List<String> = emptyList()

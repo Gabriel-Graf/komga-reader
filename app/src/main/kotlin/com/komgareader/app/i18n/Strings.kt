@@ -98,6 +98,9 @@ interface Strings {
     val readerPanelModeOn: String
     /** Angezeigt, wenn Panel-Modus AN ist (Tippen schaltet ihn AUS). */
     val readerPanelModeOff: String
+    // Guided-View (Debug)
+    val settingsGuidedDebug: String
+    val readerPanelOverlay: String
 }
 
 object StringsDe : Strings {
@@ -195,6 +198,9 @@ object StringsDe : Strings {
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
+    // Guided-View (Debug)
+    override val settingsGuidedDebug = "Guided-View (Debug)"
+    override val readerPanelOverlay = "Erkannte Panel-Rahmen einblenden"
 }
 
 object StringsEn : Strings {
@@ -292,6 +298,9 @@ object StringsEn : Strings {
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"
+    // Guided view (debug)
+    override val settingsGuidedDebug = "Guided view (debug)"
+    override val readerPanelOverlay = "Show detected panel borders"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

@@ -12,6 +12,14 @@ interface SettingsRepository {
     val activeColorProfileId: Flow<Long?>  // id des aktiven Farbfilter-Profils, null = noch keines gesetzt
     val webtoonOverlapPercent: Flow<Int>  // Überlappung zwischen Webtoon-Streifen in Prozent (0–50)
     val chapterViewMode: Flow<String>  // "LIST" | "GRID" — Kapitel als Textliste oder Cover-Gitter
+    // Roman-Reader-Typografie (global, gilt für alle Romane). Strings/Floats UI-neutral;
+    // der Mapper NovelSettings.toReflowConfig() setzt sie in eine ReflowConfig um.
+    val novelFontSizeEm: Flow<Float>          // Schriftgröße in em (1.0 = Basis)
+    val novelLineHeight: Flow<Float>          // Zeilenhöhe als Faktor (1.0 = einfach)
+    val novelMarginPreset: Flow<String>       // "NARROW" | "NORMAL" | "WIDE"
+    val novelFontFamily: Flow<String>         // Schriftfamilie (gebündelt, z.B. "DejaVuSans")
+    val novelTextAlign: Flow<String>          // "LEFT" | "JUSTIFY"
+    val novelHyphenationLang: Flow<String>    // "" = aus, sonst Sprachcode ("de"/"en")
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -20,4 +28,10 @@ interface SettingsRepository {
     suspend fun setActiveColorProfileId(id: Long)
     suspend fun setWebtoonOverlapPercent(percent: Int)
     suspend fun setChapterViewMode(mode: String)
+    suspend fun setNovelFontSizeEm(value: Float)
+    suspend fun setNovelLineHeight(value: Float)
+    suspend fun setNovelMarginPreset(preset: String)
+    suspend fun setNovelFontFamily(family: String)
+    suspend fun setNovelTextAlign(align: String)
+    suspend fun setNovelHyphenationLang(lang: String)
 }

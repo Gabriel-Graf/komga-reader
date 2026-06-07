@@ -36,4 +36,82 @@ class RoomSettingsRepositoryTest {
         repo.setChapterViewMode("LIST")
         assertEquals("LIST", repo.chapterViewMode.first())
     }
+
+    @Test
+    fun `novelFontSizeEm default ist 1_0 ohne gesetzten Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals(1.0f, repo.novelFontSizeEm.first())
+    }
+
+    @Test
+    fun `setNovelFontSizeEm persistiert und Flow liefert neuen Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setNovelFontSizeEm(1.4f)
+        assertEquals(1.4f, repo.novelFontSizeEm.first())
+    }
+
+    @Test
+    fun `novelLineHeight default ist 1_0 ohne gesetzten Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals(1.0f, repo.novelLineHeight.first())
+    }
+
+    @Test
+    fun `setNovelLineHeight persistiert und Flow liefert neuen Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setNovelLineHeight(1.5f)
+        assertEquals(1.5f, repo.novelLineHeight.first())
+    }
+
+    @Test
+    fun `novelMarginPreset default ist NORMAL ohne gesetzten Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals("NORMAL", repo.novelMarginPreset.first())
+    }
+
+    @Test
+    fun `setNovelMarginPreset persistiert und Flow liefert neuen Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setNovelMarginPreset("WIDE")
+        assertEquals("WIDE", repo.novelMarginPreset.first())
+    }
+
+    @Test
+    fun `novelFontFamily default ist DejaVuSans ohne gesetzten Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals("DejaVuSans", repo.novelFontFamily.first())
+    }
+
+    @Test
+    fun `setNovelFontFamily persistiert und Flow liefert neuen Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setNovelFontFamily("Literata")
+        assertEquals("Literata", repo.novelFontFamily.first())
+    }
+
+    @Test
+    fun `novelTextAlign default ist JUSTIFY ohne gesetzten Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals("JUSTIFY", repo.novelTextAlign.first())
+    }
+
+    @Test
+    fun `setNovelTextAlign persistiert und Flow liefert neuen Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setNovelTextAlign("LEFT")
+        assertEquals("LEFT", repo.novelTextAlign.first())
+    }
+
+    @Test
+    fun `novelHyphenationLang default ist leer ohne gesetzten Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals("", repo.novelHyphenationLang.first())
+    }
+
+    @Test
+    fun `setNovelHyphenationLang persistiert und Flow liefert neuen Wert`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setNovelHyphenationLang("de")
+        assertEquals("de", repo.novelHyphenationLang.first())
+    }
 }

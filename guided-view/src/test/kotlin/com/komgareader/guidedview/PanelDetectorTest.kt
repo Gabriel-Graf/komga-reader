@@ -82,4 +82,32 @@ class PanelDetectorTest {
         val out = det.detect(page, ReadingDirection.LEFT_TO_RIGHT)
         assertEquals(2, out.size, "Erwarte 2 Panels bei grauem Hintergrund, war ${out.size}")
     }
+
+    @Test
+    fun `schwarz-umrandetes 2x2 ohne Weissgutter ergibt 4 Panels`() {
+        val px = IntArray(1000 * 800) { 0xFFFFFFFF.toInt() }
+        fun vline(x: Int) { for (y in 0 until 800) for (dx in 0..5) px[y * 1000 + (x + dx)] = 0xFF101010.toInt() }
+        fun hline(y: Int) { for (x in 0 until 1000) for (dy in 0..5) px[(y + dy) * 1000 + x] = 0xFF101010.toInt() }
+        hline(10); hline(395); hline(784); vline(10); vline(495); vline(984)
+        for (q in 0..1) for (r in 0..1) {
+            val ox = 60 + r * 485; val oy = 60 + q * 385
+            for (y in oy until oy + 250) for (x in ox until ox + 350) px[y * 1000 + x] = 0xFF808080.toInt()
+        }
+        val page = com.komgareader.domain.render.RenderedPage(1000, 800, px)
+        val out = PanelDetector().detect(page, ReadingDirection.LEFT_TO_RIGHT)
+        assertEquals(4, out.size, "Erwarte 4 Panels (Rahmen-Split), war ${out.size}")
+    }
+
+    @Test
+    fun `Sprechblase wird nicht als eigenes Panel gezählt`() {
+        val panel = PanelRect(50, 50, 900, 700)
+        val px = IntArray(1000 * 800) { 0xFFFFFFFF.toInt() }
+        for (y in panel.y until panel.y + panel.height) for (x in panel.x until panel.x + panel.width)
+            px[y * 1000 + x] = 0xFF303030.toInt()
+        for (y in 300 until 450) for (x in 400 until 600) px[y * 1000 + x] = 0xFFFFFFFF.toInt()
+        for (y in 360 until 380) for (x in 440 until 560) px[y * 1000 + x] = 0xFF101010.toInt()
+        val page = com.komgareader.domain.render.RenderedPage(1000, 800, px)
+        val out = PanelDetector().detect(page, ReadingDirection.LEFT_TO_RIGHT)
+        assertEquals(1, out.size, "Blase darf kein eigenes Panel sein, war ${out.size}")
+    }
 }

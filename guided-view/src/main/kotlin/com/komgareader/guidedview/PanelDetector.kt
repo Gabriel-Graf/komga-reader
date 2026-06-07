@@ -25,8 +25,36 @@ class PanelDetector(
 
         val minArea = page.width.toLong() * page.height * minPanelAreaFraction
         val filtered = regions.filter { it.width.toLong() * it.height >= minArea }
-        val merged = dropContained(filtered)
+
+        // Dunkle Maske (Inverse der Hintergrundmaske) für BorderLineSplit aufbereiten
+        val darkMask = BooleanArray(background.size) { !background[it] }
+        // Seitenüberspannende Komponenten (schwarze Rahmengitter ohne Weißgutter) aufteilen
+        val expanded = filtered.flatMap { box ->
+            val wide = box.width > page.width * 0.6 && box.height > page.height * 0.5
+            val bandlike = box.width > page.width * 0.85 || box.height > page.height * 0.85
+            if (wide || bandlike) BorderLineSplit.split(darkMask, page.width, page.height, box) else listOf(box)
+        }
+        val sized = expanded.filter { it.width.toLong() * it.height >= minArea }
+        val deBubbled = dropContainedSmall(sized, page.width, page.height)
+        val merged = dropContained(deBubbled)
         return ReadingOrder.sort(merged, direction)
+    }
+
+    /**
+     * Verwirft kleine Boxen (< [smallAreaFraction] Seitenfläche), die vollständig in einer
+     * größeren liegen (Sprechblasen).
+     */
+    private fun dropContainedSmall(
+        boxes: List<PanelRect>, pageW: Int, pageH: Int, smallAreaFraction: Double = 0.06,
+    ): List<PanelRect> {
+        val pageArea = pageW.toLong() * pageH
+        return boxes.filterNot { b ->
+            val small = b.width.toLong() * b.height < pageArea * smallAreaFraction
+            small && boxes.any { o ->
+                o !== b && o.width.toLong() * o.height > b.width.toLong() * b.height &&
+                    b.x >= o.x && b.y >= o.y && b.x + b.width <= o.x + o.width && b.y + b.height <= o.y + o.height
+            }
+        }
     }
 
     /** Entfernt Boxen, die zu [containmentFraction] in einer anderen (größeren) liegen. */

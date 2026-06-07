@@ -27,7 +27,9 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
@@ -244,6 +246,8 @@ private fun SeriesDetailContent(
     // Beschreibung: Serien-Summary hat Vorrang, sonst Summary des ausgewählten Buchs.
     val description = seriesSummary?.takeIf { it.isNotBlank() }
         ?: currentBook?.summary?.takeIf { it.isNotBlank() }
+    // Wenn ein Kapitel per Info-Icon gewählt ist, ersetzt seine Beschreibung die Hero-Karte.
+    var infoBook by remember(books) { mutableStateOf<Book?>(null) }
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
@@ -252,8 +256,17 @@ private fun SeriesDetailContent(
         verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
         contentPadding = PaddingValues(horizontal = EinkTokens.screenPadding, vertical = EinkTokens.tileGap),
     ) {
-        // Fusionierte Hero-Karte: großes Cover, Titel, Status/Genres, Beschreibung, Aktionen.
+        // Hero-Karte: normal die Serie; per Info-Icon das gewählte Kapitel (in-place ersetzt).
         item(span = { GridItemSpan(maxLineSpan) }) {
+            val info = infoBook
+            if (info != null) {
+                ChapterInfoHero(
+                    book = info,
+                    serverConfig = serverConfig,
+                    onBack = { infoBook = null },
+                    modifier = Modifier.padding(12.dp),
+                )
+            } else {
             SeriesHeroCard(
                 seriesTitle = seriesTitle,
                 bookCount = books.size,
@@ -283,6 +296,7 @@ private fun SeriesDetailContent(
                 onRemoveAll = onRemoveAll,
                 modifier = Modifier.padding(12.dp),
             )
+            }
         }
 
         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -312,6 +326,7 @@ private fun SeriesDetailContent(
                     onDownload = { onDownload(book) },
                     onRemoveDownload = { onRemoveDownload(book.remoteId) },
                     onSetRead = { read -> onSetRead(book, read) },
+                    onShowInfo = { infoBook = book },
                 )
             }
         } else {
@@ -333,6 +348,7 @@ private fun SeriesDetailContent(
                         onDownload = { onDownload(book) },
                         onRemoveDownload = { onRemoveDownload(book.remoteId) },
                         onSetRead = { read -> onSetRead(book, read) },
+                        onShowInfo = { infoBook = book },
                     )
                     HorizontalDivider()
                 }
@@ -640,6 +656,65 @@ private fun ChaptersSectionHeader(
     }
 }
 
+/**
+ * Hero-Ersatz: zeigt Titel + Beschreibung eines einzelnen Kapitels statt der Serien-Info.
+ * Wird über das Info-Icon eines Kapitels geöffnet; der Zurück-Pfeil stellt die Serie wieder her.
+ */
+@Composable
+private fun ChapterInfoHero(
+    book: Book,
+    serverConfig: ServerConfig?,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val s = LocalStrings.current
+    val ctx = LocalContext.current
+    val coverUrl = serverConfig?.let { "${it.baseUrl}books/${book.remoteId}/thumbnail" }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .padding(12.dp),
+    ) {
+        Box(Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                if (coverUrl != null) {
+                    val authHeaders = AuthHeaders.forCovers(serverConfig)
+                    FilteredAsyncImage(
+                        model = ImageRequest.Builder(ctx)
+                            .data(coverUrl)
+                            .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                            .crossfade(false)
+                            .build(),
+                        contentDescription = book.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.width(140.dp).aspectRatio(2f / 3f),
+                    )
+                }
+                Column(modifier = Modifier.weight(1f).padding(end = 36.dp)) {
+                    Text(
+                        book.number?.let { "$it · ${book.title}" } ?: book.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            // Zurück zur Serien-Hero-Karte.
+            IconButton(onClick = onBack, modifier = Modifier.align(Alignment.TopEnd)) {
+                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = s.backToSeries)
+            }
+        }
+        book.summary?.takeIf { it.isNotBlank() }?.let { summary ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
 /** Lesefortschritt in Prozent: 100 wenn abgeschlossen, sonst Leseposition/Seitenzahl, 0 wenn ungelesen. */
 private fun readPercent(book: Book): Int {
     if (book.readCompleted) return 100
@@ -658,6 +733,7 @@ private fun ChapterRow(
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
+    onShowInfo: () -> Unit,
 ) {
     val s = LocalStrings.current
     var menuOpen by remember { mutableStateOf(false) }
@@ -707,6 +783,16 @@ private fun ChapterRow(
         // Status-/Aktions-Icons: Lesezeichen (Leseposition) · Häkchen (gelesen) · Cloud/Entfernen.
         // E-Ink: Gelesen wird als Häkchen-Logo gezeigt, nicht über Textfarbe.
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (!book.summary.isNullOrBlank()) {
+                IconButton(onClick = onShowInfo, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = s.chapterInfo,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
             if (showBookmark) {
                 Icon(
                     Icons.Filled.Bookmark,
@@ -776,6 +862,7 @@ private fun ChapterTile(
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
+    onShowInfo: () -> Unit,
 ) {
     val s = LocalStrings.current
     val ctx = LocalContext.current
@@ -829,6 +916,19 @@ private fun ChapterTile(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
+            }
+            // oben-links: Info (Beschreibung), nur wenn vorhanden.
+            if (!book.summary.isNullOrBlank()) {
+                Box(Modifier.align(Alignment.TopStart).padding(4.dp)) {
+                    CoverBadge(onClick = onShowInfo) {
+                        Icon(
+                            Icons.Outlined.Info,
+                            contentDescription = s.chapterInfo,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
             }
             // oben-rechts: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.
             Column(

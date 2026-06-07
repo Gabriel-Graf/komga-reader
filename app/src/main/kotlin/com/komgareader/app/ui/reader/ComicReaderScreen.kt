@@ -123,11 +123,17 @@ fun ComicReaderScreen(
             val panel = if (isCurrent && state.zoomed) state.currentPanels.getOrNull(state.position.unit) else null
             val mod = if (panel != null) {
                 val scale = PanelGeometry.fitScale(panel, contentW, contentH, vw, vh, marginFraction = marginFraction)
-                val pivotX = (offX + panel.centerX * contentW) / vw
-                val pivotY = (offY + panel.centerY * contentH) / vh
+                // Panel-Mittelpunkt (in Viewport-Pixeln) auf die Viewport-Mitte schieben UND skalieren,
+                // damit genau der Panel-Inhalt zentriert bildschirmfüllend gezeigt wird. transformOrigin
+                // oben-links (0,0) + Translation ist nötig: nur ein Pivot würde das Panel an seiner
+                // Off-Center-Position fixieren statt es zu zentrieren.
+                val cx = offX + panel.centerX * contentW
+                val cy = offY + panel.centerY * contentH
                 Modifier.fillMaxSize().graphicsLayer(
                     scaleX = scale, scaleY = scale,
-                    transformOrigin = TransformOrigin(pivotX, pivotY),
+                    transformOrigin = TransformOrigin(0f, 0f),
+                    translationX = vw / 2f - scale * cx,
+                    translationY = vh / 2f - scale * cy,
                 )
             } else Modifier.fillMaxSize()
 
@@ -142,7 +148,7 @@ fun ComicReaderScreen(
         // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke (kein pointerInput → Taps passieren durch).
         if (showOverlay && !state.zoomed && state.currentPanels.isNotEmpty()) {
             Canvas(Modifier.fillMaxSize()) {
-                val stroke = Stroke(width = 4f)
+                val stroke = Stroke(width = 9f)
                 state.currentPanels.forEach { p ->
                     drawRect(
                         color = Color(0xFF00C800),

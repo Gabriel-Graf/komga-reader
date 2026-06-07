@@ -6,9 +6,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -19,10 +20,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -32,6 +37,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import com.komgareader.app.ui.icons.AppIcons
+import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.source.PageRef
@@ -127,13 +133,29 @@ fun WebtoonReaderScreen(
                         .crossfade(false)
                         .build()
                 }
+                // Solange das Bild lädt: volle Platzhalterhöhe reservieren (damit die
+                // LazyColumn nur sichtbare + nächste Items komponiert, kein Lade-Sturm).
+                // Nach dem Laden die exakte Bild-Ratio per aspectRatio erzwingen — sonst
+                // bliebe das Item bildschirmhoch und kurze Seiten (Banner/Spacer) erschienen
+                // zentriert mit schwarzen Balken darüber/darunter. (FillWidth allein lässt
+                // AsyncImage bei unbegrenzter Höhe NICHT auf die Bildhöhe wrappen.)
+                var aspect by remember(pageRef.url) { mutableStateOf(0f) }
                 FilteredReaderAsyncImage(
                     model = request,
                     contentDescription = "Seite ${index + 1}",
                     contentScale = ContentScale.FillWidth,
+                    onState = { state ->
+                        val size = (state as? AsyncImagePainter.State.Success)?.painter?.intrinsicSize
+                        if (size != null && size.isSpecified && size.height > 0f) {
+                            aspect = size.width / size.height
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = placeholderHeight),
+                        .then(
+                            if (aspect > 0f) Modifier.aspectRatio(aspect)
+                            else Modifier.height(placeholderHeight),
+                        ),
                 )
             }
         }

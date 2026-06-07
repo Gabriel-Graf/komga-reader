@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.komgareader.app.color.ColorPipelineTransformation
 import com.komgareader.domain.color.applyPixelPipeline
@@ -26,6 +27,8 @@ val LocalColorProfile = staticCompositionLocalOf { ColorProfile.OFF }
  * verlangt, läuft die volle Pixel-Pipeline als Coil-Transformation (colorFilter = null, da der
  * Kernel die lineare Stufe mitmacht). Sonst nur die billige GPU-Matrix (wie Cover).
  * [profileOverride] übersteuert das aktive Profil (Live-Vorschau im Editor).
+ * [onState] meldet den Coil-Ladezustand (z. B. damit der Webtoon-Reader die Platzhalter-
+ * Höhe erst nach erfolgreichem Laden auf die echte Bildhöhe freigibt).
  */
 @Composable
 fun FilteredReaderAsyncImage(
@@ -34,15 +37,16 @@ fun FilteredReaderAsyncImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
     profileOverride: ColorProfile? = null,
+    onState: ((AsyncImagePainter.State) -> Unit)? = null,
 ) {
     val profile = profileOverride ?: LocalColorProfile.current
     if (profile.needsPixelPipeline) {
         val req = remember(model, profile) {
             model.newBuilder().transformations(ColorPipelineTransformation(profile)).build()
         }
-        AsyncImage(model = req, contentDescription = contentDescription, contentScale = contentScale, colorFilter = null, modifier = modifier)
+        AsyncImage(model = req, contentDescription = contentDescription, contentScale = contentScale, colorFilter = null, onState = onState, modifier = modifier)
     } else {
-        AsyncImage(model = model, contentDescription = contentDescription, contentScale = contentScale, colorFilter = profile.toColorFilterOrNull(), modifier = modifier)
+        AsyncImage(model = model, contentDescription = contentDescription, contentScale = contentScale, colorFilter = profile.toColorFilterOrNull(), onState = onState, modifier = modifier)
     }
 }
 

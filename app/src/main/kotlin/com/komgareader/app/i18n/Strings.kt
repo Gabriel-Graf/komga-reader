@@ -15,9 +15,6 @@ interface Strings {
     val displayModeHelper: String
     val displayEink: String
     val displaySmartphone: String
-    val settingsWebtoon: String
-    val webtoonOverlap: String
-    val webtoonOverlapHelper: String
     val settingsServer: String
     val serverDisplayName: String
     val serverUrl: String
@@ -103,6 +100,29 @@ interface Strings {
     val searchSettingsHint: String
     val searchAction: String
     val searchNoResults: String
+    // Farbfilter
+    val settingsColorFilter: String
+    val colorFilterSummary: String
+    val colorFilterProfiles: String
+    val colorFilterAdjust: String
+    val colorFilterSaturation: String
+    val colorFilterContrast: String
+    val colorFilterBrightness: String
+    val colorFilterSaveAsNew: String
+    val colorFilterUpdate: String
+    val colorFilterDelete: String
+    val colorFilterProfileName: String
+    val colorFilterPreview: String
+    val colorFilterCopySuffix: String
+    val colorFilterNewProfile: String
+    val colorFilterNewProfileHint: String
+    val colorFilterPrevImage: String
+    val colorFilterNextImage: String
+    val close: String
+    // Reader-Einstellungen
+    val settingsWebtoon: String
+    val webtoonOverlapHelper: String
+    val webtoonOverlap: String
 }
 
 object StringsDe : Strings {
@@ -119,9 +139,6 @@ object StringsDe : Strings {
     override val displayModeHelper = "Optimiert die App für E-Ink (Frame-Sprünge, keine Animationen) oder Smartphone."
     override val displayEink = "E-Ink"
     override val displaySmartphone = "Smartphone"
-    override val settingsWebtoon = "Webtoon"
-    override val webtoonOverlap = "Überlappung beim Blättern"
-    override val webtoonOverlapHelper = "Wie viel vom letzten Bildschirm beim Frame-Sprung erhalten bleibt."
     override val settingsServer = "Komga-Server"
     override val serverDisplayName = "Anzeigename"
     override val serverUrl = "Server-URL"
@@ -207,6 +224,29 @@ object StringsDe : Strings {
     override val searchSettingsHint = "Einstellungen durchsuchen"
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
+    // Farbfilter
+    override val settingsColorFilter = "Farbfilter"
+    override val colorFilterSummary = "Bilder fürs E-Ink-Display anpassen"
+    override val colorFilterProfiles = "Profile"
+    override val colorFilterAdjust = "Anpassen"
+    override val colorFilterSaturation = "Sättigung"
+    override val colorFilterContrast = "Kontrast"
+    override val colorFilterBrightness = "Helligkeit"
+    override val colorFilterSaveAsNew = "Als neues Profil speichern"
+    override val colorFilterUpdate = "Profil aktualisieren"
+    override val colorFilterDelete = "Profil löschen"
+    override val colorFilterProfileName = "Profilname"
+    override val colorFilterPreview = "Vorschau"
+    override val colorFilterCopySuffix = " (Kopie)"
+    override val colorFilterNewProfile = "Neues Profil"
+    override val colorFilterNewProfileHint = "Vom aktiven Profil ausgehen, anpassen und speichern"
+    override val colorFilterPrevImage = "Vorheriges"
+    override val colorFilterNextImage = "Nächstes"
+    override val close = "Schließen"
+    // Reader-Einstellungen
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
+    override val webtoonOverlap = "Überlappung"
 }
 
 object StringsEn : Strings {
@@ -223,9 +263,6 @@ object StringsEn : Strings {
     override val displayModeHelper = "Optimises the app for E-Ink (frame jumps, no animations) or smartphone."
     override val displayEink = "E-Ink"
     override val displaySmartphone = "Smartphone"
-    override val settingsWebtoon = "Webtoon"
-    override val webtoonOverlap = "Page-turn overlap"
-    override val webtoonOverlapHelper = "How much of the previous screen is kept when jumping a frame."
     override val settingsServer = "Komga Server"
     override val serverDisplayName = "Display Name"
     override val serverUrl = "Server URL"
@@ -311,6 +348,29 @@ object StringsEn : Strings {
     override val searchSettingsHint = "Search settings"
     override val searchAction = "Search"
     override val searchNoResults = "No results"
+    // Color filter
+    override val settingsColorFilter = "Color Filter"
+    override val colorFilterSummary = "Tune images for the e-ink display"
+    override val colorFilterProfiles = "Profiles"
+    override val colorFilterAdjust = "Adjust"
+    override val colorFilterSaturation = "Saturation"
+    override val colorFilterContrast = "Contrast"
+    override val colorFilterBrightness = "Brightness"
+    override val colorFilterSaveAsNew = "Save as new profile"
+    override val colorFilterUpdate = "Update profile"
+    override val colorFilterDelete = "Delete profile"
+    override val colorFilterProfileName = "Profile name"
+    override val colorFilterPreview = "Preview"
+    override val colorFilterCopySuffix = " (copy)"
+    override val colorFilterNewProfile = "New profile"
+    override val colorFilterNewProfileHint = "Start from the active profile, tune and save"
+    override val colorFilterPrevImage = "Previous"
+    override val colorFilterNextImage = "Next"
+    override val close = "Close"
+    // Reader settings
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
+    override val webtoonOverlap = "Overlap"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

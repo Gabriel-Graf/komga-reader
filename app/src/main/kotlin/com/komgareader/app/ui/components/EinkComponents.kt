@@ -107,13 +107,15 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 
 /**
  * Auswahlzeile mit Häkchen rechts statt RadioButton-Kreis (ruhiger auf E-Ink).
- * Für Theme-/Sprach-/Modus-Auswahl.
+ * Für Theme-/Sprach-/Modus-Auswahl. [query] markiert Suchtreffer im Label.
  */
 @Composable
 fun ChoiceRow(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null,
+    query: String = "",
     onSelect: () -> Unit,
 ) {
     Row(
@@ -123,15 +125,25 @@ fun ChoiceRow(
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        if (selected) {
-            Icon(
-                Icons.Outlined.Check,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        HighlightText(
+            text = label,
+            query = query,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        // Fester Häkchen-Slot: reserviert die Breite auch ohne Auswahl, damit ein optionales
+        // [trailing]-Element (z. B. Info-Button) zeilenübergreifend bündig ganz rechts sitzt.
+        Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+            if (selected) {
+                Icon(
+                    Icons.Outlined.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
+        trailing?.invoke()
     }
 }
 
@@ -227,3 +239,36 @@ fun SubPageScaffold(
 
 /** Inhalts-Padding-Helfer, falls eine Unterseite eigenes Scroll-/Listen-Layout braucht. */
 val SubPageContentPadding = PaddingValues(EinkTokens.screenPadding)
+
+/**
+ * Diskrete ±-Regelzeile (kein kontinuierlicher Slider — ruckelt auf E-Ink). Label links,
+ * aktueller Wert mittig, − / + Buttons rechts. [enabled] sperrt z. B. bei Built-in-Profilen.
+ */
+@Composable
+fun StepperRow(
+    label: String,
+    valueText: String,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        IconButton(onClick = onDecrement, enabled = enabled) {
+            Icon(Icons.Outlined.Remove, contentDescription = "−", modifier = Modifier.size(22.dp))
+        }
+        Text(
+            valueText,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(56.dp),
+            textAlign = TextAlign.Center,
+        )
+        IconButton(onClick = onIncrement, enabled = enabled) {
+            Icon(Icons.Outlined.Add, contentDescription = "+", modifier = Modifier.size(22.dp))
+        }
+    }
+}

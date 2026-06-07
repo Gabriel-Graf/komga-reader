@@ -2,6 +2,8 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
@@ -16,6 +18,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val servers: ServerRepository,
+    private val colorProfiles: ColorProfileRepository,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -24,6 +27,8 @@ class SettingsViewModel @Inject constructor(
     val webtoonOverlapPercent =
         settings.webtoonOverlapPercent.stateIn(viewModelScope, SharingStarted.Eagerly, 25)
     val server = servers.config.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val activeColorProfile = colorProfiles.observeActive()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ColorProfile.OFF)
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}

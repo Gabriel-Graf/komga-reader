@@ -76,3 +76,14 @@ data class DownloadEntity(
     val seriesTitle: String = "",
     val seriesCoverUrl: String? = null,
 )
+
+/** Persistiertes E-Ink-Farbfilter-Profil. */
+@Entity(tableName = "color_profiles")
+data class ColorProfileEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val saturation: Float,
+    val contrast: Float,
+    val brightness: Float,
+    val builtIn: Boolean,
+)

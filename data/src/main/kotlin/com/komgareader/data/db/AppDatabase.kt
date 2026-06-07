@@ -7,10 +7,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
-        SettingEntity::class, ServerEntity::class, DownloadEntity::class,
-        ShelfEntity::class, SeriesOverrideEntity::class, ReadProgressEntity::class,
+        SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class,
+        SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -20,6 +20,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun shelfDao(): ShelfDao
     abstract fun seriesOverrideDao(): SeriesOverrideDao
     abstract fun readProgressDao(): ReadProgressDao
+    abstract fun colorProfileDao(): ColorProfileDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -140,5 +141,55 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesTitle` TEXT NOT NULL DEFAULT ''")
         db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesCoverUrl` TEXT")
+    }
+}
+
+/**
+ * Seedet die mitgelieferten Farbfilter-Profile + den aktiven Pointer. Wird von der
+ * v9→v10-Migration (Upgrade) UND vom Fresh-Install-Callback (onCreate) genutzt, damit
+ * neue Installationen nicht mit leerer Profilliste starten.
+ */
+private fun seedColorProfiles(db: SupportSQLiteDatabase) {
+    db.execSQL(
+        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
+            "VALUES (1,'Aus',1.0,1.0,0.0,1)",
+    )
+    db.execSQL(
+        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
+            "VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)",
+    )
+    db.execSQL(
+        "INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')",
+    )
+}
+
+/**
+ * v9 → v10: color_profiles-Tabelle für E-Ink-Farbfilter-Profile. Seedet zwei Built-ins
+ * (Aus = neutral, Boox Go Color 7 Gen2 = Kaleido-getunt) und setzt das Go-7-Profil aktiv.
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `color_profiles` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `saturation` REAL NOT NULL,
+                `contrast` REAL NOT NULL,
+                `brightness` REAL NOT NULL,
+                `builtIn` INTEGER NOT NULL
+            )""",
+        )
+        seedColorProfiles(db)
+    }
+}
+
+/**
+ * Fresh-Install: Room legt die Tabellen direkt aus den Entities an — die Migration läuft
+ * dann NICHT. Daher hier die Built-in-Profile seeden.
+ */
+val SEED_CALLBACK = object : RoomDatabase.Callback() {
+    override fun onCreate(db: SupportSQLiteDatabase) {
+        super.onCreate(db)
+        seedColorProfiles(db)
     }
 }

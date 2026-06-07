@@ -100,16 +100,28 @@ Immer **Outlined**-Variante (dünner Strich = Onyx-Look), nie `Filled`.
 
 ## Settings-Architektur
 
-**Kachel-Landing → fokussierte Unterseiten** (Onyx-Speicher-Screen-Muster), nicht ein
-langer Radio-Button-Scroll. Landing = 2-Spalten-Tile-Grid; Tap öffnet Vollbild-Unterseite
-mit Zurück-Pfeil. Jede Unterseite hat **ein** Thema:
+**Adaptives Master-Detail.** Eine Section-Registry (`SettingsSection`: id, Icon, Titel,
+`searchTerms`, `content(query)` in `SettingsSections.kt`) treibt drei Layouts über
+`BoxWithConstraints` (`SettingsScreen.kt`) — **keine** eigenen NavHost-Seiten pro Sektion mehr:
 
-- **Verbindung** — Server-Formular (Name/URL/API-Key — oder — Benutzer/Passwort), Status, Verbinden/Trennen
-- **Darstellung** — Theme (Hell/Dunkel/System) via `ChoiceRow`
-- **Reader** — Anzeige-Modus (E-Ink/Smartphone) + Helper
-- **Downloads** — SAF-Ordner-Picker
-- **Sprache** — DE/EN via `ChoiceRow`
-- **Über** — App-Name, Version (`BuildConfig.VERSION_NAME`), Geräte-Hinweis
+- **< 600 dp (Phone):** Accordion — eine Scroll-Liste, Sektionskopf tappbar, Inhalt klappt
+  inline auf (`AnimatedVisibility`, einziges erlaubtes Motion).
+- **600–900 dp (Tablet):** Sidebar links (Icon 28 dp + `titleMedium`, aktiv = schwarzer
+  Akzent-Balken links + fett) + scrollendes Detail rechts.
+- **≥ 900 dp (großes E-Ink):** wie Tablet, größer (Icon 32 dp, größeres Label, mehr Padding).
+
+Sektionen (Reihenfolge fix): **Verbindung** (Server-Formular, Status, Verbinden/Trennen) ·
+**Darstellung** (Theme Hell/Dunkel/System via `ChoiceRow`) · **Reader** (Webtoon-Überlappung
+`StepperRow` + Anzeige-Modus E-Ink/Smartphone) · **Downloads** (SAF-Ordner-Picker) ·
+**Sprache** (DE/EN) · **Über** (App-Name, `BuildConfig.VERSION_NAME`, Geräte-Hinweis).
+Die Inhalte sind scaffold-freie Content-Composables (`SettingsContent.kt`), gehostet inline.
+
+**Such-Highlight.** Die TopBar-Suche reicht auf dem Settings-Tab **live** `query` an
+`SettingsScreen`. Reine Funktionen `matchRanges`/`sectionMatches` (`SettingsSearch.kt`,
+unit-getestet) filtern auf Treffer-Sektionen und springen zur ersten; `HighlightText`
+markiert den gematchten Text **fett + `outlineVariant`-Hintergrund** (monochrom, keine
+Akzentfarbe) — bis in `ChoiceRow`-Labels hinein. So sieht der Nutzer, *warum* etwas
+gefunden wurde.
 
 ## Anti-Pattern: Voll-Reload bei Teil-Update
 

@@ -76,7 +76,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
@@ -359,7 +359,7 @@ private fun SeriesHeroCard(
             // Großes Cover links
             if (coverUrl != null) {
                 val authHeaders = AuthHeaders.forCovers(serverConfig)
-                AsyncImage(
+                FilteredAsyncImage(
                     model = ImageRequest.Builder(ctx)
                         .data(coverUrl)
                         .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }

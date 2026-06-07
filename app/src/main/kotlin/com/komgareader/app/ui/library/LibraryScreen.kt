@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
@@ -176,7 +176,7 @@ private fun SeriesCover(
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
-        AsyncImage(
+        FilteredAsyncImage(
             model = request,
             contentDescription = series.title,
             contentScale = ContentScale.Crop,

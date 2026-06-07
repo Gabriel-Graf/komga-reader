@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.source.PageRef
@@ -128,7 +128,7 @@ fun WebtoonReaderScreen(
                         .crossfade(false)
                         .build()
                 }
-                AsyncImage(
+                FilteredAsyncImage(
                     model = request,
                     contentDescription = "Seite ${index + 1}",
                     contentScale = ContentScale.FillWidth,

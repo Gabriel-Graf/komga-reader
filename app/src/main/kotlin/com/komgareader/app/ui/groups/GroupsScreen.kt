@@ -53,8 +53,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkModal
@@ -295,7 +295,7 @@ private fun CoverSlot(
                     .apply { headers.forEach { addHeader(it.key, it.value) } }
                     .crossfade(false).build()
             }
-            AsyncImage(
+            FilteredAsyncImage(
                 model = request,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,

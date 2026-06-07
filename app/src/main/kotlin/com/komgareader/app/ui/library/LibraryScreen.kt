@@ -126,8 +126,8 @@ private fun BrowseTab(
             }
         }
         is LibraryUiState.Content -> {
-            val shown = remember(current.series, query, typeFilter) {
-                filterSeries(current.series, query, typeFilter)
+            val shown = remember(current.series, query, typeFilter, current.effectiveTypes) {
+                filterSeries(current.series, query, typeFilter) { current.effectiveTypes[it.remoteId] }
             }
             if (shown.isEmpty() && typeFilter.isNotEmpty()) {
                 Box(modifier, contentAlignment = Alignment.Center) {

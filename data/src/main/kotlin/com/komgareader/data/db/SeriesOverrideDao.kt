@@ -12,6 +12,9 @@ interface SeriesOverrideDao {
     )
     suspend fun get(sourceId: Long, seriesRemoteId: String): String?
 
+    @Query("SELECT * FROM series_overrides WHERE sourceId = :sourceId")
+    suspend fun getAll(sourceId: Long): List<SeriesOverrideEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(e: SeriesOverrideEntity)
 

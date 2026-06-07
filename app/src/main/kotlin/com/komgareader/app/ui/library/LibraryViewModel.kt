@@ -5,11 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.localSeries
 import com.komgareader.data.download.DownloadManager
+import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Series
+import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.repository.DownloadRepository
+import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.source.SourceFilter
+import com.komgareader.domain.usecase.ResolveShelfContentType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,6 +39,8 @@ sealed interface LibraryUiState {
         val series: List<Series>,
         val serverConfig: ServerConfig?,
         val offline: Boolean = false,
+        /** Effektiver Werk-Typ je Serie (remoteId → Typ) — derselbe Wert wie das Typ-Tag. */
+        val effectiveTypes: Map<String, ContentType?> = emptyMap(),
     ) : LibraryUiState
     data class Error(val message: String) : LibraryUiState
 }
@@ -52,9 +59,26 @@ class LibraryViewModel @Inject constructor(
     private val sourceProvider: KomgaSourceProvider,
     private val downloadManager: DownloadManager,
     private val downloadRepository: DownloadRepository,
+    private val shelfRepository: ShelfRepository,
+    private val overrideRepository: SeriesOverrideRepository,
 ) : ViewModel() {
 
     private val refreshTrigger = MutableStateFlow(0)
+    private val resolveShelfContentType = ResolveShelfContentType()
+
+    /**
+     * Effektiver Werk-Typ je Serie — **dieselbe Regel wie das Typ-Tag** (Bibliotheks-Default
+     * hat Vorrang vor manueller Zuweisung), damit der Filter exakt nach dem sichtbaren Tag
+     * filtert. Siehe [com.komgareader.app.ui.series.SeriesDetailViewModel].
+     */
+    private fun resolveTypes(
+        series: List<Series>,
+        shelves: List<Shelf>,
+        overrides: Map<String, ContentType>,
+    ): Map<String, ContentType?> =
+        series.associate { item ->
+            item.remoteId to (resolveShelfContentType(item, shelves) ?: overrides[item.remoteId])
+        }
 
     /** Serien mit lokalem Inhalt → Download-Badge statt Cloud. */
     val localSeriesIds: StateFlow<Set<String>> = downloadRepository.downloads
@@ -62,8 +86,10 @@ class LibraryViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val state: StateFlow<LibraryUiState> =
-        combine(servers.config, refreshTrigger) { config, _ -> config }
-            .flatMapLatest { config ->
+        combine(servers.config, refreshTrigger, shelfRepository.shelves) { config, _, shelves ->
+            config to shelves
+        }
+            .flatMapLatest { (config, shelves) ->
                 flow {
                     emit(LibraryUiState.Loading)
                     val source = sourceProvider.from(config)
@@ -71,19 +97,34 @@ class LibraryViewModel @Inject constructor(
                         // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
                         val local = downloadRepository.downloads.first().localSeries()
                         emit(
-                            if (local.isNotEmpty()) LibraryUiState.Content(local, config, offline = true)
-                            else LibraryUiState.NoServer,
+                            if (local.isNotEmpty()) {
+                                LibraryUiState.Content(
+                                    local, config, offline = true,
+                                    effectiveTypes = resolveTypes(local, shelves, emptyMap()),
+                                )
+                            } else {
+                                LibraryUiState.NoServer
+                            },
                         )
                         return@flow
                     }
+                    val overrides = runCatching { overrideRepository.all(source.id) }.getOrDefault(emptyMap())
                     emit(runCatching { source.browse(0, SourceFilter()) }
                         .fold(
-                            { LibraryUiState.Content(it.items, config) },
+                            {
+                                LibraryUiState.Content(
+                                    it.items, config,
+                                    effectiveTypes = resolveTypes(it.items, shelves, overrides),
+                                )
+                            },
                             { error ->
                                 // Server weg → nur lokal vorhandene Werke zeigen.
                                 val local = downloadRepository.downloads.first().localSeries(source.id)
                                 if (local.isNotEmpty()) {
-                                    LibraryUiState.Content(local, config, offline = true)
+                                    LibraryUiState.Content(
+                                        local, config, offline = true,
+                                        effectiveTypes = resolveTypes(local, shelves, overrides),
+                                    )
                                 } else {
                                     LibraryUiState.Error(error.message ?: "Verbindung fehlgeschlagen")
                                 }

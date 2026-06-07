@@ -58,4 +58,24 @@ class SeriesFilterTest {
     @Test fun `query matches untyped series when filter is empty`() {
         assertEquals(listOf("Roman ohne Typ"), filterSeries(all, "Roman", emptySet()).map { it.title })
     }
+
+    // --- typeOf-Injektion: Filter nutzt den hereingereichten effektiven Typ (= das Tag) ---
+
+    @Test fun `filter uses injected effective type not the override field`() {
+        // Serien OHNE contentTypeOverride, Typ kommt von außen (z. B. Bibliotheks-Default).
+        val list = listOf(series("Tower of God"), series("Berserk"))
+        val effective = mapOf("Tower of God" to ContentType.WEBTOON, "Berserk" to ContentType.MANGA)
+        assertEquals(
+            listOf("Tower of God"),
+            filterSeries(list, "", setOf(ContentType.WEBTOON)) { effective[it.remoteId] }.map { it.title },
+        )
+    }
+
+    @Test fun `series with unknown effective type falls out under active filter`() {
+        val list = listOf(series("Ohne Tag"))
+        assertEquals(
+            emptyList<String>(),
+            filterSeries(list, "", setOf(ContentType.WEBTOON)) { null }.map { it.title },
+        )
+    }
 }

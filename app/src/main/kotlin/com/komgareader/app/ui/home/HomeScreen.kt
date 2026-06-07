@@ -112,29 +112,33 @@ fun HomeScreen(
                 title = {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         StatusCluster(modifier = Modifier.align(Alignment.CenterStart))
-                        EinkSearchBar(
-                            query = query,
-                            onQueryChange = { query = it },
-                            onSubmit = { submitSearch() },
-                            placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
-                            actionLabel = s.searchAction,
-                            clearLabel = s.clearSearch,
-                            onClear = { query = ""; submitted = "" },
-                            leading = if (selected == TAB_LIBRARY && typeFilter.value.isNotEmpty()) {
-                                {
-                                    typeFilter.value.forEach { type ->
-                                        TypeFilterChip(
-                                            label = s.localizedContentType(type),
-                                            onRemove = { typeFilter.value = typeFilter.value - type },
-                                        )
+                        // Suche zentriert; Filter-Icon klebt direkt rechts daneben (nur Stöbern).
+                        Row(
+                            Modifier.align(Alignment.Center).fillMaxWidth(0.62f).widthIn(max = 408.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            EinkSearchBar(
+                                query = query,
+                                onQueryChange = { query = it },
+                                onSubmit = { submitSearch() },
+                                placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
+                                actionLabel = s.searchAction,
+                                clearLabel = s.clearSearch,
+                                onClear = { query = ""; submitted = "" },
+                                leading = if (selected == TAB_LIBRARY && typeFilter.value.isNotEmpty()) {
+                                    {
+                                        typeFilter.value.forEach { type ->
+                                            TypeFilterChip(
+                                                label = s.localizedContentType(type),
+                                                onRemove = { typeFilter.value = typeFilter.value - type },
+                                            )
+                                        }
                                     }
-                                }
-                            } else {
-                                null
-                            },
-                            modifier = Modifier.fillMaxWidth(0.6f).widthIn(max = 360.dp),
-                        )
-                        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+                                } else {
+                                    null
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
                             if (selected == TAB_LIBRARY) {
                                 IconButton(
                                     onClick = { filterMenuOpen = true },
@@ -149,6 +153,8 @@ fun HomeScreen(
                                     Icon(Icons.Outlined.FilterList, contentDescription = s.filterByType)
                                 }
                             }
+                        }
+                        Box(Modifier.align(Alignment.CenterEnd)) {
                             when (selected) {
                                 TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
                                     Icon(Icons.Outlined.Sync, contentDescription = null)

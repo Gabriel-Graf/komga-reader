@@ -13,6 +13,12 @@ class RoomSeriesOverrideRepository(private val dao: SeriesOverrideDao) : SeriesO
             runCatching { ContentType.valueOf(name) }.getOrNull()
         }
 
+    override suspend fun all(sourceId: Long): Map<String, ContentType> =
+        dao.getAll(sourceId).mapNotNull { entity ->
+            runCatching { ContentType.valueOf(entity.contentType) }.getOrNull()
+                ?.let { entity.seriesRemoteId to it }
+        }.toMap()
+
     override suspend fun set(sourceId: Long, seriesRemoteId: String, type: ContentType?) {
         if (type == null) {
             dao.delete(sourceId, seriesRemoteId)

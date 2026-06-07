@@ -159,6 +159,22 @@ interface Strings {
     val settingsWebtoon: String
     val webtoonOverlapHelper: String
     val webtoonOverlap: String
+    // Roman-Typografie-Panel
+    val novelTypography: String
+    val novelFontSize: String
+    val novelLineHeight: String
+    val novelMargin: String
+    val novelMarginNarrow: String
+    val novelMarginNormal: String
+    val novelMarginWide: String
+    val novelFontFamily: String
+    val novelTextAlign: String
+    val novelAlignLeft: String
+    val novelAlignJustify: String
+    val novelHyphenation: String
+    val novelHyphenationOff: String
+    val novelHyphenationDe: String
+    val novelHyphenationEn: String
 }
 
 object StringsDe : Strings {
@@ -326,6 +342,21 @@ object StringsDe : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
     override val webtoonOverlap = "Überlappung"
+    override val novelTypography = "Typografie"
+    override val novelFontSize = "Schriftgröße"
+    override val novelLineHeight = "Zeilenabstand"
+    override val novelMargin = "Seitenränder"
+    override val novelMarginNarrow = "Schmal"
+    override val novelMarginNormal = "Normal"
+    override val novelMarginWide = "Breit"
+    override val novelFontFamily = "Schriftart"
+    override val novelTextAlign = "Ausrichtung"
+    override val novelAlignLeft = "Linksbündig"
+    override val novelAlignJustify = "Blocksatz"
+    override val novelHyphenation = "Silbentrennung"
+    override val novelHyphenationOff = "Aus"
+    override val novelHyphenationDe = "Deutsch"
+    override val novelHyphenationEn = "Englisch"
 }
 
 object StringsEn : Strings {
@@ -493,6 +524,21 @@ object StringsEn : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
     override val webtoonOverlap = "Overlap"
+    override val novelTypography = "Typography"
+    override val novelFontSize = "Font size"
+    override val novelLineHeight = "Line spacing"
+    override val novelMargin = "Margins"
+    override val novelMarginNarrow = "Narrow"
+    override val novelMarginNormal = "Normal"
+    override val novelMarginWide = "Wide"
+    override val novelFontFamily = "Font"
+    override val novelTextAlign = "Alignment"
+    override val novelAlignLeft = "Left"
+    override val novelAlignJustify = "Justify"
+    override val novelHyphenation = "Hyphenation"
+    override val novelHyphenationOff = "Off"
+    override val novelHyphenationDe = "German"
+    override val novelHyphenationEn = "English"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

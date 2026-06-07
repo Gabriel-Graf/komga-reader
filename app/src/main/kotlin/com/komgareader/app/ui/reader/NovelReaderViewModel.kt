@@ -7,7 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.render.crengine.CrengineDocument
 import com.komgareader.render.crengine.CrengineNative
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +18,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -52,6 +56,7 @@ class NovelReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val bytesLoader: EpubBytesLoader,
     private val bus: HardwareButtonBus,
+    private val settings: SettingsRepository,
 ) : ViewModel(), ReaderChromeState {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -59,6 +64,28 @@ class NovelReaderViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(NovelUiState())
     val uiState: StateFlow<NovelUiState> = _uiState.asStateFlow()
+
+    /**
+     * Globale Roman-Typografie als [ReflowConfig], aus den sechs persistierten
+     * Settings-Flows über den reinen [NovelSettings]-Mapper zusammengesetzt.
+     * Single Source of Truth — die UI liest hier, schreibt über die Setter.
+     */
+    val reflowConfig: StateFlow<ReflowConfig> = combine(
+        settings.novelFontSizeEm,
+        settings.novelLineHeight,
+        settings.novelMarginPreset,
+        settings.novelFontFamily,
+        combine(settings.novelTextAlign, settings.novelHyphenationLang) { align, hyph -> align to hyph },
+    ) { fontSizeEm, lineHeight, marginPreset, fontFamily, alignHyph ->
+        NovelSettings(
+            fontSizeEm = fontSizeEm,
+            lineHeight = lineHeight,
+            marginPreset = marginPreset,
+            fontFamily = fontFamily,
+            textAlign = alignHyph.first,
+            hyphenationLang = alignHyph.second,
+        ).toReflowConfig()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, ReflowConfig.DEFAULT)
 
     /** Overlay-Sichtbarkeit als eigener Flow für das geteilte [ReaderScaffold]. */
     override val chromeVisible: StateFlow<Boolean> = _uiState
@@ -70,14 +97,19 @@ class NovelReaderViewModel @Inject constructor(
     private val renderMutex = Mutex()
     private var opened = false
 
+    /** Zuletzt auf das Dokument angewandte Typografie — verhindert ein redundantes
+     *  Re-Layout für die bereits beim Öffnen verwendete Konfiguration. */
+    private var appliedConfig: ReflowConfig? = null
+
     init {
         collectButtonEvents()
     }
 
     /**
      * Öffnet das EPUB für den [viewportWidth]×[viewportHeight] großen Viewport und
-     * schichtet es mit [ReflowConfig.DEFAULT] um. Idempotent: ein erneuter Aufruf
-     * mit derselben Größe ist ein No-Op (der Screen ruft es beim ersten Layout auf).
+     * schichtet es mit der global persistierten Typografie ([reflowConfig]) um.
+     * Idempotent: ein erneuter Aufruf mit derselben Größe ist ein No-Op (der Screen
+     * ruft es beim ersten Layout auf). Danach läuft die Re-Layout-Beobachtung an.
      */
     fun open(viewportWidth: Int, viewportHeight: Int) {
         if (opened || viewportWidth <= 0 || viewportHeight <= 0) return
@@ -87,19 +119,26 @@ class NovelReaderViewModel @Inject constructor(
                 ensureFontManager()
                 val bytes = bytesLoader.load(bookId, forceStream)
                 val startFraction = bytesLoader.startProgressFraction(bookId)
+                // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
+                // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
+                val initialConfig = reflowConfig.first()
+                appliedConfig = initialConfig
                 val doc = withContext(Dispatchers.IO) {
                     CrengineDocument(bytes, ".epub", viewportWidth, viewportHeight).also {
-                        it.applyLayout(ReflowConfig.DEFAULT)
+                        it.applyLayout(initialConfig)
                         it.seekToProgress(startFraction)
                     }
                 }
                 document = doc
-                val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
+                val (pageCount, startPage) = withContext(Dispatchers.IO) {
+                    doc.pageCount() to doc.currentPage()
+                }
                 _uiState.value = _uiState.value.copy(
                     loading = false,
                     pageCount = pageCount,
-                    currentPage = 0,
+                    currentPage = startPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
                 )
+                observeReflowConfig()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     loading = false,
@@ -108,6 +147,42 @@ class NovelReaderViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Schichtet das geöffnete Dokument bei jeder Typografie-Änderung neu um und
+     * **erhält die Leseposition**: vor dem Re-Layout wird der stabile Anker der
+     * aktuellen Stelle gemerkt, danach wieder angesprungen — so springt der Leser
+     * beim Vergrößern der Schrift nicht auf eine zufällige Seite. Die bereits beim
+     * Öffnen angewandte Konfiguration ([appliedConfig]) wird übersprungen.
+     */
+    private fun observeReflowConfig() = viewModelScope.launch {
+        reflowConfig.collect { cfg ->
+            if (cfg != appliedConfig) relayout(cfg)
+        }
+    }
+
+    private suspend fun relayout(cfg: ReflowConfig) {
+        val doc = document ?: return
+        appliedConfig = cfg
+        val (pageCount, newPage) = withContext(Dispatchers.IO) {
+            val anchor = doc.currentAnchor()
+            doc.applyLayout(cfg)
+            if (anchor.isNotEmpty()) doc.seekToAnchor(anchor)
+            doc.pageCount() to doc.currentPage()
+        }
+        renderMutex.withLock { renderCache.values.forEach { it.recycle() }; renderCache.clear() }
+        _uiState.value = _uiState.value.copy(
+            pageCount = pageCount,
+            currentPage = newPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
+        )
+    }
+
+    fun setFontSizeEm(value: Float) = viewModelScope.launch { settings.setNovelFontSizeEm(value) }.let {}
+    fun setLineHeight(value: Float) = viewModelScope.launch { settings.setNovelLineHeight(value) }.let {}
+    fun setMargin(preset: String) = viewModelScope.launch { settings.setNovelMarginPreset(preset) }.let {}
+    fun setFontFamily(family: String) = viewModelScope.launch { settings.setNovelFontFamily(family) }.let {}
+    fun setTextAlign(align: String) = viewModelScope.launch { settings.setNovelTextAlign(align) }.let {}
+    fun setHyphenation(lang: String) = viewModelScope.launch { settings.setNovelHyphenationLang(lang) }.let {}
 
     /** Rendert die reflowte Seite [index] (gecacht) in eine Bitmap. */
     suspend fun renderPage(index: Int): Bitmap? = withContext(Dispatchers.IO) {

@@ -56,6 +56,9 @@ object CrengineNative {
     /** Stable xpointer of the current page top ("" if unavailable). */
     external fun nativeCurrentAnchor(handle: Long): String
 
+    /** Index (0-based) of the page the view is currently on, in the current layout. */
+    external fun nativeCurrentPage(handle: Long): Int
+
     /** Navigate to the position named by [xpointer]. */
     external fun nativeSeekToAnchor(handle: Long, xpointer: String)
 

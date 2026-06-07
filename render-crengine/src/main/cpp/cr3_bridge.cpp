@@ -236,6 +236,21 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeCurrentAnchor(
     return env->NewStringUTF(UnicodeToUtf8(bm.toString()).c_str());
 }
 
+/*
+ * Index of the page the view is currently positioned on (0-based) in the current
+ * layout. Lets the reader re-derive the page index after a re-layout once it has
+ * seeked back to a saved anchor, so the reading position is preserved.
+ */
+JNIEXPORT jint JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeCurrentPage(
+        JNIEnv* /*env*/, jobject /*thiz*/, jlong handle) {
+    auto* view = reinterpret_cast<LVDocView*>(handle);
+    if (view == nullptr)
+        return 0;
+    view->checkRender();
+    return view->getCurPage();
+}
+
 /* Navigate to the position named by [jXPointer] (no-op if it doesn't resolve). */
 JNIEXPORT void JNICALL
 Java_com_komgareader_render_crengine_CrengineNative_nativeSeekToAnchor(

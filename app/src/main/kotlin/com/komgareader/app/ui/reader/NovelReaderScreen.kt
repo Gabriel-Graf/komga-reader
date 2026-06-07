@@ -6,13 +6,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,8 +25,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.eink.onyx.OnyxRefresher
 
 /**
@@ -41,13 +48,30 @@ fun NovelReaderScreen(
     refresher: OnyxRefresher? = null,
 ) {
     val state by novelVm.uiState.collectAsState()
+    val reflowConfig by novelVm.reflowConfig.collectAsState()
     val rootView = LocalView.current
+    val strings = LocalStrings.current
+    var typoPanelOpen by remember { mutableStateOf(false) }
 
     // Reflow-Seitenwechsel ist ein bewusster Bildwechsel -> sofortiger GC-Full-Refresh
-    // gegen Ghosting (No-Op auf Nicht-Boox).
-    LaunchedEffect(state.currentPage) {
+    // gegen Ghosting (No-Op auf Nicht-Boox). Ein Re-Layout (Typo-Änderung) ändert
+    // pageCount -> ebenfalls als Full-Refresh-Auslöser einbeziehen.
+    LaunchedEffect(state.currentPage, state.pageCount) {
         novelVm.onPageSettled(state.currentPage)
         refresher?.fullRefreshNow(rootView)
+    }
+
+    if (typoPanelOpen) {
+        NovelTypoPanel(
+            config = reflowConfig,
+            onFontSizeEm = novelVm::setFontSizeEm,
+            onLineHeight = novelVm::setLineHeight,
+            onMargin = novelVm::setMargin,
+            onFontFamily = novelVm::setFontFamily,
+            onTextAlign = novelVm::setTextAlign,
+            onHyphenation = novelVm::setHyphenation,
+            onDismiss = { typoPanelOpen = false },
+        )
     }
 
     ReaderScaffold(
@@ -57,6 +81,15 @@ fun NovelReaderScreen(
         onPrev = novelVm::prevPage,
         onNext = novelVm::nextPage,
         background = Color.White,
+        actions = {
+            IconButton(onClick = { typoPanelOpen = true }) {
+                Icon(
+                    AppIcons.Typography,
+                    contentDescription = strings.novelTypography,
+                    tint = Color.White,
+                )
+            }
+        },
         footer = {
             Box(Modifier.fillMaxSize()) {
                 Text(

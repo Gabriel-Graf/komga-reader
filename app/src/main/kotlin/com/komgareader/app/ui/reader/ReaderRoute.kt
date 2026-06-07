@@ -35,7 +35,6 @@ fun ReaderRoute(
     EinkReaderEffect(refresher)
 
     val content by viewModel.content.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
     val mode by viewModel.viewerMode.collectAsState()
     val displayMode by viewModel.displayMode.collectAsState()
 
@@ -75,8 +74,7 @@ fun ReaderRoute(
                     initialPage = c.initialPage,
                     displayMode = displayMode,
                     frameSteps = viewModel.frameStep,
-                    chromeVisible = uiState.chromeVisible,
-                    onToggleChrome = viewModel::toggleChrome,
+                    chrome = viewModel,
                     onBack = onBack,
                     onPageVisible = viewModel::onPageSettled,
                     onToggleMode = viewModel::toggleViewerMode,
@@ -109,8 +107,7 @@ fun ReaderRoute(
                     initialPage = c.initialPage,
                     displayMode = displayMode,
                     frameSteps = viewModel.frameStep,
-                    chromeVisible = uiState.chromeVisible,
-                    onToggleChrome = viewModel::toggleChrome,
+                    chrome = viewModel,
                     onBack = onBack,
                     onPageVisible = viewModel::onPageSettled,
                     onToggleMode = viewModel::toggleViewerMode,

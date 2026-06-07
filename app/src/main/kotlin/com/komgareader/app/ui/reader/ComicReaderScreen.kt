@@ -1,13 +1,9 @@
 package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -15,6 +11,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -42,6 +41,12 @@ import com.komgareader.guidedview.PanelGeometry
  *
  * Der [ComicReaderViewModel] ist die einzige Wahrheitsquelle für die sichtbare
  * Seite (`state.position.page`) und den Zoom-Zustand.
+ *
+ * Hintergrund + Overlay laufen über [ReaderScaffold]; die Tap-Zonen sind hier
+ * bespoke (Panel-Hit-Test, Zoom, Letterbox-normalisierte Koordinaten) und leben
+ * daher in der Content-Lambda innerhalb der [BoxWithConstraints], wo die
+ * Viewport-Geometrie verfügbar ist. Die Scaffold-Standard-Drittel greifen nicht
+ * (leerer `tapModifier`).
  */
 @Composable
 fun ComicReaderScreen(
@@ -90,109 +95,112 @@ fun ComicReaderScreen(
         refresher?.fullRefreshNow(rootView)
     }
 
-    // Kleiner Rand: Panel füllt das Viewport möglichst voll (ohne Crop). Größerer Wert = mehr Luft.
-    val marginFraction = 0.02f
-
-    BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
-        // Bei ContentScale.Fit wird die Seite ins Viewport eingepasst und seitlich
-        // bzw. oben/unten mit Letterbox-Balken zentriert. Tap-Normalisierung und
-        // Panel-Pivot müssen gegen dieses tatsächlich dargestellte Content-Rechteck
-        // rechnen, nicht gegen das volle Viewport.
-        val vw = constraints.maxWidth.toFloat()
-        val vh = constraints.maxHeight.toFloat()
-        val aspect = if (state.pageAspect > 0f) state.pageAspect else vw / vh
-        val contentW: Float
-        val contentH: Float
-        if (aspect < vw / vh) {
-            contentH = vh; contentW = vh * aspect
-        } else {
-            contentW = vw; contentH = vw / aspect
-        }
-        val offX = (vw - contentW) / 2f
-        val offY = (vh - contentH) / 2f
-
-        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
-            val pageRef = pages[pageIndex]
-            val request = remember(pageRef.url, authHeaders) {
-                ImageRequest.Builder(ctx).data(pageRef.url)
-                    .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
-                    .crossfade(false).build()
-            }
-            val isCurrent = pageIndex == state.position.page
-            val panel = if (isCurrent && state.zoomed) state.currentPanels.getOrNull(state.position.unit) else null
-            val mod = if (panel != null) {
-                val scale = PanelGeometry.fitScale(panel, contentW, contentH, vw, vh, marginFraction = marginFraction)
-                // Panel-Mittelpunkt (in Viewport-Pixeln) auf die Viewport-Mitte schieben UND skalieren,
-                // damit genau der Panel-Inhalt zentriert bildschirmfüllend gezeigt wird. transformOrigin
-                // oben-links (0,0) + Translation ist nötig: nur ein Pivot würde das Panel an seiner
-                // Off-Center-Position fixieren statt es zu zentrieren.
-                val cx = offX + panel.centerX * contentW
-                val cy = offY + panel.centerY * contentH
-                Modifier.fillMaxSize().graphicsLayer(
-                    scaleX = scale, scaleY = scale,
-                    transformOrigin = TransformOrigin(0f, 0f),
-                    translationX = vw / 2f - scale * cx,
-                    translationY = vh / 2f - scale * cy,
+    ReaderScaffold(
+        chrome = comicVm,
+        title = "${state.position.page + 1} / $pageCount",
+        onBack = onBack,
+        // Navigation läuft hier komplett über die bespoke Tap-Zonen / das ViewModel.
+        onPrev = {},
+        onNext = {},
+        // Bespoke Tap-Zonen leben in der Content-Lambda (brauchen Viewport-Geometrie).
+        tapModifier = Modifier,
+        actions = {
+            IconButton(onClick = { comicVm.toggleGuided() }) {
+                Icon(
+                    AppIcons.PanelMode,
+                    contentDescription = if (state.guidedEnabled) s.readerPanelModeOff else s.readerPanelModeOn,
+                    tint = if (state.guidedEnabled) Color.White else Color.Gray,
                 )
-            } else Modifier.fillMaxSize()
-
-            FilteredReaderAsyncImage(
-                model = request,
-                contentDescription = "Seite ${pageIndex + 1}",
-                modifier = mod,
-                contentScale = ContentScale.Fit,
-            )
-        }
-
-        // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke (kein pointerInput → Taps passieren durch).
-        if (showOverlay && !state.zoomed && state.currentPanels.isNotEmpty()) {
-            Canvas(Modifier.fillMaxSize()) {
-                val stroke = Stroke(width = 9f)
-                state.currentPanels.forEach { p ->
-                    drawRect(
-                        color = Color(0xFF00C800),
-                        topLeft = Offset(offX + p.left * contentW, offY + p.top * contentH),
-                        size = Size(p.width * contentW, p.height * contentH),
-                        style = stroke,
-                    )
-                }
             }
-        }
+            ReaderModeAction(onToggleMode, "Zu Webtoon-Modus wechseln")
+        },
+    ) {
+        // Kleiner Rand: Panel füllt das Viewport möglichst voll (ohne Crop). Größerer Wert = mehr Luft.
+        val marginFraction = 0.02f
 
-        Box(
-            Modifier.fillMaxSize().pointerInput(state.zoomed, state.guidedEnabled, state.currentPanels) {
-                detectTapGestures { offset ->
-                    if (state.zoomed) {
-                        when {
-                            offset.x < vw / 3f -> comicVm.previous()
-                            offset.x > vw * 2f / 3f -> comicVm.next()
-                            else -> comicVm.zoomOut()
-                        }
-                    } else {
-                        val xN = ((offset.x - offX) / contentW).coerceIn(0f, 1f)
-                        val yN = ((offset.y - offY) / contentH).coerceIn(0f, 1f)
-                        comicVm.onPageTap(xN, yN)
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            // Bei ContentScale.Fit wird die Seite ins Viewport eingepasst und seitlich
+            // bzw. oben/unten mit Letterbox-Balken zentriert. Tap-Normalisierung und
+            // Panel-Pivot müssen gegen dieses tatsächlich dargestellte Content-Rechteck
+            // rechnen, nicht gegen das volle Viewport.
+            val vw = constraints.maxWidth.toFloat()
+            val vh = constraints.maxHeight.toFloat()
+            val aspect = if (state.pageAspect > 0f) state.pageAspect else vw / vh
+            val contentW: Float
+            val contentH: Float
+            if (aspect < vw / vh) {
+                contentH = vh; contentW = vh * aspect
+            } else {
+                contentW = vw; contentH = vw / aspect
+            }
+            val offX = (vw - contentW) / 2f
+            val offY = (vh - contentH) / 2f
+
+            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
+                val pageRef = pages[pageIndex]
+                val request = remember(pageRef.url, authHeaders) {
+                    ImageRequest.Builder(ctx).data(pageRef.url)
+                        .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
+                        .crossfade(false).build()
+                }
+                val isCurrent = pageIndex == state.position.page
+                val panel = if (isCurrent && state.zoomed) state.currentPanels.getOrNull(state.position.unit) else null
+                val mod = if (panel != null) {
+                    val scale = PanelGeometry.fitScale(panel, contentW, contentH, vw, vh, marginFraction = marginFraction)
+                    // Panel-Mittelpunkt (in Viewport-Pixeln) auf die Viewport-Mitte schieben UND skalieren,
+                    // damit genau der Panel-Inhalt zentriert bildschirmfüllend gezeigt wird. transformOrigin
+                    // oben-links (0,0) + Translation ist nötig: nur ein Pivot würde das Panel an seiner
+                    // Off-Center-Position fixieren statt es zu zentrieren.
+                    val cx = offX + panel.centerX * contentW
+                    val cy = offY + panel.centerY * contentH
+                    Modifier.fillMaxSize().graphicsLayer(
+                        scaleX = scale, scaleY = scale,
+                        transformOrigin = TransformOrigin(0f, 0f),
+                        translationX = vw / 2f - scale * cx,
+                        translationY = vh / 2f - scale * cy,
+                    )
+                } else Modifier.fillMaxSize()
+
+                FilteredReaderAsyncImage(
+                    model = request,
+                    contentDescription = "Seite ${pageIndex + 1}",
+                    modifier = mod,
+                    contentScale = ContentScale.Fit,
+                )
+            }
+
+            // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke (kein pointerInput → Taps passieren durch).
+            if (showOverlay && !state.zoomed && state.currentPanels.isNotEmpty()) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val stroke = Stroke(width = 9f)
+                    state.currentPanels.forEach { p ->
+                        drawRect(
+                            color = Color(0xFF00C800),
+                            topLeft = Offset(offX + p.left * contentW, offY + p.top * contentH),
+                            size = Size(p.width * contentW, p.height * contentH),
+                            style = stroke,
+                        )
                     }
                 }
-            },
-        )
+            }
 
-        ReaderChromeOverlay(
-            visible = state.chromeVisible,
-            title = "${state.position.page + 1} / $pageCount",
-            onBack = onBack,
-            actions = {
-                IconButton(onClick = { comicVm.toggleGuided() }) {
-                    Icon(
-                        AppIcons.PanelMode,
-                        contentDescription = if (state.guidedEnabled) s.readerPanelModeOff else s.readerPanelModeOn,
-                        tint = if (state.guidedEnabled) Color.White else Color.Gray,
-                    )
-                }
-                IconButton(onClick = onToggleMode) {
-                    Icon(AppIcons.ReaderMode, contentDescription = "Zu Webtoon-Modus wechseln", tint = Color.White)
-                }
-            },
-        )
+            Box(
+                Modifier.fillMaxSize().pointerInput(state.zoomed, state.guidedEnabled, state.currentPanels) {
+                    detectTapGestures { offset ->
+                        if (state.zoomed) {
+                            when {
+                                offset.x < vw / 3f -> comicVm.previous()
+                                offset.x > vw * 2f / 3f -> comicVm.next()
+                                else -> comicVm.zoomOut()
+                            }
+                        } else {
+                            val xN = ((offset.x - offX) / contentW).coerceIn(0f, 1f)
+                            val yN = ((offset.y - offY) / contentH).coerceIn(0f, 1f)
+                            comicVm.onPageTap(xN, yN)
+                        }
+                    }
+                },
+            )
+        }
     }
 }

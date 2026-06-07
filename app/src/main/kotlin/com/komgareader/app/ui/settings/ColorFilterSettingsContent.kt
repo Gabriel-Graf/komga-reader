@@ -5,12 +5,16 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -46,6 +50,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -94,17 +99,19 @@ fun ColorFilterSettingsContent(
     var profilesExpanded by remember { mutableStateOf(false) }
     var selectorSize by remember { mutableStateOf(IntSize.Zero) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
-        val previewProfile = edit?.let {
-            ColorProfile(
-                id = it.baseProfileId, name = it.name,
-                saturation = it.saturation, contrast = it.contrast, brightness = it.brightness,
-                blackPoint = it.blackPoint, whitePoint = it.whitePoint, gamma = it.gamma,
-                sharpenAmount = it.sharpenAmount, sharpenRadius = it.sharpenRadius,
-                ditherMode = it.ditherMode, ditherLevels = it.ditherLevels, builtIn = it.builtIn,
-            )
-        } ?: active
+    // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
+    val previewProfile = edit?.let {
+        ColorProfile(
+            id = it.baseProfileId, name = it.name,
+            saturation = it.saturation, contrast = it.contrast, brightness = it.brightness,
+            blackPoint = it.blackPoint, whitePoint = it.whitePoint, gamma = it.gamma,
+            sharpenAmount = it.sharpenAmount, sharpenRadius = it.sharpenRadius,
+            ditherMode = it.ditherMode, ditherLevels = it.ditherLevels, builtIn = it.builtIn,
+        )
+    } ?: active
+
+    // Vorschau-Cover — bleibt oben gepinnt (scrollt nicht mit den Reglern weg).
+    val cover: @Composable () -> Unit = {
         preview?.let { p ->
             val request = remember(p.url) {
                 ImageRequest.Builder(ctx).data(p.url)
@@ -141,7 +148,10 @@ fun ColorFilterSettingsContent(
                 }
             }
         }
+    }
 
+    // Profil-Selektor + Editor — kann lang werden, deshalb der scrollbare Teil.
+    val controls: @Composable () -> Unit = {
         // Profil-Selektor (zwischen Vorschau und Editor): aufklappbares Dropdown + Anlegen-Button rechts.
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
             SectionHeader(s.colorFilterProfiles)
@@ -276,6 +286,28 @@ fun ColorFilterSettingsContent(
                         OutlinedButton(onClick = { viewModel.delete(e.baseProfileId) }) { Text(s.colorFilterDelete) }
                         Button(onClick = { viewModel.updateExisting() }) { Text(s.colorFilterUpdate) }
                     }
+                }
+            }
+        }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if (maxHeight == Dp.Infinity) {
+            // Unbegrenzte Höhe (Phone-Accordion in der Scroll-Liste): einfacher Stapel.
+            Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+                cover()
+                controls()
+            }
+        } else {
+            // Begrenzte Höhe (Master-Detail): Cover oben gepinnt, nur die Regler scrollen.
+            Column(Modifier.fillMaxSize()) {
+                cover()
+                Spacer(Modifier.height(EinkTokens.sectionGap))
+                Column(
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap),
+                ) {
+                    controls()
                 }
             }
         }

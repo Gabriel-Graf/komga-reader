@@ -16,12 +16,19 @@ import com.komgareader.app.i18n.Strings
 /** Die einzelnen Settings-Sektionen. Reihenfolge = Sidebar-/Accordion-Reihenfolge. */
 enum class SettingsSectionId { CONNECTION, APPEARANCE, COLOR_FILTER, READER, DOWNLOADS, LANGUAGE, ABOUT }
 
-/** Eine Settings-Sektion: Metadaten + such-Terme + ihr Inhalt. */
+/**
+ * Eine Settings-Sektion: Metadaten + such-Terme + ihr Inhalt.
+ *
+ * @param scrollable false, wenn die Sektion ihr eigenes Scrollen verwaltet (z. B. Farbfilter
+ *   pinnt die Vorschau und scrollt nur die Regler) — der Host gibt dann eine gebundene Höhe
+ *   statt selbst zu scrollen.
+ */
 data class SettingsSection(
     val id: SettingsSectionId,
     val icon: ImageVector,
     val title: String,
     val searchTerms: List<String>,
+    val scrollable: Boolean = true,
     val content: @Composable (query: String) -> Unit,
 )
 
@@ -56,6 +63,8 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
             s.settingsColorFilter, s.colorFilterSummary, s.colorFilterProfiles,
             s.colorFilterSaturation, s.colorFilterContrast, s.colorFilterBrightness,
         ),
+        // Verwaltet eigenes Scrollen: pinnt das Vorschau-Cover, scrollt nur die Regler.
+        scrollable = false,
         content = { q -> ColorFilterSettingsContent(q) },
     ),
     SettingsSection(

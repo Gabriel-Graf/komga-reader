@@ -16,7 +16,7 @@ import org.junit.runner.RunWith
 
 /**
  * Verifiziert das Fresh-Install-Seeding (onCreate-Callback): eine frische DB erhält die
- * zwei Built-in-Profile und den aktiven Pointer auf das Go-7-Profil — ohne dass eine
+ * drei Built-in-Profile und den aktiven Pointer auf das Go-7-Profil — ohne dass eine
  * Migration läuft. Deckt damit den realistischen Neu-Installationspfad ab; die Seed-SQL
  * ist mit der v6→v7-Migration geteilt.
  */
@@ -39,9 +39,18 @@ class ColorProfileSeedTest {
     @Test
     fun freshInstall_seedetBuiltInProfileUndAktivenPointer() = runBlocking {
         val profiles = db.colorProfileDao().observeAll().first()
-        assertEquals(2, profiles.size)
+        assertEquals(3, profiles.size)
         assertTrue(profiles.any { it.name == "Boox Go Color 7 Gen2" && it.builtIn })
         assertTrue(profiles.any { it.name == "Aus" && it.builtIn })
         assertEquals("2", db.settingsDao().observe("active_color_profile_id").first())
+    }
+
+    @Test
+    fun freshInstall_enthältDemoBuiltinVoll() = runBlocking {
+        val all = db.colorProfileDao().observeAll().first()
+        val voll = all.firstOrNull { it.name == "Boox Go Color 7 — Voll" }
+        assertTrue(voll != null && voll.builtIn)
+        assertEquals(1.2f, voll!!.gamma, 0.0001f)
+        assertTrue(voll.sharpenAmount > 0f)
     }
 }

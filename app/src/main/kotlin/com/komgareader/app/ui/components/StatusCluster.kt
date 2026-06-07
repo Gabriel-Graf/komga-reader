@@ -34,8 +34,8 @@ import java.util.Date
 
 /**
  * Ersetzt den (jetzt überflüssigen) TopBar-Titel der Top-Level-Tabs: kompakter
- * vertikaler Block — **Uhrzeit oben, Akkustand unten**. Bewusst klein gehalten
- * (≤ 40 dp), damit er nicht höher als die übrigen TopBar-Elemente (Suchzeile) ist.
+ * vertikaler Block — **Uhrzeit oben, Akkustand unten**. Kompakt gehalten
+ * (≤ 50 dp), damit er nicht höher als die übrigen TopBar-Elemente (Suchzeile) ist.
  * Vorher kam diese Info aus der System-Statusleiste, die im Vollbild ausgeblendet ist.
  */
 @Composable
@@ -53,23 +53,31 @@ fun StatusCluster(modifier: Modifier = Modifier) {
         }
     }
 
+    // ~25% größer als die Material-Label-Styles für bessere E-Ink-Lesbarkeit (Gewicht kommt
+    // aus der SemiBold-EinkTypography). Eine Stelle skaliert Schrift, Icon, Höhe konsistent.
+    val timeStyle = MaterialTheme.typography.labelMedium.let {
+        it.copy(fontSize = it.fontSize * 1.25f, lineHeight = it.lineHeight * 1.25f)
+    }
+    val batteryStyle = MaterialTheme.typography.labelSmall.let {
+        it.copy(fontSize = it.fontSize * 1.25f, lineHeight = it.lineHeight * 1.25f)
+    }
     Column(
-        modifier = modifier.heightIn(max = 40.dp),
+        modifier = modifier.heightIn(max = 50.dp),
         verticalArrangement = Arrangement.Center,
         // Uhrzeit mittig über der (breiteren) Akku-Zeile → symmetrischer Block.
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(time, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        Text(time, style = timeStyle, maxLines = 1)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 Icons.Outlined.BatteryStd,
                 contentDescription = null,
                 // BatteryStd ist senkrecht — 90° drehen für waagerechte Akku-Darstellung (Nub rechts).
-                modifier = Modifier.size(14.dp).rotate(90f),
+                modifier = Modifier.size(18.dp).rotate(90f),
                 tint = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.width(2.dp))
-            Text("$battery %", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Spacer(Modifier.width(3.dp))
+            Text("$battery %", style = batteryStyle, maxLines = 1)
         }
     }
 }

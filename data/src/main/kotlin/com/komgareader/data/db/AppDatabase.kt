@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class,
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -145,30 +145,29 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
 }
 
 /**
- * Seedet die mitgelieferten Farbfilter-Profile + den aktiven Pointer. Wird von der
- * v9→v10-Migration (Upgrade) UND vom Fresh-Install-Callback (onCreate) genutzt, damit
- * neue Installationen nicht mit leerer Profilliste starten.
+ * Seedet die drei mitgelieferten Farbfilter-Profile (Aus, Boox Go Color 7 Gen2,
+ * Boox Go Color 7 — Voll) + den aktiven Pointer im **v11-Schema** (13 Spalten). Wird vom
+ * Fresh-Install-Callback (onCreate) und der Selbstheilung (onOpen, wenn die Tabelle leer ist)
+ * genutzt. NICHT von MIGRATION_9_10 — die erzeugt eine 6-Spalten-Tabelle und seedet selbst.
  */
 private fun seedColorProfiles(db: SupportSQLiteDatabase) {
-    db.execSQL(
-        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
-            "VALUES (1,'Aus',1.0,1.0,0.0,1)",
-    )
-    db.execSQL(
-        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
-            "VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)",
-    )
-    db.execSQL(
-        "INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')",
-    )
+    val cols = "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`)"
+    db.execSQL("INSERT OR REPLACE INTO `color_profiles` $cols VALUES (1,'Aus',1.0,1.0,0.0,0.0,1.0,1.0,0.0,1,'NONE',16,1)")
+    db.execSQL("INSERT OR REPLACE INTO `color_profiles` $cols VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,0.0,1.0,1.0,0.0,1,'NONE',16,1)")
+    db.execSQL("INSERT OR REPLACE INTO `color_profiles` $cols VALUES (3,'Boox Go Color 7 — Voll',1.4,1.15,0.05,0.05,0.95,1.2,0.6,1,'NONE',16,1)")
+    db.execSQL("INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')")
 }
 
 /**
- * v9 → v10: color_profiles-Tabelle für E-Ink-Farbfilter-Profile. Seedet zwei Built-ins
- * (Aus = neutral, Boox Go Color 7 Gen2 = Kaleido-getunt) und setzt das Go-7-Profil aktiv.
+ * v9 → v10: color_profiles-Tabelle (Phase-1, 6-spaltig) für E-Ink-Farbfilter-Profile. Seedet zwei
+ * Built-ins (Aus = neutral, Boox Go Color 7 Gen2 = Kaleido-getunt) und setzt das Go-7-Profil aktiv.
  */
 val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        // Robust gegen eine inkompatible Alt-Tabelle aus parallelem Branch-Testen (z. B. ein
+        // `color_profiles` mit zusätzlichen NOT-NULL-Spalten): vor dem Anlegen verwerfen. In der
+        // master-Lineage existiert die Tabelle vor v10 nicht → für saubere DBs ein No-Op.
+        db.execSQL("DROP TABLE IF EXISTS `color_profiles`")
         db.execSQL(
             """CREATE TABLE IF NOT EXISTS `color_profiles` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -179,7 +178,46 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
                 `builtIn` INTEGER NOT NULL
             )""",
         )
-        seedColorProfiles(db)
+        // 6-Spalten-Seed (Phase-1-Form). Die Phase-2-Spalten + das Voll-Built-in kommen erst in
+        // MIGRATION_10_11 dazu — hier NICHT das v11-seedColorProfiles (13-spaltig) nutzen.
+        db.execSQL("INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) VALUES (1,'Aus',1.0,1.0,0.0,1)")
+        db.execSQL("INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)")
+        db.execSQL("INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')")
+    }
+}
+
+/**
+ * v10 → v11: Phase-2-Pixel-Pipeline-Spalten (Levels/Gamma/Unsharp/Dither). Die Tabelle wird
+ * **neu erstellt** (statt ALTER ADD COLUMN), weil ALTER in SQLite bei `NOT NULL` einen
+ * Spalten-`DEFAULT` erzwingt — das Entity hat aber keinen `@ColumnInfo(defaultValue=…)`, sodass
+ * Rooms Schema-Validierung nach der Migration fehlschlüge und `fallbackToDestructiveMigration`
+ * die GANZE Datenbank löschen würde (Datenverlust). Die neue Tabelle hat exakt das vom Entity
+ * generierte Schema (keine Spalten-Defaults); bestehende Profile werden mit neutralen Phase-2-
+ * Werten übernommen. Zusätzlich das Demo-Built-in „Boox Go Color 7 — Voll". Aktiver Pointer
+ * bleibt unverändert.
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE `color_profiles_new` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                "`saturation` REAL NOT NULL, `contrast` REAL NOT NULL, `brightness` REAL NOT NULL, " +
+                "`blackPoint` REAL NOT NULL, `whitePoint` REAL NOT NULL, `gamma` REAL NOT NULL, " +
+                "`sharpenAmount` REAL NOT NULL, `sharpenRadius` INTEGER NOT NULL, " +
+                "`ditherMode` TEXT NOT NULL, `ditherLevels` INTEGER NOT NULL, `builtIn` INTEGER NOT NULL)",
+        )
+        db.execSQL(
+            "INSERT INTO `color_profiles_new` " +
+                "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`) " +
+                "SELECT `id`,`name`,`saturation`,`contrast`,`brightness`,0,1,1,0,1,'NONE',16,`builtIn` FROM `color_profiles`",
+        )
+        db.execSQL("DROP TABLE `color_profiles`")
+        db.execSQL("ALTER TABLE `color_profiles_new` RENAME TO `color_profiles`")
+        db.execSQL(
+            "INSERT OR REPLACE INTO `color_profiles` " +
+                "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`) " +
+                "VALUES (3,'Boox Go Color 7 — Voll',1.4,1.15,0.05,0.05,0.95,1.2,0.6,1,'NONE',16,1)",
+        )
     }
 }
 
@@ -191,5 +229,18 @@ val SEED_CALLBACK = object : RoomDatabase.Callback() {
     override fun onCreate(db: SupportSQLiteDatabase) {
         super.onCreate(db)
         seedColorProfiles(db)
+    }
+
+    /**
+     * Selbstheilung: feuert bei jedem Öffnen. Ist die Profil-Tabelle leer (z. B. weil ein
+     * früherer fehlerhafter Build eine destruktive Migration ausgelöst hat — onCreate läuft
+     * dann nicht), werden die Built-ins erneut geseedet. Verhindert eine leere Profilliste.
+     */
+    override fun onOpen(db: SupportSQLiteDatabase) {
+        super.onOpen(db)
+        val isEmpty = db.query("SELECT COUNT(*) FROM `color_profiles`").use { c ->
+            c.moveToFirst() && c.getInt(0) == 0
+        }
+        if (isEmpty) seedColorProfiles(db)
     }
 }

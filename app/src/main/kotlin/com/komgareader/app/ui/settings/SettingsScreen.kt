@@ -112,7 +112,9 @@ private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, 
             Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
+                // Sektionen, die ihr eigenes Scrollen verwalten (z. B. Farbfilter mit gepinntem
+                // Cover), bekommen eine gebundene Höhe statt des Host-Scrolls.
+                .then(if (selected.scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .padding(sizing.contentPadding),
         ) {
             selected.content(query)

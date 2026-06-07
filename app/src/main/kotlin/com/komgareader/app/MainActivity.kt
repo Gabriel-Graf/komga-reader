@@ -20,6 +20,7 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
+import com.komgareader.app.ui.components.LocalColorProfile
 import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.app.ui.components.LocalImageFilter
 import com.komgareader.app.ui.components.toColorFilterOrNull
@@ -86,6 +87,7 @@ class MainActivity : ComponentActivity() {
                 LocalStrings provides stringsFor(language),
                 LocalEinkMode provides isEink,
                 LocalImageFilter provides activeColorProfile.toColorFilterOrNull(),
+                LocalColorProfile provides activeColorProfile,
             ) {
                 KomgaReaderTheme(themeMode = themeMode) {
                     val nav = rememberNavController()

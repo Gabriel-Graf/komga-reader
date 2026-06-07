@@ -19,9 +19,9 @@ import com.komgareader.domain.model.ColorProfile
  */
 val LocalImageFilter = staticCompositionLocalOf<ColorFilter?> { null }
 
-/** Wandelt ein Profil in einen ColorFilter — oder `null`, wenn es nichts verändert. */
+/** Wandelt ein Profil in einen ColorFilter (nur linearer Teil) — oder `null`, wenn linear neutral. */
 fun ColorProfile.toColorFilterOrNull(): ColorFilter? =
-    if (isNeutral) null
+    if (isLinearNeutral) null
     else ColorFilter.colorMatrix(ColorMatrix(buildColorMatrix(saturation, contrast, brightness)))
 
 /**

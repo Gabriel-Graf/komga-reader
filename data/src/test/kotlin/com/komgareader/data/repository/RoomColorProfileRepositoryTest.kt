@@ -3,6 +3,7 @@ package com.komgareader.data.repository
 import com.komgareader.data.db.ColorProfileDao
 import com.komgareader.data.db.ColorProfileEntity
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.DitherMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -40,7 +41,7 @@ class RoomColorProfileRepositoryTest {
     @Test
     fun `observeActive fällt auf OFF zurück wenn kein Pointer gesetzt`() = runTest {
         val dao = FakeColorProfileDao()
-        dao.rows.value = listOf(ColorProfileEntity(1, "Aus", 1f, 1f, 0f, true))
+        dao.rows.value = listOf(ColorProfileEntity(id = 1, name = "Aus", saturation = 1f, contrast = 1f, brightness = 0f, builtIn = true))
         val active = repo(dao, FakeActivePointer()).observeActive().first()
         assertEquals(ColorProfile.OFF, active)
     }
@@ -49,8 +50,8 @@ class RoomColorProfileRepositoryTest {
     fun `observeActive liefert das Profil zum Pointer`() = runTest {
         val dao = FakeColorProfileDao()
         dao.rows.value = listOf(
-            ColorProfileEntity(1, "Aus", 1f, 1f, 0f, true),
-            ColorProfileEntity(2, "Boox Go Color 7 Gen2", 1.4f, 1.15f, 0.05f, true),
+            ColorProfileEntity(id = 1, name = "Aus", saturation = 1f, contrast = 1f, brightness = 0f, builtIn = true),
+            ColorProfileEntity(id = 2, name = "Boox Go Color 7 Gen2", saturation = 1.4f, contrast = 1.15f, brightness = 0.05f, builtIn = true),
         )
         val pointer = FakeActivePointer().also { it.flow.value = 2L }
         val active = repo(dao, pointer).observeActive().first()
@@ -61,11 +62,33 @@ class RoomColorProfileRepositoryTest {
     @Test
     fun `observeAll mappt Entities zu Domain-Profilen`() = runTest {
         val dao = FakeColorProfileDao()
-        dao.rows.value = listOf(ColorProfileEntity(2, "Custom", 1.2f, 1.1f, 0f, false))
+        dao.rows.value = listOf(ColorProfileEntity(id = 2, name = "Custom", saturation = 1.2f, contrast = 1.1f, brightness = 0f, builtIn = false))
         val all = repo(dao, FakeActivePointer()).observeAll().first()
         assertEquals(1, all.size)
         assertEquals("Custom", all[0].name)
         assertEquals(false, all[0].builtIn)
+    }
+
+    @Test
+    fun `upsert und observeAll erhalten die Phase-2-Felder`() = runTest {
+        val dao = FakeColorProfileDao()
+        val repo = repo(dao, FakeActivePointer())
+        val id = repo.upsert(
+            ColorProfile(
+                id = 0, name = "P2", saturation = 1f, contrast = 1f, brightness = 0f,
+                blackPoint = 0.1f, whitePoint = 0.9f, gamma = 1.3f,
+                sharpenAmount = 0.5f, sharpenRadius = 2,
+                ditherMode = DitherMode.FLOYD_STEINBERG, ditherLevels = 8, builtIn = false,
+            ),
+        )
+        val loaded = repo.observeAll().first().first { it.id == id }
+        assertEquals(0.1f, loaded.blackPoint)
+        assertEquals(0.9f, loaded.whitePoint)
+        assertEquals(1.3f, loaded.gamma)
+        assertEquals(0.5f, loaded.sharpenAmount)
+        assertEquals(2, loaded.sharpenRadius)
+        assertEquals(DitherMode.FLOYD_STEINBERG, loaded.ditherMode)
+        assertEquals(8, loaded.ditherLevels)
     }
 
     @Test

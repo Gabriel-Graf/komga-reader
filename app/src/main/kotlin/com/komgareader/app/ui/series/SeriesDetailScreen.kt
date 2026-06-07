@@ -263,6 +263,19 @@ private fun SeriesDetailContent(
                 ChapterInfoHero(
                     book = info,
                     serverConfig = serverConfig,
+                    genres = seriesGenres,
+                    contentType = contentType,
+                    isLocal = info.remoteId in localIds,
+                    isDownloading = info.remoteId in downloadingIds,
+                    onRead = {
+                        onOpenChapter(info)
+                        onOpenBook(
+                            info.remoteId, info.pageCount, info.format.name, false,
+                            viewerModes[info.remoteId] ?: "PAGED",
+                        )
+                    },
+                    onDownload = { onDownload(info) },
+                    onRemoveDownload = { onRemoveDownload(info.remoteId) },
                     onBack = { infoBook = null },
                     modifier = Modifier.padding(12.dp),
                 )
@@ -457,15 +470,14 @@ private fun SeriesHeroCard(
             }
         }
 
-        // Beschreibung (Serie, Fallback ausgewähltes Buch) — nur wenn vorhanden
-        if (description != null) {
-            Spacer(Modifier.height(12.dp))
-            Text(
-                description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        // Beschreibung (Serie, Fallback ausgewähltes Buch); sonst Hinweis „keine Beschreibung".
+        Spacer(Modifier.height(12.dp))
+        Text(
+            description ?: s.noDescription,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (description != null) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
         // Aktionsschaltflächen: Lesen (primär) + Download/Entfernen-Toggle
         if (currentBook != null) {
@@ -664,6 +676,13 @@ private fun ChaptersSectionHeader(
 private fun ChapterInfoHero(
     book: Book,
     serverConfig: ServerConfig?,
+    genres: List<String>,
+    contentType: ContentType?,
+    isLocal: Boolean,
+    isDownloading: Boolean,
+    onRead: () -> Unit,
+    onDownload: () -> Unit,
+    onRemoveDownload: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -673,7 +692,7 @@ private fun ChapterInfoHero(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
             .padding(12.dp),
     ) {
         Box(Modifier.fillMaxWidth()) {
@@ -691,12 +710,19 @@ private fun ChapterInfoHero(
                         modifier = Modifier.width(140.dp).aspectRatio(2f / 3f),
                     )
                 }
+                // Genres + Typ bleiben wie beim Serien-Hero (ändern sich nicht pro Kapitel).
                 Column(modifier = Modifier.weight(1f).padding(end = 36.dp)) {
                     Text(
                         book.number?.let { "$it · ${book.title}" } ?: book.title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
+                    if (genres.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        GenreChips(genres = genres)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    TypeChip(label = s.localizedContentType(contentType))
                 }
             }
             // Zurück zur Serien-Hero-Karte.
@@ -712,6 +738,35 @@ private fun ChapterInfoHero(
             color = if (summaryText != null) MaterialTheme.colorScheme.onSurface
             else MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // Lese-/Download-Aktionen — beziehen sich auf dieses Kapitel.
+        Spacer(Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Button(onClick = onRead, modifier = Modifier.weight(1f)) {
+                Text(s.read, maxLines = 1)
+            }
+            when {
+                isDownloading -> OutlinedButton(
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    LoadingIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                }
+                isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(s.removeDownload, maxLines = 1)
+                }
+                else -> OutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(s.download, maxLines = 1)
+                }
+            }
+        }
     }
 }
 
@@ -915,8 +970,8 @@ private fun ChapterTile(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-            // oben-links: Info — öffnet immer die Kapitel-Beschreibung (auch wenn keine da ist).
-            Box(Modifier.align(Alignment.TopStart).padding(4.dp)) {
+            // oben-rechts: Info — öffnet immer die Kapitel-Beschreibung (auch wenn keine da ist).
+            Box(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
                 CoverBadge(onClick = onShowInfo) {
                     Icon(
                         Icons.Outlined.Info,
@@ -926,9 +981,9 @@ private fun ChapterTile(
                     )
                 }
             }
-            // oben-rechts: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.
+            // oben-links: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.
             Column(
-                Modifier.align(Alignment.TopEnd).padding(4.dp),
+                Modifier.align(Alignment.TopStart).padding(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 if (showBookmark) CoverBadge {

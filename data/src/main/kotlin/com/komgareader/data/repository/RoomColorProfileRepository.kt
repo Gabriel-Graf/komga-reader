@@ -3,6 +3,7 @@ package com.komgareader.data.repository
 import com.komgareader.data.db.ColorProfileDao
 import com.komgareader.data.db.ColorProfileEntity
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.DitherMode
 import com.komgareader.domain.repository.ColorProfileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -37,8 +38,17 @@ class RoomColorProfileRepository(
     override suspend fun setActive(id: Long) = setActivePointer(id)
 }
 
-private fun ColorProfileEntity.toDomain() =
-    ColorProfile(id, name, saturation, contrast, brightness, builtIn)
+private fun ColorProfileEntity.toDomain() = ColorProfile(
+    id = id, name = name, saturation = saturation, contrast = contrast, brightness = brightness,
+    blackPoint = blackPoint, whitePoint = whitePoint, gamma = gamma,
+    sharpenAmount = sharpenAmount, sharpenRadius = sharpenRadius,
+    ditherMode = runCatching { DitherMode.valueOf(ditherMode) }.getOrDefault(DitherMode.NONE),
+    ditherLevels = ditherLevels, builtIn = builtIn,
+)
 
-private fun ColorProfile.toEntity() =
-    ColorProfileEntity(id, name, saturation, contrast, brightness, builtIn)
+private fun ColorProfile.toEntity() = ColorProfileEntity(
+    id = id, name = name, saturation = saturation, contrast = contrast, brightness = brightness,
+    blackPoint = blackPoint, whitePoint = whitePoint, gamma = gamma,
+    sharpenAmount = sharpenAmount, sharpenRadius = sharpenRadius,
+    ditherMode = ditherMode.name, ditherLevels = ditherLevels, builtIn = builtIn,
+)

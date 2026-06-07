@@ -57,5 +57,12 @@ data class ColorProfileEntity(
     val saturation: Float,
     val contrast: Float,
     val brightness: Float,
+    val blackPoint: Float = 0f,
+    val whitePoint: Float = 1f,
+    val gamma: Float = 1f,
+    val sharpenAmount: Float = 0f,
+    val sharpenRadius: Int = 1,
+    val ditherMode: String = "NONE",
+    val ditherLevels: Int = 16,
     val builtIn: Boolean,
 )

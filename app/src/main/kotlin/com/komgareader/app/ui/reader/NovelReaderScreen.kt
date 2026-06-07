@@ -2,10 +2,14 @@ package com.komgareader.app.ui.reader
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,9 +53,14 @@ fun NovelReaderScreen(
 ) {
     val state by novelVm.uiState.collectAsState()
     val reflowConfig by novelVm.reflowConfig.collectAsState()
+    val chapters by novelVm.chapters.collectAsState()
+    val currentChapterTitle by novelVm.currentChapterTitle.collectAsState()
+    val progressPercent by novelVm.progressPercent.collectAsState()
     val rootView = LocalView.current
     val strings = LocalStrings.current
     var typoPanelOpen by remember { mutableStateOf(false) }
+    var tocPanelOpen by remember { mutableStateOf(false) }
+    var searchPanelOpen by remember { mutableStateOf(false) }
 
     // Reflow-Seitenwechsel ist ein bewusster Bildwechsel -> sofortiger GC-Full-Refresh
     // gegen Ghosting (No-Op auf Nicht-Boox). Ein Re-Layout (Typo-Änderung) ändert
@@ -61,8 +70,9 @@ fun NovelReaderScreen(
         refresher?.fullRefreshNow(rootView)
     }
 
-    if (typoPanelOpen) {
-        NovelTypoPanel(
+    // Max. ein Dialog gleichzeitig über dem Reader (E-Ink-Designsprache): exklusive Verzweigung.
+    when {
+        typoPanelOpen -> NovelTypoPanel(
             config = reflowConfig,
             onFontSizeEm = novelVm::setFontSizeEm,
             onLineHeight = novelVm::setLineHeight,
@@ -71,6 +81,17 @@ fun NovelReaderScreen(
             onTextAlign = novelVm::setTextAlign,
             onHyphenation = novelVm::setHyphenation,
             onDismiss = { typoPanelOpen = false },
+        )
+        tocPanelOpen -> NovelTocPanel(
+            chapters = chapters,
+            onChapterSelected = novelVm::goToAnchor,
+            onDismiss = { tocPanelOpen = false },
+        )
+        searchPanelOpen -> NovelSearchPanel(
+            onSearch = novelVm::search,
+            onHitSelected = novelVm::goToAnchor,
+            onGoToProgress = novelVm::goToProgress,
+            onDismiss = { searchPanelOpen = false },
         )
     }
 
@@ -82,6 +103,20 @@ fun NovelReaderScreen(
         onNext = novelVm::nextPage,
         background = Color.White,
         actions = {
+            IconButton(onClick = { tocPanelOpen = true }) {
+                Icon(
+                    AppIcons.TableOfContents,
+                    contentDescription = strings.novelToc,
+                    tint = Color.White,
+                )
+            }
+            IconButton(onClick = { searchPanelOpen = true }) {
+                Icon(
+                    AppIcons.Search,
+                    contentDescription = strings.novelSearch,
+                    tint = Color.White,
+                )
+            }
             IconButton(onClick = { typoPanelOpen = true }) {
                 Icon(
                     AppIcons.Typography,
@@ -91,18 +126,12 @@ fun NovelReaderScreen(
             }
         },
         footer = {
-            Box(Modifier.fillMaxSize()) {
-                Text(
-                    text = "${state.currentPage + 1} / ${state.pageCount.coerceAtLeast(1)}",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.LightGray.copy(alpha = 0.6f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
-            }
+            NovelStatusFooter(
+                progressPercent = progressPercent,
+                currentPage = state.currentPage,
+                pageCount = state.pageCount,
+                chapterTitle = currentChapterTitle,
+            )
         },
     ) {
         // Der Viewport gibt erst hier seine Pixel-Größe her: damit öffnet das VM das
@@ -144,6 +173,54 @@ fun NovelReaderScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Status-Fuß des Roman-Readers: Fortschritt in %, Seite X / N und der Titel des
+ * aktuellen Kapitels (sofern vorhanden). Flach, ohne Schatten — eine schmale,
+ * halbtransparente Leiste am unteren Rand. Alle Texte lokalisiert ([LocalStrings]).
+ */
+@Composable
+private fun NovelStatusFooter(
+    progressPercent: Int,
+    currentPage: Int,
+    pageCount: Int,
+    chapterTitle: String?,
+) {
+    val strings = LocalStrings.current
+    val pageLabel = "${strings.novelPageOfCount} ${currentPage + 1} / ${pageCount.coerceAtLeast(1)}"
+    Box(Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(Color.LightGray.copy(alpha = 0.85f))
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "$progressPercent %",
+                color = Color.Black,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                text = pageLabel,
+                color = Color.Black,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            if (!chapterTitle.isNullOrBlank()) {
+                Text(
+                    text = chapterTitle,
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
             }
         }
     }

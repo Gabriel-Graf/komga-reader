@@ -7,8 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.render.Chapter
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
+import com.komgareader.domain.render.SearchHit
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.render.crengine.CrengineDocument
@@ -96,6 +98,31 @@ class NovelReaderViewModel @Inject constructor(
         .map { it.chromeVisible }
         .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.chromeVisible)
 
+    /**
+     * Inhaltsverzeichnis des geöffneten Romans (flach, tiefenmarkiert). Wird einmal
+     * nach dem Öffnen/Re-Layout geladen — die Anker sind layout-unabhängig (Xpointer),
+     * also bleibt die Liste über Typo-Änderungen hinweg gültig.
+     */
+    private val _chapters = MutableStateFlow<List<Chapter>>(emptyList())
+    val chapters: StateFlow<List<Chapter>> = _chapters.asStateFlow()
+
+    /**
+     * Seiten-Startindex je Kapitel im **aktuellen** Layout: bestimmt das aktuelle
+     * Kapitel aus der Seite. Muss nach jedem Re-Layout neu berechnet werden, weil
+     * sich die Seitenzuordnung der (stabilen) Anker mit der Typografie verschiebt.
+     */
+    private var chapterStartPages: List<Int> = emptyList()
+
+    private val _currentChapterTitle = MutableStateFlow<String?>(null)
+
+    /** Titel des Kapitels, in dem die aktuelle Seite liegt (oder `null`, falls keins). */
+    val currentChapterTitle: StateFlow<String?> = _currentChapterTitle.asStateFlow()
+
+    /** Leseanteil 0–100 % der aktuellen Seite — für den Status-Fuß. */
+    val progressPercent: StateFlow<Int> = _uiState
+        .map { percentOf(it.currentPage, it.pageCount) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
     private var document: CrengineDocument? = null
     private val renderCache = mutableMapOf<Int, Bitmap>()
     private val renderMutex = Mutex()
@@ -156,6 +183,8 @@ class NovelReaderViewModel @Inject constructor(
                     pageCount = pageCount,
                     currentPage = startPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
                 )
+                loadChapters(doc)
+                refreshCurrentChapter()
                 observeReflowConfig()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
@@ -193,6 +222,58 @@ class NovelReaderViewModel @Inject constructor(
             pageCount = pageCount,
             currentPage = newPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
         )
+        // Die Kapitel-Anker bleiben gültig (Xpointer, layout-unabhängig), aber ihre
+        // Seitenzuordnung hat sich verschoben -> Startseiten neu berechnen.
+        recomputeChapterStartPages(doc)
+        refreshCurrentChapter()
+    }
+
+    /**
+     * Lädt das Inhaltsverzeichnis (einmal je Dokument) und berechnet die Seiten-Startindizes.
+     */
+    private suspend fun loadChapters(doc: CrengineDocument) {
+        val list = withContext(Dispatchers.IO) { doc.chapters() }
+        _chapters.value = list
+        recomputeChapterStartPages(doc)
+    }
+
+    /**
+     * Bestimmt je Kapitel die Seite seines Ankers im **aktuellen** Layout, ohne die
+     * sichtbare Position zu verschieben: vor dem Sondieren wird der aktuelle Anker
+     * gemerkt und danach wieder angesprungen.
+     */
+    private suspend fun recomputeChapterStartPages(doc: CrengineDocument) {
+        val list = _chapters.value
+        if (list.isEmpty()) {
+            chapterStartPages = emptyList()
+            return
+        }
+        chapterStartPages = withContext(Dispatchers.IO) {
+            val keep = doc.currentAnchor()
+            val pages = list.map { chapter ->
+                if (chapter.anchor.isEmpty()) {
+                    0
+                } else {
+                    doc.seekToAnchor(chapter.anchor)
+                    doc.currentPage()
+                }
+            }
+            if (keep.isNotEmpty()) doc.seekToAnchor(keep)
+            pages
+        }
+    }
+
+    /** Setzt [currentChapterTitle] auf das letzte Kapitel, dessen Startseite ≤ aktueller Seite liegt. */
+    private fun refreshCurrentChapter() {
+        val list = _chapters.value
+        val starts = chapterStartPages
+        if (list.isEmpty() || starts.size != list.size) {
+            _currentChapterTitle.value = null
+            return
+        }
+        val page = _uiState.value.currentPage
+        val index = starts.indexOfLast { it <= page }
+        _currentChapterTitle.value = list.getOrNull(index)?.title
     }
 
     fun setFontSizeEm(value: Float) = viewModelScope.launch { settings.setNovelFontSizeEm(value) }.let {}
@@ -223,12 +304,50 @@ class NovelReaderViewModel @Inject constructor(
         val target = page.coerceIn(0, count - 1)
         if (target != _uiState.value.currentPage) {
             _uiState.value = _uiState.value.copy(currentPage = target)
+            refreshCurrentChapter()
         }
+    }
+
+    /**
+     * Springt zum (layout-unabhängigen) Anker — für TOC-Auswahl und Suchtreffer.
+     * Liest die neue Seite aus dem aktuellen Layout und übernimmt sie als
+     * Leseposition; der Screen löst daraufhin den Full-Refresh aus (wie beim Blättern).
+     */
+    fun goToAnchor(anchor: String) {
+        if (anchor.isEmpty()) return
+        viewModelScope.launch {
+            val doc = document ?: return@launch
+            val newPage = withContext(Dispatchers.IO) {
+                doc.seekToAnchor(anchor)
+                doc.currentPage()
+            }
+            navigateTo(newPage)
+        }
+    }
+
+    /** Springt an die relative Position [fraction] (0.0–1.0) — für „Gehe zu %". */
+    fun goToProgress(fraction: Float) {
+        viewModelScope.launch {
+            val doc = document ?: return@launch
+            val newPage = withContext(Dispatchers.IO) {
+                doc.seekToProgress(fraction.coerceIn(0f, 1f))
+                doc.currentPage()
+            }
+            navigateTo(newPage)
+        }
+    }
+
+    /** Volltextsuche off-main-thread; liefert die Treffer in Lesereihenfolge (leer = keine). */
+    suspend fun search(query: String): List<SearchHit> {
+        val doc = document ?: return emptyList()
+        if (query.isBlank()) return emptyList()
+        return withContext(Dispatchers.IO) { doc.search(query) }
     }
 
     override fun onPageSettled(page: Int) {
         if (page != _uiState.value.currentPage) {
             _uiState.value = _uiState.value.copy(currentPage = page)
+            refreshCurrentChapter()
         }
         persistProgress(page)
     }
@@ -259,6 +378,12 @@ class NovelReaderViewModel @Inject constructor(
     private fun readingFraction(page: Int): Float {
         val lastIndex = (_uiState.value.pageCount - 1).coerceAtLeast(1)
         return (page.toFloat() / lastIndex).coerceIn(0f, 1f)
+    }
+
+    /** Leseanteil als ganze Prozent (0–100) für den Status-Fuß. */
+    private fun percentOf(page: Int, pageCount: Int): Int {
+        if (pageCount <= 1) return 0
+        return ((page.toFloat() / (pageCount - 1)) * 100f).toInt().coerceIn(0, 100)
     }
 
     override fun toggleChrome() {

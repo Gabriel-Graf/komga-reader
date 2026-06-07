@@ -158,7 +158,15 @@ fun NovelReaderScreen(
                     LoadingIndicator()
                 }
                 else -> {
-                    val bmp by produceState<Bitmap?>(initialValue = null, key1 = state.currentPage) {
+                    // Auf Seite UND Layout-Generation keyen: nach einem Re-Layout
+                    // (Typo-Änderung) ist der Render-Cache geleert; ohne den
+                    // Generations-Key behielte produceState die alte Bitmap-Referenz,
+                    // selbst wenn der Seitenindex gleich bleibt -> frisch rendern.
+                    val bmp by produceState<Bitmap?>(
+                        initialValue = null,
+                        key1 = state.currentPage,
+                        key2 = state.layoutGeneration,
+                    ) {
                         value = novelVm.renderPage(state.currentPage)
                     }
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

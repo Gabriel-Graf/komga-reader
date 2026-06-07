@@ -39,6 +39,14 @@ data class NovelUiState(
     val pageCount: Int = 0,
     val currentPage: Int = 0,
     val chromeVisible: Boolean = false,
+    /**
+     * Zähler, der bei **jedem** abgeschlossenen Re-Layout (Typografie-Änderung)
+     * erhöht wird. Der Screen keyt das Seiten-Rendern zusätzlich hierauf, damit
+     * nach einem Re-Layout eine frische Bitmap gerendert wird — auch wenn die
+     * Seitenzahl unverändert bleibt. Sonst zeichnete Compose die alte (im Cache
+     * gelöschte) Bitmap-Referenz weiter.
+     */
+    val layoutGeneration: Int = 0,
 )
 
 /**
@@ -231,10 +239,16 @@ class NovelReaderViewModel @Inject constructor(
                 if (anchor.isNotEmpty()) doc.seekToAnchor(anchor)
                 doc.pageCount() to doc.currentPage()
             }
-            renderMutex.withLock { renderCache.values.forEach { it.recycle() }; renderCache.clear() }
+            // Cache leeren OHNE zu recyceln: die aktuell angezeigte Bitmap wird von
+            // Compose noch gezeichnet. Recyceln würde sie unter dem laufenden Frame
+            // wegziehen ("trying to use a recycled bitmap"). Die Referenz fallen zu
+            // lassen reicht — die nativen Pixel (Android O+ liegen sie im Native-Heap)
+            // gibt der GC frei, sobald keine Composition sie mehr hält.
+            renderMutex.withLock { renderCache.clear() }
             _uiState.value = _uiState.value.copy(
                 pageCount = pageCount,
                 currentPage = newPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
+                layoutGeneration = _uiState.value.layoutGeneration + 1,
             )
             // Die Kapitel-Anker bleiben gültig (Xpointer, layout-unabhängig), aber ihre
             // Seitenzuordnung hat sich verschoben -> Startseiten neu berechnen.

@@ -3,6 +3,7 @@ package com.komgareader.app.ui.reader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -88,7 +89,24 @@ fun ComicReaderScreen(
 
     val marginFraction = 0.05f
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
+        // Bei ContentScale.Fit wird die Seite ins Viewport eingepasst und seitlich
+        // bzw. oben/unten mit Letterbox-Balken zentriert. Tap-Normalisierung und
+        // Panel-Pivot müssen gegen dieses tatsächlich dargestellte Content-Rechteck
+        // rechnen, nicht gegen das volle Viewport.
+        val vw = constraints.maxWidth.toFloat()
+        val vh = constraints.maxHeight.toFloat()
+        val aspect = if (state.pageAspect > 0f) state.pageAspect else vw / vh
+        val contentW: Float
+        val contentH: Float
+        if (aspect < vw / vh) {
+            contentH = vh; contentW = vh * aspect
+        } else {
+            contentW = vw; contentH = vw / aspect
+        }
+        val offX = (vw - contentW) / 2f
+        val offY = (vh - contentH) / 2f
+
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
             val pageRef = pages[pageIndex]
             val request = remember(pageRef.url, authHeaders) {
@@ -99,10 +117,12 @@ fun ComicReaderScreen(
             val isCurrent = pageIndex == state.position.page
             val panel = if (isCurrent && state.zoomed) state.currentPanels.getOrNull(state.position.unit) else null
             val mod = if (panel != null) {
-                val scale = PanelGeometry.zoomScale(panel, marginFraction)
+                val scale = PanelGeometry.fitScale(panel, contentW, contentH, vw, vh, marginFraction = marginFraction)
+                val pivotX = (offX + panel.centerX * contentW) / vw
+                val pivotY = (offY + panel.centerY * contentH) / vh
                 Modifier.fillMaxSize().graphicsLayer(
                     scaleX = scale, scaleY = scale,
-                    transformOrigin = TransformOrigin(panel.centerX, panel.centerY),
+                    transformOrigin = TransformOrigin(pivotX, pivotY),
                 )
             } else Modifier.fillMaxSize()
 
@@ -117,16 +137,16 @@ fun ComicReaderScreen(
         Box(
             Modifier.fillMaxSize().pointerInput(state.zoomed, state.guidedEnabled, state.currentPanels) {
                 detectTapGestures { offset ->
-                    val w = size.width.toFloat()
-                    val h = size.height.toFloat()
                     if (state.zoomed) {
                         when {
-                            offset.x < w / 3f -> comicVm.previous()
-                            offset.x > w * 2f / 3f -> comicVm.next()
+                            offset.x < vw / 3f -> comicVm.previous()
+                            offset.x > vw * 2f / 3f -> comicVm.next()
                             else -> comicVm.zoomOut()
                         }
                     } else {
-                        comicVm.onPageTap(offset.x / w, offset.y / h)
+                        val xN = ((offset.x - offX) / contentW).coerceIn(0f, 1f)
+                        val yN = ((offset.y - offY) / contentH).coerceIn(0f, 1f)
+                        comicVm.onPageTap(xN, yN)
                     }
                 }
             },

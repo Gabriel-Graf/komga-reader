@@ -26,6 +26,8 @@ data class ComicUiState(
     /** Normalisierte Panels der aktuellen Seite (leer = Vollseite/Fallback). */
     val currentPanels: List<NormRect> = emptyList(),
     val chromeVisible: Boolean = false,
+    /** Seitenverhältnis (Breite/Höhe) der aktuellen Seite; 0 = unbekannt. */
+    val pageAspect: Float = 0f,
 )
 
 @HiltViewModel
@@ -38,6 +40,7 @@ class ComicReaderViewModel @Inject constructor(
     private val loader = ComicPageLoader(context, imageLoader)
     private val panelCache = mutableMapOf<Int, List<NormRect>>()
     private val unitsPerPage = mutableMapOf<Int, Int>()
+    private val aspectPerPage = mutableMapOf<Int, Float>()
 
     private val _uiState = MutableStateFlow(ComicUiState())
     val uiState: StateFlow<ComicUiState> = _uiState.asStateFlow()
@@ -76,6 +79,9 @@ class ComicReaderViewModel @Inject constructor(
         val usable = if (norms.size < 2 || PanelGeometry.maxAreaFraction(norms) > 0.85f) emptyList() else norms
         panelCache[page] = usable
         unitsPerPage[page] = if (usable.isEmpty()) 1 else usable.size
+        if (det.pageWidth > 0 && det.pageHeight > 0) {
+            aspectPerPage[page] = det.pageWidth.toFloat() / det.pageHeight
+        }
         return usable
     }
 
@@ -84,7 +90,8 @@ class ComicReaderViewModel @Inject constructor(
         viewModelScope.launch {
             val norms = loadPanels(page)
             if (_uiState.value.position.page == page) {
-                _uiState.value = _uiState.value.copy(currentPanels = norms)
+                val aspect = aspectPerPage[page] ?: _uiState.value.pageAspect
+                _uiState.value = _uiState.value.copy(currentPanels = norms, pageAspect = aspect)
             }
         }
     }
@@ -127,7 +134,8 @@ class ComicReaderViewModel @Inject constructor(
             val panels = panelCache[target.page] ?: emptyList()
             // Zielseite ohne erkennbare Panels → Vollseite (Fallback), sonst Panel zeigen.
             val zoomed = panels.size >= 2
-            _uiState.value = _uiState.value.copy(position = target, currentPanels = panels, zoomed = zoomed)
+            val aspect = aspectPerPage[target.page] ?: _uiState.value.pageAspect
+            _uiState.value = _uiState.value.copy(position = target, currentPanels = panels, zoomed = zoomed, pageAspect = aspect)
             ensurePanels(target.page + 1) // Nachbar vorausladen
         }
     }
@@ -158,6 +166,7 @@ class ComicReaderViewModel @Inject constructor(
             position = GuidedPosition(target, 0),
             currentPanels = panelCache[target] ?: emptyList(),
             zoomed = false,
+            pageAspect = aspectPerPage[target] ?: _uiState.value.pageAspect,
         )
         ensurePanels(target)
         ensurePanels(target + 1)
@@ -179,6 +188,7 @@ class ComicReaderViewModel @Inject constructor(
             position = GuidedPosition(page, 0),
             currentPanels = panelCache[page] ?: emptyList(),
             zoomed = false,
+            pageAspect = aspectPerPage[page] ?: _uiState.value.pageAspect,
         )
         ensurePanels(page)
         ensurePanels(page + 1)

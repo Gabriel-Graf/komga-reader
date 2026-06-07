@@ -48,6 +48,21 @@ data class SeriesOverrideEntity(
     val contentType: String,
 )
 
+/**
+ * Lokaler Lesefortschritt je Buch (offline-first). [dirty] = noch nicht zum Server gepusht.
+ * Wird mit dem Server-Stand gemerged (höhere Seite gewinnt, kein Regress).
+ */
+@Entity(tableName = "read_progress")
+data class ReadProgressEntity(
+    @PrimaryKey val bookRemoteId: String,
+    val sourceId: Long,
+    val page: Int,
+    val completed: Boolean,
+    val totalPages: Int,
+    val dirty: Boolean,
+    val updatedAt: Long,
+)
+
 /** Lokal gespeichertes Buch (Download-Eintrag). */
 @Entity(tableName = "downloads")
 data class DownloadEntity(

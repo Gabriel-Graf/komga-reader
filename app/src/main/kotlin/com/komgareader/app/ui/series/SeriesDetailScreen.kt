@@ -1,6 +1,10 @@
 package com.komgareader.app.ui.series
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +37,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import com.komgareader.app.ui.components.LoadingIndicator
+import com.komgareader.app.ui.components.LocalEinkMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -159,6 +164,7 @@ fun SeriesDetailScreen(
                     downloadProgress = downloadProgress,
                     cancelling = cancelling,
                     onOpenBook = onOpenBook,
+                    onOpenChapter = viewModel::onOpenChapter,
                     onDownload = viewModel::download,
                     onRemoveDownload = viewModel::removeDownload,
                     onDownloadAll = { viewModel.downloadAll(current.books) },
@@ -205,6 +211,7 @@ private fun SeriesDetailContent(
     downloadProgress: DownloadProgress?,
     cancelling: Boolean,
     onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
+    onOpenChapter: (Book) -> Unit,
     onDownload: (Book) -> Unit,
     onRemoveDownload: (String) -> Unit,
     onDownloadAll: () -> Unit,
@@ -246,6 +253,7 @@ private fun SeriesDetailContent(
                 onTypeMenuAnchor = onTypeMenuAnchor,
                 onRead = {
                     currentBook?.let {
+                        onOpenChapter(it)
                         onOpenBook(
                             it.remoteId, it.pageCount, it.format.name, false,
                             viewerModes[it.remoteId] ?: "PAGED",
@@ -269,7 +277,14 @@ private fun SeriesDetailContent(
         }
 
         item {
-            AnimatedVisibility(visible = chaptersExpanded) {
+            // E-Ink: kein Bewegungs-Effekt (Ghosting) → sofortiges Auf-/Zuklappen.
+            // Smartphone: vertikales Falten von oben (kein Diagonal-Schrumpfen in die Ecke).
+            val eink = LocalEinkMode.current
+            AnimatedVisibility(
+                visible = chaptersExpanded,
+                enter = if (eink) EnterTransition.None else expandVertically(expandFrom = Alignment.Top),
+                exit = if (eink) ExitTransition.None else shrinkVertically(shrinkTowards = Alignment.Top),
+            ) {
                 Column {
                     books.forEach { book ->
                         ChapterRow(
@@ -277,7 +292,13 @@ private fun SeriesDetailContent(
                             isSelected = book.remoteId == currentBook?.remoteId,
                             isLocal = book.remoteId in localIds,
                             isDownloading = book.remoteId in downloadingIds,
-                            onSelect = { selectedBook = book.remoteId },
+                            onOpen = {
+                                onOpenChapter(book)
+                                onOpenBook(
+                                    book.remoteId, book.pageCount, book.format.name, false,
+                                    viewerModes[book.remoteId] ?: "PAGED",
+                                )
+                            },
                             onDownload = { onDownload(book) },
                             onRemoveDownload = { onRemoveDownload(book.remoteId) },
                             onSetRead = { read -> onSetRead(book, read) },
@@ -591,7 +612,7 @@ private fun ChapterRow(
     isSelected: Boolean,
     isLocal: Boolean,
     isDownloading: Boolean,
-    onSelect: () -> Unit,
+    onOpen: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
@@ -600,8 +621,9 @@ private fun ChapterRow(
     var menuOpen by remember { mutableStateOf(false) }
     var rowPos by remember { mutableStateOf(Offset.Zero) }
     var pressAnchor by remember { mutableStateOf(IntOffset.Zero) }
-    // „Aufgehört bei": Server kennt eine Leseposition, das Buch ist aber nicht abgeschlossen.
-    val resumeHere = book.lastReadPage != null && !book.readCompleted
+    // Lesezeichen, sobald eine Leseposition existiert — bleibt auch nach „gelesen" sichtbar
+    // (drei Zeichen: Lesezeichen · Häkchen · Cloud/Delete).
+    val showBookmark = book.lastReadPage != null
 
     Row(
         Modifier
@@ -609,7 +631,7 @@ private fun ChapterRow(
             .onGloballyPositioned { rowPos = it.positionInWindow() }
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap = { onSelect() },
+                    onTap = { onOpen() },
                     onLongPress = { local ->
                         // Druckpunkt in Fensterkoordinaten → Kontextmenü öffnet genau dort.
                         pressAnchor = IntOffset((rowPos.x + local.x).toInt(), (rowPos.y + local.y).toInt())
@@ -642,10 +664,10 @@ private fun ChapterRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        // Status-/Aktions-Icons: Lesezeichen (aufgehört) · Häkchen (gelesen) · Cloud/Entfernen.
+        // Status-/Aktions-Icons: Lesezeichen (Leseposition) · Häkchen (gelesen) · Cloud/Entfernen.
         // E-Ink: Gelesen wird als Häkchen-Logo gezeigt, nicht über Textfarbe.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (resumeHere) {
+            if (showBookmark) {
                 Icon(
                     Icons.Filled.Bookmark,
                     contentDescription = s.resumeHere,

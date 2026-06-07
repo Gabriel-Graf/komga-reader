@@ -9,10 +9,12 @@ import com.komgareader.app.ui.reader.ViewerMode
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.ContentType
+import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.ReadingDirection
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.ViewerType
 import com.komgareader.domain.repository.DownloadRepository
+import com.komgareader.domain.repository.ReadProgressRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
@@ -93,7 +95,13 @@ class SeriesDetailViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val shelfRepository: ShelfRepository,
     private val overrideRepository: SeriesOverrideRepository,
+    private val readProgressRepository: ReadProgressRepository,
 ) : ViewModel() {
+
+    init {
+        // Beim Öffnen offen gebliebene (dirty) Fortschritte zum Server nachziehen.
+        viewModelScope.launch { syncDirtyProgress() }
+    }
 
     private val seriesId: String = checkNotNull(savedStateHandle["seriesId"])
     private val shelfId: Long? = savedStateHandle.get<Long>("shelfId")
@@ -161,7 +169,9 @@ class SeriesDetailViewModel @Inject constructor(
      * (Loading-Flash / E-Ink-Ghosting). Voll-Reload nur bei echtem Seitenwechsel (Server/Serie).
      */
     val state: StateFlow<SeriesDetailUiState> =
-        combine(baseState, _readOverrides, _typeOverride) { base, readOv, typeOv ->
+        combine(
+            baseState, _readOverrides, _typeOverride, readProgressRepository.all,
+        ) { base, readOv, typeOv, localProgress ->
             if (base !is SeriesDetailUiState.Content) return@combine base
             var content = base
             // Typ optimistisch: Chip + Viewer-Modi neu berechnen (Bibliothek behält Vorrang).
@@ -180,7 +190,22 @@ class SeriesDetailViewModel @Inject constructor(
                     },
                 )
             }
-            // Read-Status optimistisch einblenden.
+            // Lokalen Fortschritt über den Server-Stand legen (höhere Seite gewinnt, kein Regress)
+            // — so erscheint das Lesezeichen sofort/offline.
+            if (localProgress.isNotEmpty()) {
+                content = content.copy(
+                    books = content.books.map { b ->
+                        localProgress[b.remoteId]?.let { lp ->
+                            val page = maxOf(b.lastReadPage ?: 0, lp.page)
+                            b.copy(
+                                lastReadPage = page.takeIf { it > 0 },
+                                readCompleted = b.readCompleted || lp.completed,
+                            )
+                        } ?: b
+                    },
+                )
+            }
+            // Read-Status optimistisch einblenden (explizite Aktion gewinnt).
             if (readOv.isNotEmpty()) {
                 content = content.copy(
                     books = content.books.map { b ->
@@ -379,6 +404,44 @@ class SeriesDetailViewModel @Inject constructor(
                     Log.e(TAG, "Typ setzen fehlgeschlagen", it)
                     _typeOverride.value = null // optimistisches Update zurücknehmen
                 }
+        }
+    }
+
+    /**
+     * Wird beim Öffnen eines Kapitels zum Lesen gerufen: setzt den Fortschritt **lokal zuerst**
+     * (dirty) — so erscheint das Lesezeichen sofort, auch offline — und pusht ihn dann zum Server.
+     */
+    fun onOpenChapter(book: Book) {
+        viewModelScope.launch {
+            readProgressRepository.markProgress(
+                sourceId = book.sourceId,
+                bookRemoteId = book.remoteId,
+                page = book.lastReadPage ?: 1,
+                completed = book.readCompleted,
+                totalPages = book.pageCount,
+            )
+            syncDirtyProgress()
+        }
+    }
+
+    /** Pusht alle noch nicht synchronisierten lokalen Fortschritte zum Server (still bei Offline). */
+    private suspend fun syncDirtyProgress() {
+        val config = servers.config.first() ?: return
+        val source = sourceProvider.from(config) ?: return
+        readProgressRepository.dirty().forEach { lp ->
+            runCatching {
+                source.pushProgress(
+                    lp.bookRemoteId,
+                    ReadProgress(
+                        bookId = 0,
+                        page = lp.page,
+                        totalPages = lp.totalPages,
+                        completed = lp.completed,
+                        updatedAt = lp.updatedAt,
+                    ),
+                )
+            }.onSuccess { readProgressRepository.markSynced(lp.bookRemoteId) }
+                .onFailure { Log.w(TAG, "Fortschritt-Sync verschoben (offline?): ${lp.bookRemoteId}") }
         }
     }
 

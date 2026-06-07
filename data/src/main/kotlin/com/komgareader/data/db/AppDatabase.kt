@@ -8,9 +8,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [
         SettingEntity::class, ServerEntity::class, DownloadEntity::class,
-        ShelfEntity::class, SeriesOverrideEntity::class,
+        ShelfEntity::class, SeriesOverrideEntity::class, ReadProgressEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -19,6 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun downloadDao(): DownloadDao
     abstract fun shelfDao(): ShelfDao
     abstract fun seriesOverrideDao(): SeriesOverrideDao
+    abstract fun readProgressDao(): ReadProgressDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -111,6 +112,24 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
                 `seriesRemoteId` TEXT NOT NULL,
                 `contentType` TEXT NOT NULL,
                 PRIMARY KEY(`sourceId`, `seriesRemoteId`)
+            )""",
+        )
+    }
+}
+
+/** v7 → v8: lokaler Lesefortschritt (offline-first, dirty → Sync). */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `read_progress` (
+                `bookRemoteId` TEXT NOT NULL,
+                `sourceId` INTEGER NOT NULL,
+                `page` INTEGER NOT NULL,
+                `completed` INTEGER NOT NULL,
+                `totalPages` INTEGER NOT NULL,
+                `dirty` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                PRIMARY KEY(`bookRemoteId`)
             )""",
         )
     }

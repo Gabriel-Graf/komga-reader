@@ -111,6 +111,22 @@ mit Zurück-Pfeil. Jede Unterseite hat **ein** Thema:
 - **Sprache** — DE/EN via `ChoiceRow`
 - **Über** — App-Name, Version (`BuildConfig.VERSION_NAME`), Geräte-Hinweis
 
+## Anti-Pattern: Voll-Reload bei Teil-Update
+
+Eine kleine Zustandsänderung darf **nie** die ganze Seite neu laden. Auf E-Ink ist der
+`Loading`-Durchlauf ein sichtbarer Flash + Full-Refresh (Ghosting) — und unnötig, weil sich
+nur ein Detail geändert hat.
+
+- **Falsch:** Mark-as-read / Typ-Zuweisung / Favorit-Toggle löst einen `refreshTrigger` aus,
+  der den `state`-Flow neu durch `Loading → Content` schickt (komplette Liste neu rendern).
+- **Richtig:** Den geladenen `Content` behalten und nur den betroffenen Teil **optimistisch**
+  patchen — über einen separaten `MutableStateFlow` (z. B. `_readOverrides`, `_typeOverride`),
+  der via `combine(baseState, …)` in den `Content` einfließt. Bei Server-Fehler das optimistische
+  Update zurücknehmen. Server-Call läuft im Hintergrund, ohne den State auf `Loading` zu werfen.
+- **Voll-Reload nur** bei echtem Seiten-/Kontextwechsel (anderer Server, andere Serie, Pull-to-
+  Refresh). Referenz-Implementierung: `SeriesDetailViewModel` (`_readOverrides`/`_typeOverride`
+  → `state`-`combine`, `baseState` lädt nur bei `servers.config`).
+
 ## Checkliste pro UI-Stück
 
 1. Token aus der Tabelle nehmen — keine Magic-dp/Farben inline.
@@ -119,3 +135,4 @@ mit Zurück-Pfeil. Jede Unterseite hat **ein** Thema:
 4. Modal? → `EinkModal` (schwarzer Rand).
 5. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute.
 6. Keine Animation/Schatten/Verläufe (E-Ink).
+7. Teil-Update statt Voll-Reload (siehe Anti-Pattern oben) — kein `Loading`-Flash bei kleinen Änderungen.

@@ -37,6 +37,17 @@ data class ShelfEntity(
     val defaultContentType: String? = null,
 )
 
+/**
+ * Manuell zugewiesener Inhaltstyp eines Werks (Serie). Quellen-übergreifend per
+ * [sourceId] + [seriesRemoteId]. [contentType] ist ein [com.komgareader.domain.model.ContentType]-Name.
+ */
+@Entity(tableName = "series_overrides", primaryKeys = ["sourceId", "seriesRemoteId"])
+data class SeriesOverrideEntity(
+    val sourceId: Long,
+    val seriesRemoteId: String,
+    val contentType: String,
+)
+
 /** Lokal gespeichertes Buch (Download-Eintrag). */
 @Entity(tableName = "downloads")
 data class DownloadEntity(

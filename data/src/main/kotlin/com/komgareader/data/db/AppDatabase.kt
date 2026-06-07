@@ -6,8 +6,11 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class],
-    version = 6,
+    entities = [
+        SettingEntity::class, ServerEntity::class, DownloadEntity::class,
+        ShelfEntity::class, SeriesOverrideEntity::class,
+    ],
+    version = 7,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -15,6 +18,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun serverDao(): ServerDao
     abstract fun downloadDao(): DownloadDao
     abstract fun shelfDao(): ShelfDao
+    abstract fun seriesOverrideDao(): SeriesOverrideDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -95,5 +99,19 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         )
         db.execSQL("DROP TABLE `shelves`")
         db.execSQL("ALTER TABLE `shelves_new` RENAME TO `shelves`")
+    }
+}
+
+/** v6 → v7: Tabelle für manuelle Werk-Inhaltstypen (per Quelle + Serien-Remote-ID). */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `series_overrides` (
+                `sourceId` INTEGER NOT NULL,
+                `seriesRemoteId` TEXT NOT NULL,
+                `contentType` TEXT NOT NULL,
+                PRIMARY KEY(`sourceId`, `seriesRemoteId`)
+            )""",
+        )
     }
 }

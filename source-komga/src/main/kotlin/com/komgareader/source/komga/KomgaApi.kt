@@ -8,6 +8,7 @@ import com.komgareader.source.komga.dto.ReadProgressUpdateDto
 import com.komgareader.source.komga.dto.SeriesDto
 import okhttp3.ResponseBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.Path
@@ -59,4 +60,7 @@ interface KomgaApi {
         @Path("id") bookId: String,
         @Body body: ReadProgressUpdateDto,
     )
+
+    @DELETE("books/{id}/read-progress")
+    suspend fun deleteProgress(@Path("id") bookId: String)
 }

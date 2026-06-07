@@ -15,6 +15,9 @@ interface Strings {
     val displayModeHelper: String
     val displayEink: String
     val displaySmartphone: String
+    val settingsWebtoon: String
+    val webtoonOverlap: String
+    val webtoonOverlapHelper: String
     val settingsServer: String
     val serverDisplayName: String
     val serverUrl: String
@@ -34,11 +37,16 @@ interface Strings {
     val stream: String
     val download: String
     val downloadShort: String
+    val downloadAll: String
     val downloaded: String
     val downloadedShort: String
     val removeDownload: String
     val loading: String
     val statusRead: String
+    val resumeHere: String
+    val markRead: String
+    val markUnread: String
+    val downloadCancelled: String
     val downloadFolder: String
     val chooseFolder: String
     val defaultFolder: String
@@ -65,6 +73,8 @@ interface Strings {
     val tagNovel: String
     val tagWebtoon: String
     val tagAuto: String
+    val typeUnknown: String
+    val assignType: String
     val server: String
     val create: String
     val cancel: String
@@ -109,6 +119,9 @@ object StringsDe : Strings {
     override val displayModeHelper = "Optimiert die App für E-Ink (Frame-Sprünge, keine Animationen) oder Smartphone."
     override val displayEink = "E-Ink"
     override val displaySmartphone = "Smartphone"
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlap = "Überlappung beim Blättern"
+    override val webtoonOverlapHelper = "Wie viel vom letzten Bildschirm beim Frame-Sprung erhalten bleibt."
     override val settingsServer = "Komga-Server"
     override val serverDisplayName = "Anzeigename"
     override val serverUrl = "Server-URL"
@@ -128,11 +141,18 @@ object StringsDe : Strings {
     override val stream = "Stream"
     override val download = "Herunterladen"
     override val downloadShort = "Laden"
+    override val downloadAll = "Alle laden"
     override val downloaded = "Heruntergeladen ✓"
     override val downloadedShort = "Gespeichert"
     override val removeDownload = "Entfernen"
     override val loading = "Lädt…"
     override val statusRead = "Gelesen"
+    override val resumeHere = "Hier aufgehört"
+    override val markRead = "Als gelesen markieren"
+    override val markUnread = "Als ungelesen markieren"
+    override val downloadCancelled = "Download abgebrochen"
+    override val typeUnknown = "Unbekannt"
+    override val assignType = "Typ zuweisen"
     override val downloadFolder = "Download-Ordner"
     override val chooseFolder = "Ordner wählen"
     override val defaultFolder = "Standard (intern)"
@@ -203,6 +223,9 @@ object StringsEn : Strings {
     override val displayModeHelper = "Optimises the app for E-Ink (frame jumps, no animations) or smartphone."
     override val displayEink = "E-Ink"
     override val displaySmartphone = "Smartphone"
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlap = "Page-turn overlap"
+    override val webtoonOverlapHelper = "How much of the previous screen is kept when jumping a frame."
     override val settingsServer = "Komga Server"
     override val serverDisplayName = "Display Name"
     override val serverUrl = "Server URL"
@@ -222,11 +245,18 @@ object StringsEn : Strings {
     override val stream = "Stream"
     override val download = "Download"
     override val downloadShort = "Save"
+    override val downloadAll = "Download all"
     override val downloaded = "Downloaded ✓"
     override val downloadedShort = "Saved"
     override val removeDownload = "Remove"
     override val loading = "Loading…"
     override val statusRead = "Read"
+    override val resumeHere = "Stopped here"
+    override val markRead = "Mark as read"
+    override val markUnread = "Mark as unread"
+    override val downloadCancelled = "Download cancelled"
+    override val typeUnknown = "Unknown"
+    override val assignType = "Assign type"
     override val downloadFolder = "Download Folder"
     override val chooseFolder = "Choose Folder"
     override val defaultFolder = "Default (internal)"
@@ -300,4 +330,13 @@ fun Strings.localizedSeriesStatus(raw: String): String = when (raw.uppercase()) 
     "ABANDONED" -> statusAbandoned
     "HIATUS" -> statusHiatus
     else -> raw.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+/** Lokalisierter Anzeigename eines Inhaltstyps; `null` = unbekannt. */
+fun Strings.localizedContentType(type: com.komgareader.domain.model.ContentType?): String = when (type) {
+    com.komgareader.domain.model.ContentType.MANGA -> tagManga
+    com.komgareader.domain.model.ContentType.COMIC -> tagComic
+    com.komgareader.domain.model.ContentType.NOVEL -> tagNovel
+    com.komgareader.domain.model.ContentType.WEBTOON -> tagWebtoon
+    null -> typeUnknown
 }

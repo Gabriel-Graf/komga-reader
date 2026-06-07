@@ -18,6 +18,7 @@ import com.komgareader.domain.repository.ReadProgressRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.usecase.ResolveViewerType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -96,6 +97,7 @@ class SeriesDetailViewModel @Inject constructor(
     private val shelfRepository: ShelfRepository,
     private val overrideRepository: SeriesOverrideRepository,
     private val readProgressRepository: ReadProgressRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     init {
@@ -222,6 +224,15 @@ class SeriesDetailViewModel @Inject constructor(
     val localBookIds: StateFlow<Set<String>> = downloadRepository.downloads
         .map { list -> list.map { it.bookRemoteId }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Globaler Kapitel-Anzeigemodus ("LIST"|"GRID") — unabhängig vom Content-State (kein Reload). */
+    val chapterViewMode: StateFlow<String> = settings.chapterViewMode
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "LIST")
+
+    /** Schaltet den globalen Kapitel-Anzeigemodus um und persistiert ihn. */
+    fun setChapterViewMode(mode: String) {
+        viewModelScope.launch { settings.setChapterViewMode(mode) }
+    }
 
     /** Bücher die gerade heruntergeladen werden (lokal verwaltet). */
     private val _downloadingIds = MutableStateFlow<Set<String>>(emptySet())

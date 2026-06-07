@@ -704,14 +704,14 @@ private fun ChapterInfoHero(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = s.backToSeries)
             }
         }
-        book.summary?.takeIf { it.isNotBlank() }?.let { summary ->
-            Spacer(Modifier.height(12.dp))
-            Text(
-                summary,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
+        val summaryText = book.summary?.takeIf { it.isNotBlank() }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            summaryText ?: s.noDescription,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (summaryText != null) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -783,15 +783,13 @@ private fun ChapterRow(
         // Status-/Aktions-Icons: Lesezeichen (Leseposition) · Häkchen (gelesen) · Cloud/Entfernen.
         // E-Ink: Gelesen wird als Häkchen-Logo gezeigt, nicht über Textfarbe.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (!book.summary.isNullOrBlank()) {
-                IconButton(onClick = onShowInfo, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = s.chapterInfo,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+            IconButton(onClick = onShowInfo, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Outlined.Info,
+                    contentDescription = s.chapterInfo,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             if (showBookmark) {
                 Icon(
@@ -917,17 +915,15 @@ private fun ChapterTile(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-            // oben-links: Info (Beschreibung), nur wenn vorhanden.
-            if (!book.summary.isNullOrBlank()) {
-                Box(Modifier.align(Alignment.TopStart).padding(4.dp)) {
-                    CoverBadge(onClick = onShowInfo) {
-                        Icon(
-                            Icons.Outlined.Info,
-                            contentDescription = s.chapterInfo,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
+            // oben-links: Info — öffnet immer die Kapitel-Beschreibung (auch wenn keine da ist).
+            Box(Modifier.align(Alignment.TopStart).padding(4.dp)) {
+                CoverBadge(onClick = onShowInfo) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = s.chapterInfo,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
             // oben-rechts: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.

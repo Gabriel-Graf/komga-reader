@@ -34,6 +34,7 @@ interface Strings {
     val chapterViewSwitchToList: String
     val chapterInfo: String
     val backToSeries: String
+    val noDescription: String
     val read: String
     val stream: String
     val download: String
@@ -162,6 +163,7 @@ object StringsDe : Strings {
     override val chapterViewSwitchToList = "Listenansicht"
     override val chapterInfo = "Beschreibung"
     override val backToSeries = "Zurück zur Serie"
+    override val noDescription = "Keine Beschreibung vorhanden"
     override val read = "Lesen"
     override val stream = "Stream"
     override val download = "Herunterladen"
@@ -290,6 +292,7 @@ object StringsEn : Strings {
     override val chapterViewSwitchToList = "List view"
     override val chapterInfo = "Description"
     override val backToSeries = "Back to series"
+    override val noDescription = "No description available"
     override val read = "Read"
     override val stream = "Stream"
     override val download = "Download"

@@ -86,7 +86,7 @@ fun EinkSearchBar(
                         Icon(
                             Icons.Outlined.Close,
                             contentDescription = clearLabel,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }

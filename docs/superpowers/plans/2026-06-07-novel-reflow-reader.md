@@ -12,9 +12,21 @@
 
 ---
 
-## Phase 0 — Lizenz-Gate (HART, vor jeder NDK-Zeile)
+## Phase 0 — Lizenz-Gate (HART, vor jeder NDK-Zeile) — ✅ ERLEDIGT
 
 > Läuft ZUERST. Bei Rot endet der Plan hier. Kein Vendoren, kein Build davor.
+
+**Ergebnis (2026-06-07):**
+- **KOReader-`crengine`-Fork → 🔴 RED** (GPL-2.0-**only**, Repo `koreader/crengine`
+  @ `e32ab96`). Report: `tools/crengine/LICENSE-SCAN.md`, Commit `ab1de7d`.
+- **`crengine-ng` → 🟢 GREEN** (GPL-2.0-**or-later**, README-Klausel „or (at your
+  option) any later version"; Kern `or-later=335, only=0`, alle `unklar` =
+  thirdparty MIT/BSD/MPL). Repo `gitlab.com/coolreader-ng/crengine-ng` @
+  `ec57cc1d16c47237c10ac6f3cfa491791e23a952`. Report:
+  `tools/crengine/LICENSE-SCAN-NG.md`, Commit `ea335cd`.
+
+→ **Gewählte Engine: `crengine-ng`.** Alle weiteren „crengine"-Nennungen in diesem
+Plan/Spec meinen **crengine-ng**. Modulname bleibt `render-crengine`.
 
 ### Task 0: crengine-Lizenz verifizieren
 
@@ -22,14 +34,12 @@
 - Create: `tools/crengine/scan-license.sh`
 - Create: `tools/crengine/LICENSE-SCAN.md` (Report-Ausgabe, eingecheckt)
 
-- [ ] **Step 1: crengine-Quelle als Referenz holen (read-only, NICHT vendoren)**
+- [ ] **Step 1: crengine-ng-Quelle als Referenz holen (read-only, NICHT vendoren)**
 
 ```bash
-mkdir -p /tmp/crengine-src && cd /tmp/crengine-src
-git clone --depth 1 https://github.com/koreader/crengine.git . || \
-  git clone --depth 1 https://github.com/buggins/coolreader.git .
+git clone --depth 1 --branch master https://gitlab.com/coolreader-ng/crengine-ng.git /tmp/crengine-ng-src
 ```
-Erwartung: Quelle liegt in `/tmp/crengine-src`. (KOReaders crengine-Fork bevorzugen; sonst CoolreaderS `crengine/`-Unterordner.)
+Erwartung: Quelle in `/tmp/crengine-ng-src` (GREEN-Kandidat aus Phase 0, GPL-2.0-or-later). Layout: `crengine/src` + `crengine/include`.
 
 - [ ] **Step 2: Scan-Skript schreiben** (`#!/bin/bash`, `set -euo pipefail`, ShellCheck-konform)
 

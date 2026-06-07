@@ -45,7 +45,7 @@ werden entfernt.
 | # | Entscheidung |
 |---|---|
 | Verhältnis | **`ViewerType.NOVEL`** (Reflow) ersetzt den fixen EPUB-Bitmap-Viewer vollständig. `ViewerType.EPUB` + `EpubReaderScreen` werden entfernt. Alle EPUBs → NOVEL. |
-| Engine | **crengine** (CoolReader-Engine) als neue `Document`-Impl. Echte KOReader-Typo-Qualität (Hyphenation, Blocksatz ohne „rivers"). |
+| Engine | **crengine-ng** (modernisierter CoolReader-Fork, **GPL-2.0-or-later** → AGPL-kompatibel; Phase-0-Gate bestanden) als neue `Document`-Impl. Echte KOReader-Typo-Qualität (Hyphenation, Blocksatz ohne „rivers"). Der KOReader-`crengine`-Fork schied im Gate aus (GPL-2.0-only). |
 | Typo-Knöpfe v1 | Schriftgröße · Zeilenabstand · Seitenränder · Schriftart + Blocksatz + Hyphenation. |
 | Bonus v1 | Status-Footer (% / Seite / Kapitel) · Inhaltsverzeichnis (TOC) · Volltextsuche · Gehe-zu-%. |
 | Settings-Scope | **Global**, persistiert (ein Satz für alle Romane). |
@@ -63,13 +63,19 @@ werden entfernt.
   Wikipedia, Übersetzen, Vokabel-Trainer, TTS, Lese-Statistik, Profile.
 - **Kein** stiller MuPDF-Fallback, wenn crengine ausfällt (siehe Phase 0).
 
-## Phase 0 — Lizenz-Gate (hart, vor jeder NDK-Zeile)
+## Phase 0 — Lizenz-Gate (hart, vor jeder NDK-Zeile) — ✅ bestanden (2026-06-07)
 
 crengine ist GPL-2.0 (teils -or-later). Das Projekt ist **AGPL-3.0-or-later**
 (MuPDF). **GPL-2.0-only ⨯ AGPL-3.0 = Lizenzkonflikt.** Nur GPL-2.0-**or-later**
 (oder anderweitig GPL-3-kompatibel) lässt sich auf (A)GPL-3 heben.
 
-**Dieser Schritt läuft VOR allem anderen. Kein Vendoren, kein Build davor.**
+**Ergebnis:** KOReader-`crengine`-Fork = **RED** (GPL-2.0-only). **`crengine-ng`**
+(`gitlab.com/coolreader-ng/crengine-ng` @ `ec57cc1`) = **GREEN** (GPL-2.0-or-later,
+README „or (at your option) any later version"; Kern `only=0`, alle `unklar` =
+thirdparty MIT/BSD/MPL). Reports: `tools/crengine/LICENSE-SCAN.md` (RED) +
+`LICENSE-SCAN-NG.md` (GREEN). → **Engine = crengine-ng.**
+
+**Dieser Schritt lief VOR allem anderen. Kein Vendoren, kein Build davor.**
 
 - **0a — Header-Scan (automatisiert):** crengine-Quelle holen, Skript über alle
   `.c/.cpp/.h/.hpp` im **Render-Pfad** laufen lassen. Pro Datei die Lizenz-Aussage

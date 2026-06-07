@@ -11,3 +11,6 @@ local.properties
 
 # Lokaler Real-Page-Korpus für PanelDetector-Harness (urheberrechtlich, nie committen)
 guided-view/realpages/
+
+# Icon-Generator (Node) — Deps nicht tracken
+tools/icons/node_modules/

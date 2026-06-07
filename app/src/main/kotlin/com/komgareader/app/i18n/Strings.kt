@@ -107,6 +107,7 @@ interface Strings {
     val colorFilterProfileName: String
     val colorFilterPreview: String
     val colorFilterCopySuffix: String
+    val colorFilterNewProfile: String
 }
 
 object StringsDe : Strings {
@@ -215,6 +216,7 @@ object StringsDe : Strings {
     override val colorFilterProfileName = "Profilname"
     override val colorFilterPreview = "Vorschau"
     override val colorFilterCopySuffix = " (Kopie)"
+    override val colorFilterNewProfile = "Neues Profil"
 }
 
 object StringsEn : Strings {
@@ -323,6 +325,7 @@ object StringsEn : Strings {
     override val colorFilterProfileName = "Profile name"
     override val colorFilterPreview = "Preview"
     override val colorFilterCopySuffix = " (copy)"
+    override val colorFilterNewProfile = "New profile"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

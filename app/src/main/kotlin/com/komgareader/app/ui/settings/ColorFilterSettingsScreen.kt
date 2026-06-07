@@ -82,40 +82,46 @@ fun ColorFilterSettingsScreen(
         profiles.forEach { profile ->
             ChoiceRow(label = profile.name, selected = profile.id == active.id) {
                 viewModel.setActive(profile.id)
-                viewModel.beginEdit(profile)
+                // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
+                if (profile.builtIn) viewModel.cancelEdit() else viewModel.beginEdit(profile)
             }
         }
+        // Neues, editierbares Profil anlegen — die Regler erscheinen darunter,
+        // vorbefüllt vom aktiven Profil. Speichern legt es an und wählt es aus.
+        ChoiceRow(label = "＋ ${s.colorFilterNewProfile}", selected = false) {
+            viewModel.beginNewProfile()
+        }
 
-        edit?.let { e ->
+        // Editor nur für editierbare Zustände (neuer Entwurf oder Custom-Profil), nie für Built-ins.
+        edit?.takeIf { !it.builtIn }?.let { e ->
+            val isNewDraft = e.baseProfileId == 0L
             SectionHeader(s.colorFilterAdjust)
             StepperRow(
                 label = s.colorFilterSaturation,
                 valueText = format(e.saturation),
                 onDecrement = { viewModel.updateSaturation(-STEP) },
                 onIncrement = { viewModel.updateSaturation(STEP) },
-                enabled = !e.builtIn,
             )
             StepperRow(
                 label = s.colorFilterContrast,
                 valueText = format(e.contrast),
                 onDecrement = { viewModel.updateContrast(-STEP) },
                 onIncrement = { viewModel.updateContrast(STEP) },
-                enabled = !e.builtIn,
             )
             StepperRow(
                 label = s.colorFilterBrightness,
                 valueText = format(e.brightness),
                 onDecrement = { viewModel.updateBrightness(-STEP) },
                 onIncrement = { viewModel.updateBrightness(STEP) },
-                enabled = !e.builtIn,
             )
 
             Column(Modifier.padding(top = 8.dp)) {
                 ChoiceRow(label = s.colorFilterSaveAsNew, selected = false) {
-                    newName = if (e.builtIn) "${e.name}${s.colorFilterCopySuffix}" else e.name
+                    newName = if (isNewDraft) "" else "${e.name}${s.colorFilterCopySuffix}"
                     showSaveDialog = true
                 }
-                if (!e.builtIn) {
+                // Aktualisieren/Löschen nur für ein bereits gespeichertes Custom-Profil.
+                if (!isNewDraft) {
                     ChoiceRow(label = s.colorFilterUpdate, selected = false) { viewModel.updateExisting() }
                     ChoiceRow(label = s.colorFilterDelete, selected = false) { viewModel.delete(e.baseProfileId) }
                 }

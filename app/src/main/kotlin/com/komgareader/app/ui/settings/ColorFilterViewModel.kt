@@ -72,6 +72,20 @@ class ColorFilterViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Neuen, editierbaren Profil-Entwurf öffnen (noch nicht gespeichert, `baseProfileId = 0`).
+     * Werte vom aktiven Profil vorbefüllt, damit man von der aktuellen Anmutung (z. B. Go-7)
+     * aus weitertunt. `builtIn = false` → Regler sind aktiv.
+     */
+    fun beginNewProfile() {
+        val base = active.value
+        _edit.value = EditState(
+            baseProfileId = 0L, name = "",
+            saturation = base.saturation, contrast = base.contrast,
+            brightness = base.brightness, builtIn = false,
+        )
+    }
+
     fun cancelEdit() { _edit.value = null }
 
     fun updateSaturation(delta: Float) = mutate { it.copy(saturation = clamp(it.saturation + delta, 0.5f, 2f)) }

@@ -16,6 +16,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         .map { it?.toLongOrNull() }
     override val webtoonOverlapPercent: Flow<Int> =
         dao.observe(KEY_WEBTOON_OVERLAP).map { it?.toIntOrNull() ?: 25 }
+    override val chapterViewMode: Flow<String> =
+        dao.observe(KEY_CHAPTER_VIEW_MODE).map { it ?: "LIST" }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -26,6 +28,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     }
     override suspend fun setWebtoonOverlapPercent(percent: Int) =
         dao.put(SettingEntity(KEY_WEBTOON_OVERLAP, percent.toString()))
+    override suspend fun setChapterViewMode(mode: String) =
+        dao.put(SettingEntity(KEY_CHAPTER_VIEW_MODE, mode))
 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
@@ -37,5 +41,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_DOWNLOAD_DIR = "download_dir"
         const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"
         const val KEY_WEBTOON_OVERLAP = "webtoon_overlap_percent"
+        const val KEY_CHAPTER_VIEW_MODE = "chapter_view_mode"
     }
 }

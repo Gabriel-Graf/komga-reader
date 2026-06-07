@@ -112,7 +112,7 @@ fun ColorFilterSettingsScreen(
 
             Column(Modifier.padding(top = 8.dp)) {
                 ChoiceRow(label = s.colorFilterSaveAsNew, selected = false) {
-                    newName = if (e.builtIn) "${e.name} (Kopie)" else e.name
+                    newName = if (e.builtIn) "${e.name}${s.colorFilterCopySuffix}" else e.name
                     showSaveDialog = true
                 }
                 if (!e.builtIn) {

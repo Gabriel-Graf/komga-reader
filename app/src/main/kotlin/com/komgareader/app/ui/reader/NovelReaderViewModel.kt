@@ -1,26 +1,23 @@
 package com.komgareader.app.ui.reader
 
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.render.Chapter
-import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
+import com.komgareader.domain.render.ReflowableDocument
+import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.render.SearchHit
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.SettingsRepository
-import com.komgareader.render.crengine.CrengineDocument
-import com.komgareader.render.crengine.CrengineNative
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +30,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.File
 import javax.inject.Inject
 
 /** Zustand des Roman-Readers: reflowte Seiten zur aktuellen Viewport-Größe. */
@@ -58,12 +54,13 @@ data class NovelUiState(
  */
 @HiltViewModel
 class NovelReaderViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle,
+    private val documentFactory: ReflowableDocumentFactory,
     private val bytesLoader: EpubBytesLoader,
     private val bus: HardwareButtonBus,
     private val settings: SettingsRepository,
     private val novelProgress: NovelProgressRepository,
+    @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel(), ReaderChromeState {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -124,9 +121,19 @@ class NovelReaderViewModel @Inject constructor(
         .map { percentOf(it.currentPage, it.pageCount) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    private var document: CrengineDocument? = null
+    private var document: ReflowableDocument? = null
     private val renderCache = mutableMapOf<Int, Bitmap>()
     private val renderMutex = Mutex()
+
+    /**
+     * Serialisiert **jeden** Zugriff auf das native [ReflowableDocument]:
+     * die Reflow-Engine ist explizit nicht thread-sicher, der Reader berührt sie aber
+     * aus mehreren `Dispatchers.IO`-Coroutinen (Re-Layout, Anker lesen/setzen, Suche,
+     * Kapitel-Sondierung). Ohne diese Sperre würde z. B. [recomputeChapterStartPages]
+     * (Seek-Schleife) mit [persistProgress] (`currentAnchor`) rennen und der native
+     * Zustand korrumpieren. Alle doc-berührenden Blöcke laufen unter dieser Sperre.
+     */
+    private val documentMutex = Mutex()
     private var opened = false
 
     /** Id der aktiven Quelle (quellen-übergreifender `novel_progress`-Schlüssel). */
@@ -154,7 +161,6 @@ class NovelReaderViewModel @Inject constructor(
         opened = true
         viewModelScope.launch {
             runCatching {
-                ensureFontManager()
                 val bytes = bytesLoader.load(bookId, forceStream)
                 sourceId = bytesLoader.activeSourceId()
                 // EINE kohärente Wiederaufnahme: der lokale Xpointer ist die Wahrheit (exakt,
@@ -167,24 +173,30 @@ class NovelReaderViewModel @Inject constructor(
                 // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
                 val initialConfig = reflowConfig.first()
                 appliedConfig = initialConfig
-                val doc = withContext(Dispatchers.IO) {
-                    CrengineDocument(bytes, ".epub", viewportWidth, viewportHeight).also {
-                        it.applyLayout(initialConfig)
-                        if (savedAnchor != null) it.seekToAnchor(savedAnchor)
-                        else it.seekToProgress(fallbackFraction)
+                // Initialisierung vollständig unter der Document-Sperre abschließen — öffnen,
+                // umschichten, Position wiederherstellen, Kapitel laden + Startseiten sondieren —
+                // BEVOR die Re-Layout-Beobachtung anläuft. So kann kein Re-Layout gleichzeitig
+                // mit der Kapitel-Sondierung am nicht-thread-sicheren Dokument arbeiten.
+                documentMutex.withLock {
+                    val doc = withContext(Dispatchers.IO) {
+                        documentFactory.open(bytes, ".epub", viewportWidth, viewportHeight).also {
+                            it.applyLayout(initialConfig)
+                            if (savedAnchor != null) it.seekToAnchor(savedAnchor)
+                            else it.seekToProgress(fallbackFraction)
+                        }
                     }
+                    document = doc
+                    lastSavedAnchor = savedAnchor
+                    val (count, startPage) = withContext(Dispatchers.IO) {
+                        doc.pageCount() to doc.currentPage()
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        loading = false,
+                        pageCount = count,
+                        currentPage = startPage.coerceIn(0, (count - 1).coerceAtLeast(0)),
+                    )
+                    loadChaptersLocked(doc)
                 }
-                lastSavedAnchor = savedAnchor
-                document = doc
-                val (pageCount, startPage) = withContext(Dispatchers.IO) {
-                    doc.pageCount() to doc.currentPage()
-                }
-                _uiState.value = _uiState.value.copy(
-                    loading = false,
-                    pageCount = pageCount,
-                    currentPage = startPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
-                )
-                loadChapters(doc)
                 refreshCurrentChapter()
                 observeReflowConfig()
             }.onFailure { e ->
@@ -210,40 +222,44 @@ class NovelReaderViewModel @Inject constructor(
     }
 
     private suspend fun relayout(cfg: ReflowConfig) {
-        val doc = document ?: return
         appliedConfig = cfg
-        val (pageCount, newPage) = withContext(Dispatchers.IO) {
-            val anchor = doc.currentAnchor()
-            doc.applyLayout(cfg)
-            if (anchor.isNotEmpty()) doc.seekToAnchor(anchor)
-            doc.pageCount() to doc.currentPage()
+        documentMutex.withLock {
+            val doc = document ?: return
+            val (pageCount, newPage) = withContext(Dispatchers.IO) {
+                val anchor = doc.currentAnchor()
+                doc.applyLayout(cfg)
+                if (anchor.isNotEmpty()) doc.seekToAnchor(anchor)
+                doc.pageCount() to doc.currentPage()
+            }
+            renderMutex.withLock { renderCache.values.forEach { it.recycle() }; renderCache.clear() }
+            _uiState.value = _uiState.value.copy(
+                pageCount = pageCount,
+                currentPage = newPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
+            )
+            // Die Kapitel-Anker bleiben gültig (Xpointer, layout-unabhängig), aber ihre
+            // Seitenzuordnung hat sich verschoben -> Startseiten neu berechnen.
+            recomputeChapterStartPagesLocked(doc)
         }
-        renderMutex.withLock { renderCache.values.forEach { it.recycle() }; renderCache.clear() }
-        _uiState.value = _uiState.value.copy(
-            pageCount = pageCount,
-            currentPage = newPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
-        )
-        // Die Kapitel-Anker bleiben gültig (Xpointer, layout-unabhängig), aber ihre
-        // Seitenzuordnung hat sich verschoben -> Startseiten neu berechnen.
-        recomputeChapterStartPages(doc)
         refreshCurrentChapter()
     }
 
     /**
      * Lädt das Inhaltsverzeichnis (einmal je Dokument) und berechnet die Seiten-Startindizes.
+     * **Voraussetzung:** der Aufrufer hält [documentMutex] — diese Variante greift selbst nicht.
      */
-    private suspend fun loadChapters(doc: CrengineDocument) {
+    private suspend fun loadChaptersLocked(doc: ReflowableDocument) {
         val list = withContext(Dispatchers.IO) { doc.chapters() }
         _chapters.value = list
-        recomputeChapterStartPages(doc)
+        recomputeChapterStartPagesLocked(doc)
     }
 
     /**
      * Bestimmt je Kapitel die Seite seines Ankers im **aktuellen** Layout, ohne die
      * sichtbare Position zu verschieben: vor dem Sondieren wird der aktuelle Anker
-     * gemerkt und danach wieder angesprungen.
+     * gemerkt und danach wieder angesprungen. **Voraussetzung:** der Aufrufer hält
+     * [documentMutex] — die Seek-Schleife darf nicht mit anderen Dokumentzugriffen rennen.
      */
-    private suspend fun recomputeChapterStartPages(doc: CrengineDocument) {
+    private suspend fun recomputeChapterStartPagesLocked(doc: ReflowableDocument) {
         val list = _chapters.value
         if (list.isEmpty()) {
             chapterStartPages = emptyList()
@@ -284,14 +300,21 @@ class NovelReaderViewModel @Inject constructor(
     fun setTextAlign(align: String) = viewModelScope.launch { settings.setNovelTextAlign(align) }.let {}
     fun setHyphenation(lang: String) = viewModelScope.launch { settings.setNovelHyphenationLang(lang) }.let {}
 
-    /** Rendert die reflowte Seite [index] (gecacht) in eine Bitmap. */
+    /**
+     * Rendert die reflowte Seite [index] (gecacht) in eine Bitmap. Der Cache-Treffer
+     * läuft unter [renderMutex]; der Cache-Miss rendert nativ unter [documentMutex]
+     * (das Dokument ist nicht thread-sicher). Lock-Reihenfolge stets documentMutex →
+     * renderMutex, identisch zu [relayout] — kein Deadlock.
+     */
     suspend fun renderPage(index: Int): Bitmap? = withContext(Dispatchers.IO) {
-        val doc = document ?: return@withContext null
-        renderMutex.withLock {
-            renderCache[index]?.let { return@withLock it }
+        renderMutex.withLock { renderCache[index] }?.let { return@withContext it }
+        documentMutex.withLock {
+            val doc = document ?: return@withContext null
+            renderMutex.withLock { renderCache[index] }?.let { return@withLock it }
             val rp = doc.renderPage(index, zoom = 1f, rotation = 0)
-            Bitmap.createBitmap(rp.pixels, rp.width, rp.height, Bitmap.Config.ARGB_8888)
-                .also { renderCache[index] = it }
+            val bitmap = Bitmap.createBitmap(rp.pixels, rp.width, rp.height, Bitmap.Config.ARGB_8888)
+            renderMutex.withLock { renderCache[index] = bitmap }
+            bitmap
         }
     }
 
@@ -317,10 +340,12 @@ class NovelReaderViewModel @Inject constructor(
     fun goToAnchor(anchor: String) {
         if (anchor.isEmpty()) return
         viewModelScope.launch {
-            val doc = document ?: return@launch
-            val newPage = withContext(Dispatchers.IO) {
-                doc.seekToAnchor(anchor)
-                doc.currentPage()
+            val newPage = documentMutex.withLock {
+                val doc = document ?: return@launch
+                withContext(Dispatchers.IO) {
+                    doc.seekToAnchor(anchor)
+                    doc.currentPage()
+                }
             }
             navigateTo(newPage)
         }
@@ -329,10 +354,12 @@ class NovelReaderViewModel @Inject constructor(
     /** Springt an die relative Position [fraction] (0.0–1.0) — für „Gehe zu %". */
     fun goToProgress(fraction: Float) {
         viewModelScope.launch {
-            val doc = document ?: return@launch
-            val newPage = withContext(Dispatchers.IO) {
-                doc.seekToProgress(fraction.coerceIn(0f, 1f))
-                doc.currentPage()
+            val newPage = documentMutex.withLock {
+                val doc = document ?: return@launch
+                withContext(Dispatchers.IO) {
+                    doc.seekToProgress(fraction.coerceIn(0f, 1f))
+                    doc.currentPage()
+                }
             }
             navigateTo(newPage)
         }
@@ -340,9 +367,11 @@ class NovelReaderViewModel @Inject constructor(
 
     /** Volltextsuche off-main-thread; liefert die Treffer in Lesereihenfolge (leer = keine). */
     suspend fun search(query: String): List<SearchHit> {
-        val doc = document ?: return emptyList()
         if (query.isBlank()) return emptyList()
-        return withContext(Dispatchers.IO) { doc.search(query) }
+        return documentMutex.withLock {
+            val doc = document ?: return emptyList()
+            withContext(Dispatchers.IO) { doc.search(query) }
+        }
     }
 
     override fun onPageSettled(page: Int) {
@@ -361,10 +390,12 @@ class NovelReaderViewModel @Inject constructor(
      * übersprungen.
      */
     private fun persistProgress(page: Int) {
-        val doc = document ?: return
         val src = sourceId ?: return
         viewModelScope.launch {
-            val anchor = withContext(Dispatchers.IO) { doc.currentAnchor() }
+            val anchor = documentMutex.withLock {
+                val doc = document ?: return@launch
+                withContext(Dispatchers.IO) { doc.currentAnchor() }
+            }
             if (anchor.isEmpty() || anchor == lastSavedAnchor) return@launch
             lastSavedAnchor = anchor
             val fraction = readingFraction(page)
@@ -400,55 +431,17 @@ class NovelReaderViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Initialisiert den crengine-Font-Manager einmalig: entpackt alle gebündelten
-     * Lese-Schriften ([NovelFonts.ALL]) und die Silbentrennungs-Muster aus den
-     * Assets in den Cache und registriert sie nativ. Muss vor dem ersten
-     * [CrengineDocument.applyLayout] laufen. Der native Font-Manager ist
-     * prozessweit — daher genau einmal.
-     */
-    private suspend fun ensureFontManager() = withContext(Dispatchers.IO) {
-        if (fontManagerReady) return@withContext
-        val fontPaths = NovelFonts.ALL
-            .map { extractAsset(it.asset, context.cacheDir).absolutePath }
-            .toTypedArray()
-        val hyphDir = extractHyphenationPatterns()
-        CrengineNative.nativeInit(fontPaths, hyphDir)
-        fontManagerReady = true
-    }
-
-    /**
-     * Entpackt die `.pattern`-Wörterbücher in ein eigenes Cache-Verzeichnis und
-     * liefert dessen Pfad **mit abschließendem '/'** zurück — crengine-ng erkennt
-     * ein Verzeichnis (statt Archiv) nur am Trailing-Slash.
-     */
-    private fun extractHyphenationPatterns(): String {
-        val hyphDir = File(context.cacheDir, "hyph").apply { mkdirs() }
-        for (pattern in HYPH_PATTERNS) {
-            extractAsset("hyph/$pattern", hyphDir)
-        }
-        return hyphDir.absolutePath + "/"
-    }
-
-    /** Kopiert ein Asset einmalig in [targetDir] (nach Basisnamen) und liefert die Datei. */
-    private fun extractAsset(asset: String, targetDir: File): File {
-        val out = File(targetDir, asset.substringAfterLast('/'))
-        if (!out.exists()) {
-            context.assets.open(asset).use { input ->
-                out.outputStream().use { input.copyTo(it) }
-            }
-        }
-        return out
-    }
-
     override fun onCleared() {
         super.onCleared()
         // Letzten Stand beim Schließen sichern: den Anker SYNCHRON lesen, solange das Dokument
-        // noch offen ist; die (suspendierende) Persistenz + der %-Push laufen in einem vom
-        // VM-Lifecycle entkoppelten Scope, da [viewModelScope] hier bereits abgebrochen wird.
+        // noch offen ist; die (suspendierende) Persistenz + der %-Push laufen im injizierten
+        // [appScope], da [viewModelScope] hier bereits abgebrochen wird (offline-first: der
+        // Schreibvorgang darf nicht still verloren gehen).
         persistOnClose()
         document?.close()
         document = null
+        // Bitmaps erst recyceln, dann den Cache leeren — sonst leckt der native Pixelspeicher.
+        renderCache.values.forEach { it.recycle() }
         renderCache.clear()
     }
 
@@ -459,20 +452,11 @@ class NovelReaderViewModel @Inject constructor(
         if (anchor.isEmpty() || anchor == lastSavedAnchor) return
         lastSavedAnchor = anchor
         val fraction = readingFraction(_uiState.value.currentPage)
-        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+        appScope.launch {
             novelProgress.save(src, bookId, anchor, fraction)
             if (bytesLoader.pushNovelFraction(bookId, fraction)) {
                 novelProgress.markSynced(src, bookId)
             }
         }
-    }
-
-    private companion object {
-        /** Gebündelte Silbentrennungs-Muster (Assets unter `hyph/`). */
-        val HYPH_PATTERNS = listOf("hyph-de-1996.pattern", "hyph-en-us.pattern")
-
-        /** Der native Font-Manager ist prozessweit — nur einmal initialisieren. */
-        @Volatile
-        var fontManagerReady = false
     }
 }

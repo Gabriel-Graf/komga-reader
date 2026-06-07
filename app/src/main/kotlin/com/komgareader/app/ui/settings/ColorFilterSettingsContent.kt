@@ -309,11 +309,15 @@ fun ColorFilterSettingsContent(
             InfoValueRow(s.colorFilterWhitePoint, format(p.whitePoint))
             InfoValueRow(s.colorFilterGamma, format(p.gamma))
             InfoValueRow(s.colorFilterSharpen, format(p.sharpenAmount))
+            InfoValueRow(s.colorFilterSharpenRadius, p.sharpenRadius.toString())
             InfoValueRow(s.colorFilterDither, when (p.ditherMode) {
                 DitherMode.NONE -> s.colorFilterDitherNone
                 DitherMode.FLOYD_STEINBERG -> s.colorFilterDitherFloyd
                 DitherMode.ORDERED -> s.colorFilterDitherOrdered
             })
+            if (p.ditherMode != DitherMode.NONE) {
+                InfoValueRow(s.colorFilterDitherLevels, p.ditherLevels.toString())
+            }
         }
     }
 }

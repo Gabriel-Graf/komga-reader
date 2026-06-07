@@ -78,9 +78,9 @@ fun HomeScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var submitted by rememberSaveable { mutableStateOf("") }
     val typeFilter = rememberSaveable(
-        saver = listSaver<MutableState<Set<ContentType>>, Int>(
-            save = { it.value.map(ContentType::ordinal) },
-            restore = { mutableStateOf(it.map { o -> ContentType.entries[o] }.toSet()) },
+        saver = listSaver<MutableState<Set<ContentType>>, String>(
+            save = { it.value.map(ContentType::name) },
+            restore = { mutableStateOf(it.map(ContentType::valueOf).toSet()) },
         ),
     ) { mutableStateOf(emptySet()) }
     var filterMenuOpen by remember { mutableStateOf(false) }
@@ -123,7 +123,7 @@ fun HomeScreen(
                             leading = if (selected == TAB_LIBRARY && typeFilter.value.isNotEmpty()) {
                                 {
                                     typeFilter.value.forEach { type ->
-                                        FilterChip(
+                                        TypeFilterChip(
                                             label = s.localizedContentType(type),
                                             onRemove = { typeFilter.value = typeFilter.value - type },
                                         )
@@ -170,7 +170,7 @@ fun HomeScreen(
                                 onDismiss = { filterMenuOpen = false },
                             )
                         }
-}
+                    }
                 },
             )
         },
@@ -211,7 +211,7 @@ fun HomeScreen(
 
 /** Kompakter E-Ink-Filter-Chip im Suchfeld: Label + ✕ zum Entfernen des Typs. */
 @Composable
-private fun FilterChip(label: String, onRemove: () -> Unit) {
+private fun TypeFilterChip(label: String, onRemove: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))

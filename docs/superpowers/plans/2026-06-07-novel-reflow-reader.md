@@ -88,52 +88,66 @@ Bei Grün zusätzlich in `NOTICE` + Provenance-Datei: crengine-Quelle (Permalink
 
 ---
 
-## Phase 1 — crengine NDK-Spike (de-risk, TDD-exempt: Spike)
+## Phase 1 — crengine-ng NDK-Spike (de-risk, TDD-exempt: Spike)
 
-> Spike = explorativ. Ziel: beweisen, dass crengine baut und EINE Seite rendert. Danach wegwerfbar/härtbar. Erst dann lohnen die TDD-Phasen.
+> **Referenz-Rezept: LxReader** (`gitlab.com/coolreader-ng/lxreader`, GPL-3.0,
+> lizenzkompatibel) — die Android-App der crengine-ng-Autoren. Sie baut crengine-ng
+> via NDK und rendert in eine Android-Bitmap. Wir kochen ihr Rezept nach, statt zu
+> forschen. Lokal gecheckt: `/tmp/lxreader-src` + `/tmp/crengine-ng-src`.
+> **Nur arm64-v8a** (Boox-Ziel) zuerst. Spike-Erfolg = EINE reflowte EPUB-Seite als Bitmap.
+> Maßgebliche Befunde: `docs/superpowers/plans/` + Feasibility-Report (Session).
 
-### Task 1: Modul `render-crengine` + NDK-Bau
+### Task 1a: Dependency-Cross-Build (arm64-v8a)
 
 **Files:**
-- Create: `render-crengine/build.gradle.kts`
-- Create: `render-crengine/src/main/cpp/CMakeLists.txt`
-- Create: `render-crengine/src/main/cpp/cr3_bridge.cpp` (JNI-Bridge)
+- Create: `render-crengine/native/thirdparty/` (Cross-Build-Skripte, von LxReader adaptiert)
+- Create: `render-crengine/native/prefix/aarch64-linux-android/` (Build-Output: `.a` + Header)
+
+- [ ] **Step 1: LxReader-Skripte als Referenz holen** — `git clone --depth 1 https://gitlab.com/coolreader-ng/lxreader.git /tmp/lxreader-src` (falls weg). Relevant: `tools/thirdparty-bldtool/repo/*.meta.sh`, `tools/crengine-ng-build/build-all.sh`.
+
+- [ ] **Step 2: ~10 Deps cross-bauen** (freetype, harfbuzz, fribidi, libunibreak, libpng, libjpeg-turbo, libwebp, utf8proc, zlib, zstd) per NDK-Toolchain (`$NDK/build/cmake/android.toolchain.cmake`, `ANDROID_ABI=arm64-v8a`, `ANDROID_PLATFORM=android-21`, `ANDROID_STL=c++_static`) in den Prefix. **fontconfig NICHT** (wird abgeschaltet).
+
+- [ ] **Step 3: Artefakte verifizieren** — `find render-crengine/native/prefix -name '*.a'` listet alle Dep-Libs + Header. Erwartung: vollständiger Prefix.
+
+- [ ] **Step 4: Commit** — `git commit -am "spike(render-crengine): Dep-Cross-Build arm64-v8a (LxReader-Rezept)"`
+
+### Task 1b: crengine-ng cross-bauen
+
+**Files:**
+- Vendoren: crengine-ng-Quelle unter `render-crengine/native/crengine-ng/` (Commit `ec57cc1`, GPL-2.0-or-later)
+- Create: `render-crengine/native/build-crengine.sh` (von LxReaders `build-all.sh`)
+
+- [ ] **Step 1: crengine-ng vendoren** (Pin auf `ec57cc1`; `NOTICE`/Provenance-Eintrag in Task 13 final).
+
+- [ ] **Step 2: `crengine-ng_static` cross-bauen** — Flags aus LxReaders `build-all.sh`, **kritisch `-DUSE_FONTCONFIG=OFF`**, `-DCRE_BUILD_STATIC=ON`, `-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON`, Deps via `CMAKE_FIND_ROOT_PATH=<prefix>`.
+
+- [ ] **Step 3: Verifizieren** — `libcrengine-ng_static.a` + CMake-Config (`find_package(crengine-ng CONFIG)`-fähig) liegen im Prefix.
+
+- [ ] **Step 4: Commit** — `git commit -am "spike(render-crengine): crengine-ng cross-build arm64-v8a"`
+
+### Task 1c: Modul `render-crengine` + JNI-Render einer Seite
+
+**Files:**
+- Create: `render-crengine/build.gradle.kts`, `render-crengine/src/main/cpp/CMakeLists.txt`
+- Create: `render-crengine/src/main/cpp/cr3_bridge.cpp` (JNI, von LxReaders `crengine-ng-jni.cpp` + `jnigraphicslib.cpp` adaptiert)
 - Modify: `settings.gradle` (`include(":render-crengine")`)
-- Vendoren: crengine-Quelle + Deps unter `render-crengine/src/main/cpp/crengine/` (erst nach Phase-0-Grün)
+- Test: `render-crengine/src/androidTest/.../CrengineRenderInstrumentedTest.kt`
 
-- [ ] **Step 1: Modul anlegen + in settings.gradle eintragen**
+- [ ] **Step 1: Modul + settings.gradle** — `include(":render-crengine")`; `build.gradle.kts`: `com.android.library`, `externalNativeBuild { cmake { … } }`, `ndk { abiFilters += "arm64-v8a" }`, `dependencies { implementation(project(":domain")) }`.
 
-`settings.gradle` ergänzen:
-```kotlin
-include(":render-crengine")
-```
-`render-crengine/build.gradle.kts`: `com.android.library` + `externalNativeBuild { cmake { path("src/main/cpp/CMakeLists.txt") } }`, `ndkVersion` wie im Projekt, `dependencies { implementation(project(":domain")) }`.
+- [ ] **Step 2: CMake** — `find_package(crengine-ng CONFIG)` aus dem Prefix, JNI-Lib linkt `crengine-ng::crengine-ng_static` + Dep-Libs.
 
-- [ ] **Step 2: CMake + Deps verdrahten** (freetype, harfbuzz, fribidi, libpng, libjpeg, zlib, utf8proc)
+- [ ] **Step 3: JNI-Bridge** — `nativeOpen(byte[] bytes, String fmt) -> long`, `nativeRenderPage(long, int idx, int w, int h, Bitmap dst)`, `nativeClose(long)`. `LVDocView::Render`+`Draw` in `LVColorDrawBuf(w,h, lockedPixels, 32)` (LxReaders `lvcolordrawbufex.cpp`-Muster), via `AndroidBitmap_lockPixels`.
 
-CoolReader/KOReader-`CMakeLists` als Vorlage. Deps als Prebuilt oder Sub-Builds. Ziel: `libcr3engine.so` pro ABI (arm64-v8a zuerst — Boox).
+- [ ] **Step 4: Bau verifizieren** — `./gradlew :render-crengine:assembleDebug` → BUILD SUCCESSFUL, `libcr3bridge.so` (arm64-v8a) im AAR.
 
-- [ ] **Step 3: Minimale JNI-Bridge** — öffnen + 1 Seite rendern
+- [ ] **Step 5: Render-Smoke (Instrumented, `eink_test`)** — öffnet `render-core/src/androidTest/assets/sample.epub`, rendert Seite 0 in eine Bitmap, prüft nicht-uniforme Pixel (Text vorhanden). `./gradlew :render-crengine:connectedDebugAndroidTest` → PASS. **Spike-Erfolg = Gate zu Phase 2.**
 
-`cr3_bridge.cpp`: `nativeOpen(byte[] bytes, String fmt) -> long handle`, `nativeRenderPage(long, int idx, int w, int h) -> int[] argb`, `nativeClose(long)`. crengine `LVDocView` mit fester Größe; `Draw` in ein `LVColorDrawBuf`, Pixel als ARGB extrahieren.
+- [ ] **Step 6: Commit** — `git commit -am "spike(render-crengine): JNI-Render einer reflowten EPUB-Seite"`
 
-- [ ] **Step 4: Bau verifizieren**
-
-Run: `./gradlew :render-crengine:assembleDebug`
-Erwartung: BUILD SUCCESSFUL, `libcr3engine.so` für arm64-v8a im AAR.
-
-- [ ] **Step 5: Render-Smoke per Instrumented-Test auf `eink_test`**
-
-Test öffnet `render-core/src/androidTest/assets/sample.epub`, ruft `nativeRenderPage`, prüft `argb.size == w*h` und nicht-uniform (Text vorhanden).
-Run: `./gradlew :render-crengine:connectedDebugAndroidTest`
-Erwartung: PASS. **Spike-Erfolg = Gate zu Phase 2.**
-
-- [ ] **Step 6: Spike committen**
-
-```bash
-git add render-crengine settings.gradle
-git commit -m "spike(render-crengine): crengine NDK-Bau + 1-Seiten-JNI-Render"
-```
+> **Off-Ramp (notiert, nicht gewählt):** Reicht der Aufwand nicht, ist MuPDF-Reflow
+> der konfliktfreie Rückfall (Spec-Phase-4-Logik, schon hinter Naht B). Nutzer hat
+> crengine-ng bewusst gewählt — nur ziehen, wenn der Spike hart blockiert.
 
 ---
 

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -246,9 +245,15 @@ private fun SeriesDetailContent(
     val description = seriesSummary?.takeIf { it.isNotBlank() }
         ?: currentBook?.summary?.takeIf { it.isNotBlank() }
 
-    LazyColumn(modifier = modifier) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 150.dp),
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+        verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+        contentPadding = PaddingValues(horizontal = EinkTokens.screenPadding, vertical = EinkTokens.tileGap),
+    ) {
         // Fusionierte Hero-Karte: großes Cover, Titel, Status/Genres, Beschreibung, Aktionen.
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             SeriesHeroCard(
                 seriesTitle = seriesTitle,
                 bookCount = books.size,
@@ -280,7 +285,7 @@ private fun SeriesDetailContent(
             )
         }
 
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             ChaptersSectionHeader(
                 count = books.size,
                 gridMode = gridMode,
@@ -288,9 +293,30 @@ private fun SeriesDetailContent(
             )
         }
 
-        item {
-            Column {
-                books.forEach { book ->
+        if (gridMode) {
+            items(books, key = { it.remoteId }) { book ->
+                ChapterTile(
+                    book = book,
+                    serverConfig = serverConfig,
+                    isSelected = book.remoteId == currentBook?.remoteId,
+                    showBookmark = book.remoteId == bookmarkBookId,
+                    isLocal = book.remoteId in localIds,
+                    isDownloading = book.remoteId in downloadingIds,
+                    onOpen = {
+                        onOpenChapter(book)
+                        onOpenBook(
+                            book.remoteId, book.pageCount, book.format.name, false,
+                            viewerModes[book.remoteId] ?: "PAGED",
+                        )
+                    },
+                    onDownload = { onDownload(book) },
+                    onRemoveDownload = { onRemoveDownload(book.remoteId) },
+                    onSetRead = { read -> onSetRead(book, read) },
+                )
+            }
+        } else {
+            items(books, key = { it.remoteId }, span = { GridItemSpan(maxLineSpan) }) { book ->
+                Column {
                     ChapterRow(
                         book = book,
                         isSelected = book.remoteId == currentBook?.remoteId,

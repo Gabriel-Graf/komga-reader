@@ -13,7 +13,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val displayMode: Flow<String> = dao.observe(KEY_DISPLAY).map { it ?: "EINK" }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)
     override val webtoonOverlapPercent: Flow<Int> =
-        dao.observe(KEY_WEBTOON_OVERLAP).map { it?.toIntOrNull() ?: 10 }
+        dao.observe(KEY_WEBTOON_OVERLAP).map { it?.toIntOrNull() ?: 25 }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))

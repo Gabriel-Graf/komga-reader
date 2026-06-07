@@ -49,9 +49,6 @@ import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
 
-/** Die einzelnen Settings-Sektionen. Reihenfolge = Sidebar-/Accordion-Reihenfolge. */
-enum class SettingsSectionId { CONNECTION, APPEARANCE, READER, DOWNLOADS, LANGUAGE, ABOUT }
-
 /** Schrittweite und Grenzen der Webtoon-Überlappung (in Prozent). */
 private const val OVERLAP_STEP = 5
 private const val OVERLAP_MIN = 0

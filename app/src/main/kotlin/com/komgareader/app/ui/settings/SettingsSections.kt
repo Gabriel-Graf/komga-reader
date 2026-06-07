@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.komgareader.app.BuildConfig
 import com.komgareader.app.i18n.Strings
 
+/** Die einzelnen Settings-Sektionen. Reihenfolge = Sidebar-/Accordion-Reihenfolge. */
+enum class SettingsSectionId { CONNECTION, APPEARANCE, READER, DOWNLOADS, LANGUAGE, ABOUT }
+
 /** Eine Settings-Sektion: Metadaten + such-Terme + ihr Inhalt. */
 data class SettingsSection(
     val id: SettingsSectionId,

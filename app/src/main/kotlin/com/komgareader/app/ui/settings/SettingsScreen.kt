@@ -93,7 +93,8 @@ fun SettingsScreen(
 private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, sizing: SettingsSizing) {
     var selectedId by rememberSaveable { mutableStateOf(visible.first().id) }
     // Auto-Sprung: wenn die Auswahl ausgefiltert ist, auf die erste sichtbare wechseln.
-    LaunchedEffect(visible) {
+    // Key auf query (stabil), nicht auf die bei jeder Recomposition neue visible-Liste.
+    LaunchedEffect(query) {
         if (visible.none { it.id == selectedId }) selectedId = visible.first().id
     }
     val selected = visible.firstOrNull { it.id == selectedId } ?: visible.first()

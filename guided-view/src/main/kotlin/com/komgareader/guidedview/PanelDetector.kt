@@ -40,7 +40,8 @@ class PanelDetector(
         val deSolid = dropSolidBlobs(sized, darkMask, page.width, page.height)
         val deBubbled = dropContainedSmall(deSolid, page.width, page.height)
         val merged = dropContained(deBubbled)
-        return ReadingOrder.sort(merged, direction)
+        val mergedFragments = mergeTouching(merged, page.width, page.height)
+        return ReadingOrder.sort(mergedFragments, direction)
     }
 
     /**
@@ -98,5 +99,52 @@ class PanelDetector(
             if (!contained) kept.add(b)
         }
         return kept
+    }
+
+    /**
+     * Vereint eng benachbarte/überlappende Boxen zu einer (umschließenden) Box. Dämpft
+     * Über-Segmentierung detailreicher Figuren (winzige Lücken zwischen Fragmenten); echte
+     * Panels mit normalen Guttern (größere Lücken) bleiben getrennt.
+     *
+     * Zwei Boxen werden vereint, wenn die um [gapFraction] * min(pageW, pageH) aufgeblähten
+     * Rechtecke sich überlappen (Lücke in BEIDEN Achsen kleiner als der Schwellwert).
+     * Iteration bis zum Fixpunkt.
+     */
+    private fun mergeTouching(boxes: List<PanelRect>, pageW: Int, pageH: Int, gapFraction: Double = 0.004): List<PanelRect> {
+        if (boxes.size < 2) return boxes
+        val gap = (minOf(pageW, pageH) * gapFraction).toInt().coerceAtLeast(1)
+        val cur = boxes.toMutableList()
+        var changed = true
+        while (changed) {
+            changed = false
+            outer@ for (i in cur.indices) {
+                for (j in i + 1 until cur.size) {
+                    if (adjacent(cur[i], cur[j], gap)) {
+                        val u = union(cur[i], cur[j])
+                        cur[i] = u; cur.removeAt(j)
+                        changed = true
+                        break@outer
+                    }
+                }
+            }
+        }
+        return cur
+    }
+
+    /**
+     * Gibt true zurück, wenn sich die um [gap] aufgeblähten Boxen überschneiden
+     * (d. h. Lücke < gap in BEIDEN Achsen).
+     */
+    private fun adjacent(a: PanelRect, b: PanelRect, gap: Int): Boolean {
+        val overlapX = (a.x - gap) < (b.x + b.width + gap) && (b.x - gap) < (a.x + a.width + gap)
+        val overlapY = (a.y - gap) < (b.y + b.height + gap) && (b.y - gap) < (a.y + a.height + gap)
+        return overlapX && overlapY
+    }
+
+    /** Umschließende Bounding-Box zweier Rechtecke. */
+    private fun union(a: PanelRect, b: PanelRect): PanelRect {
+        val x = minOf(a.x, b.x); val y = minOf(a.y, b.y)
+        val r = maxOf(a.x + a.width, b.x + b.width); val btm = maxOf(a.y + a.height, b.y + b.height)
+        return PanelRect(x, y, r - x, btm - y)
     }
 }

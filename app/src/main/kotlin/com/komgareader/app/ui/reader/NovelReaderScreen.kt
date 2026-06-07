@@ -134,6 +134,7 @@ fun NovelReaderScreen(
                 chapterTitle = currentChapterTitle,
             )
         },
+        footerAlwaysVisible = true,
     ) {
         // Der Viewport gibt erst hier seine Pixel-Größe her: damit öffnet das VM das
         // EPUB und schichtet es passend um (idempotent).
@@ -210,25 +211,25 @@ private fun BoxScope.NovelStatusFooter(
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
             .background(Color.LightGray.copy(alpha = 0.85f))
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "$progressPercent %",
             color = Color.Black,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
         )
         Text(
             text = pageLabel,
             color = Color.Black,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
         )
         if (!chapterTitle.isNullOrBlank()) {
             Text(
                 text = chapterTitle,
                 color = Color.Black,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),

@@ -42,6 +42,7 @@ fun ReaderScaffold(
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
     tapModifier: Modifier? = null,
     footer: (@Composable BoxScope.() -> Unit)? = null,
+    footerAlwaysVisible: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val chromeVisible by chrome.chromeVisible.collectAsState()
@@ -71,7 +72,11 @@ fun ReaderScaffold(
             actions = actions,
         )
 
-        if (chromeVisible && footer != null) {
+        // Der Status-Fuß folgt standardmäßig der Chrome-Sichtbarkeit; Reader, die ihn
+        // dauerhaft zeigen wollen (NOVEL: Fortschritt/Seite/Kapitel immer sichtbar),
+        // setzen [footerAlwaysVisible]. Default false lässt Paged/Webtoon/Comic/Epub
+        // unverändert.
+        if (footer != null && (footerAlwaysVisible || chromeVisible)) {
             footer()
         }
     }

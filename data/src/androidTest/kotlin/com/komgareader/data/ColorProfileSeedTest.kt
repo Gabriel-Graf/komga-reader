@@ -44,4 +44,13 @@ class ColorProfileSeedTest {
         assertTrue(profiles.any { it.name == "Aus" && it.builtIn })
         assertEquals("2", db.settingsDao().observe("active_color_profile_id").first())
     }
+
+    @Test
+    fun freshInstall_enthältDemoBuiltinVoll() = runBlocking {
+        val all = db.colorProfileDao().observeAll().first()
+        val voll = all.firstOrNull { it.name == "Boox Go Color 7 — Voll" }
+        assertTrue(voll != null && voll.builtIn)
+        assertEquals(1.2f, voll!!.gamma, 0.0001f)
+        assertTrue(voll.sharpenAmount > 0f)
+    }
 }

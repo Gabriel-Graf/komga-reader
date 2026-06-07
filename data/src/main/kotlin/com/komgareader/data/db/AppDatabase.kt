@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class, ColorProfileEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -105,17 +105,11 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
  * neue Installationen nicht mit leerer Profilliste starten.
  */
 private fun seedColorProfiles(db: SupportSQLiteDatabase) {
-    db.execSQL(
-        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
-            "VALUES (1,'Aus',1.0,1.0,0.0,1)",
-    )
-    db.execSQL(
-        "INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) " +
-            "VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)",
-    )
-    db.execSQL(
-        "INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')",
-    )
+    val cols = "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`)"
+    db.execSQL("INSERT OR REPLACE INTO `color_profiles` $cols VALUES (1,'Aus',1.0,1.0,0.0,0.0,1.0,1.0,0.0,1,'NONE',16,1)")
+    db.execSQL("INSERT OR REPLACE INTO `color_profiles` $cols VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,0.0,1.0,1.0,0.0,1,'NONE',16,1)")
+    db.execSQL("INSERT OR REPLACE INTO `color_profiles` $cols VALUES (3,'Boox Go Color 7 — Voll',1.4,1.15,0.05,0.05,0.95,1.2,0.6,1,'NONE',16,1)")
+    db.execSQL("INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')")
 }
 
 /**
@@ -135,6 +129,28 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
             )""",
         )
         seedColorProfiles(db)
+    }
+}
+
+/**
+ * v7 → v8: Phase-2-Pixel-Pipeline-Spalten (Levels/Gamma/Unsharp/Dither) mit neutralen Defaults
+ * — bestehende Profile bleiben dadurch unverändert. Seedet zusätzlich das Demo-Built-in
+ * „Boox Go Color 7 — Voll". Der aktive Pointer wird NICHT verändert.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `blackPoint` REAL NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `whitePoint` REAL NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `gamma` REAL NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `sharpenAmount` REAL NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `sharpenRadius` INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `ditherMode` TEXT NOT NULL DEFAULT 'NONE'")
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `ditherLevels` INTEGER NOT NULL DEFAULT 16")
+        db.execSQL(
+            "INSERT OR REPLACE INTO `color_profiles` " +
+                "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`) " +
+                "VALUES (3,'Boox Go Color 7 — Voll',1.4,1.15,0.05,0.05,0.95,1.2,0.6,1,'NONE',16,1)",
+        )
     }
 }
 

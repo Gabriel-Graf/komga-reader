@@ -3,9 +3,13 @@ package com.komgareader.render.crengine
 import android.graphics.Bitmap
 
 /**
- * Thin JNI surface over crengine-ng (Phase 1c spike). Just enough to open an
- * EPUB from memory and rasterise one reflowed page into a Bitmap. The full
- * ReflowableDocument seam comes in a later phase.
+ * JNI-Oberfläche über crengine-ng. Öffnet ein EPUB aus dem Speicher, schichtet
+ * es über [nativeApplyLayout] mit Schrift/Properties/CSS/Trennung um und liefert
+ * die ReflowableDocument-Bausteine: Seitenzahl, TOC, stabile xpointer-Anker,
+ * Prozent-Navigation und Volltextsuche.
+ *
+ * Die TOC- und Suchergebnisse werden als ein String mit ASCII-Separatoren
+ * (Field 0x1F, Record 0x1E) serialisiert und in [CrengineDocument] geparst.
  */
 object CrengineNative {
 
@@ -19,7 +23,25 @@ object CrengineNative {
     /** Open a document from bytes; returns an opaque handle (0 = failure). */
     external fun nativeOpen(bytes: ByteArray, formatHint: String): Long
 
-    /** Reflow at [width]x[height], go to [pageIndex], rasterise into [dst]. */
+    /**
+     * Register the font, set the base font size (px), apply the [keys]/[vals]
+     * engine properties + [userCss], then Render at [width]x[height]. Page count
+     * reflects the layout afterwards.
+     */
+    external fun nativeApplyLayout(
+        handle: Long,
+        width: Int,
+        height: Int,
+        fontSizePx: Int,
+        keys: Array<String>,
+        vals: Array<String>,
+        userCss: String,
+    )
+
+    /** Page count of the current layout. */
+    external fun nativePageCount(handle: Long): Int
+
+    /** Go to [pageIndex] of the current layout and rasterise into [dst]. */
     external fun nativeRenderPage(
         handle: Long,
         pageIndex: Int,
@@ -27,6 +49,21 @@ object CrengineNative {
         height: Int,
         dst: Bitmap,
     )
+
+    /** Serialized TOC: title<US>xpointer<US>level<RS>... ("" if none). */
+    external fun nativeChapters(handle: Long): String
+
+    /** Stable xpointer of the current page top ("" if unavailable). */
+    external fun nativeCurrentAnchor(handle: Long): String
+
+    /** Navigate to the position named by [xpointer]. */
+    external fun nativeSeekToAnchor(handle: Long, xpointer: String)
+
+    /** Navigate to relative position [fraction] (0.0..1.0). */
+    external fun nativeSeekToProgress(handle: Long, fraction: Float)
+
+    /** Serialized search hits: xpointer<US>snippet<RS>... ("" if none). */
+    external fun nativeSearch(handle: Long, query: String, maxCount: Int): String
 
     external fun nativeClose(handle: Long)
 }

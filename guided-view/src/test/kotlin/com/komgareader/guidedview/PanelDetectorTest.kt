@@ -110,4 +110,22 @@ class PanelDetectorTest {
         val out = PanelDetector().detect(page, ReadingDirection.LEFT_TO_RIGHT)
         assertEquals(1, out.size, "Blase darf kein eigenes Panel sein, war ${out.size}")
     }
+
+    @Test
+    fun `solider SFX-Blob wird verworfen, helles Panel bleibt`() {
+        val px = IntArray(1000 * 800) { 0xFFFFFFFF.toInt() }
+        // Helles, umrandetes Panel (Rahmen dunkel, Innen hell + etwas Inhalt) -> niedriger Dunkelanteil
+        for (y in 50 until 450) for (x in 50 until 450) {
+            val border = x < 56 || x >= 444 || y < 56 || y >= 444
+            if (border) px[y * 1000 + x] = 0xFF101010.toInt()
+        }
+        for (y in 100 until 160) for (x in 100 until 300) px[y * 1000 + x] = 0xFF202020.toInt() // wenig Inhalt
+        // Solider schwarzer SFX-Blob (klein, ~vollständig dunkel)
+        for (y in 600 until 720) for (x in 600 until 740) px[y * 1000 + x] = 0xFF050505.toInt()
+        val page = com.komgareader.domain.render.RenderedPage(1000, 800, px)
+        val out = PanelDetector().detect(page, ReadingDirection.LEFT_TO_RIGHT)
+        assertEquals(1, out.size, "Erwarte nur das helle Panel (SFX-Blob verworfen), war ${out.size}")
+        assertTrue(out[0].x < 460 && out[0].y < 460, "Das verbliebene Panel ist das umrandete oben-links")
+    }
+
 }

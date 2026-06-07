@@ -35,9 +35,32 @@ class PanelDetector(
             if (wide || bandlike) BorderLineSplit.split(darkMask, page.width, page.height, box) else listOf(box)
         }
         val sized = expanded.filter { it.width.toLong() * it.height >= minArea }
-        val deBubbled = dropContainedSmall(sized, page.width, page.height)
+        val deSolid = dropSolidBlobs(sized, darkMask, page.width, page.height)
+        val deBubbled = dropContainedSmall(deSolid, page.width, page.height)
         val merged = dropContained(deBubbled)
         return ReadingOrder.sort(merged, direction)
+    }
+
+    /**
+     * Verwirft kleine, fast vollständig dunkle Boxen (Soundeffekt-Buchstaben wie „BLAM",
+     * solide Silhouetten) — die sind keine Panels. Echte (auch kleine) Panels haben helle
+     * Flächen/Sprechblasen, ihr Dunkelanteil bleibt unter [minDarkFill]. Flächen-gegatet
+     * ([maxAreaFraction]), damit nur kleine Blobs betroffen sind, nie ganze Panels.
+     */
+    private fun dropSolidBlobs(
+        boxes: List<PanelRect>, dark: BooleanArray, pageW: Int, pageH: Int,
+        maxAreaFraction: Double = 0.10, minDarkFill: Double = 0.72,
+    ): List<PanelRect> {
+        val pageArea = pageW.toLong() * pageH
+        return boxes.filterNot { b ->
+            val area = b.width.toLong() * b.height
+            if (area >= pageArea * maxAreaFraction) return@filterNot false
+            var d = 0L
+            val x1 = (b.x + b.width).coerceAtMost(pageW); val y1 = (b.y + b.height).coerceAtMost(pageH)
+            for (y in b.y until y1) for (x in b.x until x1) if (dark[y * pageW + x]) d++
+            val fill = d.toDouble() / area.coerceAtLeast(1)
+            fill >= minDarkFill
+        }
     }
 
     /**

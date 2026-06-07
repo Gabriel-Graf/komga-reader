@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.dp
  * damit kein Magic-dp im UI-Code landet.
  */
 object EinkTokens {
-    /** Hairline-Rahmen für ruhige Flächen (Tiles, Listenzeilen, Divider). */
-    val hairline = 1.dp
+    /** Hairline-Rahmen für ruhige Flächen (Tiles, Listenzeilen, Divider). 1.5dp — dünner ist auf E-Ink unsichtbar. */
+    val hairline = 1.5.dp
 
     /** Betonter Rahmen — immer schwarz; Pflicht für Modals. */
     val strongBorder = 2.dp

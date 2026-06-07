@@ -30,15 +30,24 @@ interface Strings {
     val notConnected: String
     // Detail-Screen
     val chapters: String
+    val chapterViewSwitchToGrid: String
+    val chapterViewSwitchToList: String
+    val chapterInfo: String
+    val backToSeries: String
     val read: String
     val stream: String
     val download: String
     val downloadShort: String
+    val downloadAll: String
     val downloaded: String
     val downloadedShort: String
     val removeDownload: String
     val loading: String
     val statusRead: String
+    val resumeHere: String
+    val markRead: String
+    val markUnread: String
+    val downloadCancelled: String
     val downloadFolder: String
     val chooseFolder: String
     val defaultFolder: String
@@ -65,6 +74,8 @@ interface Strings {
     val tagNovel: String
     val tagWebtoon: String
     val tagAuto: String
+    val typeUnknown: String
+    val assignType: String
     val server: String
     val create: String
     val cancel: String
@@ -101,6 +112,29 @@ interface Strings {
     // Guided-View (Debug)
     val settingsGuidedDebug: String
     val readerPanelOverlay: String
+    // Farbfilter
+    val settingsColorFilter: String
+    val colorFilterSummary: String
+    val colorFilterProfiles: String
+    val colorFilterAdjust: String
+    val colorFilterSaturation: String
+    val colorFilterContrast: String
+    val colorFilterBrightness: String
+    val colorFilterSaveAsNew: String
+    val colorFilterUpdate: String
+    val colorFilterDelete: String
+    val colorFilterProfileName: String
+    val colorFilterPreview: String
+    val colorFilterCopySuffix: String
+    val colorFilterNewProfile: String
+    val colorFilterNewProfileHint: String
+    val colorFilterPrevImage: String
+    val colorFilterNextImage: String
+    val close: String
+    // Reader-Einstellungen
+    val settingsWebtoon: String
+    val webtoonOverlapHelper: String
+    val webtoonOverlap: String
 }
 
 object StringsDe : Strings {
@@ -132,15 +166,26 @@ object StringsDe : Strings {
     override val notConnected = "Nicht verbunden"
     // Detail-Screen
     override val chapters = "Kapitel"
+    override val chapterViewSwitchToGrid = "Kachelansicht"
+    override val chapterViewSwitchToList = "Listenansicht"
+    override val chapterInfo = "Beschreibung"
+    override val backToSeries = "Zurück zur Serie"
     override val read = "Lesen"
     override val stream = "Stream"
     override val download = "Herunterladen"
     override val downloadShort = "Laden"
+    override val downloadAll = "Alle laden"
     override val downloaded = "Heruntergeladen ✓"
     override val downloadedShort = "Gespeichert"
     override val removeDownload = "Entfernen"
     override val loading = "Lädt…"
     override val statusRead = "Gelesen"
+    override val resumeHere = "Hier aufgehört"
+    override val markRead = "Als gelesen markieren"
+    override val markUnread = "Als ungelesen markieren"
+    override val downloadCancelled = "Download abgebrochen"
+    override val typeUnknown = "Unbekannt"
+    override val assignType = "Typ zuweisen"
     override val downloadFolder = "Download-Ordner"
     override val chooseFolder = "Ordner wählen"
     override val defaultFolder = "Standard (intern)"
@@ -201,6 +246,29 @@ object StringsDe : Strings {
     // Guided-View (Debug)
     override val settingsGuidedDebug = "Guided-View (Debug)"
     override val readerPanelOverlay = "Erkannte Panel-Rahmen einblenden"
+    // Farbfilter
+    override val settingsColorFilter = "Farbfilter"
+    override val colorFilterSummary = "Bilder fürs E-Ink-Display anpassen"
+    override val colorFilterProfiles = "Profile"
+    override val colorFilterAdjust = "Anpassen"
+    override val colorFilterSaturation = "Sättigung"
+    override val colorFilterContrast = "Kontrast"
+    override val colorFilterBrightness = "Helligkeit"
+    override val colorFilterSaveAsNew = "Als neues Profil speichern"
+    override val colorFilterUpdate = "Profil aktualisieren"
+    override val colorFilterDelete = "Profil löschen"
+    override val colorFilterProfileName = "Profilname"
+    override val colorFilterPreview = "Vorschau"
+    override val colorFilterCopySuffix = " (Kopie)"
+    override val colorFilterNewProfile = "Neues Profil"
+    override val colorFilterNewProfileHint = "Vom aktiven Profil ausgehen, anpassen und speichern"
+    override val colorFilterPrevImage = "Vorheriges"
+    override val colorFilterNextImage = "Nächstes"
+    override val close = "Schließen"
+    // Reader-Einstellungen
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
+    override val webtoonOverlap = "Überlappung"
 }
 
 object StringsEn : Strings {
@@ -232,15 +300,26 @@ object StringsEn : Strings {
     override val notConnected = "Not connected"
     // Detail-Screen
     override val chapters = "Chapters"
+    override val chapterViewSwitchToGrid = "Grid view"
+    override val chapterViewSwitchToList = "List view"
+    override val chapterInfo = "Description"
+    override val backToSeries = "Back to series"
     override val read = "Read"
     override val stream = "Stream"
     override val download = "Download"
     override val downloadShort = "Save"
+    override val downloadAll = "Download all"
     override val downloaded = "Downloaded ✓"
     override val downloadedShort = "Saved"
     override val removeDownload = "Remove"
     override val loading = "Loading…"
     override val statusRead = "Read"
+    override val resumeHere = "Stopped here"
+    override val markRead = "Mark as read"
+    override val markUnread = "Mark as unread"
+    override val downloadCancelled = "Download cancelled"
+    override val typeUnknown = "Unknown"
+    override val assignType = "Assign type"
     override val downloadFolder = "Download Folder"
     override val chooseFolder = "Choose Folder"
     override val defaultFolder = "Default (internal)"
@@ -301,6 +380,29 @@ object StringsEn : Strings {
     // Guided view (debug)
     override val settingsGuidedDebug = "Guided view (debug)"
     override val readerPanelOverlay = "Show detected panel borders"
+    // Color filter
+    override val settingsColorFilter = "Color Filter"
+    override val colorFilterSummary = "Tune images for the e-ink display"
+    override val colorFilterProfiles = "Profiles"
+    override val colorFilterAdjust = "Adjust"
+    override val colorFilterSaturation = "Saturation"
+    override val colorFilterContrast = "Contrast"
+    override val colorFilterBrightness = "Brightness"
+    override val colorFilterSaveAsNew = "Save as new profile"
+    override val colorFilterUpdate = "Update profile"
+    override val colorFilterDelete = "Delete profile"
+    override val colorFilterProfileName = "Profile name"
+    override val colorFilterPreview = "Preview"
+    override val colorFilterCopySuffix = " (copy)"
+    override val colorFilterNewProfile = "New profile"
+    override val colorFilterNewProfileHint = "Start from the active profile, tune and save"
+    override val colorFilterPrevImage = "Previous"
+    override val colorFilterNextImage = "Next"
+    override val close = "Close"
+    // Reader settings
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
+    override val webtoonOverlap = "Overlap"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }
@@ -320,4 +422,13 @@ fun Strings.localizedSeriesStatus(raw: String): String = when (raw.uppercase()) 
     "ABANDONED" -> statusAbandoned
     "HIATUS" -> statusHiatus
     else -> raw.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+/** Lokalisierter Anzeigename eines Inhaltstyps; `null` = unbekannt. */
+fun Strings.localizedContentType(type: com.komgareader.domain.model.ContentType?): String = when (type) {
+    com.komgareader.domain.model.ContentType.MANGA -> tagManga
+    com.komgareader.domain.model.ContentType.COMIC -> tagComic
+    com.komgareader.domain.model.ContentType.NOVEL -> tagNovel
+    com.komgareader.domain.model.ContentType.WEBTOON -> tagWebtoon
+    null -> typeUnknown
 }

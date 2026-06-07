@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import com.komgareader.app.ui.components.LoadingIndicator
@@ -44,7 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.domain.model.Series
@@ -59,6 +60,7 @@ fun GroupBrowseRoute(
     viewModel: GroupBrowseViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val localSeriesIds by viewModel.localSeriesIds.collectAsState()
 
     Scaffold(
         topBar = {
@@ -115,6 +117,7 @@ fun GroupBrowseRoute(
                         GroupSeriesCover(
                             series = series,
                             serverConfig = current.serverConfig,
+                            isLocal = series.remoteId in localSeriesIds,
                             onClick = { onOpenSeries(series.remoteId) },
                         )
                     }
@@ -129,6 +132,7 @@ fun GroupBrowseRoute(
 private fun GroupSeriesCover(
     series: Series,
     serverConfig: ServerConfig?,
+    isLocal: Boolean,
     onClick: () -> Unit,
 ) {
     val ctx = LocalContext.current
@@ -144,7 +148,7 @@ private fun GroupSeriesCover(
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
             .combinedClickable(onClick = onClick),
     ) {
-        AsyncImage(
+        FilteredAsyncImage(
             model = request,
             contentDescription = series.title,
             contentScale = ContentScale.Crop,
@@ -160,7 +164,8 @@ private fun GroupSeriesCover(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Filled.CloudQueue,
+                // Lokal komplett vorhanden → Download-Logo; sonst Cloud (nur online verfügbar).
+                if (isLocal) Icons.Filled.DownloadDone else Icons.Filled.CloudQueue,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurface,

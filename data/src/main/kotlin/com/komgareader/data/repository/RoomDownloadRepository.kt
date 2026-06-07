@@ -29,6 +29,8 @@ class RoomDownloadRepository(private val dao: DownloadDao) : DownloadRepository 
         format = e.format,
         localPath = e.localPath,
         totalPages = e.totalPages,
+        seriesTitle = e.seriesTitle,
+        seriesCoverUrl = e.seriesCoverUrl,
     )
 
     private fun toEntity(b: DownloadedBook) = DownloadEntity(
@@ -39,5 +41,7 @@ class RoomDownloadRepository(private val dao: DownloadDao) : DownloadRepository 
         format = b.format,
         localPath = b.localPath,
         totalPages = b.totalPages,
+        seriesTitle = b.seriesTitle,
+        seriesCoverUrl = b.seriesCoverUrl,
     )
 }

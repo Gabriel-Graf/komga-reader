@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.eink.onyx.OnyxRefresher
 
@@ -83,7 +83,7 @@ fun PagedReaderScreen(
                     .crossfade(false)
                     .build()
             }
-            AsyncImage(
+            FilteredAsyncImage(
                 model = request,
                 contentDescription = "Seite ${pageIndex + 1}",
                 contentScale = ContentScale.Fit,

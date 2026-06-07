@@ -54,6 +54,13 @@ interface BrowsableSource : MediaSource {
 interface SyncingSource : MediaSource {
     suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress)
     suspend fun pullProgress(bookRemoteId: String): ReadProgress?
+
+    /**
+     * Markiert ein Buch server-seitig als gelesen ([read] = true → letzte Seite/komplett)
+     * oder hebt die Markierung auf ([read] = false → Fortschritt löschen). [pageCount] ist
+     * die Seitenzahl, die beim Setzen als gelesene Position gemeldet wird.
+     */
+    suspend fun setRead(bookRemoteId: String, read: Boolean, pageCount: Int)
 }
 
 /**

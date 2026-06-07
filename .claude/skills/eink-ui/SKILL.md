@@ -26,10 +26,10 @@ ein themed Pendant existiert.
 | Token | Wert | Verwendung |
 |-------|------|-----------|
 | `outline` (colorScheme) | Schwarz / invertiert Weiß | **starke** Rahmen: Modals, aktive Elemente |
-| `outlineVariant` (colorScheme) | `#CCCCCC` / `#444444` | **Hairline** für Tiles/Cards/Divider |
+| `outlineVariant` (colorScheme) | `#777777` / `#8A8A8A` | **Hairline** für Tiles/Cards/Divider (mittelgrau — auf E-Ink sichtbar) |
 | Radius small/medium/large | 6 / 8 / 12 dp | Standard Compose `Shapes` |
 | `EinkTokens.tileRadius` | 10 dp | Settings-Tiles, Quick-Action-Kacheln |
-| `EinkTokens.hairline` | 1 dp | Card-/Tile-/Row-Rahmen |
+| `EinkTokens.hairline` | 1.5 dp | Card-/Tile-/Row-Rahmen (dünner wird auf E-Ink unsichtbar) |
 | `EinkTokens.strongBorder` | 2 dp | Modal-Rand (immer schwarz) |
 | `EinkTokens.screenPadding` | 16 dp | Screen-Rand |
 | `EinkTokens.sectionGap` | 16 dp | zwischen Sektionen |
@@ -100,16 +100,44 @@ Immer **Outlined**-Variante (dünner Strich = Onyx-Look), nie `Filled`.
 
 ## Settings-Architektur
 
-**Kachel-Landing → fokussierte Unterseiten** (Onyx-Speicher-Screen-Muster), nicht ein
-langer Radio-Button-Scroll. Landing = 2-Spalten-Tile-Grid; Tap öffnet Vollbild-Unterseite
-mit Zurück-Pfeil. Jede Unterseite hat **ein** Thema:
+**Adaptives Master-Detail.** Eine Section-Registry (`SettingsSection`: id, Icon, Titel,
+`searchTerms`, `content(query)` in `SettingsSections.kt`) treibt drei Layouts über
+`BoxWithConstraints` (`SettingsScreen.kt`) — **keine** eigenen NavHost-Seiten pro Sektion mehr:
 
-- **Verbindung** — Server-Formular (Name/URL/API-Key — oder — Benutzer/Passwort), Status, Verbinden/Trennen
-- **Darstellung** — Theme (Hell/Dunkel/System) via `ChoiceRow`
-- **Reader** — Anzeige-Modus (E-Ink/Smartphone) + Helper
-- **Downloads** — SAF-Ordner-Picker
-- **Sprache** — DE/EN via `ChoiceRow`
-- **Über** — App-Name, Version (`BuildConfig.VERSION_NAME`), Geräte-Hinweis
+- **< 600 dp (Phone):** Accordion — eine Scroll-Liste, Sektionskopf tappbar, Inhalt klappt
+  inline auf (`AnimatedVisibility`, einziges erlaubtes Motion).
+- **600–900 dp (Tablet):** Sidebar links (Icon 28 dp + `titleMedium`, aktiv = schwarzer
+  Akzent-Balken links + fett) + scrollendes Detail rechts.
+- **≥ 900 dp (großes E-Ink):** wie Tablet, größer (Icon 32 dp, größeres Label, mehr Padding).
+
+Sektionen (Reihenfolge fix): **Verbindung** (Server-Formular, Status, Verbinden/Trennen) ·
+**Darstellung** (Theme Hell/Dunkel/System via `ChoiceRow`) · **Reader** (Webtoon-Überlappung
+`StepperRow` + Anzeige-Modus E-Ink/Smartphone) · **Downloads** (SAF-Ordner-Picker) ·
+**Sprache** (DE/EN) · **Über** (App-Name, `BuildConfig.VERSION_NAME`, Geräte-Hinweis).
+Die Inhalte sind scaffold-freie Content-Composables (`SettingsContent.kt`), gehostet inline.
+
+**Such-Highlight.** Die TopBar-Suche reicht auf dem Settings-Tab **live** `query` an
+`SettingsScreen`. Reine Funktionen `matchRanges`/`sectionMatches` (`SettingsSearch.kt`,
+unit-getestet) filtern auf Treffer-Sektionen und springen zur ersten; `HighlightText`
+markiert den gematchten Text **fett + `outlineVariant`-Hintergrund** (monochrom, keine
+Akzentfarbe) — bis in `ChoiceRow`-Labels hinein. So sieht der Nutzer, *warum* etwas
+gefunden wurde.
+
+## Anti-Pattern: Voll-Reload bei Teil-Update
+
+Eine kleine Zustandsänderung darf **nie** die ganze Seite neu laden. Auf E-Ink ist der
+`Loading`-Durchlauf ein sichtbarer Flash + Full-Refresh (Ghosting) — und unnötig, weil sich
+nur ein Detail geändert hat.
+
+- **Falsch:** Mark-as-read / Typ-Zuweisung / Favorit-Toggle löst einen `refreshTrigger` aus,
+  der den `state`-Flow neu durch `Loading → Content` schickt (komplette Liste neu rendern).
+- **Richtig:** Den geladenen `Content` behalten und nur den betroffenen Teil **optimistisch**
+  patchen — über einen separaten `MutableStateFlow` (z. B. `_readOverrides`, `_typeOverride`),
+  der via `combine(baseState, …)` in den `Content` einfließt. Bei Server-Fehler das optimistische
+  Update zurücknehmen. Server-Call läuft im Hintergrund, ohne den State auf `Loading` zu werfen.
+- **Voll-Reload nur** bei echtem Seiten-/Kontextwechsel (anderer Server, andere Serie, Pull-to-
+  Refresh). Referenz-Implementierung: `SeriesDetailViewModel` (`_readOverrides`/`_typeOverride`
+  → `state`-`combine`, `baseState` lädt nur bei `servers.config`).
 
 ## Checkliste pro UI-Stück
 
@@ -119,3 +147,20 @@ mit Zurück-Pfeil. Jede Unterseite hat **ein** Thema:
 4. Modal? → `EinkModal` (schwarzer Rand).
 5. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute.
 6. Keine Animation/Schatten/Verläufe (E-Ink).
+7. Teil-Update statt Voll-Reload (siehe Anti-Pattern oben) — kein `Loading`-Flash bei kleinen Änderungen.
+
+## Anti-Pattern (sofort ablehnen)
+
+- **Zu dünne / zu blasse Linien.** Auf E-Ink verschwindet ein 1px-Strich und ein zu heller
+  Grauton (z. B. `#CCCCCC`) komplett — Rahmen, Divider und Card-Kanten werden unsichtbar.
+  Regel: Rahmen **≥ 1.5 dp**, Farbe mindestens mittelgrau (`outlineVariant` = `#777777`/`#8A8A8A`),
+  für Betonung `outline` (schwarz). Wer einen Divider/Rahmen setzt, prüft ihn auf echter
+  E-Ink-Hardware (oder Emulator `eink_test`) — „sieht man am LCD" reicht nicht.
+- Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
+- **Asymmetrie bei Geschwister-Elementen.** Elemente in **derselben Zeile** oder mit **gleicher Rolle**
+  müssen sich Maße teilen: ein Button neben einem Eingabefeld/Dropdown ist **gleich hoch** (gemeinsame
+  `height`-Konstante, nicht zwei verschiedene Größen), flankierende Icons/Slots links+rechts sind
+  **gleich breit** (sonst verschiebt sich das mittige Element), Aktions-Buttons sind gleich groß.
+  Auf E-Ink fällt ein 4dp-Höhenversatz sofort auf. Faustregel: gleiche Zeile/gleiche Rolle → geteilte Maß-Konstante.
+- **Button-Reihenfolge inkonsistent.** Sekundäre Aktion (Abbrechen/Löschen) **immer links**, primäre
+  (Speichern/OK) **rechts** — über alle Dialoge/Footer hinweg gleich.

@@ -3,8 +3,10 @@ package com.komgareader.app.ui.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.localSeries
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.Series
+import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.source.SourceFilter
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -27,7 +30,11 @@ import javax.inject.Inject
 sealed interface LibraryUiState {
     data object NoServer : LibraryUiState
     data object Loading : LibraryUiState
-    data class Content(val series: List<Series>, val serverConfig: ServerConfig?) : LibraryUiState
+    data class Content(
+        val series: List<Series>,
+        val serverConfig: ServerConfig?,
+        val offline: Boolean = false,
+    ) : LibraryUiState
     data class Error(val message: String) : LibraryUiState
 }
 
@@ -44,9 +51,15 @@ class LibraryViewModel @Inject constructor(
     private val servers: ServerRepository,
     private val sourceProvider: KomgaSourceProvider,
     private val downloadManager: DownloadManager,
+    private val downloadRepository: DownloadRepository,
 ) : ViewModel() {
 
     private val refreshTrigger = MutableStateFlow(0)
+
+    /** Serien mit lokalem Inhalt → Download-Badge statt Cloud. */
+    val localSeriesIds: StateFlow<Set<String>> = downloadRepository.downloads
+        .map { list -> list.mapTo(mutableSetOf()) { it.seriesRemoteId } as Set<String> }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val state: StateFlow<LibraryUiState> =
         combine(servers.config, refreshTrigger) { config, _ -> config }
@@ -54,11 +67,27 @@ class LibraryViewModel @Inject constructor(
                 flow {
                     emit(LibraryUiState.Loading)
                     val source = sourceProvider.from(config)
-                    if (config == null || source == null) { emit(LibraryUiState.NoServer); return@flow }
+                    if (config == null || source == null) {
+                        // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
+                        val local = downloadRepository.downloads.first().localSeries()
+                        emit(
+                            if (local.isNotEmpty()) LibraryUiState.Content(local, config, offline = true)
+                            else LibraryUiState.NoServer,
+                        )
+                        return@flow
+                    }
                     emit(runCatching { source.browse(0, SourceFilter()) }
                         .fold(
                             { LibraryUiState.Content(it.items, config) },
-                            { LibraryUiState.Error(it.message ?: "Verbindung fehlgeschlagen") },
+                            { error ->
+                                // Server weg → nur lokal vorhandene Werke zeigen.
+                                val local = downloadRepository.downloads.first().localSeries(source.id)
+                                if (local.isNotEmpty()) {
+                                    LibraryUiState.Content(local, config, offline = true)
+                                } else {
+                                    LibraryUiState.Error(error.message ?: "Verbindung fehlgeschlagen")
+                                }
+                            },
                         ))
                 }
             }
@@ -86,6 +115,8 @@ class LibraryViewModel @Inject constructor(
                             format = book.format.name,
                             totalPages = book.pageCount,
                             bytes = bytes,
+                            seriesTitle = series.title,
+                            seriesCoverUrl = series.coverUrl,
                         )
                     }
                 }

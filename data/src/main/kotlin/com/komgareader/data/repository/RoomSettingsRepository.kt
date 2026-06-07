@@ -13,6 +13,13 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val displayMode: Flow<String> = dao.observe(KEY_DISPLAY).map { it ?: "EINK" }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)
     override val guidedPanelOverlay: Flow<Boolean> = dao.observe(KEY_PANEL_OVERLAY).map { it == "true" }
+    override val activeColorProfileId: Flow<Long?> = dao.observe(KEY_ACTIVE_COLOR_PROFILE)
+        .map { it?.toLongOrNull() }
+    override val webtoonOverlapPercent: Flow<Int> =
+        dao.observe(KEY_WEBTOON_OVERLAP).map { it?.toIntOrNull() ?: 25 }
+    // Default GRID: Kapitel als Cover-Kacheln (nutzt die Buch-Covers).
+    override val chapterViewMode: Flow<String> =
+        dao.observe(KEY_CHAPTER_VIEW_MODE).map { it ?: "GRID" }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -22,6 +29,13 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         else dao.put(SettingEntity(KEY_DOWNLOAD_DIR, uri))
     }
     override suspend fun setGuidedPanelOverlay(value: Boolean) = dao.put(SettingEntity(KEY_PANEL_OVERLAY, value.toString()))
+    override suspend fun setWebtoonOverlapPercent(percent: Int) =
+        dao.put(SettingEntity(KEY_WEBTOON_OVERLAP, percent.toString()))
+    override suspend fun setChapterViewMode(mode: String) =
+        dao.put(SettingEntity(KEY_CHAPTER_VIEW_MODE, mode))
+
+    override suspend fun setActiveColorProfileId(id: Long) =
+        dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
 
     private companion object {
         const val KEY_THEME = "theme_mode"
@@ -29,5 +43,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_DISPLAY = "display_mode"
         const val KEY_DOWNLOAD_DIR = "download_dir"
         const val KEY_PANEL_OVERLAY = "guided_panel_overlay"
+        const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"
+        const val KEY_WEBTOON_OVERLAP = "webtoon_overlap_percent"
+        const val KEY_CHAPTER_VIEW_MODE = "chapter_view_mode"
     }
 }

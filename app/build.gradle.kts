@@ -53,9 +53,14 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     debugImplementation(libs.compose.ui.tooling)
 
+    testImplementation(libs.junit.jupiter)
+    testImplementation(kotlin("test"))
+
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.room.runtime)
     androidTestImplementation(libs.room.ktx)
 }
+
+tasks.withType<Test> { useJUnitPlatform() }

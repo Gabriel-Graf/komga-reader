@@ -30,7 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.eink.onyx.OnyxRefresher
@@ -131,11 +131,11 @@ fun ComicReaderScreen(
                 )
             } else Modifier.fillMaxSize()
 
-            AsyncImage(
+            FilteredAsyncImage(
                 model = request,
                 contentDescription = "Seite ${pageIndex + 1}",
-                contentScale = ContentScale.Fit,
                 modifier = mod,
+                contentScale = ContentScale.Fit,
             )
         }
 

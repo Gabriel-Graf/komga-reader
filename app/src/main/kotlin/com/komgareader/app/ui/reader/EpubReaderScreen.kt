@@ -1,7 +1,7 @@
 package com.komgareader.app.ui.reader
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.Image
+import com.komgareader.app.ui.components.FilteredImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -67,7 +67,7 @@ fun EpubReaderScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 if (bmp != null) {
-                    Image(
+                    FilteredImage(
                         bitmap = bmp!!.asImageBitmap(),
                         contentDescription = "Seite ${pageIndex + 1}",
                         contentScale = ContentScale.Fit,

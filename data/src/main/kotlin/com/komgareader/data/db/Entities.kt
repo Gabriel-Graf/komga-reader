@@ -37,6 +37,32 @@ data class ShelfEntity(
     val defaultContentType: String? = null,
 )
 
+/**
+ * Manuell zugewiesener Inhaltstyp eines Werks (Serie). Quellen-übergreifend per
+ * [sourceId] + [seriesRemoteId]. [contentType] ist ein [com.komgareader.domain.model.ContentType]-Name.
+ */
+@Entity(tableName = "series_overrides", primaryKeys = ["sourceId", "seriesRemoteId"])
+data class SeriesOverrideEntity(
+    val sourceId: Long,
+    val seriesRemoteId: String,
+    val contentType: String,
+)
+
+/**
+ * Lokaler Lesefortschritt je Buch (offline-first). [dirty] = noch nicht zum Server gepusht.
+ * Wird mit dem Server-Stand gemerged (höhere Seite gewinnt, kein Regress).
+ */
+@Entity(tableName = "read_progress")
+data class ReadProgressEntity(
+    @PrimaryKey val bookRemoteId: String,
+    val sourceId: Long,
+    val page: Int,
+    val completed: Boolean,
+    val totalPages: Int,
+    val dirty: Boolean,
+    val updatedAt: Long,
+)
+
 /** Lokal gespeichertes Buch (Download-Eintrag). */
 @Entity(tableName = "downloads")
 data class DownloadEntity(
@@ -47,4 +73,17 @@ data class DownloadEntity(
     val format: String,
     val localPath: String,
     val totalPages: Int,
+    val seriesTitle: String = "",
+    val seriesCoverUrl: String? = null,
+)
+
+/** Persistiertes E-Ink-Farbfilter-Profil. */
+@Entity(tableName = "color_profiles")
+data class ColorProfileEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val saturation: Float,
+    val contrast: Float,
+    val brightness: Float,
+    val builtIn: Boolean,
 )

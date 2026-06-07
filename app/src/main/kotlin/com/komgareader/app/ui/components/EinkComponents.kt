@@ -3,6 +3,7 @@ package com.komgareader.app.ui.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.theme.EinkTokens
 
@@ -103,13 +107,15 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 
 /**
  * Auswahlzeile mit Häkchen rechts statt RadioButton-Kreis (ruhiger auf E-Ink).
- * Für Theme-/Sprach-/Modus-Auswahl.
+ * Für Theme-/Sprach-/Modus-Auswahl. [query] markiert Suchtreffer im Label.
  */
 @Composable
 fun ChoiceRow(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null,
+    query: String = "",
     onSelect: () -> Unit,
 ) {
     Row(
@@ -119,15 +125,76 @@ fun ChoiceRow(
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        if (selected) {
-            Icon(
-                Icons.Outlined.Check,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        HighlightText(
+            text = label,
+            query = query,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        // Fester Häkchen-Slot: reserviert die Breite auch ohne Auswahl, damit ein optionales
+        // [trailing]-Element (z. B. Info-Button) zeilenübergreifend bündig ganz rechts sitzt.
+        Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+            if (selected) {
+                Icon(
+                    Icons.Outlined.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
+        trailing?.invoke()
+    }
+}
+
+/**
+ * Zeile mit ±-Steppern für einen numerischen Wert — E-Ink-tauglich (kein Slider,
+ * der auf E-Ink schlecht zeichnet). Label links, [−] Wert [+] rechts. [display]
+ * formatiert den Wert (z. B. "25 %").
+ */
+@Composable
+fun StepperRow(
+    label: String,
+    value: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier,
+    canDecrement: Boolean = true,
+    canIncrement: Boolean = true,
+    display: (Int) -> String = { it.toString() },
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        StepperButton(Icons.Outlined.Remove, enabled = canDecrement, contentDescription = "−", onClick = onDecrement)
+        Text(
+            text = display(value),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(64.dp).padding(horizontal = 8.dp),
+        )
+        StepperButton(Icons.Outlined.Add, enabled = canIncrement, contentDescription = "+", onClick = onIncrement)
+    }
+}
+
+@Composable
+private fun StepperButton(
+    icon: ImageVector,
+    enabled: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    val tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .border(EinkTokens.hairline, tint, RoundedCornerShape(6.dp))
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(22.dp))
     }
 }
 
@@ -172,3 +239,36 @@ fun SubPageScaffold(
 
 /** Inhalts-Padding-Helfer, falls eine Unterseite eigenes Scroll-/Listen-Layout braucht. */
 val SubPageContentPadding = PaddingValues(EinkTokens.screenPadding)
+
+/**
+ * Diskrete ±-Regelzeile (kein kontinuierlicher Slider — ruckelt auf E-Ink). Label links,
+ * aktueller Wert mittig, − / + Buttons rechts. [enabled] sperrt z. B. bei Built-in-Profilen.
+ */
+@Composable
+fun StepperRow(
+    label: String,
+    valueText: String,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        IconButton(onClick = onDecrement, enabled = enabled) {
+            Icon(Icons.Outlined.Remove, contentDescription = "−", modifier = Modifier.size(22.dp))
+        }
+        Text(
+            valueText,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(56.dp),
+            textAlign = TextAlign.Center,
+        )
+        IconButton(onClick = onIncrement, enabled = enabled) {
+            Icon(Icons.Outlined.Add, contentDescription = "+", modifier = Modifier.size(22.dp))
+        }
+    }
+}

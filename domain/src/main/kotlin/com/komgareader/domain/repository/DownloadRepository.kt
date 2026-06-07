@@ -10,6 +10,9 @@ data class DownloadedBook(
     val format: String,
     val localPath: String,
     val totalPages: Int,
+    /** Serien-Metadaten für Offline-Browsing (ohne Server keine andere Quelle). */
+    val seriesTitle: String = "",
+    val seriesCoverUrl: String? = null,
 )
 
 interface DownloadRepository {

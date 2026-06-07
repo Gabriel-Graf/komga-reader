@@ -26,10 +26,10 @@ ein themed Pendant existiert.
 | Token | Wert | Verwendung |
 |-------|------|-----------|
 | `outline` (colorScheme) | Schwarz / invertiert Weiß | **starke** Rahmen: Modals, aktive Elemente |
-| `outlineVariant` (colorScheme) | `#CCCCCC` / `#444444` | **Hairline** für Tiles/Cards/Divider |
+| `outlineVariant` (colorScheme) | `#777777` / `#8A8A8A` | **Hairline** für Tiles/Cards/Divider (mittelgrau — auf E-Ink sichtbar) |
 | Radius small/medium/large | 6 / 8 / 12 dp | Standard Compose `Shapes` |
 | `EinkTokens.tileRadius` | 10 dp | Settings-Tiles, Quick-Action-Kacheln |
-| `EinkTokens.hairline` | 1 dp | Card-/Tile-/Row-Rahmen |
+| `EinkTokens.hairline` | 1.5 dp | Card-/Tile-/Row-Rahmen (dünner wird auf E-Ink unsichtbar) |
 | `EinkTokens.strongBorder` | 2 dp | Modal-Rand (immer schwarz) |
 | `EinkTokens.screenPadding` | 16 dp | Screen-Rand |
 | `EinkTokens.sectionGap` | 16 dp | zwischen Sektionen |
@@ -131,3 +131,12 @@ gefunden wurde.
 4. Modal? → `EinkModal` (schwarzer Rand).
 5. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute.
 6. Keine Animation/Schatten/Verläufe (E-Ink).
+
+## Anti-Pattern (sofort ablehnen)
+
+- **Zu dünne / zu blasse Linien.** Auf E-Ink verschwindet ein 1px-Strich und ein zu heller
+  Grauton (z. B. `#CCCCCC`) komplett — Rahmen, Divider und Card-Kanten werden unsichtbar.
+  Regel: Rahmen **≥ 1.5 dp**, Farbe mindestens mittelgrau (`outlineVariant` = `#777777`/`#8A8A8A`),
+  für Betonung `outline` (schwarz). Wer einen Divider/Rahmen setzt, prüft ihn auf echter
+  E-Ink-Hardware (oder Emulator `eink_test`) — „sieht man am LCD" reicht nicht.
+- Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.

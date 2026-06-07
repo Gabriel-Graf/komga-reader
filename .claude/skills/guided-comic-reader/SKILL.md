@@ -71,11 +71,20 @@ E-Ink-Designsprache gilt ([[eink-ui]]): flach, 1.5px-Border, monochrom, keine An
 
 ## Detektor-Algorithmus (Flood-Fill + Connected-Components)
 
-`PanelDetector` arbeitet in vier Stufen (reines Kotlin, host-testbar, keine Android-Deps):
+`PanelDetector` arbeitet in Stufen (reines Kotlin, host-testbar, keine Android-Deps):
 Otsu-Binarisierung → Edge-Seed-Gutter-Flood (vom Seitenrand, Full-Bleed-Panels bleiben erhalten) →
-Component-Bounding-Boxes (RegionLabeling) → Min-Fläche-Filter + Contained-Merge → Lesereihenfolge
-(Zeilen-Bänder, LTR/RTL). Units: `ImageBinarization` / `GutterFill` / `RegionLabeling` /
-`ReadingOrder` / `PanelDetector`.
+Component-Bounding-Boxes (RegionLabeling) → Min-Fläche-Filter → **Rahmen-Linien-Split** (`BorderLineSplit`)
+→ Bubble-Filter (`dropContainedSmall`) + Contained-Merge → Lesereihenfolge (Zeilen-Bänder, LTR/RTL).
+Units: `ImageBinarization` / `GutterFill` / `RegionLabeling` / `BorderLineSplit` / `ReadingOrder` / `PanelDetector`.
+
+**Rahmen-Linien-Split (`BorderLineSplit`):** Der Weiß-Gutter-Flood trennt nur über **weiße** Gutter.
+Schwarz-umrandete, eng liegende Panels (z. B. Red Hood) verschmelzen sonst zu seitenbreiten Bändern.
+Darum wird jede seitenüberspannende Komponente rekursiv an **dünnen, durchgehend dunklen,
+von helleren Bändern umgebenen** achsenparallelen Rahmenlinien geschnitten. Der „heller-Nachbar"-Guard
+verhindert, dass uniform-dunkle Splash-Art zersplittert wird.
+
+**Bubble-Filter:** Kleine Boxen (< ~6 % Seitenfläche), die vollständig in einer größeren liegen
+(Sprechblasen = helle Inseln im Panel), werden verworfen — eine Blase ist nie ein Panel.
 
 **Degenerate-Guard (im ViewModel):** Liefert der Detektor <2 Panels ODER ein Panel belegt >85 % der
 Seitenfläche → Vollseite-Fallback (Seite verhält sich wie Paged, kein Panel-Zoom).

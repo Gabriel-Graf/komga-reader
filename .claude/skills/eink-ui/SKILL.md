@@ -140,3 +140,10 @@ gefunden wurde.
   für Betonung `outline` (schwarz). Wer einen Divider/Rahmen setzt, prüft ihn auf echter
   E-Ink-Hardware (oder Emulator `eink_test`) — „sieht man am LCD" reicht nicht.
 - Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
+- **Asymmetrie bei Geschwister-Elementen.** Elemente in **derselben Zeile** oder mit **gleicher Rolle**
+  müssen sich Maße teilen: ein Button neben einem Eingabefeld/Dropdown ist **gleich hoch** (gemeinsame
+  `height`-Konstante, nicht zwei verschiedene Größen), flankierende Icons/Slots links+rechts sind
+  **gleich breit** (sonst verschiebt sich das mittige Element), Aktions-Buttons sind gleich groß.
+  Auf E-Ink fällt ein 4dp-Höhenversatz sofort auf. Faustregel: gleiche Zeile/gleiche Rolle → geteilte Maß-Konstante.
+- **Button-Reihenfolge inkonsistent.** Sekundäre Aktion (Abbrechen/Löschen) **immer links**, primäre
+  (Speichern/OK) **rechts** — über alle Dialoge/Footer hinweg gleich.

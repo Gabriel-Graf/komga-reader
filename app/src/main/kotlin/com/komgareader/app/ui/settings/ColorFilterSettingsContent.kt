@@ -60,6 +60,9 @@ private const val STEP = 0.05f
 /** Feste Breite der Pfeil-Slots links/rechts — symmetrisch, damit das Cover exakt zentriert bleibt. */
 private val NAV_SLOT = 56.dp
 
+/** Höhe der Dropdown-Selektor-Zeile = Höhe des „＋"-Buttons daneben (gleiche Zeile → gleiche Höhe). */
+private val SELECTOR_HEIGHT = 44.dp
+
 /**
  * Farbfilter-Sektion im Master-Detail-Settings-Host (kein eigenes Scaffold — der Host liefert
  * Titel + Scroll). Reihenfolge: zentrierte Vorschau → Profil-Selektor (Dropdown + Anlegen-Button)
@@ -144,8 +147,9 @@ fun ColorFilterSettingsContent(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .height(SELECTOR_HEIGHT)
                             .clickable { profilesExpanded = !profilesExpanded }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
@@ -186,7 +190,8 @@ fun ColorFilterSettingsContent(
                 // Eigenständiger „Neues Profil"-Button rechts, oben ausgerichtet.
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .height(SELECTOR_HEIGHT)
+                        .width(48.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                         .clickable { viewModel.beginNewProfile() },
@@ -213,13 +218,14 @@ fun ColorFilterSettingsContent(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 ) {
+                    // Konvention: sekundäre Aktion (Abbrechen/Löschen) links, primäre (Speichern/Aktualisieren) rechts.
                     if (isNewDraft) {
-                        Button(onClick = { newName = ""; showSaveDialog = true }) { Text(s.save) }
                         // Abbrechen: Editor verbergen, Entwurf verwerfen — das aktive Profil bleibt.
                         OutlinedButton(onClick = { viewModel.cancelEdit() }) { Text(s.cancel) }
+                        Button(onClick = { newName = ""; showSaveDialog = true }) { Text(s.save) }
                     } else {
-                        Button(onClick = { viewModel.updateExisting() }) { Text(s.colorFilterUpdate) }
                         OutlinedButton(onClick = { viewModel.delete(e.baseProfileId) }) { Text(s.colorFilterDelete) }
+                        Button(onClick = { viewModel.updateExisting() }) { Text(s.colorFilterUpdate) }
                     }
                 }
             }

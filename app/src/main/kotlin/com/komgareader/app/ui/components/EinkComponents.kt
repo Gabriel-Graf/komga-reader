@@ -113,6 +113,7 @@ fun ChoiceRow(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    trailing: @Composable (() -> Unit)? = null,
     onSelect: () -> Unit,
 ) {
     Row(
@@ -123,6 +124,7 @@ fun ChoiceRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        trailing?.invoke()
         if (selected) {
             Icon(
                 Icons.Outlined.Check,

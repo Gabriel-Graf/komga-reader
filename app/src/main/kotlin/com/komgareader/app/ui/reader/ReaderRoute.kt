@@ -16,7 +16,8 @@ import com.komgareader.eink.onyx.OnyxRefresher
 
 /**
  * Reader-Host: holt den ReaderViewModel und wählt je nach ReaderContent
- * zwischen EpubReaderScreen, PagedReaderScreen und WebtoonReaderScreen.
+ * zwischen NovelReaderScreen (EPUB-Reflow), dem MuPDF-Reader für lokale Downloads
+ * (EpubReaderScreen), PagedReaderScreen, WebtoonReaderScreen und ComicReaderScreen.
  *
  * Aktiviert außerdem den E-Ink-Schnell-Modus (A2/DW) für Onyx-Geräte
  * und stellt ihn beim Verlassen wieder her (No-Op auf Nicht-Boox).
@@ -48,6 +49,12 @@ fun ReaderRoute(
             Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
                 Text(c.message, color = Color.White)
             }
+        }
+        is ReaderContent.Novel -> {
+            NovelReaderScreen(
+                onBack = onBack,
+                refresher = refresher,
+            )
         }
         is ReaderContent.Rendered -> {
             EpubReaderScreen(

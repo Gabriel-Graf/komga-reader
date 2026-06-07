@@ -118,6 +118,14 @@ class ReaderViewModel @Inject constructor(
 
     private fun loadBook() = viewModelScope.launch {
         runCatching {
+            // EPUB läuft über den Roman-Reader (crengine-Reflow): nur den Modus
+            // signalisieren, die Bytes lädt der NovelReaderViewModel selbst über
+            // denselben Mechanismus (lokaler Download oder Stream). Kein MuPDF.
+            if (format == BookFormat.EPUB) {
+                _content.value = ReaderContent.Novel
+                return@launch
+            }
+
             // Zuerst prüfen ob lokal vorhanden — außer wenn forceStream gesetzt ist
             if (!forceStream) {
                 val localDownload = downloadRepository.get(bookId)
@@ -148,18 +156,7 @@ class ReaderViewModel @Inject constructor(
             }
             val authHeaders = AuthHeaders.forCovers(config)
 
-            if (format == BookFormat.EPUB) {
-                val bytes = withContext(Dispatchers.IO) { source.downloadFile(bookId) }
-                val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ".epub") }
-                document = doc
-                val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
-                val startPage = runCatching { source.pullProgress(bookId) }
-                    .getOrNull()
-                    ?.let { progress -> (progress.page - 1).coerceIn(0, pageCount - 1) }
-                    ?: 0
-                _currentPage.value = startPage
-                _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
-            } else if (initialViewerMode == ViewerMode.WEBTOON) {
+            if (initialViewerMode == ViewerMode.WEBTOON) {
                 loadWebtoonStrip(source, authHeaders)
             } else {
                 val pages = source.pages(bookId)

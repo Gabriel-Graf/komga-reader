@@ -16,8 +16,9 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         .map { it?.toLongOrNull() }
     override val webtoonOverlapPercent: Flow<Int> =
         dao.observe(KEY_WEBTOON_OVERLAP).map { it?.toIntOrNull() ?: 25 }
+    // Default GRID: Kapitel als Cover-Kacheln (nutzt die Buch-Covers).
     override val chapterViewMode: Flow<String> =
-        dao.observe(KEY_CHAPTER_VIEW_MODE).map { it ?: "LIST" }
+        dao.observe(KEY_CHAPTER_VIEW_MODE).map { it ?: "GRID" }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))

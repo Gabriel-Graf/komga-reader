@@ -640,6 +640,13 @@ private fun ChaptersSectionHeader(
     }
 }
 
+/** Lesefortschritt in Prozent: 100 wenn abgeschlossen, sonst Leseposition/Seitenzahl, 0 wenn ungelesen. */
+private fun readPercent(book: Book): Int {
+    if (book.readCompleted) return 100
+    val page = book.lastReadPage
+    return if (page != null && book.pageCount > 0) (page * 100 / book.pageCount).coerceIn(0, 100) else 0
+}
+
 @Composable
 private fun ChapterRow(
     book: Book,
@@ -685,10 +692,11 @@ private fun ChapterRow(
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            val percent = readPercent(book)
             val subtitle = when {
-                book.readCompleted -> s.statusRead
-                book.lastReadPage != null -> "${s.pagesShort} ${book.lastReadPage}/${book.pageCount}"
-                else -> "${book.pageCount} ${s.pagesShort}"
+                book.readCompleted -> "${s.statusRead} · $percent%"
+                book.lastReadPage != null -> "${s.pagesShort} ${book.lastReadPage}/${book.pageCount} · $percent%"
+                else -> "${book.pageCount} ${s.pagesShort} · $percent%"
             }
             Text(
                 subtitle,
@@ -866,6 +874,16 @@ private fun ChapterTile(
                             modifier = Modifier.size(18.dp),
                         )
                     }
+                }
+            }
+            // unten-links: Lesefortschritt in Prozent.
+            Box(Modifier.align(Alignment.BottomStart).padding(4.dp)) {
+                CoverBadge {
+                    Text(
+                        "${readPercent(book)}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             }
         }

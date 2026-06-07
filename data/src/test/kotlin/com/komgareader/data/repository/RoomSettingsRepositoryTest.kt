@@ -25,15 +25,15 @@ private class FakeSettingsDao : SettingsDao {
 class RoomSettingsRepositoryTest {
 
     @Test
-    fun `chapterViewMode default ist LIST ohne gesetzten Wert`() = runTest {
+    fun `chapterViewMode default ist GRID ohne gesetzten Wert`() = runTest {
         val repo = RoomSettingsRepository(FakeSettingsDao())
-        assertEquals("LIST", repo.chapterViewMode.first())
+        assertEquals("GRID", repo.chapterViewMode.first())
     }
 
     @Test
     fun `setChapterViewMode persistiert und Flow liefert neuen Wert`() = runTest {
         val repo = RoomSettingsRepository(FakeSettingsDao())
-        repo.setChapterViewMode("GRID")
-        assertEquals("GRID", repo.chapterViewMode.first())
+        repo.setChapterViewMode("LIST")
+        assertEquals("LIST", repo.chapterViewMode.first())
     }
 }

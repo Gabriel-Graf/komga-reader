@@ -227,7 +227,7 @@ class SeriesDetailViewModel @Inject constructor(
 
     /** Globaler Kapitel-Anzeigemodus ("LIST"|"GRID") — unabhängig vom Content-State (kein Reload). */
     val chapterViewMode: StateFlow<String> = settings.chapterViewMode
-        .stateIn(viewModelScope, SharingStarted.Eagerly, "LIST")
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "GRID")
 
     /** Schaltet den globalen Kapitel-Anzeigemodus um und persistiert ihn. */
     fun setChapterViewMode(mode: String) {

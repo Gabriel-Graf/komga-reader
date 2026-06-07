@@ -1,0 +1,10 @@
+prefix=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android
+exec_prefix=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android
+libdir=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android/lib
+includedir=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android/include
+
+Name: libjpeg
+Description: A SIMD-accelerated JPEG codec that provides the libjpeg API
+Version: 3.1.2
+Libs: -L${libdir} -ljpeg
+Cflags: -I${includedir}

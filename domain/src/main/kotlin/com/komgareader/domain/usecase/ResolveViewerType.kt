@@ -12,7 +12,7 @@ import com.komgareader.domain.model.ViewerType
  * Vollständige Begründung: docs/domain/viewer-type-resolution.md.
  *
  * 1. Serien-Override (manuell)        → map(override)
- * 2. Buch-Format EPUB                 → EPUB
+ * 2. Buch-Format EPUB                 → NOVEL
  * 3. Leserichtung VERTICAL/WEBTOON    → WEBTOON
  * 4. Bibliotheks-Default (Fallback)   → map(fallback)
  * 5. Archiv-Format (CBZ/CBR/PDF)      → PAGED
@@ -27,7 +27,7 @@ class ResolveViewerType {
 
     operator fun invoke(series: Series, book: Book, fallback: ContentType?): ViewerType {
         series.contentTypeOverride?.let { return map(it) }
-        if (book.format == BookFormat.EPUB) return ViewerType.EPUB
+        if (book.format == BookFormat.EPUB) return ViewerType.NOVEL
         if (series.readingDirection == ReadingDirection.VERTICAL ||
             series.readingDirection == ReadingDirection.WEBTOON
         ) {
@@ -54,6 +54,6 @@ class ResolveViewerType {
         ContentType.MANGA -> ViewerType.PAGED
         ContentType.COMIC -> ViewerType.COMIC
         ContentType.WEBTOON -> ViewerType.WEBTOON
-        ContentType.NOVEL -> ViewerType.EPUB
+        ContentType.NOVEL -> ViewerType.NOVEL
     }
 }

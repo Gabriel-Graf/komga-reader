@@ -20,6 +20,19 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     // Default GRID: Kapitel als Cover-Kacheln (nutzt die Buch-Covers).
     override val chapterViewMode: Flow<String> =
         dao.observe(KEY_CHAPTER_VIEW_MODE).map { it ?: "GRID" }
+    // Roman-Typografie: Defaults = lesbare Startwerte (NovelSettings-Defaults).
+    override val novelFontSizeEm: Flow<Float> =
+        dao.observe(KEY_NOVEL_FONT_SIZE).map { it?.toFloatOrNull() ?: 1.0f }
+    override val novelLineHeight: Flow<Float> =
+        dao.observe(KEY_NOVEL_LINE_HEIGHT).map { it?.toFloatOrNull() ?: 1.0f }
+    override val novelMarginPreset: Flow<String> =
+        dao.observe(KEY_NOVEL_MARGIN_PRESET).map { it ?: "NORMAL" }
+    override val novelFontFamily: Flow<String> =
+        dao.observe(KEY_NOVEL_FONT_FAMILY).map { it ?: "DejaVuSans" }
+    override val novelTextAlign: Flow<String> =
+        dao.observe(KEY_NOVEL_TEXT_ALIGN).map { it ?: "JUSTIFY" }
+    override val novelHyphenationLang: Flow<String> =
+        dao.observe(KEY_NOVEL_HYPHENATION).map { it ?: "" }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -33,6 +46,18 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_WEBTOON_OVERLAP, percent.toString()))
     override suspend fun setChapterViewMode(mode: String) =
         dao.put(SettingEntity(KEY_CHAPTER_VIEW_MODE, mode))
+    override suspend fun setNovelFontSizeEm(value: Float) =
+        dao.put(SettingEntity(KEY_NOVEL_FONT_SIZE, value.toString()))
+    override suspend fun setNovelLineHeight(value: Float) =
+        dao.put(SettingEntity(KEY_NOVEL_LINE_HEIGHT, value.toString()))
+    override suspend fun setNovelMarginPreset(preset: String) =
+        dao.put(SettingEntity(KEY_NOVEL_MARGIN_PRESET, preset))
+    override suspend fun setNovelFontFamily(family: String) =
+        dao.put(SettingEntity(KEY_NOVEL_FONT_FAMILY, family))
+    override suspend fun setNovelTextAlign(align: String) =
+        dao.put(SettingEntity(KEY_NOVEL_TEXT_ALIGN, align))
+    override suspend fun setNovelHyphenationLang(lang: String) =
+        dao.put(SettingEntity(KEY_NOVEL_HYPHENATION, lang))
 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
@@ -46,5 +71,11 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"
         const val KEY_WEBTOON_OVERLAP = "webtoon_overlap_percent"
         const val KEY_CHAPTER_VIEW_MODE = "chapter_view_mode"
+        const val KEY_NOVEL_FONT_SIZE = "novel_font_size_em"
+        const val KEY_NOVEL_LINE_HEIGHT = "novel_line_height"
+        const val KEY_NOVEL_MARGIN_PRESET = "novel_margin_preset"
+        const val KEY_NOVEL_FONT_FAMILY = "novel_font_family"
+        const val KEY_NOVEL_TEXT_ALIGN = "novel_text_align"
+        const val KEY_NOVEL_HYPHENATION = "novel_hyphenation_lang"
     }
 }

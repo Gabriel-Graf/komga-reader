@@ -1,0 +1,152 @@
+package com.komgareader.render.crengine
+
+import android.graphics.Bitmap
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.komgareader.domain.render.Hyphenation
+import com.komgareader.domain.render.ReflowConfig
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+
+/**
+ * Beweis für den ReflowableDocument-Adapter über crengine-ng:
+ *  1. Die nackte Spike-Pipeline (Open + Render einer Seite mit Text) bleibt grün.
+ *  2. Re-Layout funktioniert: andere Schriftgröße => andere Seitenzahl.
+ *  3. TOC, Suche und der Anker-Round-Trip funktionieren über den Adapter.
+ *
+ * Voraussetzung: gebündelte DejaVuSans als einzig registrierte Schrift.
+ */
+@RunWith(AndroidJUnit4::class)
+class CrengineRenderInstrumentedTest {
+
+    private val context = InstrumentationRegistry.getInstrumentation().context
+
+    private val viewportW = 800
+    private val viewportH = 1200
+
+    private fun copyAssetToFile(asset: String): File {
+        val out = File(context.cacheDir, asset.substringAfterLast('/'))
+        out.parentFile?.mkdirs()
+        context.assets.open(asset).use { input -> out.outputStream().use { input.copyTo(it) } }
+        return out
+    }
+
+    private fun assetBytes(name: String): ByteArray =
+        context.assets.open(name).use { it.readBytes() }
+
+    private fun initFontManager() {
+        val fontFile = copyAssetToFile("fonts/DejaVuSans.ttf")
+        assertTrue("Font-Manager init + Font registriert", CrengineNative.nativeInit(fontFile.absolutePath))
+    }
+
+    private fun openDocument(): CrengineDocument =
+        CrengineDocument(assetBytes("sample.epub"), "sample.epub", viewportW, viewportH)
+
+    @Test
+    fun rendert_reflowte_epub_seite_mit_text() {
+        initFontManager()
+        val handle = CrengineNative.nativeOpen(assetBytes("sample.epub"), "sample.epub")
+        assertTrue("EPUB geöffnet (handle != 0)", handle != 0L)
+
+        val bitmap = Bitmap.createBitmap(viewportW, viewportH, Bitmap.Config.ARGB_8888)
+        try {
+            // Layout muss vor dem ersten Render angewandt sein.
+            CrengineNative.nativeApplyLayout(
+                handle, viewportW, viewportH, 24, emptyArray(), emptyArray(), "",
+            )
+            CrengineNative.nativeRenderPage(handle, 0, viewportW, viewportH, bitmap)
+
+            val pixels = IntArray(viewportW * viewportH)
+            bitmap.getPixels(pixels, 0, viewportW, 0, 0, viewportW, viewportH)
+
+            val distinctColors = pixels.toHashSet().size
+            assertTrue("Seite ist nicht uniform (mehrere Farben), war $distinctColors", distinctColors > 1)
+
+            val darkPixels = pixels.count { argb ->
+                val r = (argb shr 16) and 0xff
+                val g = (argb shr 8) and 0xff
+                val b = argb and 0xff
+                (r + g + b) / 3 < 80
+            }
+            assertTrue("gerenderter Text (dunkle Pixel vorhanden), war $darkPixels", darkPixels > 300)
+        } finally {
+            bitmap.recycle()
+            CrengineNative.nativeClose(handle)
+        }
+    }
+
+    @Test
+    fun reflow_aendert_seitenzahl_bei_groesserer_schrift() {
+        initFontManager()
+        openDocument().use { doc ->
+            doc.applyLayout(ReflowConfig(fontSizeEm = 1.0f))
+            val pagesSmall = doc.pageCount()
+            assertTrue("Seitenzahl bei 1.0em > 0, war $pagesSmall", pagesSmall > 0)
+
+            doc.applyLayout(ReflowConfig(fontSizeEm = 2.0f))
+            val pagesLarge = doc.pageCount()
+
+            assertNotEquals(
+                "Re-Layout: groessere Schrift muss die Seitenzahl aendern " +
+                    "(1.0em=$pagesSmall, 2.0em=$pagesLarge)",
+                pagesSmall,
+                pagesLarge,
+            )
+            assertTrue(
+                "Groessere Schrift sollte mehr Seiten ergeben (1.0em=$pagesSmall, 2.0em=$pagesLarge)",
+                pagesLarge > pagesSmall,
+            )
+        }
+    }
+
+    @Test
+    fun chapters_liefert_das_inhaltsverzeichnis() {
+        initFontManager()
+        openDocument().use { doc ->
+            doc.applyLayout(ReflowConfig.DEFAULT)
+            val chapters = doc.chapters()
+            // sample.epub hat genau einen TOC-Eintrag ("K1").
+            assertTrue("TOC nicht leer, war ${chapters.size}", chapters.isNotEmpty())
+            assertTrue(
+                "TOC-Eintrag hat einen Anker (xpointer), war '${chapters.first().anchor}'",
+                chapters.first().anchor.isNotBlank(),
+            )
+        }
+    }
+
+    @Test
+    fun search_findet_ein_im_text_vorhandenes_wort() {
+        initFontManager()
+        openDocument().use { doc ->
+            doc.applyLayout(ReflowConfig.DEFAULT)
+            // "Sonne" kommt im Korpus von sample.epub vielfach vor.
+            val hits = doc.search("Sonne")
+            assertTrue("mindestens ein Treffer für 'Sonne', war ${hits.size}", hits.isNotEmpty())
+            assertTrue(
+                "Treffer hat einen Anker (xpointer), war '${hits.first().anchor}'",
+                hits.first().anchor.isNotBlank(),
+            )
+        }
+    }
+
+    @Test
+    fun anker_round_trip_stuerzt_nicht_ab_und_liefert_anker() {
+        initFontManager()
+        openDocument().use { doc ->
+            doc.applyLayout(ReflowConfig(hyphenation = Hyphenation.Language("de")))
+            val anchor = doc.currentAnchor()
+            assertTrue("currentAnchor liefert einen xpointer, war '$anchor'", anchor.isNotBlank())
+            // Round-Trip: zurueck an den gemerkten Anker springen.
+            doc.seekToAnchor(anchor)
+            assertEquals(
+                "seekToAnchor(currentAnchor()) ist stabil",
+                anchor,
+                doc.currentAnchor(),
+            )
+        }
+    }
+}

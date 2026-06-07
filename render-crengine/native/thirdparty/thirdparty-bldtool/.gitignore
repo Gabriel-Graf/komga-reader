@@ -1,0 +1,10 @@
+/sources
+/tmp
+/prefix*
+# make.conf is intentionally committed: it pins this project's NDK/SDK setup
+# for a reproducible cross-build (see PROVENANCE.md).
+*.log
+*.diff
+/*.patch
+*.bak
+.DS_*

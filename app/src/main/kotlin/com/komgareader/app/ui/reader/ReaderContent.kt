@@ -23,7 +23,16 @@ sealed interface ReaderContent {
         val initialPage: Int,
         val strip: WebtoonStrip,
     ) : ReaderContent
-    /** MuPDF-gerendertes Dokument (EPUB-Stream oder lokaler Download). */
+    /**
+     * MuPDF-gerendertes Dokument für **lokale Downloads** (CBZ/CBR/PDF offline).
+     * EPUB läuft nicht mehr hierdurch, sondern über [Novel] (crengine-Reflow).
+     */
     data class Rendered(val pageCount: Int, val initialPage: Int) : ReaderContent
+    /**
+     * Roman-Modus (EPUB): der [NovelReaderViewModel] öffnet das Buch selbst über die
+     * crengine-Reflow-Engine. Dieser Marker signalisiert dem Reader-Host nur den
+     * Modus — die Bytes lädt der Novel-Reader über denselben Mechanismus.
+     */
+    data object Novel : ReaderContent
     data class Error(val message: String) : ReaderContent
 }

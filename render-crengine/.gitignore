@@ -1,0 +1,2 @@
+# AGP native build intermediates (CMake/ninja output).
+.cxx/

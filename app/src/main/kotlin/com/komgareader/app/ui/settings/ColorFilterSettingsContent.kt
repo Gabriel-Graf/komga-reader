@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +43,7 @@ import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
+import com.komgareader.app.ui.components.SettingsTile
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.theme.EinkTokens
@@ -112,31 +114,8 @@ fun ColorFilterSettingsContent(
             }
         }
 
-        SectionHeader(s.colorFilterProfiles)
-        profiles.forEach { profile ->
-            ChoiceRow(
-                label = profile.name,
-                selected = profile.id == active.id,
-                query = query,
-                // Info-Button: Werte des Profils (auch der gesperrten Presets) read-only ansehen.
-                trailing = {
-                    IconButton(onClick = { infoProfile = profile }) {
-                        Icon(Icons.Outlined.Info, contentDescription = profile.name)
-                    }
-                },
-            ) {
-                viewModel.setActive(profile.id)
-                // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
-                if (profile.builtIn) viewModel.cancelEdit() else viewModel.beginEdit(profile)
-            }
-        }
-        // Neues, editierbares Profil anlegen — die Regler erscheinen darunter,
-        // vorbefüllt vom aktiven Profil. Speichern legt es an und wählt es aus.
-        ChoiceRow(label = "＋ ${s.colorFilterNewProfile}", selected = false) {
-            viewModel.beginNewProfile()
-        }
-
-        // Editor nur für editierbare Zustände (neuer Entwurf oder Custom-Profil), nie für Built-ins.
+        // Editor direkt unter der Vorschau — Cover + Regler beieinander, beim Tunen sichtbar.
+        // Nur für editierbare Zustände (neuer Entwurf oder Custom-Profil), nie für Built-ins.
         edit?.takeIf { !it.builtIn }?.let { e ->
             val isNewDraft = e.baseProfileId == 0L
             SectionHeader(s.colorFilterAdjust)
@@ -158,7 +137,6 @@ fun ColorFilterSettingsContent(
                 onDecrement = { viewModel.updateBrightness(-STEP) },
                 onIncrement = { viewModel.updateBrightness(STEP) },
             )
-
             Column(Modifier.padding(top = 8.dp)) {
                 ChoiceRow(label = s.colorFilterSaveAsNew, selected = false) {
                     newName = if (isNewDraft) "" else "${e.name}${s.colorFilterCopySuffix}"
@@ -171,6 +149,33 @@ fun ColorFilterSettingsContent(
                 }
             }
         }
+
+        SectionHeader(s.colorFilterProfiles)
+        profiles.forEach { profile ->
+            ChoiceRow(
+                label = profile.name,
+                selected = profile.id == active.id,
+                query = query,
+                // Info-Button: Werte des Profils (auch der gesperrten Presets) read-only ansehen.
+                trailing = {
+                    IconButton(onClick = { infoProfile = profile }) {
+                        Icon(Icons.Outlined.Info, contentDescription = profile.name)
+                    }
+                },
+            ) {
+                viewModel.setActive(profile.id)
+                // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
+                if (profile.builtIn) viewModel.cancelEdit() else viewModel.beginEdit(profile)
+            }
+        }
+        // Eigenständige, umrandete Aktion (kein Profil-Look) → klar als „anlegen" erkennbar.
+        SettingsTile(
+            icon = Icons.Outlined.Add,
+            title = s.colorFilterNewProfile,
+            summary = s.colorFilterNewProfileHint,
+            onClick = { viewModel.beginNewProfile() },
+            showChevron = false,
+        )
     }
 
     if (showSaveDialog) {

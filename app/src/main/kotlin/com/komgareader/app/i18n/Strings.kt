@@ -111,6 +111,18 @@ interface Strings {
     val colorFilterNewProfileHint: String
     val colorFilterPrevImage: String
     val colorFilterNextImage: String
+    val colorFilterAdvanced: String
+    val colorFilterBlackPoint: String
+    val colorFilterWhitePoint: String
+    val colorFilterGamma: String
+    val colorFilterSharpen: String
+    val colorFilterSharpenRadius: String
+    val colorFilterDither: String
+    val colorFilterDitherNone: String
+    val colorFilterDitherFloyd: String
+    val colorFilterDitherOrdered: String
+    val colorFilterDitherLevels: String
+    val colorFilterReaderOnlyHint: String
     val close: String
     // Reader-Einstellungen
     val settingsWebtoon: String
@@ -228,6 +240,18 @@ object StringsDe : Strings {
     override val colorFilterNewProfileHint = "Vom aktiven Profil ausgehen, anpassen und speichern"
     override val colorFilterPrevImage = "Vorheriges"
     override val colorFilterNextImage = "Nächstes"
+    override val colorFilterAdvanced = "Erweitert"
+    override val colorFilterBlackPoint = "Schwarzpunkt"
+    override val colorFilterWhitePoint = "Weißpunkt"
+    override val colorFilterGamma = "Gamma"
+    override val colorFilterSharpen = "Schärfe"
+    override val colorFilterSharpenRadius = "Schärfe-Radius"
+    override val colorFilterDither = "Dithering"
+    override val colorFilterDitherNone = "Aus"
+    override val colorFilterDitherFloyd = "Floyd-Steinberg"
+    override val colorFilterDitherOrdered = "Ordered"
+    override val colorFilterDitherLevels = "Stufen"
+    override val colorFilterReaderOnlyHint = "Wirkt nur beim Lesen, nicht auf Bibliotheks-Cover. Erhöht den Akku-Verbrauch."
     override val close = "Schließen"
     // Reader-Einstellungen
     override val settingsWebtoon = "Webtoon"
@@ -345,6 +369,18 @@ object StringsEn : Strings {
     override val colorFilterNewProfileHint = "Start from the active profile, tune and save"
     override val colorFilterPrevImage = "Previous"
     override val colorFilterNextImage = "Next"
+    override val colorFilterAdvanced = "Advanced"
+    override val colorFilterBlackPoint = "Black point"
+    override val colorFilterWhitePoint = "White point"
+    override val colorFilterGamma = "Gamma"
+    override val colorFilterSharpen = "Sharpen"
+    override val colorFilterSharpenRadius = "Sharpen radius"
+    override val colorFilterDither = "Dithering"
+    override val colorFilterDitherNone = "Off"
+    override val colorFilterDitherFloyd = "Floyd-Steinberg"
+    override val colorFilterDitherOrdered = "Ordered"
+    override val colorFilterDitherLevels = "Levels"
+    override val colorFilterReaderOnlyHint = "Applies only while reading, not to library covers. Increases battery use."
     override val close = "Close"
     // Reader settings
     override val settingsWebtoon = "Webtoon"

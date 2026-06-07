@@ -30,6 +30,8 @@ interface Strings {
     val notConnected: String
     // Detail-Screen
     val chapters: String
+    val chapterViewSwitchToGrid: String
+    val chapterViewSwitchToList: String
     val read: String
     val stream: String
     val download: String
@@ -154,6 +156,8 @@ object StringsDe : Strings {
     override val notConnected = "Nicht verbunden"
     // Detail-Screen
     override val chapters = "Kapitel"
+    override val chapterViewSwitchToGrid = "Kachelansicht"
+    override val chapterViewSwitchToList = "Listenansicht"
     override val read = "Lesen"
     override val stream = "Stream"
     override val download = "Herunterladen"
@@ -278,6 +282,8 @@ object StringsEn : Strings {
     override val notConnected = "Not connected"
     // Detail-Screen
     override val chapters = "Chapters"
+    override val chapterViewSwitchToGrid = "Grid view"
+    override val chapterViewSwitchToList = "List view"
     override val read = "Read"
     override val stream = "Stream"
     override val download = "Download"

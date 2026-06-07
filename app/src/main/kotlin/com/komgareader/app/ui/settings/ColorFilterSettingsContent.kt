@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,11 +18,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,20 +49,19 @@ import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
 import com.komgareader.app.ui.components.SettingsTile
-import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ColorProfile
 
 private const val STEP = 0.05f
 
-/** Feste Breite der Pfeil-Slots links/rechts — symmetrisch, damit das Cover exakt zentriert ist. */
-private val NAV_SLOT = 72.dp
+/** Feste Breite der Pfeil-Slots links/rechts — symmetrisch, damit das Cover exakt zentriert bleibt. */
+private val NAV_SLOT = 56.dp
 
 /**
  * Farbfilter-Sektion im Master-Detail-Settings-Host (kein eigenes Scaffold — der Host liefert
- * Titel + Scroll). Kompakt gehalten, damit beim Anlegen eines Profils nichts gescrollt werden muss:
- * zentrierte Vorschau, eng gestellte Regler, Profile in einem aufklappbaren Selektor.
+ * Titel + Scroll). Kompakt: zentrierte Vorschau, eng gestellte Regler, Profile im aufklappbaren
+ * Selektor — passt ohne Scrollen, auch beim Anlegen eines Profils.
  */
 @Composable
 fun ColorFilterSettingsContent(
@@ -81,8 +82,7 @@ fun ColorFilterSettingsContent(
     var profilesExpanded by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        // Zentrierte Vorschau: Cover mittig, Blätter-Pfeile in symmetrischen Slots daneben
-        // (Vorheriges nur, wenn ein Verlauf existiert).
+        // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
         val previewProfile = edit?.let {
             ColorProfile(it.baseProfileId, it.name, it.saturation, it.contrast, it.brightness, it.builtIn)
         } ?: active
@@ -99,7 +99,7 @@ fun ColorFilterSettingsContent(
             ) {
                 Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
                     if (canGoBack) {
-                        PreviewNavButton(Icons.AutoMirrored.Outlined.ArrowBack, s.colorFilterPrevImage) {
+                        CompactIcon(Icons.AutoMirrored.Outlined.ArrowBack, s.colorFilterPrevImage) {
                             viewModel.previousPreview()
                         }
                     }
@@ -117,37 +117,24 @@ fun ColorFilterSettingsContent(
                         .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
                 )
                 Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
-                    PreviewNavButton(Icons.AutoMirrored.Outlined.ArrowForward, s.colorFilterNextImage) {
+                    CompactIcon(Icons.AutoMirrored.Outlined.ArrowForward, s.colorFilterNextImage) {
                         viewModel.nextPreview()
                     }
                 }
             }
         }
 
-        // Editor direkt unter der Vorschau, eng gestellt (kein sectionGap zwischen den Reglern).
-        // Nur für editierbare Zustände (neuer Entwurf oder Custom-Profil), nie für Built-ins.
+        // Editor direkt unter der Vorschau, eng gestellt (kompakte Regel-Zeilen).
         edit?.takeIf { !it.builtIn }?.let { e ->
             val isNewDraft = e.baseProfileId == 0L
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SectionHeader(s.colorFilterAdjust)
-                StepperRow(
-                    label = s.colorFilterSaturation,
-                    valueText = format(e.saturation),
-                    onDecrement = { viewModel.updateSaturation(-STEP) },
-                    onIncrement = { viewModel.updateSaturation(STEP) },
-                )
-                StepperRow(
-                    label = s.colorFilterContrast,
-                    valueText = format(e.contrast),
-                    onDecrement = { viewModel.updateContrast(-STEP) },
-                    onIncrement = { viewModel.updateContrast(STEP) },
-                )
-                StepperRow(
-                    label = s.colorFilterBrightness,
-                    valueText = format(e.brightness),
-                    onDecrement = { viewModel.updateBrightness(-STEP) },
-                    onIncrement = { viewModel.updateBrightness(STEP) },
-                )
+                CompactStepperRow(s.colorFilterSaturation, format(e.saturation),
+                    { viewModel.updateSaturation(-STEP) }, { viewModel.updateSaturation(STEP) })
+                CompactStepperRow(s.colorFilterContrast, format(e.contrast),
+                    { viewModel.updateContrast(-STEP) }, { viewModel.updateContrast(STEP) })
+                CompactStepperRow(s.colorFilterBrightness, format(e.brightness),
+                    { viewModel.updateBrightness(-STEP) }, { viewModel.updateBrightness(STEP) })
                 ChoiceRow(label = s.colorFilterSaveAsNew, selected = false) {
                     newName = if (isNewDraft) "" else "${e.name}${s.colorFilterCopySuffix}"
                     showSaveDialog = true
@@ -169,13 +156,12 @@ fun ColorFilterSettingsContent(
                     .clip(RoundedCornerShape(8.dp))
                     .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
                     .clickable { profilesExpanded = !profilesExpanded }
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                IconButton(onClick = { infoProfile = active }) {
-                    Icon(Icons.Outlined.Info, contentDescription = active.name)
-                }
+                CompactIcon(Icons.Outlined.Info, active.name) { infoProfile = active }
+                Spacer(Modifier.width(4.dp))
                 Icon(
                     if (profilesExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                     contentDescription = null,
@@ -183,15 +169,10 @@ fun ColorFilterSettingsContent(
             }
             if (profilesExpanded) {
                 profiles.forEach { profile ->
-                    ChoiceRow(
-                        label = profile.name,
+                    ProfileRow(
+                        name = profile.name,
                         selected = profile.id == active.id,
-                        query = query,
-                        trailing = {
-                            IconButton(onClick = { infoProfile = profile }) {
-                                Icon(Icons.Outlined.Info, contentDescription = profile.name)
-                            }
-                        },
+                        onInfo = { infoProfile = profile },
                     ) {
                         viewModel.setActive(profile.id)
                         // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
@@ -240,31 +221,74 @@ fun ColorFilterSettingsContent(
     }
 }
 
+/** Kompakte Profil-Zeile (≈40 dp) — gleich eng wie die Regler, nicht das hohe [ChoiceRow]. */
+@Composable
+private fun ProfileRow(
+    name: String,
+    selected: Boolean,
+    onInfo: () -> Unit,
+    onSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+            if (selected) Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(4.dp))
+        CompactIcon(Icons.Outlined.Info, name, onInfo)
+    }
+}
+
+/** Kompakte ±-Regel-Zeile (≈40 dp) — enger als das geteilte StepperRow (das 48-dp-IconButtons nutzt). */
+@Composable
+private fun CompactStepperRow(
+    label: String,
+    valueText: String,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        CompactIcon(Icons.Outlined.Remove, "−", onDecrement)
+        Text(
+            valueText,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(52.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        CompactIcon(Icons.Outlined.Add, "+", onIncrement)
+    }
+}
+
+/** Antippbares Icon mit kleinem Touch-Bereich (36 dp) statt des 48-dp-IconButton — für enge Zeilen. */
+@Composable
+private fun CompactIcon(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    Icon(
+        icon,
+        contentDescription = contentDescription,
+        modifier = Modifier
+            .size(36.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(6.dp),
+        tint = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
 @Composable
 private fun InfoValueRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth()) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         Text(value, style = MaterialTheme.typography.bodyLarge)
-    }
-}
-
-/** Kleiner beschrifteter Pfeil-Button (Icon über Text) zum Durchblättern der Vorschau-Cover. */
-@Composable
-private fun PreviewNavButton(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick)
-            .padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }
 

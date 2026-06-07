@@ -52,8 +52,22 @@ class PanelGeometryTest {
 
     @Test
     fun `fitScale berücksichtigt Letterbox (schmaleres Content-Rechteck)`() {
+        // Breites Panel (1.0x0.25) in 800px-Content: breiten-limitiert → Contain = 1000/800 = 1.25.
+        // Kein Crop → das ist das korrekte Maximum (Panel füllt die Breite, Höhe letterboxed).
         val panel = NormRect(0f, 0f, 1.0f, 0.25f)
         val s = PanelGeometry.fitScale(panel, contentW = 800f, contentH = 1500f, viewportW = 1000f, viewportH = 1500f, marginFraction = 0f)
         assertTrue(kotlin.math.abs(s - 1.25f) < 1e-3f, "war $s")
+    }
+
+    @Test
+    fun `fitScale beschneidet das Panel nie (Zoom passt in beide Achsen)`() {
+        // Sehr breites Panel: der Zoom darf die Panel-Breite nicht überragen, sonst Crop.
+        // Erwartet Contain (1.25), NICHT Cover (4.0).
+        val panel = NormRect(0f, 0f, 1.0f, 0.25f)
+        val s = PanelGeometry.fitScale(panel, contentW = 800f, contentH = 1500f, viewportW = 1000f, viewportH = 1500f, marginFraction = 0f)
+        // Skaliertes Panel darf Viewport in keiner Achse überschreiten:
+        val scaledW = s * 1.0f * 800f
+        val scaledH = s * 0.25f * 1500f
+        assertTrue(scaledW <= 1000f + 1e-3f && scaledH <= 1500f + 1e-3f, "Crop! w=$scaledW h=$scaledH")
     }
 }

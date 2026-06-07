@@ -37,6 +37,10 @@ object PanelGeometry {
      * Skalierungsfaktor, mit dem [panel] (bild-normalisiert) im Viewport bildschirmfüllend wird,
      * unter Berücksichtigung des bei ContentScale.Fit dargestellten Content-Rechtecks
      * ([contentW]x[contentH]) innerhalb des Viewports ([viewportW]x[viewportH]). Pivot = Panel-Mitte.
+     *
+     * **Contain** (`min(sx,sy)`): das ganze Panel bleibt sichtbar, es wird NIE beschnitten —
+     * der Zoom überragt das Panel nicht. Ein seiten-breites/-hohes Panel füllt seine limitierende
+     * Achse bereits, daher ist dort Faktor ≈ 1 das korrekte (Crop-freie) Maximum.
      */
     fun fitScale(
         panel: NormRect,

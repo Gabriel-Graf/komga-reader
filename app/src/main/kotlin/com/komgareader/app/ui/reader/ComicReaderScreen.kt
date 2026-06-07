@@ -92,7 +92,8 @@ fun ComicReaderScreen(
         refresher?.fullRefreshNow(rootView)
     }
 
-    val marginFraction = 0.05f
+    // Kleiner Rand: Panel füllt das Viewport möglichst voll (ohne Crop). Größerer Wert = mehr Luft.
+    val marginFraction = 0.02f
 
     BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
         // Bei ContentScale.Fit wird die Seite ins Viewport eingepasst und seitlich

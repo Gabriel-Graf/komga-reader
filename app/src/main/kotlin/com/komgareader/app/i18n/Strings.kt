@@ -106,6 +106,9 @@ interface Strings {
     val searchSettingsHint: String
     val searchAction: String
     val searchNoResults: String
+    val clearSearch: String
+    val filterByType: String
+    val filterTypePlaceholder: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -244,6 +247,15 @@ object StringsDe : Strings {
     override val searchSettingsHint = "Einstellungen durchsuchen"
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
+    override val clearSearch = "Suche zurücksetzen"
+    override val filterByType = "Nach Werk-Typ filtern"
+    override val filterTypePlaceholder =
+        "Keine Werke mit dem gewählten Typ gefunden.\n\n" +
+            "Die App muss wissen, welcher Lesemodus zu welchem Werk gehört " +
+            "(Manga, Comic, Webtoon, Roman). Lege den Typ entweder gesammelt im Tab " +
+            "\"Bibliotheken\" fest (Bibliothek bearbeiten → Werk-Typ wählen — gilt für alle " +
+            "Werke darin) oder einzeln in den Serien-Details über das Drei-Punkte-Menü oben " +
+            "rechts → \"Typ zuweisen\"."
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -380,6 +392,15 @@ object StringsEn : Strings {
     override val searchSettingsHint = "Search settings"
     override val searchAction = "Search"
     override val searchNoResults = "No results"
+    override val clearSearch = "Clear search"
+    override val filterByType = "Filter by type"
+    override val filterTypePlaceholder =
+        "No works found for the selected type.\n\n" +
+            "The app needs to know which reading mode each work uses " +
+            "(Manga, Comic, Webtoon, Novel). Set the type either in bulk under the " +
+            "\"Libraries\" tab (edit a library → choose work type — applies to everything " +
+            "in it) or per series in the series details via the three-dot menu in the top " +
+            "right → \"Assign type\"."
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

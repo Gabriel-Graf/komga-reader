@@ -179,6 +179,12 @@ Referenz: `TruncatedDescription` / `DescriptionModal` in `SeriesDetailScreen.kt`
   (`ui/components/EinkButtons.kt`, Rand = `EinkTokens.hairline` = 1.5 dp/`outline`), Divider mit
   `thickness = EinkTokens.hairline`. **Alle** gleich-dünnen Linien teilen sich **eine** Stärke
   (`EinkTokens.hairline`) — keine gemischten 1 dp/1.5 dp-Ränder im selben Screen.
+- **Zu dünne Schrift.** Material-Default-Text ist `FontWeight.Normal` (400) — auf E-Ink (kein
+  Sub-Pixel-Smoothing) bei **kleiner** Schrift zu blass/dünn (Such-Placeholder, Kapitel-Untertitel,
+  „Lädt…", leere-Tab-Platzhalter). **Nicht** pro `Text` ein `fontWeight` setzen, sondern **zentral**
+  über die `EinkTypography` (`Theme.kt`, an `MaterialTheme(typography=…)` übergeben): Body → Medium
+  (500), Labels + kleine Titel → SemiBold (600); große Überschriften bleiben (Größe trägt den
+  Kontrast). Neue kleine/sekundäre Texte erben das automatisch — eine Quelle der Wahrheit.
 - Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
 - **Asymmetrie bei Geschwister-Elementen.** Elemente in **derselben Zeile** oder mit **gleicher Rolle**
   müssen sich Maße teilen: ein Button neben einem Eingabefeld/Dropdown ist **gleich hoch** (gemeinsame

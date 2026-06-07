@@ -25,11 +25,11 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -42,8 +42,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
@@ -85,6 +91,7 @@ fun ColorFilterSettingsContent(
     var newName by remember { mutableStateOf("") }
     var infoProfile by remember { mutableStateOf<ColorProfile?>(null) }
     var profilesExpanded by remember { mutableStateOf(false) }
+    var selectorSize by remember { mutableStateOf(IntSize.Zero) }
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
@@ -137,17 +144,14 @@ fun ColorFilterSettingsContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Top,
             ) {
-                // Dropdown als EIN umrahmter Block: Selektor + aufgeklappte Liste, Breite = weight(1f).
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
-                ) {
+                // Selektor (collapsed); die aufgeklappte Liste liegt als Popup DARÜBER (kein Layout-Shift).
+                Box(modifier = Modifier.weight(1f).onGloballyPositioned { selectorSize = it.size }) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(SELECTOR_HEIGHT)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                             .clickable { profilesExpanded = !profilesExpanded }
                             .padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -160,29 +164,41 @@ fun ColorFilterSettingsContent(
                         )
                     }
                     if (profilesExpanded) {
-                        HorizontalDivider(
-                            thickness = EinkTokens.hairline,
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                        )
-                        Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
-                            profiles.forEach { profile ->
-                                ProfileRow(
-                                    name = profile.name,
-                                    selected = profile.id == active.id,
-                                    editable = !profile.builtIn,
-                                    onInfo = { infoProfile = profile },
-                                    onEdit = {
-                                        viewModel.setActive(profile.id)
-                                        viewModel.beginEdit(profile)
-                                        profilesExpanded = false
-                                    },
-                                    onSelect = {
-                                        // Auswählen aktiviert nur — der Editor öffnet erst übers Zahnrad.
-                                        viewModel.setActive(profile.id)
-                                        viewModel.cancelEdit()
-                                        profilesExpanded = false
-                                    },
-                                )
+                        Popup(
+                            alignment = Alignment.TopStart,
+                            // direkt unter den Selektor; überlappt den Inhalt darunter statt ihn zu schieben.
+                            offset = IntOffset(0, selectorSize.height),
+                            onDismissRequest = { profilesExpanded = false },
+                            properties = PopupProperties(focusable = true),
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .width(with(LocalDensity.current) { selectorSize.width.toDp() })
+                                    .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                            ) {
+                                Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                                    profiles.forEach { profile ->
+                                        ProfileRow(
+                                            name = profile.name,
+                                            selected = profile.id == active.id,
+                                            editable = !profile.builtIn,
+                                            onInfo = { infoProfile = profile },
+                                            onEdit = {
+                                                viewModel.setActive(profile.id)
+                                                viewModel.beginEdit(profile)
+                                                profilesExpanded = false
+                                            },
+                                            onSelect = {
+                                                // Auswählen aktiviert nur — der Editor öffnet erst übers Zahnrad.
+                                                viewModel.setActive(profile.id)
+                                                viewModel.cancelEdit()
+                                                profilesExpanded = false
+                                            },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

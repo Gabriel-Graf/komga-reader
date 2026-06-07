@@ -8,7 +8,7 @@
 
 **Tech Stack:** Kotlin (pure JVM in `guided-view`, JUnit5 + kotlin.test), Jetpack Compose (app), `domain.render.RenderedPage`.
 
-**Maßgeblich:** `docs/superpowers/specs/2026-06-07-robust-panel-detector-design.md`, Skill `guided-comic-reader`. Arbeitsverzeichnis: dieser Worktree (`feat/guided-comic-reader`). Alle `git`-Befehle von hier.
+**Maßgeblich:** `docs/superpowers/specs/2026-06-07-robust-panel-detector-design.md`, Skill `komga-guided-comic-reader`. Arbeitsverzeichnis: dieser Worktree (`feat/guided-comic-reader`). Alle `git`-Befehle von hier.
 
 **Bestehende, unveränderte Typen** (`guided-view/.../Panel.kt`): `data class PanelRect(val x:Int, val y:Int, val width:Int, val height:Int)` mit `centerX`/`centerY`; `enum class ReadingDirection { LEFT_TO_RIGHT, RIGHT_TO_LEFT }`. `RenderedPage(width:Int, height:Int, pixels:IntArray)` (ARGB) aus `domain`.
 
@@ -33,7 +33,7 @@
 - `app/.../ui/reader/ComicReaderViewModel.kt` — Degenerate-Guard.
 - `app/.../ui/reader/ComicReaderScreen.kt` — Letterbox-Tap + transformOrigin + fitScale.
 - `.gitignore` (Repo-Root) — `guided-view/realpages/`.
-- `.claude/skills/guided-comic-reader/SKILL.md` — Detektion + Guard + Letterbox aktualisieren.
+- `.claude/skills/komga-guided-comic-reader/SKILL.md` — Detektion + Guard + Letterbox aktualisieren.
 
 ---
 
@@ -893,7 +893,7 @@ git commit -m "fix(app): Letterbox-bewusste Tap-Normalisierung + Panel-Zoom (fit
 **Files:**
 - Create: `guided-view/src/test/kotlin/com/komgareader/guidedview/RealPageHarness.kt`
 - Modify: `.gitignore` (Repo-Root)
-- Modify: `.claude/skills/guided-comic-reader/SKILL.md`
+- Modify: `.claude/skills/komga-guided-comic-reader/SKILL.md`
 
 - [ ] **Step 1: .gitignore ergänzen**
 
@@ -1003,7 +1003,7 @@ Erwartung: die meisten Seiten ergeben mehrere (>1, <85%) Panels; die Doppelseite
 
 - [ ] **Step 5: Skill aktualisieren**
 
-In `.claude/skills/guided-comic-reader/SKILL.md` den Detektions-Absatz ersetzen: nicht mehr XY-Cut, sondern „Flood-Fill + Connected-Components (Otsu-Binarisierung, Edge-Seed-Gutter-Flood, Component-Boxes, Lesereihenfolge)". Anti-Pattern „eigene Richtungserkennung" bleibt. Ergänzen: Degenerate-Guard (Panel >85 % oder <2 → Vollseite-Fallback) und Letterbox-bewusste Tap/Zoom (`fitScale`, Content-Rechteck). Pipeline-Units (`ImageBinarization`/`GutterFill`/`RegionLabeling`/`ReadingOrder`) nennen.
+In `.claude/skills/komga-guided-comic-reader/SKILL.md` den Detektions-Absatz ersetzen: nicht mehr XY-Cut, sondern „Flood-Fill + Connected-Components (Otsu-Binarisierung, Edge-Seed-Gutter-Flood, Component-Boxes, Lesereihenfolge)". Anti-Pattern „eigene Richtungserkennung" bleibt. Ergänzen: Degenerate-Guard (Panel >85 % oder <2 → Vollseite-Fallback) und Letterbox-bewusste Tap/Zoom (`fitScale`, Content-Rechteck). Pipeline-Units (`ImageBinarization`/`GutterFill`/`RegionLabeling`/`ReadingOrder`) nennen.
 
 - [ ] **Step 6: Volle Verifikation**
 
@@ -1013,7 +1013,7 @@ Expected: BUILD SUCCESSFUL, alle Unit-Tests grün.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add .gitignore guided-view/src/test/kotlin/com/komgareader/guidedview/RealPageHarness.kt .claude/skills/guided-comic-reader/SKILL.md
+git add .gitignore guided-view/src/test/kotlin/com/komgareader/guidedview/RealPageHarness.kt .claude/skills/komga-guided-comic-reader/SKILL.md
 git commit -m "test(guided-view): Real-Page-Harness (gitignored) + Skill-Update Detektor"
 ```
 

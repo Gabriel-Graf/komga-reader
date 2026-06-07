@@ -34,7 +34,7 @@ import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 
 /**
- * Wiederverwendbare E-Ink-Bausteine im Onyx-Look. Siehe Skill `eink-ui`.
+ * Wiederverwendbare E-Ink-Bausteine im Onyx-Look. Siehe Skill `komga-eink-ui`.
  * Alle Komponenten: flach, Hairline- bzw. starker Rahmen statt Schatten, keine Animation.
  */
 

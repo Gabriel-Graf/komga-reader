@@ -1,5 +1,5 @@
 ---
-name: eink-ui
+name: komga-eink-ui
 description: Use when building or refactoring UI in the Komga E-Ink Reader (Jetpack Compose, Onyx Boox Go Color 7 Gen2). Captures the device-native "Onyx-look" design language — flat high-contrast e-ink surfaces, bottom menubar, labelled action icons, tile-landing settings, hairline cards, black-bordered modals, Lucide icons via central AppIcons registry. Load at the start of any visual/UI task in this app.
 ---
 

@@ -5,7 +5,7 @@
 **Bezug:** ersetzt den projection-profile-XY-Cut in `guided-view`, der echte (Farb-)Comicseiten
 unter-segmentiert (Root-Cause-Analyse 2026-06-07: Default `gutterMaxInk=0.02` zu streng →
 seitenbreite Merge-Panels → `zoomScale≈1` → „Zoom zeigt ganze Seite"). Gehört zum
-[[guided-comic-reader]] auf Branch `feat/guided-comic-reader`.
+[[komga-guided-comic-reader]] auf Branch `feat/guided-comic-reader`.
 
 ## Problem
 
@@ -126,6 +126,6 @@ Reihenfolge-Nummern) zur manuellen Sichtprüfung. Keine urheberrechtlich geschü
 
 - Alter XY-Cut entfernt; `PanelDetectorTest` an das neue Verhalten/Generator angepasst
   (Confidence/Communication-Kriterium: synthetische Klar-Fälle bleiben).
-- `guided-comic-reader`-Skill um neue Detektion (Flood-Fill/CC, Otsu) + Degenerate-Guard +
+- `komga-guided-comic-reader`-Skill um neue Detektion (Flood-Fill/CC, Otsu) + Degenerate-Guard +
   Letterbox-Fix ergänzen.
 - `.gitignore`: `guided-view/realpages/` ergänzen.

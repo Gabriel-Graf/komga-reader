@@ -1,5 +1,5 @@
 ---
-name: guided-comic-reader
+name: komga-guided-comic-reader
 description: Use when touching the Guided Comic Reader in the Komga-Reader (ViewerType.COMIC, ComicReaderScreen/ViewModel, panel-by-panel zoom, PanelDetector wiring, GuidedNavigator/PanelGeometry). Hält die verbindlichen Interaktions-, Pixelquellen- und Auflösungsregeln fest, damit der geführte Panel-Lesefluss und die E-Ink-Invarianten nicht versehentlich gebrochen werden.
 ---
 
@@ -18,7 +18,7 @@ MANGA   -> PAGED      COMIC -> COMIC      WEBTOON -> WEBTOON      NOVEL -> EPUB
 ```
 
 `ContentType.COMIC` existiert bereits — **kein neuer Enum-Wert**. Die 6-stufige
-Prioritätsregel aus [[viewer-type-resolution]] bleibt unverändert; nur das COMIC-Mapping
+Prioritätsregel aus [[komga-viewer-type-resolution]] bleibt unverändert; nur das COMIC-Mapping
 wechselt von PAGED auf COMIC. App: `ViewerMode.COMIC`, `ReaderRoute` → `ComicReaderScreen`.
 
 ## Pixelquelle — Coil, NIE MuPDF
@@ -67,7 +67,7 @@ Tap-Mitte bedeutet je Zustand etwas anderes (kein Widerspruch):
 
 Panel-Wechsel/Zoom-Out = Bildwechsel → Full-Refresh über `OnyxRefresher`/`RefreshScheduler`
 (wie Seitenwechsel). Kein blindes Invalidieren. No-Op auf Nicht-Boox (HW-gated).
-E-Ink-Designsprache gilt ([[eink-ui]]): flach, 1.5px-Border, monochrom, keine Animation.
+E-Ink-Designsprache gilt ([[komga-eink-ui]]): flach, 1.5px-Border, monochrom, keine Animation.
 
 ## Detektor-Algorithmus (Flood-Fill + Connected-Components)
 
@@ -111,6 +111,6 @@ marginFraction)` liefert den korrekten Faktor inklusive Letterbox-Offset.
 - Panel-Tap-Logik gegen un-zurückskalierte Downscale-Koordinaten (Treffer daneben).
 - Tap/Zoom gegen Viewport statt Content-Rechteck (Letterbox ignorieren) — Treffer und Zoom-Pivot stimmen nicht.
 
-Bezug: [[viewer-type-resolution]], [[eink-ui]], `guided-view`-Modul, Naht B
+Bezug: [[komga-viewer-type-resolution]], [[komga-eink-ui]], `guided-view`-Modul, Naht B
 (`architecture-seams.md`). Tests: `GuidedNavigatorTest`, `PanelGeometryTest`,
 `ResolveViewerTypeTest` (COMIC-Stufen).

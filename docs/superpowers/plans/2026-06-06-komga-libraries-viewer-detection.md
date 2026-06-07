@@ -47,7 +47,7 @@
 
 **Docs/Skill**
 - Create `docs/domain/viewer-type-resolution.md`.
-- Create `.claude/skills/viewer-type-resolution/SKILL.md`.
+- Create `.claude/skills/komga-viewer-type-resolution/SKILL.md`.
 
 ---
 
@@ -1281,7 +1281,7 @@ git commit -m "i18n: Gruppen->Bibliotheken, Stoebern->Browsen (DE+EN)"
 
 **Files:**
 - Create: `docs/domain/viewer-type-resolution.md`
-- Create: `.claude/skills/viewer-type-resolution/SKILL.md`
+- Create: `.claude/skills/komga-viewer-type-resolution/SKILL.md`
 
 - [ ] **Step 1: Doku schreiben** — `docs/domain/viewer-type-resolution.md`:
 
@@ -1318,11 +1318,11 @@ Bibliotheks-Default (Stufe 5) bzw. ein Serien-Override (Stufe 1) greift.
 (EPUB-Bücher wählen den Reader per Format), `ViewerType.WEBTOON` → `ViewerMode.WEBTOON`.
 ```
 
-- [ ] **Step 2: Skill schreiben** — `.claude/skills/viewer-type-resolution/SKILL.md`:
+- [ ] **Step 2: Skill schreiben** — `.claude/skills/komga-viewer-type-resolution/SKILL.md`:
 
 ```markdown
 ---
-name: viewer-type-resolution
+name: komga-viewer-type-resolution
 description: Use when touching Viewer-/Reader-Mode selection in the Komga-Reader (ResolveViewerType, readingDirection mapping, Shelf defaultContentType fallback). Hält die verbindliche 6-stufige Prioritätsregel fest, damit sie nicht versehentlich gebrochen wird.
 ---
 
@@ -1351,7 +1351,7 @@ Tests: domain/.../ResolveViewerTypeTest.kt (ein Test pro Stufe).
 - [ ] **Step 3: Commit**
 
 ```bash
-git add docs/domain/viewer-type-resolution.md .claude/skills/viewer-type-resolution/SKILL.md
+git add docs/domain/viewer-type-resolution.md .claude/skills/komga-viewer-type-resolution/SKILL.md
 git commit -m "docs(domain): Viewer-Typ-Aufloesung dokumentiert + Projekt-Skill"
 ```
 

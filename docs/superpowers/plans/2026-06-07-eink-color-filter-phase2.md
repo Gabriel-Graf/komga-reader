@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-07-eink-color-filter-phase2-design.md`
 
-**Wichtige Konvention im Projekt:** Bash-Befehle als Oneliner (keine Newlines). Echte Umlaute/ß in allen deutschen Texten. Tests laufen mit `./gradlew :modul:test` (JVM-Unit) bzw. `:data:connectedDebugAndroidTest` (Room-Migration, Emulator nötig). E-Ink-Designsprache (`eink-ui`-Skill) bei UI-Arbeit befolgen.
+**Wichtige Konvention im Projekt:** Bash-Befehle als Oneliner (keine Newlines). Echte Umlaute/ß in allen deutschen Texten. Tests laufen mit `./gradlew :modul:test` (JVM-Unit) bzw. `:data:connectedDebugAndroidTest` (Room-Migration, Emulator nötig). E-Ink-Designsprache (`komga-eink-ui`-Skill) bei UI-Arbeit befolgen.
 
 ---
 
@@ -1464,7 +1464,7 @@ Expected: Nutzer prüft Kaleido-Realeindruck und Akku-Verhalten — der eigentli
 
 - [ ] **Step 6: Skill-Notiz (optional, nur wenn neue Erkenntnis)**
 
-Falls beim Bau eine nicht-offensichtliche E-Ink-/Pipeline-Erkenntnis auftaucht: `.claude/skills/eink-color-filter/SKILL.md` ergänzen (Phase-2-Abschnitt: Kernel-Stufen-Reihenfolge, Cover-vs-Reader-Trennung, Coil-cacheKey-Falle).
+Falls beim Bau eine nicht-offensichtliche E-Ink-/Pipeline-Erkenntnis auftaucht: `.claude/skills/komga-eink-color-filter/SKILL.md` ergänzen (Phase-2-Abschnitt: Kernel-Stufen-Reihenfolge, Cover-vs-Reader-Trennung, Coil-cacheKey-Falle).
 
 ---
 

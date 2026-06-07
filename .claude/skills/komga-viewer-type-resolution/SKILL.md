@@ -1,5 +1,5 @@
 ---
-name: viewer-type-resolution
+name: komga-viewer-type-resolution
 description: Use when touching Viewer-/Reader-Mode selection in the Komga-Reader (ResolveViewerType, readingDirection mapping, Shelf defaultContentType fallback, per-book viewer in SeriesDetailViewModel). Hält die verbindliche 6-stufige Prioritätsregel fest, damit sie nicht versehentlich gebrochen wird.
 ---
 

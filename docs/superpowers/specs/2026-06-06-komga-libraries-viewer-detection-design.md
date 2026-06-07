@@ -190,7 +190,7 @@ parität-konform halten.
 
 - `docs/` (z.B. `docs/domain/viewer-type-resolution.md`): Prioritätstabelle +
   Begründung + Komga-Feld-Mapping.
-- Projekt-Skill `.claude/skills/viewer-type-resolution/SKILL.md`: kompakte
+- Projekt-Skill `.claude/skills/komga-viewer-type-resolution/SKILL.md`: kompakte
   Domain-Regel, damit künftige Arbeit die Reihenfolge nicht bricht.
 
 ---

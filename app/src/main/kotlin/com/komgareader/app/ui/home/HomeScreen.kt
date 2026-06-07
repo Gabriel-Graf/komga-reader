@@ -106,6 +106,7 @@ fun HomeScreen(
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         StatusCluster(modifier = Modifier.align(Alignment.CenterStart))
                         // Suche zentriert; Filter-Icon klebt direkt rechts daneben (nur Stöbern).
+                        // Reload bzw. Neu steht allein rechts.
                         Row(
                             Modifier.align(Alignment.Center).fillMaxWidth(0.62f).widthIn(max = 408.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -153,7 +154,7 @@ fun HomeScreen(
                                 }
                             }
                         }
-                        Box(Modifier.align(Alignment.CenterEnd)) {
+                        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
                             when (selected) {
                                 TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
                                     Icon(AppIcons.Refresh, contentDescription = null)

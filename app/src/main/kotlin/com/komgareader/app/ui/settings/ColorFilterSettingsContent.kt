@@ -397,7 +397,7 @@ private fun ProfileRow(
         }
         Spacer(Modifier.width(4.dp))
         if (editable) {
-            CompactIcon(AppIcons.Edit, name, onEdit)
+            CompactIcon(AppIcons.Settings, name, onEdit)
             Spacer(Modifier.width(4.dp))
         }
         CompactIcon(AppIcons.Info, name, onInfo)

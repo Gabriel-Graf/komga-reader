@@ -67,7 +67,15 @@ class LibraryViewModel @Inject constructor(
                 flow {
                     emit(LibraryUiState.Loading)
                     val source = sourceProvider.from(config)
-                    if (config == null || source == null) { emit(LibraryUiState.NoServer); return@flow }
+                    if (config == null || source == null) {
+                        // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
+                        val local = downloadRepository.downloads.first().localSeries()
+                        emit(
+                            if (local.isNotEmpty()) LibraryUiState.Content(local, config, offline = true)
+                            else LibraryUiState.NoServer,
+                        )
+                        return@flow
+                    }
                     emit(runCatching { source.browse(0, SourceFilter()) }
                         .fold(
                             { LibraryUiState.Content(it.items, config) },

@@ -71,7 +71,12 @@ class GroupBrowseViewModel @Inject constructor(
                 emit(GroupBrowseUiState.Loading)
                 val source = sourceProvider.from(config)
                 if (config == null || source == null) {
-                    emit(GroupBrowseUiState.NoServer)
+                    // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
+                    val local = downloadRepository.downloads.first().localSeries()
+                    emit(
+                        if (local.isNotEmpty()) GroupBrowseUiState.Content(shelf, local, config, offline = true)
+                        else GroupBrowseUiState.NoServer,
+                    )
                     return@flow
                 }
                 val containerIds = shelf.sources

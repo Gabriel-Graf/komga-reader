@@ -54,4 +54,8 @@ class SeriesFilterTest {
     @Test fun `query is case insensitive`() {
         assertEquals(listOf("Saga"), filterSeries(all, "SAG", emptySet()).map { it.title })
     }
+
+    @Test fun `query matches untyped series when filter is empty`() {
+        assertEquals(listOf("Roman ohne Typ"), filterSeries(all, "Roman", emptySet()).map { it.title })
+    }
 }

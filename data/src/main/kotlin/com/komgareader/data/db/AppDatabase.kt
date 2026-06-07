@@ -100,9 +100,10 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
 }
 
 /**
- * Seedet die mitgelieferten Farbfilter-Profile + den aktiven Pointer. Wird von der
- * v6→v7-Migration (Upgrade) UND vom Fresh-Install-Callback (onCreate) genutzt, damit
- * neue Installationen nicht mit leerer Profilliste starten.
+ * Seedet die drei mitgelieferten Farbfilter-Profile (Aus, Boox Go Color 7 Gen2,
+ * Boox Go Color 7 — Voll) + den aktiven Pointer. Wird von der v6→v7-Migration (Upgrade)
+ * UND vom Fresh-Install-Callback (onCreate) genutzt, damit neue Installationen nicht
+ * mit leerer Profilliste starten.
  */
 private fun seedColorProfiles(db: SupportSQLiteDatabase) {
     val cols = "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`)"

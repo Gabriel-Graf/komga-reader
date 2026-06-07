@@ -120,7 +120,7 @@ private fun boxBlur(src: IntArray, width: Int, height: Int, radius: Int): IntArr
 private fun quantize(value: Int, levels: Int): Int {
     if (levels >= 256) return value.coerceIn(0, 255)
     val step = 255f / (levels - 1)
-    return (Math.round(value / step) * step).roundToInt().coerceIn(0, 255)
+    return ((value / step).roundToInt() * step).roundToInt().coerceIn(0, 255)
 }
 
 /** Floyd-Steinberg-Fehlerdiffusion pro Kanal (sequentiell). */
@@ -163,7 +163,7 @@ private fun applyOrdered(px: IntArray, width: Int, height: Int, levels: Int) {
     for (y in 0 until height) {
         for (x in 0 until width) {
             val i = y * width + x
-            val t = (bayer[y and 3][x and 3] / 16f - 0.5f) * step
+            val t = ((bayer[y and 3][x and 3] + 0.5f) / 16f - 0.5f) * step
             val a = px[i] and -0x1000000
             val r = quantize((((px[i] shr 16) and 0xFF) + t).roundToInt().coerceIn(0, 255), levels)
             val g = quantize((((px[i] shr 8) and 0xFF) + t).roundToInt().coerceIn(0, 255), levels)

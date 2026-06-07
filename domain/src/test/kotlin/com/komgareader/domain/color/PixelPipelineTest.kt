@@ -104,6 +104,7 @@ class PixelPipelineTest {
         val p = profile(ditherMode = com.komgareader.domain.model.DitherMode.ORDERED, ditherLevels = 8)
         applyPixelPipeline(a, 8, 8, p)
         applyPixelPipeline(b, 8, 8, p)
+        assertTrue(!a.contentEquals(IntArray(8 * 8) { argb(90, 130, 200) }), "Dithering muss den Input verändern")
         assertTrue(a.contentEquals(b))
     }
 
@@ -113,5 +114,21 @@ class PixelPipelineTest {
         val copy = px.copyOf()
         applyPixelPipeline(px, 1, 1, profile(ditherMode = com.komgareader.domain.model.DitherMode.ORDERED, ditherLevels = 256))
         assertTrue(px.contentEquals(copy), "256 Stufen ≈ keine Quantisierung")
+    }
+
+    @Test
+    fun `Ordered erzeugt bei 2 Stufen auf Mittelgrau ein Schwarz-Weiß-Muster`() {
+        val px = IntArray(4 * 4) { argb(128, 128, 128) }
+        applyPixelPipeline(px, 4, 4, profile(ditherMode = com.komgareader.domain.model.DitherMode.ORDERED, ditherLevels = 2))
+        val reds = px.map { r(it) }.toSet()
+        assertTrue(0 in reds && 255 in reds, "2-Stufen-Ordered muss 0 und 255 erzeugen, war $reds")
+    }
+
+    @Test
+    fun `Floyd-Steinberg erzeugt bei 2 Stufen auf Mittelgrau ein Schwarz-Weiß-Muster`() {
+        val px = IntArray(8 * 8) { argb(128, 128, 128) }
+        applyPixelPipeline(px, 8, 8, profile(ditherMode = com.komgareader.domain.model.DitherMode.FLOYD_STEINBERG, ditherLevels = 2))
+        val reds = px.map { r(it) }.toSet()
+        assertTrue(0 in reds && 255 in reds, "2-Stufen-FS muss 0 und 255 erzeugen, war $reds")
     }
 }

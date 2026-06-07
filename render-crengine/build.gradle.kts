@@ -38,6 +38,7 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    testImplementation(kotlin("test"))
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
 }

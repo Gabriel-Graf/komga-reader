@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * Beschafft die Panel-Rechtecke einer Comic-Seite: Coil dekodiert das Seitenbild,
- * es wird auf [detectionWidth] runterskaliert (XY-Cut braucht keine volle Auflösung),
+ * es wird auf [detectionWidth] runterskaliert (Flood-Fill/CC braucht keine volle Auflösung),
  * der [PanelDetector] liefert die in Leserichtung sortierten Panels.
  *
  * Panel-Koordinaten liegen im Downscale-Raum; die Compose-Schicht normalisiert sie

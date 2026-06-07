@@ -11,13 +11,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 ┌─ Domain (kennt weder UI noch Daten noch Quelle) ───────────┐
 │  Modelle · UseCases · Repository-Interfaces · ViewerType   │
 └──────── ↓ NAHT A: Quellen ──────────── ↓ NAHT B: Engine ───┘
-┌─ MediaSource ───────────┐   ┌─ Document / Viewer ───────────┐
+┌─ MediaSource ───────────┐   ┌─ Document (Render) ───────────┐
 │ KomgaSource (REST)      │   │ MuPDF (C++/JNI) → Bitmap      │
-│ OpdsSource              │   │ RefreshScheduler (E-Ink)      │
+│ OpdsSource              │   │ OnyxRefresher (E-Ink-Refresh) │
 │ [LocalSource, Plugins…] │   │ EinkController (Onyx ⟂ No-Op) │
-│ SourceManager + Stub    │   │ Paged/Webtoon/Epub-Viewer     │
+│ SourceManager + Stub     │  │ Compose-Reader-Screens        │
 └─────────────────────────┘   └───────────────────────────────┘
 ```
+
+> **Soll vs. Ist — diese Regel trennt beides.** Verbindliche Regeln dürfen keine
+> nicht-existierenden Typen als real darstellen (sonst baut der nächste — Mensch
+> oder Agent — gegen ein Phantom, siehe `docs-match-code` in der Big-Picture-Doku).
+> Das Naht-**Design** (unten) ist verbindlich; wo der **Ist-Stand** abweicht, steht
+> es explizit dabei. Vor dem Bauen den Ist-Stand per `grep` verifizieren, nicht der
+> Vokabel der Doku vertrauen.
 
 ## Naht A — Quellen (`domain/source/MediaSource.kt`)
 
@@ -32,15 +39,27 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 
 ## Naht B — Render & E-Ink (`render-core`, `eink-onyx`)
 
-- `Document`/`PageRenderer` ist die Render-Naht: **MuPDF** rendert cbz/cbr/pdf **und** EPUB-Reflow
-  in eine `android.graphics.Bitmap`. Render-Target strikt von der View getrennt.
-  Reicht MuPDFs EPUB-Qualität nicht, klinkt sich crengine **nur für EPUB** hinter dem Interface ein
-  (Phase 4) — ohne den Rest zu berühren.
-- `EinkController` kapselt das Gerät: `OnyxEinkController` (Boox-SDK, **HW-gated** über
-  `Build.MANUFACTURER`), `NoOpEinkController` als Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.**
-- `RefreshScheduler`: Modus-Präzedenz + Region-Merge + partial→full-Promotion gegen Ghosting.
-  Geräteunabhängig, unit-testbar.
-- `Viewer`-Interface (`bind/onButton/teardown`): PagedViewer, WebtoonViewer, EpubViewer.
+- **Render-Naht (Ist):** `Document`/`DocumentFactory` (`domain/render/Document.kt`) ist die
+  Render-Naht: **MuPDF** rendert cbz/cbr/pdf **und** EPUB in eine `android.graphics.Bitmap`
+  (`MupdfDocument` in `render-core`). Render-Target strikt von der View getrennt.
+  Reicht MuPDFs Qualität nicht, klinkt sich eine andere Engine (crengine, Roman-Reflow) hinter
+  `Document`/`ReflowableDocument` ein (Phase 4 / `novel-reflow-reader`) — ohne den Rest zu berühren.
+- **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
+  `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
+  Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities` (hasEink/canColor/
+  canInvert) — siehe Big-Picture-Doku zur Geräteklassen-Frage.
+- **E-Ink-Refresh (Ist):** Die partial→full-Promotion gegen Ghosting liegt in **`OnyxRefresher`**
+  (`eink-onyx`, `enterFastMode`/`fullRefreshIfNeeded`/`GHOST_CLEAR_INTERVAL`) + `EinkReaderEffect`
+  und `triggerGhostClearIfNeeded` (`app/ui/reader`). Es gibt **keinen** geräteunabhängigen
+  `RefreshScheduler` (das ist Soll, nicht Ist).
+- **Reader (Ist):** Es gibt **kein** `Viewer`-Interface. Reader sind Compose-`@Composable`-Screens
+  (`PagedReaderScreen`, `WebtoonReaderScreen`, `ComicReaderScreen`, `EpubReaderScreen`), dispatcht
+  per `when(ViewerMode)` in `ReaderRoute.kt`.
+- **Soll (geplant, noch nicht gebaut):** ein gemeinsames `Viewer`/`ReaderScaffold` +
+  `ReaderChromeState` (Vereinheitlichung **vor** dem 4./5. Reader, Regel
+  `shared-structure-before-variants.md`) und ein geräteunabhängiger, unit-testbarer
+  `RefreshScheduler` (Modus-Präzedenz + Region-Merge). Wer das baut, ersetzt den Ist-Stand
+  *hinter* der Naht — und zieht **diese Regel im selben Commit** auf den neuen Ist-Stand nach.
 
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 

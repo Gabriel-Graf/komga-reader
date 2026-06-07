@@ -13,11 +13,13 @@ die drei Lesemodi (paged Comic, Webtoon-Scroll, EPUB-Reflow) + nativ Komga + E-I
 Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorbei:
 
 1. **Zwei Nähte kapseln alle Variabilität.** Naht A = Quellen (`MediaSource`), Naht B = Render/E-Ink
-   (`Document`/`Viewer`/`EinkController`). Neue Quelle oder neues Gerät = neue Impl **hinter** dem
-   Interface, **nie** ein Kern-Umbau. → `@.claude/rules/architecture-seams.md`
-2. **Alles über den Nähten ist quellen- und geräte-agnostisch.** Kein `KomgaSource`-Wissen in `domain`
-   oder `app`. Metadaten/Features fließen durch das Domain-Modell + `MediaSource`-Interface, jede Quelle
-   füllt was sie kann. → `@.claude/rules/source-extensibility.md`
+   (`Document`/`EinkController`; ein gemeinsames `Viewer`-Interface ist *Soll*, noch nicht gebaut).
+   Neue Quelle oder neues Gerät = neue Impl **hinter** dem Interface, **nie** ein Kern-Umbau.
+   → `@.claude/rules/architecture-seams.md`
+2. **Alles über den Nähten ist quellen- und geräte-agnostisch — auch in der Verdrahtung.** Kein
+   `KomgaSource`/`*SourceProvider`-Wissen in `domain` oder `app` (ViewModels über `SourceManager`/
+   `MediaSource`, Lesen über `openPage`). Metadaten fließen durch das Domain-Modell, jede Quelle
+   füllt was sie kann. → `@.claude/rules/source-agnostic-integration.md`, `@.claude/rules/source-extensibility.md`
 3. **E-Ink-Designsprache ist Pflicht, nicht Geschmack.** Flach, 1.5px-Border statt Schatten, keine
    Animationen, monochrom-kräftig, Lucide-Icons via `AppIcons`-Registry, `BaseDialog`. → `@.claude/rules/eink-design-language.md`
 4. **Viewer-Auflösung ist deterministisch:** `Series.contentTypeOverride ?: Shelf.contentType → ViewerType`.
@@ -32,15 +34,17 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 |---|---|---|
 | `domain` | Modelle, UseCases, Repo-/Source-**Interfaces** | Android, Netz, irgendeiner Quelle |
 | `source-komga` · `source-opds` | konkrete `MediaSource`-Impls | UI, anderen Quellen |
-| `render-core` | `Document`/`PageRenderer` + MuPDF-JNI (Naht B) | UI |
+| `render-core` | `Document`/`DocumentFactory` + MuPDF-JNI (Naht B) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx-SDK, HW-gated) | UI, Quellen |
 | `guided-view` | Panel-Erkennung (pure Kotlin XY-Cut) | Engine, UI |
 | `data` | Room-Impls, Sync-Queue, Download-Manager | UI |
-| `app` | Compose-UI, ViewModels, DI, Viewer-Host | — (oberste Schicht) |
+| `app` | Compose-UI, ViewModels, DI, Reader-Host | — (oberste Schicht) |
 
 ## Detailregeln
 
-- `@.claude/rules/architecture-seams.md` — die zwei Nähte, Modulgrenzen, was nie umgangen wird
+- `@.claude/rules/big-picture-and-goals.md` — Vision, Langzeit-Ziele, Gos/Nogos; prüf jedes Feature dagegen, nicht nur gegen den heutigen Code
+- `@.claude/rules/architecture-seams.md` — die zwei Nähte (Soll vs. Ist), Modulgrenzen, was nie umgangen wird
+- `@.claude/rules/source-agnostic-integration.md` — Naht A in der Verdrahtung durchsetzen: VMs über `SourceManager`, Lesen über `openPage`, nie konkrete Quelle/Provider
 - `@.claude/rules/source-extensibility.md` — neue Server/Metadaten quellen-agnostisch hinzufügen (Schritt-für-Schritt)
 - `@.claude/rules/eink-design-language.md` — die E-Ink-Designsprache verbatim
 - `@.claude/rules/roadmap-and-invariants.md` — Phasen P1–P4, was noch kommt, was nicht aus den Augen verloren werden darf

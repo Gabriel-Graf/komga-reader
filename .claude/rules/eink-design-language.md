@@ -19,8 +19,9 @@ Notwendigkeit, kein Geschmack**. Jede UI-Arbeit folgt ihr (Spec §8).
 - **`BaseDialog`:** ein Composable als Basis **aller** Dialoge — sticky Header/Footer, scrollender Body,
   Hardware-Back = abbrechen. **Max. ein Dialog** gleichzeitig über dem Main-View.
 - **Reader-Chrome:** Tap Mitte = Bars ein/aus, sonst immersiv. Hardware-Tasten + Tap-Zonen blättern.
-- **Refresh bewusst steuern:** sichtbare Zustandswechsel über den `RefreshScheduler`/`EinkController`
+- **Refresh bewusst steuern:** sichtbare Zustandswechsel über `OnyxRefresher`/`EinkController`
   laufen lassen (partial beim Blättern, full nach N Partials / bei Bildwechsel) — nicht blind invalidieren.
+  (Ein geräteunabhängiger `RefreshScheduler` ist *Soll*, noch nicht gebaut — siehe `architecture-seams.md`.)
 
 ## Layout-Hinweis aus der Praxis
 

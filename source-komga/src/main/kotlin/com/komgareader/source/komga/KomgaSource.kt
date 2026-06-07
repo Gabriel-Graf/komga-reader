@@ -74,8 +74,31 @@ class KomgaSource internal constructor(
     override suspend fun openPage(ref: PageRef): ByteArray =
         api.getPage(ref.bookRemoteId, ref.pageNumber).bytes()
 
-    suspend fun downloadFile(bookRemoteId: String): ByteArray =
-        api.getFile(bookRemoteId).bytes()
+    /**
+     * Lädt die ganze Buchdatei. [onProgress] meldet `(gelesene Bytes, Gesamtbytes)`
+     * fortlaufend während des Streams — Gesamtbytes ist `-1`, wenn der Server keine
+     * Content-Length liefert. Standard-Aufrufer ohne Callback bekommen unverändert die Bytes.
+     */
+    suspend fun downloadFile(
+        bookRemoteId: String,
+        onProgress: (read: Long, total: Long) -> Unit = { _, _ -> },
+    ): ByteArray {
+        val body = api.getFile(bookRemoteId)
+        val total = body.contentLength()
+        val sink = java.io.ByteArrayOutputStream(if (total > 0) total.toInt() else 32 * 1024)
+        body.byteStream().use { input ->
+            val chunk = ByteArray(64 * 1024)
+            var read = input.read(chunk)
+            var sum = 0L
+            while (read >= 0) {
+                sink.write(chunk, 0, read)
+                sum += read
+                onProgress(sum, total)
+                read = input.read(chunk)
+            }
+        }
+        return sink.toByteArray()
+    }
 
     /** Auflösen, zu welcher Serie ein Buch gehört (für die Kapitel-Liste des Webtoon-Strips). */
     suspend fun seriesIdOf(bookRemoteId: String): String =
@@ -89,6 +112,15 @@ class KomgaSource internal constructor(
         val book = api.getBook(bookRemoteId)
         // localBookId/updatedAt sind beim reinen Pull noch unbekannt → Persistenz (Plan 1.4) füllt sie.
         return mapper.toReadProgress(book, localBookId = 0L, updatedAt = 0L)
+    }
+
+    override suspend fun setRead(bookRemoteId: String, read: Boolean, pageCount: Int) {
+        if (read) {
+            // Komga markiert „gelesen" über completed=true auf der letzten Seite.
+            api.updateProgress(bookRemoteId, ReadProgressUpdateDto(page = pageCount.coerceAtLeast(1), completed = true))
+        } else {
+            api.deleteProgress(bookRemoteId)
+        }
     }
 }
 

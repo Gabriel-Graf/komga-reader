@@ -44,12 +44,12 @@ class FoundationE2ETest {
         val missing = manager.getOrStub(id = 999, name = "Verschwunden")
         assertTrue(missing is StubSource)
 
-        // 3. Regal deklariert COMIC → Viewer ist deterministisch PAGED
+        // 3. Regal deklariert COMIC → Viewer ist deterministisch COMIC
         val shelf = Shelf(id = 1, name = "Comics", sources = emptyList(), defaultContentType = ContentType.COMIC)
         val series = Series(id = 10, sourceId = komgaId, remoteId = "s-1", title = "Berserk")
         val defaultBook = Book(id = 0, sourceId = komgaId, seriesId = 10, remoteId = "b-1", title = "Berserk #1", format = BookFormat.CBZ, pageCount = 200)
         val resolveViewer = ResolveViewerType()
-        assertEquals(ViewerType.PAGED, resolveViewer(series, defaultBook, fallback = shelf.defaultContentType))
+        assertEquals(ViewerType.COMIC, resolveViewer(series, defaultBook, fallback = shelf.defaultContentType))
 
         // Eine als Webtoon markierte Serie überschreibt den Regal-Typ
         val webtoonSeries = series.copy(contentTypeOverride = ContentType.WEBTOON)

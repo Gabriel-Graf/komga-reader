@@ -15,7 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +42,7 @@ import com.komgareader.app.BuildConfig
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.components.SectionHeader
 import com.komgareader.app.ui.components.StepperRow
@@ -156,7 +157,7 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
             }) { Text(s.connect) }
             if (server != null) {
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { viewModel.disconnect() }) { Text(s.disconnect) }
+                EinkOutlinedButton(onClick = { viewModel.disconnect() }) { Text(s.disconnect) }
             }
         }
     }
@@ -187,6 +188,7 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     val displayModeStr by viewModel.displayMode.collectAsState()
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
     val overlap by viewModel.webtoonOverlapPercent.collectAsState()
+    val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         Column {
@@ -219,6 +221,19 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
                     DisplayMode.SMARTPHONE -> s.displaySmartphone
                 }
                 ChoiceRow(label, selected = dm == displayMode, query = query) { viewModel.setDisplayMode(dm.name) }
+            }
+        }
+        Column {
+            SectionHeader(s.settingsGuidedDebug)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HighlightText(
+                    s.readerPanelOverlay, query, MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(checked = panelOverlay, onCheckedChange = { viewModel.setGuidedPanelOverlay(it) })
             }
         }
     }
@@ -256,7 +271,7 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
             Button(onClick = { folderPicker.launch(null) }) { Text(s.chooseFolder) }
             if (downloadDir != null) {
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { viewModel.setDownloadDir(null) }) { Text(s.resetFolder) }
+                EinkOutlinedButton(onClick = { viewModel.setDownloadDir(null) }) { Text(s.resetFolder) }
             }
         }
     }

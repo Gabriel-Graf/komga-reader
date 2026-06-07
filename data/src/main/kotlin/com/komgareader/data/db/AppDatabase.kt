@@ -6,8 +6,11 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class, ColorProfileEntity::class],
-    version = 8,
+    entities = [
+        SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class,
+        SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
+    ],
+    version = 11,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -15,6 +18,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun serverDao(): ServerDao
     abstract fun downloadDao(): DownloadDao
     abstract fun shelfDao(): ShelfDao
+    abstract fun seriesOverrideDao(): SeriesOverrideDao
+    abstract fun readProgressDao(): ReadProgressDao
     abstract fun colorProfileDao(): ColorProfileDao
 }
 
@@ -99,11 +104,51 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/** v6 → v7: Tabelle für manuelle Werk-Inhaltstypen (per Quelle + Serien-Remote-ID). */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `series_overrides` (
+                `sourceId` INTEGER NOT NULL,
+                `seriesRemoteId` TEXT NOT NULL,
+                `contentType` TEXT NOT NULL,
+                PRIMARY KEY(`sourceId`, `seriesRemoteId`)
+            )""",
+        )
+    }
+}
+
+/** v7 → v8: lokaler Lesefortschritt (offline-first, dirty → Sync). */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `read_progress` (
+                `bookRemoteId` TEXT NOT NULL,
+                `sourceId` INTEGER NOT NULL,
+                `page` INTEGER NOT NULL,
+                `completed` INTEGER NOT NULL,
+                `totalPages` INTEGER NOT NULL,
+                `dirty` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                PRIMARY KEY(`bookRemoteId`)
+            )""",
+        )
+    }
+}
+
+/** v8 → v9: Serien-Metadaten (Titel/Cover) am Download für Offline-Browsing. */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesTitle` TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesCoverUrl` TEXT")
+    }
+}
+
 /**
  * Seedet die drei mitgelieferten Farbfilter-Profile (Aus, Boox Go Color 7 Gen2,
- * Boox Go Color 7 — Voll) + den aktiven Pointer im **v8-Schema** (13 Spalten). Wird vom
+ * Boox Go Color 7 — Voll) + den aktiven Pointer im **v11-Schema** (13 Spalten). Wird vom
  * Fresh-Install-Callback (onCreate) und der Selbstheilung (onOpen, wenn die Tabelle leer ist)
- * genutzt. NICHT von MIGRATION_6_7 — die erzeugt eine 6-Spalten-Tabelle und seedet selbst.
+ * genutzt. NICHT von MIGRATION_9_10 — die erzeugt eine 6-Spalten-Tabelle und seedet selbst.
  */
 private fun seedColorProfiles(db: SupportSQLiteDatabase) {
     val cols = "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`)"
@@ -114,11 +159,15 @@ private fun seedColorProfiles(db: SupportSQLiteDatabase) {
 }
 
 /**
- * v6 → v7: color_profiles-Tabelle für E-Ink-Farbfilter-Profile. Seedet zwei Built-ins
- * (Aus = neutral, Boox Go Color 7 Gen2 = Kaleido-getunt) und setzt das Go-7-Profil aktiv.
+ * v9 → v10: color_profiles-Tabelle (Phase-1, 6-spaltig) für E-Ink-Farbfilter-Profile. Seedet zwei
+ * Built-ins (Aus = neutral, Boox Go Color 7 Gen2 = Kaleido-getunt) und setzt das Go-7-Profil aktiv.
  */
-val MIGRATION_6_7 = object : Migration(6, 7) {
+val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        // Robust gegen eine inkompatible Alt-Tabelle aus parallelem Branch-Testen (z. B. ein
+        // `color_profiles` mit zusätzlichen NOT-NULL-Spalten): vor dem Anlegen verwerfen. In der
+        // master-Lineage existiert die Tabelle vor v10 nicht → für saubere DBs ein No-Op.
+        db.execSQL("DROP TABLE IF EXISTS `color_profiles`")
         db.execSQL(
             """CREATE TABLE IF NOT EXISTS `color_profiles` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -129,8 +178,8 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
                 `builtIn` INTEGER NOT NULL
             )""",
         )
-        // 6-Spalten-Seed (Phase-1-Form). Die Phase-2-Spalten + das Voll-Built-in kommen
-        // erst in MIGRATION_7_8 dazu — hier NICHT das v8-seedColorProfiles nutzen.
+        // 6-Spalten-Seed (Phase-1-Form). Die Phase-2-Spalten + das Voll-Built-in kommen erst in
+        // MIGRATION_10_11 dazu — hier NICHT das v11-seedColorProfiles (13-spaltig) nutzen.
         db.execSQL("INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) VALUES (1,'Aus',1.0,1.0,0.0,1)")
         db.execSQL("INSERT OR REPLACE INTO `color_profiles` (`id`,`name`,`saturation`,`contrast`,`brightness`,`builtIn`) VALUES (2,'Boox Go Color 7 Gen2',1.4,1.15,0.05,1)")
         db.execSQL("INSERT OR REPLACE INTO `settings` (`key`,`value`) VALUES ('active_color_profile_id','2')")
@@ -138,7 +187,7 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 }
 
 /**
- * v7 → v8: Phase-2-Pixel-Pipeline-Spalten (Levels/Gamma/Unsharp/Dither). Die Tabelle wird
+ * v10 → v11: Phase-2-Pixel-Pipeline-Spalten (Levels/Gamma/Unsharp/Dither). Die Tabelle wird
  * **neu erstellt** (statt ALTER ADD COLUMN), weil ALTER in SQLite bei `NOT NULL` einen
  * Spalten-`DEFAULT` erzwingt — das Entity hat aber keinen `@ColumnInfo(defaultValue=…)`, sodass
  * Rooms Schema-Validierung nach der Migration fehlschlüge und `fallbackToDestructiveMigration`
@@ -147,7 +196,7 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
  * Werten übernommen. Zusätzlich das Demo-Built-in „Boox Go Color 7 — Voll". Aktiver Pointer
  * bleibt unverändert.
  */
-val MIGRATION_7_8 = object : Migration(7, 8) {
+val MIGRATION_10_11 = object : Migration(10, 11) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
             "CREATE TABLE `color_profiles_new` (" +

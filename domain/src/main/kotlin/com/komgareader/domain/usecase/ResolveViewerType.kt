@@ -52,7 +52,7 @@ class ResolveViewerType {
 
     private fun map(type: ContentType): ViewerType = when (type) {
         ContentType.MANGA -> ViewerType.PAGED
-        ContentType.COMIC -> ViewerType.PAGED
+        ContentType.COMIC -> ViewerType.COMIC
         ContentType.WEBTOON -> ViewerType.WEBTOON
         ContentType.NOVEL -> ViewerType.EPUB
     }

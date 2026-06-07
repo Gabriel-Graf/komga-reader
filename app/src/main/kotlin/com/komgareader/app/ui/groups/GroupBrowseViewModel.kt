@@ -4,8 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.localSeries
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.Shelf
+import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.ShelfRepository
@@ -16,8 +18,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -28,6 +32,8 @@ sealed interface GroupBrowseUiState {
         val shelf: Shelf,
         val series: List<Series>,
         val serverConfig: ServerConfig?,
+        /** true = Server nicht erreichbar, nur lokal verfügbare Werke gezeigt. */
+        val offline: Boolean = false,
     ) : GroupBrowseUiState
     data class Error(val message: String) : GroupBrowseUiState
 }
@@ -39,10 +45,16 @@ class GroupBrowseViewModel @Inject constructor(
     private val shelfRepository: ShelfRepository,
     private val serverRepository: ServerRepository,
     private val sourceProvider: KomgaSourceProvider,
+    private val downloadRepository: DownloadRepository,
 ) : ViewModel() {
 
     private val shelfId: Long = checkNotNull(savedStateHandle["shelfId"])
     private val refreshTrigger = MutableStateFlow(0)
+
+    /** Serien mit lokalem Inhalt → Download-Badge statt Cloud. */
+    val localSeriesIds: StateFlow<Set<String>> = downloadRepository.downloads
+        .map { list -> list.mapTo(mutableSetOf()) { it.seriesRemoteId } as Set<String> }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val state: StateFlow<GroupBrowseUiState> = combine(
         shelfRepository.shelves,
@@ -59,7 +71,12 @@ class GroupBrowseViewModel @Inject constructor(
                 emit(GroupBrowseUiState.Loading)
                 val source = sourceProvider.from(config)
                 if (config == null || source == null) {
-                    emit(GroupBrowseUiState.NoServer)
+                    // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
+                    val local = downloadRepository.downloads.first().localSeries()
+                    emit(
+                        if (local.isNotEmpty()) GroupBrowseUiState.Content(shelf, local, config, offline = true)
+                        else GroupBrowseUiState.NoServer,
+                    )
                     return@flow
                 }
                 val containerIds = shelf.sources
@@ -75,7 +92,15 @@ class GroupBrowseViewModel @Inject constructor(
                                 serverConfig = config,
                             )
                         },
-                        { GroupBrowseUiState.Error(it.message ?: "Verbindung fehlgeschlagen") },
+                        { error ->
+                            // Server nicht erreichbar → nur lokal vorhandene Werke dieser Quelle zeigen.
+                            val local = downloadRepository.downloads.first().localSeries(source.id)
+                            if (local.isNotEmpty()) {
+                                GroupBrowseUiState.Content(shelf, local, config, offline = true)
+                            } else {
+                                GroupBrowseUiState.Error(error.message ?: "Verbindung fehlgeschlagen")
+                            }
+                        },
                     ))
             }
         }

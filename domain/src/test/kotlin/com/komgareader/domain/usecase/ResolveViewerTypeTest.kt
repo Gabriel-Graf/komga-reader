@@ -51,9 +51,9 @@ class ResolveViewerTypeTest {
     }
 
     @Test
-    fun `Stufe 4 — Bibliotheks-Default COMIC ergibt PAGED bei CBZ`() {
+    fun `Stufe 4 — Bibliotheks-Default COMIC ergibt COMIC bei CBZ`() {
         val result = resolve(series(), book(BookFormat.CBZ), fallback = ContentType.COMIC)
-        assertEquals(ViewerType.PAGED, result)
+        assertEquals(ViewerType.COMIC, result)
     }
 
     @Test
@@ -67,4 +67,11 @@ class ResolveViewerTypeTest {
         val result = resolve(series(), book(BookFormat.CBZ), fallback = null)
         assertEquals(ViewerType.PAGED, result)
     }
+
+    @Test
+    fun `COMIC-Override ergibt COMIC`() {
+        val result = resolve(series(override = ContentType.COMIC), book(BookFormat.CBZ), fallback = null)
+        assertEquals(ViewerType.COMIC, result)
+    }
+
 }

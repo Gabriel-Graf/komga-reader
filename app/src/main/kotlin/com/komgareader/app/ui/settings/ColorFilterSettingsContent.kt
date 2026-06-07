@@ -32,7 +32,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -283,10 +283,10 @@ fun ColorFilterSettingsContent(
                     // Konvention: sekundäre Aktion (Abbrechen/Löschen) links, primäre (Speichern/Aktualisieren) rechts.
                     if (isNewDraft) {
                         // Abbrechen: Editor verbergen, Entwurf verwerfen — das aktive Profil bleibt.
-                        OutlinedButton(onClick = { viewModel.cancelEdit() }) { Text(s.cancel) }
+                        EinkOutlinedButton(onClick = { viewModel.cancelEdit() }) { Text(s.cancel) }
                         Button(onClick = { newName = ""; showSaveDialog = true }) { Text(s.save) }
                     } else {
-                        OutlinedButton(onClick = { viewModel.delete(e.baseProfileId) }) { Text(s.colorFilterDelete) }
+                        EinkOutlinedButton(onClick = { viewModel.delete(e.baseProfileId) }) { Text(s.colorFilterDelete) }
                         Button(onClick = { viewModel.updateExisting() }) { Text(s.colorFilterUpdate) }
                     }
                 }

@@ -15,6 +15,7 @@ data class KomgaPage<T>(
 data class SeriesDto(
     val id: String,
     val name: String,
+    val libraryId: String = "",
     val booksCount: Int = 0,
     val metadata: SeriesMetadataDto = SeriesMetadataDto(),
 )

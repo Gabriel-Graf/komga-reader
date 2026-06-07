@@ -30,15 +30,26 @@ interface Strings {
     val notConnected: String
     // Detail-Screen
     val chapters: String
+    val chapterViewSwitchToGrid: String
+    val chapterViewSwitchToList: String
+    val chapterInfo: String
+    val backToSeries: String
+    val noDescription: String
+    val readMore: String
     val read: String
     val stream: String
     val download: String
     val downloadShort: String
+    val downloadAll: String
     val downloaded: String
     val downloadedShort: String
     val removeDownload: String
     val loading: String
     val statusRead: String
+    val resumeHere: String
+    val markRead: String
+    val markUnread: String
+    val downloadCancelled: String
     val downloadFolder: String
     val chooseFolder: String
     val defaultFolder: String
@@ -65,6 +76,8 @@ interface Strings {
     val tagNovel: String
     val tagWebtoon: String
     val tagAuto: String
+    val typeUnknown: String
+    val assignType: String
     val server: String
     val create: String
     val cancel: String
@@ -93,6 +106,14 @@ interface Strings {
     val searchSettingsHint: String
     val searchAction: String
     val searchNoResults: String
+    // Comic-Reader
+    /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
+    val readerPanelModeOn: String
+    /** Angezeigt, wenn Panel-Modus AN ist (Tippen schaltet ihn AUS). */
+    val readerPanelModeOff: String
+    // Guided-View (Debug)
+    val settingsGuidedDebug: String
+    val readerPanelOverlay: String
     // Farbfilter
     val settingsColorFilter: String
     val colorFilterSummary: String
@@ -164,15 +185,28 @@ object StringsDe : Strings {
     override val notConnected = "Nicht verbunden"
     // Detail-Screen
     override val chapters = "Kapitel"
+    override val chapterViewSwitchToGrid = "Kachelansicht"
+    override val chapterViewSwitchToList = "Listenansicht"
+    override val chapterInfo = "Beschreibung"
+    override val backToSeries = "Zurück zur Serie"
+    override val noDescription = "Keine Beschreibung vorhanden"
+    override val readMore = "Mehr lesen"
     override val read = "Lesen"
     override val stream = "Stream"
     override val download = "Herunterladen"
     override val downloadShort = "Laden"
+    override val downloadAll = "Alle herunterladen"
     override val downloaded = "Heruntergeladen ✓"
     override val downloadedShort = "Gespeichert"
     override val removeDownload = "Entfernen"
     override val loading = "Lädt…"
     override val statusRead = "Gelesen"
+    override val resumeHere = "Hier aufgehört"
+    override val markRead = "Als gelesen markieren"
+    override val markUnread = "Als ungelesen markieren"
+    override val downloadCancelled = "Download abgebrochen"
+    override val typeUnknown = "Unbekannt"
+    override val assignType = "Typ zuweisen"
     override val downloadFolder = "Download-Ordner"
     override val chooseFolder = "Ordner wählen"
     override val defaultFolder = "Standard (intern)"
@@ -227,6 +261,12 @@ object StringsDe : Strings {
     override val searchSettingsHint = "Einstellungen durchsuchen"
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
+    // Comic-Reader
+    override val readerPanelModeOn = "Panel-Modus an"
+    override val readerPanelModeOff = "Panel-Modus aus"
+    // Guided-View (Debug)
+    override val settingsGuidedDebug = "Guided-View (Debug)"
+    override val readerPanelOverlay = "Erkannte Panel-Rahmen einblenden"
     // Farbfilter
     override val settingsColorFilter = "Farbfilter"
     override val colorFilterSummary = "Bilder fürs E-Ink-Display anpassen"
@@ -298,15 +338,28 @@ object StringsEn : Strings {
     override val notConnected = "Not connected"
     // Detail-Screen
     override val chapters = "Chapters"
+    override val chapterViewSwitchToGrid = "Grid view"
+    override val chapterViewSwitchToList = "List view"
+    override val chapterInfo = "Description"
+    override val backToSeries = "Back to series"
+    override val noDescription = "No description available"
+    override val readMore = "Read more"
     override val read = "Read"
     override val stream = "Stream"
     override val download = "Download"
     override val downloadShort = "Save"
+    override val downloadAll = "Download all"
     override val downloaded = "Downloaded ✓"
     override val downloadedShort = "Saved"
     override val removeDownload = "Remove"
     override val loading = "Loading…"
     override val statusRead = "Read"
+    override val resumeHere = "Stopped here"
+    override val markRead = "Mark as read"
+    override val markUnread = "Mark as unread"
+    override val downloadCancelled = "Download cancelled"
+    override val typeUnknown = "Unknown"
+    override val assignType = "Assign type"
     override val downloadFolder = "Download Folder"
     override val chooseFolder = "Choose Folder"
     override val defaultFolder = "Default (internal)"
@@ -361,6 +414,12 @@ object StringsEn : Strings {
     override val searchSettingsHint = "Search settings"
     override val searchAction = "Search"
     override val searchNoResults = "No results"
+    // Comic reader
+    override val readerPanelModeOn = "Panel mode on"
+    override val readerPanelModeOff = "Panel mode off"
+    // Guided view (debug)
+    override val settingsGuidedDebug = "Guided view (debug)"
+    override val readerPanelOverlay = "Show detected panel borders"
     // Color filter
     override val settingsColorFilter = "Color Filter"
     override val colorFilterSummary = "Tune images for the e-ink display"
@@ -420,4 +479,13 @@ fun Strings.localizedSeriesStatus(raw: String): String = when (raw.uppercase()) 
     "ABANDONED" -> statusAbandoned
     "HIATUS" -> statusHiatus
     else -> raw.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+/** Lokalisierter Anzeigename eines Inhaltstyps; `null` = unbekannt. */
+fun Strings.localizedContentType(type: com.komgareader.domain.model.ContentType?): String = when (type) {
+    com.komgareader.domain.model.ContentType.MANGA -> tagManga
+    com.komgareader.domain.model.ContentType.COMIC -> tagComic
+    com.komgareader.domain.model.ContentType.NOVEL -> tagNovel
+    com.komgareader.domain.model.ContentType.WEBTOON -> tagWebtoon
+    null -> typeUnknown
 }

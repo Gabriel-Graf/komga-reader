@@ -67,6 +67,10 @@ class ReaderViewModel @Inject constructor(
         ViewerMode.valueOf(savedStateHandle.get<String>("viewerMode") ?: "PAGED")
     }.getOrDefault(ViewerMode.PAGED)
 
+    /** Der Nicht-Webtoon-Modus, in dem geöffnet wurde (PAGED oder COMIC); Ziel beim Zurück-Togglen. */
+    private val pagedFamilyMode: ViewerMode =
+        if (initialViewerMode == ViewerMode.WEBTOON) ViewerMode.PAGED else initialViewerMode
+
     private val _content = MutableStateFlow<ReaderContent>(ReaderContent.Loading)
     val content: StateFlow<ReaderContent> = _content.asStateFlow()
 
@@ -99,7 +103,7 @@ class ReaderViewModel @Inject constructor(
     private val renderMutex = Mutex()
 
     fun toggleViewerMode() {
-        viewerMode.value = if (viewerMode.value == ViewerMode.PAGED) ViewerMode.WEBTOON else ViewerMode.PAGED
+        viewerMode.value = if (viewerMode.value == ViewerMode.WEBTOON) pagedFamilyMode else ViewerMode.WEBTOON
     }
 
     init {
@@ -202,6 +206,8 @@ class ReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
+            // Im Comic-Modus übernimmt der ComicReaderViewModel die Tasten.
+            if (viewerMode.value == ViewerMode.COMIC) return@collect
             // Im Webtoon-Modus bedeutet eine Taste einen Frame-Sprung (Pixel-Scroll),
             // nicht einen Seitenindex.
             if (viewerMode.value == ViewerMode.WEBTOON) {

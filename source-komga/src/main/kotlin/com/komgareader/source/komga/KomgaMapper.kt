@@ -29,6 +29,7 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
         status = dto.metadata.status.ifBlank { null },
         genres = dto.metadata.genres,
         readingDirection = toReadingDirection(dto.metadata.readingDirection),
+        libraryId = dto.libraryId.ifBlank { null },
     )
 
     private fun toReadingDirection(raw: String): ReadingDirection? = when (raw) {

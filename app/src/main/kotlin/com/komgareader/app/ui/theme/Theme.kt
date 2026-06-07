@@ -25,7 +25,8 @@ private val LightEink = lightColorScheme(
     surfaceVariant = Color(0xFFE8E8E8),
     onSurfaceVariant = Color(0xFF222222),
     outline = Color.Black,
-    outlineVariant = Color(0xFFCCCCCC),
+    // Mittelgrau statt #CCCCCC — auf E-Ink ist ein zu heller Hairline unsichtbar.
+    outlineVariant = Color(0xFF777777),
 )
 
 private val DarkEink = darkColorScheme(
@@ -38,7 +39,8 @@ private val DarkEink = darkColorScheme(
     surfaceVariant = Color(0xFF1A1A1A),
     onSurfaceVariant = Color(0xFFDDDDDD),
     outline = Color.White,
-    outlineVariant = Color(0xFF444444),
+    // Heller als #444444 — sonst auf dunklem E-Ink-Grund unsichtbar.
+    outlineVariant = Color(0xFF8A8A8A),
 )
 
 private val EinkShapes = Shapes(

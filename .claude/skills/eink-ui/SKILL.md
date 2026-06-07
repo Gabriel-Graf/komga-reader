@@ -26,10 +26,10 @@ ein themed Pendant existiert.
 | Token | Wert | Verwendung |
 |-------|------|-----------|
 | `outline` (colorScheme) | Schwarz / invertiert Weiß | **starke** Rahmen: Modals, aktive Elemente |
-| `outlineVariant` (colorScheme) | `#CCCCCC` / `#444444` | **Hairline** für Tiles/Cards/Divider |
+| `outlineVariant` (colorScheme) | `#777777` / `#8A8A8A` | **Hairline** für Tiles/Cards/Divider (mittelgrau — auf E-Ink sichtbar) |
 | Radius small/medium/large | 6 / 8 / 12 dp | Standard Compose `Shapes` |
 | `EinkTokens.tileRadius` | 10 dp | Settings-Tiles, Quick-Action-Kacheln |
-| `EinkTokens.hairline` | 1 dp | Card-/Tile-/Row-Rahmen |
+| `EinkTokens.hairline` | 1.5 dp | Card-/Tile-/Row-Rahmen (dünner wird auf E-Ink unsichtbar) |
 | `EinkTokens.strongBorder` | 2 dp | Modal-Rand (immer schwarz) |
 | `EinkTokens.screenPadding` | 16 dp | Screen-Rand |
 | `EinkTokens.sectionGap` | 16 dp | zwischen Sektionen |
@@ -148,3 +148,19 @@ nur ein Detail geändert hat.
 5. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute.
 6. Keine Animation/Schatten/Verläufe (E-Ink).
 7. Teil-Update statt Voll-Reload (siehe Anti-Pattern oben) — kein `Loading`-Flash bei kleinen Änderungen.
+
+## Anti-Pattern (sofort ablehnen)
+
+- **Zu dünne / zu blasse Linien.** Auf E-Ink verschwindet ein 1px-Strich und ein zu heller
+  Grauton (z. B. `#CCCCCC`) komplett — Rahmen, Divider und Card-Kanten werden unsichtbar.
+  Regel: Rahmen **≥ 1.5 dp**, Farbe mindestens mittelgrau (`outlineVariant` = `#777777`/`#8A8A8A`),
+  für Betonung `outline` (schwarz). Wer einen Divider/Rahmen setzt, prüft ihn auf echter
+  E-Ink-Hardware (oder Emulator `eink_test`) — „sieht man am LCD" reicht nicht.
+- Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
+- **Asymmetrie bei Geschwister-Elementen.** Elemente in **derselben Zeile** oder mit **gleicher Rolle**
+  müssen sich Maße teilen: ein Button neben einem Eingabefeld/Dropdown ist **gleich hoch** (gemeinsame
+  `height`-Konstante, nicht zwei verschiedene Größen), flankierende Icons/Slots links+rechts sind
+  **gleich breit** (sonst verschiebt sich das mittige Element), Aktions-Buttons sind gleich groß.
+  Auf E-Ink fällt ein 4dp-Höhenversatz sofort auf. Faustregel: gleiche Zeile/gleiche Rolle → geteilte Maß-Konstante.
+- **Button-Reihenfolge inkonsistent.** Sekundäre Aktion (Abbrechen/Löschen) **immer links**, primäre
+  (Speichern/OK) **rechts** — über alle Dialoge/Footer hinweg gleich.

@@ -23,9 +23,13 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,17 +42,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
-import com.komgareader.app.ui.components.SettingsTile
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ColorProfile
@@ -58,10 +66,13 @@ private const val STEP = 0.05f
 /** Feste Breite der Pfeil-Slots links/rechts — symmetrisch, damit das Cover exakt zentriert bleibt. */
 private val NAV_SLOT = 56.dp
 
+/** Höhe der Dropdown-Selektor-Zeile = Höhe des „＋"-Buttons daneben (gleiche Zeile → gleiche Höhe). */
+private val SELECTOR_HEIGHT = 44.dp
+
 /**
  * Farbfilter-Sektion im Master-Detail-Settings-Host (kein eigenes Scaffold — der Host liefert
- * Titel + Scroll). Kompakt: zentrierte Vorschau, eng gestellte Regler, Profile im aufklappbaren
- * Selektor — passt ohne Scrollen, auch beim Anlegen eines Profils.
+ * Titel + Scroll). Reihenfolge: zentrierte Vorschau → Profil-Selektor (Dropdown + Anlegen-Button)
+ * → Editor. Der Editor öffnet sich nur über das Zahnrad bzw. „Neues Profil", nicht beim Auswählen.
  */
 @Composable
 fun ColorFilterSettingsContent(
@@ -80,6 +91,7 @@ fun ColorFilterSettingsContent(
     var newName by remember { mutableStateOf("") }
     var infoProfile by remember { mutableStateOf<ColorProfile?>(null) }
     var profilesExpanded by remember { mutableStateOf(false) }
+    var selectorSize by remember { mutableStateOf(IntSize.Zero) }
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
@@ -124,7 +136,89 @@ fun ColorFilterSettingsContent(
             }
         }
 
-        // Editor direkt unter der Vorschau, eng gestellt (kompakte Regel-Zeilen).
+        // Profil-Selektor (zwischen Vorschau und Editor): aufklappbares Dropdown + Anlegen-Button rechts.
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            SectionHeader(s.colorFilterProfiles)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                // Selektor (collapsed); die aufgeklappte Liste liegt als Popup DARÜBER (kein Layout-Shift).
+                Box(modifier = Modifier.weight(1f).onGloballyPositioned { selectorSize = it.size }) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(SELECTOR_HEIGHT)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                            .clickable { profilesExpanded = !profilesExpanded }
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        CompactIcon(Icons.Outlined.Info, active.name) { infoProfile = active }
+                        Icon(
+                            if (profilesExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                        )
+                    }
+                    if (profilesExpanded) {
+                        Popup(
+                            alignment = Alignment.TopStart,
+                            // direkt unter den Selektor; überlappt den Inhalt darunter statt ihn zu schieben.
+                            offset = IntOffset(0, selectorSize.height),
+                            onDismissRequest = { profilesExpanded = false },
+                            properties = PopupProperties(focusable = true),
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .width(with(LocalDensity.current) { selectorSize.width.toDp() })
+                                    .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                            ) {
+                                Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                                    profiles.forEach { profile ->
+                                        ProfileRow(
+                                            name = profile.name,
+                                            selected = profile.id == active.id,
+                                            editable = !profile.builtIn,
+                                            onInfo = { infoProfile = profile },
+                                            onEdit = {
+                                                viewModel.setActive(profile.id)
+                                                viewModel.beginEdit(profile)
+                                                profilesExpanded = false
+                                            },
+                                            onSelect = {
+                                                // Auswählen aktiviert nur — der Editor öffnet erst übers Zahnrad.
+                                                viewModel.setActive(profile.id)
+                                                viewModel.cancelEdit()
+                                                profilesExpanded = false
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Eigenständiger „Neues Profil"-Button rechts, oben ausgerichtet.
+                Box(
+                    modifier = Modifier
+                        .height(SELECTOR_HEIGHT)
+                        .width(48.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                        .clickable { viewModel.beginNewProfile() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Add, contentDescription = s.colorFilterNewProfile, modifier = Modifier.size(24.dp))
+                }
+            }
+        }
+
+        // Editor (Adjust) — erscheint nur beim Anlegen oder über das Zahnrad. Eng gestellt.
         edit?.takeIf { !it.builtIn }?.let { e ->
             val isNewDraft = e.baseProfileId == 0L
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -135,62 +229,23 @@ fun ColorFilterSettingsContent(
                     { viewModel.updateContrast(-STEP) }, { viewModel.updateContrast(STEP) })
                 CompactStepperRow(s.colorFilterBrightness, format(e.brightness),
                     { viewModel.updateBrightness(-STEP) }, { viewModel.updateBrightness(STEP) })
-                ChoiceRow(label = s.colorFilterSaveAsNew, selected = false) {
-                    newName = if (isNewDraft) "" else "${e.name}${s.colorFilterCopySuffix}"
-                    showSaveDialog = true
-                }
-                // Aktualisieren/Löschen nur für ein bereits gespeichertes Custom-Profil.
-                if (!isNewDraft) {
-                    ChoiceRow(label = s.colorFilterUpdate, selected = false) { viewModel.updateExisting() }
-                    ChoiceRow(label = s.colorFilterDelete, selected = false) { viewModel.delete(e.baseProfileId) }
-                }
-            }
-        }
-
-        // Profile als aufklappbarer Selektor — eingeklappt nur das aktive Profil (Liste wächst nicht).
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            SectionHeader(s.colorFilterProfiles)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                    .clickable { profilesExpanded = !profilesExpanded }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                CompactIcon(Icons.Outlined.Info, active.name) { infoProfile = active }
-                Spacer(Modifier.width(4.dp))
-                Icon(
-                    if (profilesExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                )
-            }
-            if (profilesExpanded) {
-                profiles.forEach { profile ->
-                    ProfileRow(
-                        name = profile.name,
-                        selected = profile.id == active.id,
-                        onInfo = { infoProfile = profile },
-                    ) {
-                        viewModel.setActive(profile.id)
-                        // Built-ins sind gesperrt → kein Editor; Custom-Profile öffnen den Editor.
-                        if (profile.builtIn) viewModel.cancelEdit() else viewModel.beginEdit(profile)
-                        profilesExpanded = false
+                // Aktionen mittig, als umrandete Buttons.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                ) {
+                    // Konvention: sekundäre Aktion (Abbrechen/Löschen) links, primäre (Speichern/Aktualisieren) rechts.
+                    if (isNewDraft) {
+                        // Abbrechen: Editor verbergen, Entwurf verwerfen — das aktive Profil bleibt.
+                        OutlinedButton(onClick = { viewModel.cancelEdit() }) { Text(s.cancel) }
+                        Button(onClick = { newName = ""; showSaveDialog = true }) { Text(s.save) }
+                    } else {
+                        OutlinedButton(onClick = { viewModel.delete(e.baseProfileId) }) { Text(s.colorFilterDelete) }
+                        Button(onClick = { viewModel.updateExisting() }) { Text(s.colorFilterUpdate) }
                     }
                 }
             }
         }
-
-        // Eigenständige, umrandete Aktion (kein Profil-Look) → klar als „anlegen" erkennbar.
-        SettingsTile(
-            icon = Icons.Outlined.Add,
-            title = s.colorFilterNewProfile,
-            summary = s.colorFilterNewProfileHint,
-            onClick = { viewModel.beginNewProfile() },
-            showChevron = false,
-        )
     }
 
     if (showSaveDialog) {
@@ -221,12 +276,14 @@ fun ColorFilterSettingsContent(
     }
 }
 
-/** Kompakte Profil-Zeile (≈40 dp) — gleich eng wie die Regler, nicht das hohe [ChoiceRow]. */
+/** Kompakte Profil-Zeile (≈40 dp). Zahnrad öffnet den Editor (nur editierbare Profile), Tippen wählt nur aus. */
 @Composable
 private fun ProfileRow(
     name: String,
     selected: Boolean,
+    editable: Boolean,
     onInfo: () -> Unit,
+    onEdit: () -> Unit,
     onSelect: () -> Unit,
 ) {
     Row(
@@ -241,6 +298,10 @@ private fun ProfileRow(
             if (selected) Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(4.dp))
+        if (editable) {
+            CompactIcon(Icons.Outlined.Settings, name, onEdit)
+            Spacer(Modifier.width(4.dp))
+        }
         CompactIcon(Icons.Outlined.Info, name, onInfo)
     }
 }

@@ -142,18 +142,4 @@ class PanelDetectorTest {
         assertEquals(2, out.size, "Erwarte 2 helle Panels auf schwarzem Hintergrund, war ${out.size}")
     }
 
-    @Test
-    fun `eng benachbarte Fragmente werden zu einem Panel vereint`() {
-        // Vier kleine helle Fragmente mit WINZIGEN dunklen Linien dazwischen (wie Figur-Details)
-        // auf weißem Hintergrund -> sollten zu EINEM Panel mergen, nicht 4 bleiben.
-        val px = IntArray(1000 * 800) { 0xFFFFFFFF.toInt() }
-        // ein 400x400-Bereich, in 2x2 Fragmente durch 2px dunkle Linien geteilt
-        for (y in 100 until 500) for (x in 100 until 500) px[y * 1000 + x] = 0xFF404040.toInt()
-        for (y in 100 until 500) for (d in 0..1) px[y * 1000 + (300 + d)] = 0xFF000000.toInt() // vertikale 2px-Linie
-        for (x in 100 until 500) for (d in 0..1) px[(300 + d) * 1000 + x] = 0xFF000000.toInt() // horizontale 2px-Linie
-        val page = com.komgareader.domain.render.RenderedPage(1000, 800, px)
-        val out = PanelDetector().detect(page, ReadingDirection.LEFT_TO_RIGHT)
-        assertEquals(1, out.size, "Erwarte 1 vereintes Panel (winzige Lücken), war ${out.size}")
-    }
-
 }

@@ -14,10 +14,23 @@ mit festem Zoom, kein `layout()`). Für **Romane** fehlt damit alles, was
 komfortables Lesen ausmacht: Schriftgröße, Zeilenabstand, Ränder, Schriftart,
 Blocksatz, Silbentrennung — die KOReader-Knöpfe.
 
-Ziel: ein **neuer, paralleler Roman-Reader** mit reflowbarem Text und
-KOReader-artiger Typografie-Kontrolle, **E-Ink-optimiert** und **offline-first**.
-Quellen-agnostisch über die bestehende Render-Naht — neue Engine **hinter** dem
-`Document`-Interface, kein Kern-Umbau.
+Ziel: ein **Roman-Reader** mit reflowbarem Text und KOReader-artiger
+Typografie-Kontrolle, **E-Ink-optimiert** und **offline-first**. Quellen-agnostisch
+über die bestehende Render-Naht — neue Engine **hinter** dem `Document`-Interface,
+kein Kern-Umbau. Der **bisherige fixe EPUB-Bitmap-Viewer wird abgeschafft**: jede
+reflowbare Datei läuft künftig über den NOVEL-Reader.
+
+### Reader-Typen nach diesem Umbau
+
+| ViewerType | Inhalt | Auslöser |
+|---|---|---|
+| **PAGED** | Manga/Comic blättern (Bild pro Seite, Zoom/Crop) | Fallback (kein Tag) · CBZ/CBR/PDF |
+| **WEBTOON** | Endlos-Vertikal-Scroll | `webtoon`-Tag / readingDirection VERTICAL·WEBTOON |
+| **COMIC** | Geführtes Panel-Zoomen | `comic`-Tag |
+| **NOVEL** *(neu)* | **Reflow-Fließtext**, alle Typo-Knöpfe | `novel`-Tag · **jedes EPUB/MOBI/FB2-Format** |
+
+`ViewerType.EPUB` **entfällt**; `EpubReaderScreen` + `ReaderViewModel.renderEpubPage`
+werden entfernt.
 
 ### Formate (Recherche-Ergebnis)
 
@@ -31,7 +44,7 @@ Quellen-agnostisch über die bestehende Render-Naht — neue Engine **hinter** d
 
 | # | Entscheidung |
 |---|---|
-| Verhältnis | **Neuer paralleler `ViewerType.NOVEL`** (Reflow) neben dem fixen Bitmap-EpubViewer. Illustrierte/fixe EPUBs bleiben am Bitmap-Viewer. |
+| Verhältnis | **`ViewerType.NOVEL`** (Reflow) ersetzt den fixen EPUB-Bitmap-Viewer vollständig. `ViewerType.EPUB` + `EpubReaderScreen` werden entfernt. Alle EPUBs → NOVEL. |
 | Engine | **crengine** (CoolReader-Engine) als neue `Document`-Impl. Echte KOReader-Typo-Qualität (Hyphenation, Blocksatz ohne „rivers"). |
 | Typo-Knöpfe v1 | Schriftgröße · Zeilenabstand · Seitenränder · Schriftart + Blocksatz + Hyphenation. |
 | Bonus v1 | Status-Footer (% / Seite / Kapitel) · Inhaltsverzeichnis (TOC) · Volltextsuche · Gehe-zu-%. |
@@ -154,12 +167,21 @@ data class ReflowConfig(
 
 ### 3. ViewerType-Auflösung (`ResolveViewerType`)
 
-- Neuer `ViewerType.NOVEL`.
-- Neuer `contentType`-Wert (z.B. `NOVEL`) im Regal/Serien-Tag.
-- Eingriff in die bestehende 6-Stufen-Prioritätsregel (Regel
-  `komga-viewer-type-resolution`): Regal/Serie als `NOVEL` getaggt → `NOVEL`.
-  **Deterministisch**, kein Auto-Erkennen des Inhaltstyps (Invariante #4).
-- Fixe/illustrierte EPUBs ohne `NOVEL`-Tag → bestehender Bitmap-EpubViewer.
+- `ViewerType` verliert `EPUB`, bekommt `NOVEL`. `ContentType.NOVEL` existiert
+  bereits.
+- **Stufen-Reihenfolge bleibt unverändert** (Regel `komga-viewer-type-resolution`,
+  „nicht umsortieren"). Nur zwei Ziele ändern sich:
+  - **Stufe 2:** `book.format == EPUB → NOVEL` (statt `→ EPUB`).
+  - **`map`:** `NOVEL → ViewerType.NOVEL` (statt `→ EPUB`).
+- Ergebnis-Regel:
+  1. Override → map · 2. Format EPUB → **NOVEL** · 3. VERTICAL/WEBTOON → WEBTOON
+  · 4. Fallback → map · 5. CBZ/CBR/PDF → PAGED · 6. PAGED.
+  `map`: MANGA→PAGED, COMIC→COMIC, WEBTOON→WEBTOON, **NOVEL→NOVEL**.
+- **Deterministisch**, kein Auto-Erkennen (Invariante #4). Jede `.epub`/reflowbare
+  Datei landet im NOVEL-Reader — kein Tag nötig; das `novel`-Tag deckt zusätzlich
+  Nicht-EPUB-Fälle/Regal-Defaults ab.
+- `docs/domain/viewer-type-resolution.md` + Skill `komga-viewer-type-resolution`
+  entsprechend nachziehen (Stufe-2-Ziel, map-Tabelle, EPUB→NOVEL).
 
 ### 4. NovelReaderScreen (app, `eink-ui`)
 
@@ -246,8 +268,10 @@ Seite gesettled → currentAnchor() + fraction → novel_progress (dirty)
    in Bitmap (de-risk Build + Lizenz-Pfad).
 2. **Seam-Erweiterung** `ReflowableDocument`/`ReflowConfig`/`Chapter`/`SearchHit`
    in `domain`, Unit-Tests fürs Mapping.
-3. **ViewerType.NOVEL** + `ResolveViewerType`-Eingriff + contentType-Tag.
-4. **NovelReaderScreen** (paged) + Render-Pfad über `CrengineDocument`.
+3. **ViewerType.NOVEL** + `ResolveViewerType`-Eingriff (Stufe-2-Ziel + map,
+   `EPUB` raus); Doku/Skill nachziehen.
+4. **NovelReaderScreen** (paged) + Render-Pfad über `CrengineDocument`;
+   **`EpubReaderScreen` + `renderEpubPage` entfernen**, Reader-Dispatch umstellen.
 5. **Typo-Panel** + `ReflowConfig`-Anwendung + globale Settings-Persistenz.
 6. **Fortschritt** (`novel_progress`, xpointer) + Komga-%-Sync (`SyncingSource`).
 7. **TOC + Footer + Volltextsuche + Gehe-zu-%**.

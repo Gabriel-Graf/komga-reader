@@ -22,7 +22,7 @@
 - Modify `app/src/main/kotlin/com/komgareader/app/ui/home/HomeScreen.kt` — `SettingsScreen` statt Landing, live-query auf Settings-Tab, adaptive Such-Breite, `onOpenSettingsPage` raus.
 - Modify `app/src/main/kotlin/com/komgareader/app/MainActivity.kt` — 6 Settings-Routen + `settingsRoute` + `onOpenSettingsPage` raus.
 - Delete `SettingsLandingScreen.kt`, `ConnectionSettingsScreen.kt`, `AppearanceSettingsScreen.kt`, `ReaderSettingsScreen.kt`, `DownloadsSettingsScreen.kt`, `LanguageSettingsScreen.kt`, `AboutScreen.kt`.
-- Modify `.claude/skills/eink-ui/SKILL.md` — Abschnitt „Settings-Architektur".
+- Modify `.claude/skills/komga-eink-ui/SKILL.md` — Abschnitt „Settings-Architektur".
 
 ---
 
@@ -1038,11 +1038,11 @@ git commit -m "refactor(settings): NavHost-Settings-Routen + alte Screens entfer
 ## Task 8: eink-ui-Skill nachziehen + E2E-Verifikation
 
 **Files:**
-- Modify: `.claude/skills/eink-ui/SKILL.md`
+- Modify: `.claude/skills/komga-eink-ui/SKILL.md`
 
 - [ ] **Step 1: Skill-Abschnitt „Settings-Architektur" aktualisieren**
 
-In `.claude/skills/eink-ui/SKILL.md` den Abschnitt „## Settings-Architektur" ersetzen durch eine Beschreibung des neuen Musters:
+In `.claude/skills/komga-eink-ui/SKILL.md` den Abschnitt „## Settings-Architektur" ersetzen durch eine Beschreibung des neuen Musters:
 
 ```markdown
 ## Settings-Architektur
@@ -1067,12 +1067,12 @@ monochrom) bis in `ChoiceRow`-Labels — der Nutzer sieht, *warum* etwas gefunde
 
 - [ ] **Step 2: Setup-Skript (Skill-Sync) ausführen**
 
-Run: `cd ~/Work/claude_settings 2>/dev/null && ./setup.sh; cd - >/dev/null` — falls der eink-ui-Skill ein Symlink aus dem claude_settings-Repo ist. Andernfalls (projekt-lokaler Skill) entfällt dieser Schritt. Prüfe vorher: `ls -l .claude/skills/eink-ui/SKILL.md` (Symlink? → setup nötig).
+Run: `cd ~/Work/claude_settings 2>/dev/null && ./setup.sh; cd - >/dev/null` — falls der eink-ui-Skill ein Symlink aus dem claude_settings-Repo ist. Andernfalls (projekt-lokaler Skill) entfällt dieser Schritt. Prüfe vorher: `ls -l .claude/skills/komga-eink-ui/SKILL.md` (Symlink? → setup nötig).
 
 - [ ] **Step 3: Commit Skill-Update**
 
 ```bash
-git add .claude/skills/eink-ui/SKILL.md
+git add .claude/skills/komga-eink-ui/SKILL.md
 git commit -m "docs(eink-ui): Settings-Architektur auf Master-Detail aktualisiert"
 ```
 

@@ -10,7 +10,7 @@
 
 **Referenz-Spec:** `docs/superpowers/specs/2026-06-07-chapter-tile-view-design.md`
 
-**Verbindliche Regeln:** `eink-ui`-Skill (Tokens, Outlined-Icons, Hairline ≥1.5dp), `eink-design-language.md` (keine Animationen/Schatten, monochrom), Naht A (Cover-URL spiegelt bestehendes Series-Muster).
+**Verbindliche Regeln:** `komga-eink-ui`-Skill (Tokens, Outlined-Icons, Hairline ≥1.5dp), `eink-design-language.md` (keine Animationen/Schatten, monochrom), Naht A (Cover-URL spiegelt bestehendes Series-Muster).
 
 ---
 

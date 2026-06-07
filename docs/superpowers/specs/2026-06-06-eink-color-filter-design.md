@@ -118,7 +118,7 @@ fehlt/ungültig → „Aus"-Profil. Quellen-/geräteagnostisch.
 ## UI
 
 Neuer Screen **Einstellungen → Display → Farbfilter** (`ColorFilterSettingsScreen`), Navigation
-analog zu den bestehenden Settings-Screens. `eink-ui`-Skill beim Bau konsultieren.
+analog zu den bestehenden Settings-Screens. `komga-eink-ui`-Skill beim Bau konsultieren.
 
 Aufbau (E-Ink-Designsprache: flach, 1.5px-Border, keine Animationen, monochrom):
 1. **Profil-Auswahl:** `ChoiceRow`-Liste aller Profile (Built-ins + Custom), aktives mit Häkchen.

@@ -47,7 +47,7 @@ Serien-Override `COMIC` löst künftig auf `ViewerType.COMIC` auf.
 
 App-Seite: `ViewerMode` (aktuell `PAGED, WEBTOON`) um `COMIC` erweitern;
 `ViewerType.COMIC → ViewerMode.COMIC`. `ReaderRoute` routet `ViewerMode.COMIC` auf den
-neuen `ComicReaderScreen`. `viewer-type-resolution`-Skill entsprechend nachziehen.
+neuen `ComicReaderScreen`. `komga-viewer-type-resolution`-Skill entsprechend nachziehen.
 
 ### 2. Pixelquelle — Coil-Bitmap, kein MuPDF
 
@@ -165,5 +165,5 @@ Panel-Tap zoomt, Vorwärts läuft über Seitengrenze. Verifikation auf Emulator
 
 ## Abschluss-Artefakt
 
-Domain-Skill `guided-comic-reader` (`.claude/skills/`), Onyx-/Naht-konform, hält die
-verbindlichen Interaktions- und Auflösungsregeln fest (analog `viewer-type-resolution`).
+Domain-Skill `komga-guided-comic-reader` (`.claude/skills/`), Onyx-/Naht-konform, hält die
+verbindlichen Interaktions- und Auflösungsregeln fest (analog `komga-viewer-type-resolution`).

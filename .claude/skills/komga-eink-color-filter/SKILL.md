@@ -1,5 +1,5 @@
 ---
-name: eink-color-filter
+name: komga-eink-color-filter
 description: Use when touching the central E-Ink color filter in the Komga-Reader (covers + reader pages getting saturation/contrast/brightness adjustment, ColorProfile, buildColorMatrix, LocalImageFilter, FilteredAsyncImage/FilteredImage, color_profiles table, built-in profile seeding). Hält die Naht und die Seeding-Regel fest, damit sie nicht versehentlich gebrochen werden.
 ---
 
@@ -67,4 +67,4 @@ Kern: `domain/color/ColorFilterMatrix.kt`, `domain/model/ColorProfile.kt`,
 `app/ui/components/FilteredImage.kt`, `app/ui/settings/ColorFilterViewModel.kt` + `ColorFilterSettingsScreen.kt`,
 `data/db/AppDatabase.kt` (`seedColorProfiles`/`MIGRATION_6_7`/`SEED_CALLBACK`), `data/repository/RoomColorProfileRepository.kt`.
 Tests: `ColorFilterMatrixTest`, `RoomColorProfileRepositoryTest`, `ColorProfileSeedTest` (instrumentiert).
-Gehört zu [[project-komga-eink-reader]]; UI-Look siehe `eink-ui`.
+Gehört zu [[project-komga-eink-reader]]; UI-Look siehe `komga-eink-ui`.

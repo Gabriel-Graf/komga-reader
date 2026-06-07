@@ -3,7 +3,7 @@
 **Datum:** 2026-06-07
 **Status:** genehmigt (Brainstorming)
 **Bezug:** erweitert den Flood-Fill/CC-Detektor (`2026-06-07-robust-panel-detector-design.md`). Gehört zu
-[[guided-comic-reader]], Branch `feat/guided-comic-reader`.
+[[komga-guided-comic-reader]], Branch `feat/guided-comic-reader`.
 
 ## Problem (auf dem Gerät belegt)
 
@@ -89,6 +89,6 @@ Fallback-Anteil, Ausreißer). **Vorher/Nachher:**
 
 ## Aufräumen / Doku
 
-- `guided-comic-reader`-Skill um die Linien-Split-Stufe + Bubble-Filter ergänzen.
+- `komga-guided-comic-reader`-Skill um die Linien-Split-Stufe + Bubble-Filter ergänzen.
 - Der ursprünglich als YAGNI zurückgestellte „interne Split" wird hiermit umgesetzt (Begründung:
   Gerätetest zeigte Schwarz-Rahmen-Unter-Segmentierung).

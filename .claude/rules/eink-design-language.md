@@ -14,7 +14,7 @@ Notwendigkeit, kein Geschmack**. Jede UI-Arbeit folgt ihr (Spec §8).
   **Keine Akzentfarbe** — Akzent = solides Schwarz bzw. invertiert Weiß. Theme: `app/ui/theme/Theme.kt`.
 - **Icons:** **Lucide** (gleichmäßiger Outline-Strich, als `ImageVector` generiert mit E-Ink-Stroke
   2.5px) — monochrom, E-Ink-kräftig. Zentrale Registry `app/ui/icons/AppIcons.kt` (SSOT), generiert
-  via `tools/icons`; nie Material-Icons, nie Streu-Icons. Details: `eink-ui`-Skill, Sektion „Icon-System".
+  via `tools/icons`; nie Material-Icons, nie Streu-Icons. Details: `komga-eink-ui`-Skill, Sektion „Icon-System".
 - **Aktions-Icons beschriftet:** im Boox-nativen Look tragen Aktionen Text-Labels, nicht nur Glyphen.
 - **`BaseDialog`:** ein Composable als Basis **aller** Dialoge — sticky Header/Footer, scrollender Body,
   Hardware-Back = abbrechen. **Max. ein Dialog** gleichzeitig über dem Main-View.
@@ -34,7 +34,7 @@ Boox-Geometrie verifizieren — der Emulator `eink_test` ist auf **1264×1680 @ 
 Sichtbarer Text **immer** über `i18n` (typsichere Keys, DE+EN, Compile-Zeit-Parität). Echte
 Umlaute/ß. Roh-Werte von Quellen (Status `ONGOING` etc.) lokalisiert anzeigen, nie durchreichen.
 
-> Hinweis: Es gibt einen `eink-ui`-Skill (Onyx-Look) und einen laufenden UI-Refactor im Branch
+> Hinweis: Es gibt einen `komga-eink-ui`-Skill (Onyx-Look) und einen laufenden UI-Refactor im Branch
 > `feat/eink-ui-refactor` (siehe [[eink-ui-refactor-worktree]]). Bei UI-Arbeit dort/diesen Skill
 > konsultieren — diese Regel ist die verbindliche Kurzfassung der Spec.
 

@@ -322,7 +322,7 @@ git commit -m "feat(guided-view): PanelDetector v2 — Rahmen-Linien-Split + Bub
 
 ## Task 3: 300-Seiten-Validierung + Tuning + Skill (Vorher/Nachher)
 
-**Files:** keine Produktionsänderung außer ggf. Schwellen-Tuning in `BorderLineSplit`/`PanelDetector`; `.claude/skills/guided-comic-reader/SKILL.md`.
+**Files:** keine Produktionsänderung außer ggf. Schwellen-Tuning in `BorderLineSplit`/`PanelDetector`; `.claude/skills/komga-guided-comic-reader/SKILL.md`.
 
 - [ ] **Step 1: Harness gegen die 300er-Stichprobe laufen lassen** (Korpus liegt schon in `guided-view/realpages/sample300/`):
 
@@ -336,7 +336,7 @@ Verteilung mit der Baseline (41 % Fallback, Ausreißer 24) vergleichen. **Ziel:*
 
 - [ ] **Step 2: Overlays sichten** (Stichprobe, inkl. schwarz-umrandete + Blasen-Seiten) — Overlays in `guided-view/realpages/_out/`. Per Read-Tool ~10 Seiten prüfen: Boxen liegen plausibel auf Panels, keine Blasen-Box, keine Querbänder mehr. Bei systematischem Problem → Schwellen in `BorderLineSplit`/`dropContainedSmall` nachziehen, Task 2 erneut.
 
-- [ ] **Step 3: Skill aktualisieren** — in `.claude/skills/guided-comic-reader/SKILL.md` den Detektor-Absatz um die **Rahmen-Linien-Split-Stufe** (schwarz-umrandete Panels) und den **Bubble-Filter** (kleine enthaltene Box = keine Panel) ergänzen.
+- [ ] **Step 3: Skill aktualisieren** — in `.claude/skills/komga-guided-comic-reader/SKILL.md` den Detektor-Absatz um die **Rahmen-Linien-Split-Stufe** (schwarz-umrandete Panels) und den **Bubble-Filter** (kleine enthaltene Box = keine Panel) ergänzen.
 
 - [ ] **Step 4: Voll-Verifikation**
 
@@ -348,7 +348,7 @@ Erwartung: BUILD SUCCESSFUL, alle Unit-Tests grün.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .claude/skills/guided-comic-reader/SKILL.md guided-view/src/main/kotlin/com/komgareader/guidedview/
+git add .claude/skills/komga-guided-comic-reader/SKILL.md guided-view/src/main/kotlin/com/komgareader/guidedview/
 git commit -m "test+docs(guided-view): 300-Seiten-Validierung v2, Skill-Update, Schwellen-Tuning"
 ```
 

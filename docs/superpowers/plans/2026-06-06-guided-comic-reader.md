@@ -8,7 +8,7 @@
 
 **Tech Stack:** Kotlin, Jetpack Compose, Coil (Bitmap-Decode + ImageLoader.execute), Hilt, JUnit5 (`guided-view`/`domain` host-tests), bestehendes `guided-view`-Modul (`PanelDetector`, `PanelRect`, `ReadingDirection`).
 
-**Maßgebliche Regeln:** `docs/superpowers/specs/2026-06-06-guided-comic-reader-design.md`, Skill `guided-comic-reader`, `viewer-type-resolution`, `eink-ui`. COMIC = westliche Comics = LTR (Manga/RTL löst auf PAGED auf) → Detektor-Richtung fix `LEFT_TO_RIGHT`.
+**Maßgebliche Regeln:** `docs/superpowers/specs/2026-06-06-guided-comic-reader-design.md`, Skill `komga-guided-comic-reader`, `komga-viewer-type-resolution`, `komga-eink-ui`. COMIC = westliche Comics = LTR (Manga/RTL löst auf PAGED auf) → Detektor-Richtung fix `LEFT_TO_RIGHT`.
 
 ---
 

@@ -20,7 +20,7 @@ auf ein **adaptives Master-Detail** umstellen:
 
 Bleibt vollständig innerhalb der E-Ink-Designsprache (flach, monochrom, Hairline-Rahmen,
 keine Animation, keine Akzentfarbe) — siehe `.claude/rules/eink-design-language.md` und
-Skill `eink-ui`.
+Skill `komga-eink-ui`.
 
 ## Ist-Zustand (vor dem Umbau)
 
@@ -161,7 +161,7 @@ auf schmalen Screens nicht überläuft.
 
 ### Skill-Nachzug
 
-`eink-ui`-Skill, Abschnitt „Settings-Architektur": von „Kachel-Landing → Unterseiten" auf
+`komga-eink-ui`-Skill, Abschnitt „Settings-Architektur": von „Kachel-Landing → Unterseiten" auf
 „adaptives Master-Detail (Tablet/E-Ink) bzw. Accordion (Phone) + Such-Highlight" aktualisieren.
 Der Skill ist die verbindliche Kurzform der Spec und muss konsistent bleiben.
 

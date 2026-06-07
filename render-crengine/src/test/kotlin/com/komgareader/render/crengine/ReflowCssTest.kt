@@ -15,6 +15,11 @@ import kotlin.test.assertTrue
  * crengine-ng/include/lvdocviewprops.h (nicht erfunden):
  *   crengine.interline.space, crengine.page.margin.*, font.face.default,
  *   crengine.hyphenation.directory, crengine.textlang.*.
+ *
+ * Hinweis zur Trennung: PROP_HYPHENATION_DICT IST "crengine.hyphenation.directory"
+ * (lvdocviewprops.h:82) — trotz des Namens der Property, die das aktive Wörterbuch
+ * WÄHLT (ihr Wert geht an HyphDictionaryList::activate(id)). Eine separate
+ * "crengine.hyphenation.dict"-Property existiert in crengine-ng nicht.
  */
 class ReflowCssTest {
 

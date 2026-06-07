@@ -100,6 +100,40 @@ class CrengineRenderInstrumentedTest {
     }
 
     @Test
+    fun reflowcss_hyphenation_key_waehlt_das_woerterbuch_ueber_den_props_pfad() {
+        initFontManager()
+        // Beweis, dass der von ReflowCss erzeugte Property-Schlüssel der RICHTIGE
+        // Dictionary-SELEKTIONS-Schlüssel ist (crengine.hyphenation.directory ->
+        // HyphDictionaryList::activate(id)): exakt diese props an nativeApplyLayout
+        // reichen — wäre der Schlüssel ein No-Op, würde die Selektion still scheitern;
+        // der "hyph-de-1996.pattern"-Wert muss als registrierte Dictionary-ID greifen.
+        val deProps = ReflowCss.toProperties(
+            ReflowConfig(hyphenation = com.komgareader.domain.render.Hyphenation.Language("de")),
+        )
+        assertEquals(
+            "ReflowCss muss das echte DE-Muster über den Selektions-Property setzen",
+            "hyph-de-1996.pattern",
+            deProps["crengine.hyphenation.directory"],
+        )
+        val handle = CrengineNative.nativeOpen(assetBytes("sample.epub"), "sample.epub")
+        assertTrue("EPUB geöffnet (handle != 0)", handle != 0L)
+        try {
+            CrengineNative.nativeApplyLayout(
+                handle, viewportW, viewportH, 24,
+                deProps.keys.toTypedArray(), deProps.values.toTypedArray(),
+                ReflowCss.toUserCss(ReflowConfig(hyphenation = com.komgareader.domain.render.Hyphenation.Language("de"))),
+            )
+            // Layout mit aktivem DE-Wörterbuch muss eine valide Seitenzahl liefern.
+            assertTrue(
+                "Layout über den DE-Trennungs-Props-Pfad ergibt Seiten",
+                CrengineNative.nativePageCount(handle) > 0,
+            )
+        } finally {
+            CrengineNative.nativeClose(handle)
+        }
+    }
+
+    @Test
     fun rendert_reflowte_epub_seite_mit_text() {
         initFontManager()
         val handle = CrengineNative.nativeOpen(assetBytes("sample.epub"), "sample.epub")

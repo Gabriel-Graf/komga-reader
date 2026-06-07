@@ -26,6 +26,11 @@ object ReflowCss {
     private const val PROP_PAGE_MARGIN_LEFT = "crengine.page.margin.left"
     private const val PROP_PAGE_MARGIN_RIGHT = "crengine.page.margin.right"
     private const val PROP_FONT_FACE = "font.face.default"
+    // PROP_HYPHENATION_DICT (lvdocviewprops.h:82). Trotz des Namens "directory" ist dies
+    // der Property, der das AKTIVE Trennwörterbuch WÄHLT: lvdocview.cpp reicht seinen Wert
+    // an HyphDictionaryList::activate(id) — der id ist "@none", "@algorithm" oder der
+    // Dateiname des registrierten `.pattern` (crhyphman.cpp registriert jedes Wörterbuch
+    // unter id = Dateiname). Es gibt KEINE separate "crengine.hyphenation.dict"-Property.
     private const val PROP_HYPHENATION_DICT = "crengine.hyphenation.directory"
     private const val PROP_TEXTLANG_MAIN_LANG = "crengine.textlang.main.lang"
     private const val PROP_TEXTLANG_HYPHENATION_ENABLED = "crengine.textlang.hyphenation.enabled"

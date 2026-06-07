@@ -17,8 +17,11 @@ import java.io.File
  *  1. Die nackte Spike-Pipeline (Open + Render einer Seite mit Text) bleibt grün.
  *  2. Re-Layout funktioniert: andere Schriftgröße => andere Seitenzahl.
  *  3. TOC, Suche und der Anker-Round-Trip funktionieren über den Adapter.
+ *  4. Alle gebündelten Lese-Fonts sind registriert und die echten DE/EN-
+ *     Trennmuster-Wörterbücher sind zur Laufzeit aktivierbar.
  *
- * Voraussetzung: gebündelte DejaVuSans als einzig registrierte Schrift.
+ * Voraussetzung: die gebündelten Lese-Fonts und die `*.pattern`-Trennmuster
+ * liegen in den Test-Assets (`fonts/`, `hyph/`).
  */
 @RunWith(AndroidJUnit4::class)
 class CrengineRenderInstrumentedTest {
@@ -38,13 +41,63 @@ class CrengineRenderInstrumentedTest {
     private fun assetBytes(name: String): ByteArray =
         context.assets.open(name).use { it.readBytes() }
 
+    private val bundledFonts = listOf(
+        "fonts/DejaVuSans.ttf",
+        "fonts/Literata.ttf",
+        "fonts/Bitter.ttf",
+    )
+
+    private val hyphPatterns = listOf("hyph-de-1996.pattern", "hyph-en-us.pattern")
+
+    /** Entpackt die Trennmuster in ein Verzeichnis und liefert dessen Pfad mit Trailing-Slash. */
+    private fun extractHyphDir(): String {
+        val dir = File(context.cacheDir, "hyph").apply { mkdirs() }
+        for (p in hyphPatterns) {
+            context.assets.open("hyph/$p").use { input ->
+                File(dir, p).outputStream().use { input.copyTo(it) }
+            }
+        }
+        return dir.absolutePath + "/"
+    }
+
     private fun initFontManager() {
-        val fontFile = copyAssetToFile("fonts/DejaVuSans.ttf")
-        assertTrue("Font-Manager init + Font registriert", CrengineNative.nativeInit(fontFile.absolutePath))
+        val fontPaths = bundledFonts.map { copyAssetToFile(it).absolutePath }.toTypedArray()
+        assertTrue(
+            "Font-Manager init + Fonts + Trennmuster registriert",
+            CrengineNative.nativeInit(fontPaths, extractHyphDir()),
+        )
     }
 
     private fun openDocument(): CrengineDocument =
         CrengineDocument(assetBytes("sample.epub"), "sample.epub", viewportW, viewportH)
+
+    @Test
+    fun alle_gebuendelten_lese_fonts_sind_registriert() {
+        initFontManager()
+        val faces = CrengineNative.nativeFontFaces().split(RECORD_SEP).toSet()
+        // Registrierte Familiennamen (FreeType family_name), nicht Dateinamen.
+        for (family in listOf("DejaVu Sans", "Literata", "Bitter")) {
+            assertTrue(
+                "Schriftfamilie '$family' registriert, vorhanden: $faces",
+                faces.contains(family),
+            )
+        }
+    }
+
+    @Test
+    fun echte_de_und_en_trennmuster_woerterbuecher_sind_aktivierbar() {
+        initFontManager()
+        // Die echten TeX-Muster-Wörterbücher müssen über ihre Dictionary-ID
+        // (Dateiname) aktivierbar sein — nicht nur @algorithm.
+        assertTrue(
+            "deutsches Muster-Wörterbuch aktivierbar",
+            CrengineNative.nativeActivateDictionary("hyph-de-1996.pattern"),
+        )
+        assertTrue(
+            "englisches Muster-Wörterbuch aktivierbar",
+            CrengineNative.nativeActivateDictionary("hyph-en-us.pattern"),
+        )
+    }
 
     @Test
     fun rendert_reflowte_epub_seite_mit_text() {
@@ -148,5 +201,10 @@ class CrengineRenderInstrumentedTest {
                 doc.currentAnchor(),
             )
         }
+    }
+
+    private companion object {
+        /** Datensatz-Trennzeichen der nativen Serialisierung (ASCII Record-Separator). */
+        const val RECORD_SEP = '\u001E'
     }
 }

@@ -15,7 +15,9 @@ class NovelSettingsTest {
         assertEquals(1.0f, cfg.fontSizeEm)
         assertEquals(1.0f, cfg.lineHeight)
         assertEquals(Margins.NORMAL, cfg.margin)
-        assertEquals("DejaVuSans", cfg.fontFamily)
+        // Default = registrierter Familienname der ersten gebündelten Schrift ("DejaVu Sans").
+        assertEquals(NovelFonts.DEFAULT, cfg.fontFamily)
+        assertEquals("DejaVu Sans", cfg.fontFamily)
         assertEquals(TextAlign.JUSTIFY, cfg.textAlign)
         assertEquals(Hyphenation.Off, cfg.hyphenation)
     }

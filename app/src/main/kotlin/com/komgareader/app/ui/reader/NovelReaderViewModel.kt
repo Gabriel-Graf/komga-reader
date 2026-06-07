@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.render.Chapter
+import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.SearchHit
@@ -400,19 +401,44 @@ class NovelReaderViewModel @Inject constructor(
     }
 
     /**
-     * Initialisiert den crengine-Font-Manager einmalig mit der gebündelten
-     * Bootstrap-Schrift. Muss vor dem ersten [CrengineDocument.applyLayout] laufen.
+     * Initialisiert den crengine-Font-Manager einmalig: entpackt alle gebündelten
+     * Lese-Schriften ([NovelFonts.ALL]) und die Silbentrennungs-Muster aus den
+     * Assets in den Cache und registriert sie nativ. Muss vor dem ersten
+     * [CrengineDocument.applyLayout] laufen. Der native Font-Manager ist
+     * prozessweit — daher genau einmal.
      */
     private suspend fun ensureFontManager() = withContext(Dispatchers.IO) {
         if (fontManagerReady) return@withContext
-        val fontFile = File(context.cacheDir, BOOTSTRAP_FONT.substringAfterLast('/'))
-        if (!fontFile.exists()) {
-            context.assets.open(BOOTSTRAP_FONT).use { input ->
-                fontFile.outputStream().use { input.copyTo(it) }
+        val fontPaths = NovelFonts.ALL
+            .map { extractAsset(it.asset, context.cacheDir).absolutePath }
+            .toTypedArray()
+        val hyphDir = extractHyphenationPatterns()
+        CrengineNative.nativeInit(fontPaths, hyphDir)
+        fontManagerReady = true
+    }
+
+    /**
+     * Entpackt die `.pattern`-Wörterbücher in ein eigenes Cache-Verzeichnis und
+     * liefert dessen Pfad **mit abschließendem '/'** zurück — crengine-ng erkennt
+     * ein Verzeichnis (statt Archiv) nur am Trailing-Slash.
+     */
+    private fun extractHyphenationPatterns(): String {
+        val hyphDir = File(context.cacheDir, "hyph").apply { mkdirs() }
+        for (pattern in HYPH_PATTERNS) {
+            extractAsset("hyph/$pattern", hyphDir)
+        }
+        return hyphDir.absolutePath + "/"
+    }
+
+    /** Kopiert ein Asset einmalig in [targetDir] (nach Basisnamen) und liefert die Datei. */
+    private fun extractAsset(asset: String, targetDir: File): File {
+        val out = File(targetDir, asset.substringAfterLast('/'))
+        if (!out.exists()) {
+            context.assets.open(asset).use { input ->
+                out.outputStream().use { input.copyTo(it) }
             }
         }
-        CrengineNative.nativeInit(fontFile.absolutePath)
-        fontManagerReady = true
+        return out
     }
 
     override fun onCleared() {
@@ -442,7 +468,8 @@ class NovelReaderViewModel @Inject constructor(
     }
 
     private companion object {
-        const val BOOTSTRAP_FONT = "fonts/DejaVuSans.ttf"
+        /** Gebündelte Silbentrennungs-Muster (Assets unter `hyph/`). */
+        val HYPH_PATTERNS = listOf("hyph-de-1996.pattern", "hyph-en-us.pattern")
 
         /** Der native Font-Manager ist prozessweit — nur einmal initialisieren. */
         @Volatile

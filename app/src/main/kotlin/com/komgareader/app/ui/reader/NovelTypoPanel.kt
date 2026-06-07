@@ -17,6 +17,7 @@ import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.SectionHeader
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.domain.render.Hyphenation
+import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.TextAlign
@@ -102,14 +103,17 @@ fun NovelTypoPanel(
             onSelect = { onHyphenation("en") },
         )
 
-        // Schriftart: aktuell nur die gebündelte DejaVuSans. Als Auswahlzeile angelegt,
-        // sodass weitere gebündelte Schriften ohne UI-Umbau ergänzt werden können.
+        // Schriftart: alle gebündelten Lese-Schriften aus der zentralen Registry
+        // ([NovelFonts]). Persistiert wird der registrierte Familienname; die Anzeige
+        // nutzt das Label verbatim (Schriftnamen werden nicht übersetzt).
         SectionHeader(strings.novelFontFamily)
-        ChoiceRow(
-            label = "DejaVuSans",
-            selected = config.fontFamily == "DejaVuSans",
-            onSelect = { onFontFamily("DejaVuSans") },
-        )
+        NovelFonts.ALL.forEach { font ->
+            ChoiceRow(
+                label = font.label,
+                selected = config.fontFamily == font.family,
+                onSelect = { onFontFamily(font.family) },
+            )
+        }
     }
 }
 

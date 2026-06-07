@@ -22,6 +22,7 @@
 #include <lvdocview.h>
 #include <lvstreamutils.h>
 #include <lvfntman.h>
+#include <lvstring32collection.h>
 #include <crhyphman.h>
 #include <crlog.h>
 #include <crprops.h>
@@ -48,32 +49,87 @@ static const lChar32 RECORD_SEP = U'\x1E';
 extern "C" {
 
 /*
- * Initialise the crengine-ng font manager and register one TTF font. With
- * USE_FONTCONFIG=OFF crengine has no fonts and renders blank text, so at least
- * one registered font is mandatory.
+ * Initialise the crengine-ng font manager, register every bundled reading font,
+ * and load the bundled hyphenation pattern dictionaries.
+ *
+ * With USE_FONTCONFIG=OFF crengine has no fonts and renders blank text, so at
+ * least one registered font is mandatory. Each TTF is registered by its real
+ * family name (FreeType `family_name`); the Kotlin side must store exactly that
+ * name in `font.face.default` for the selection to take effect.
+ *
+ * [jFontPaths] are absolute paths to the extracted TTF assets; [jHyphDir] is the
+ * directory (with trailing '/') holding the extracted `*.pattern` files. Passing
+ * that directory to HyphMan::initDictionaries makes the real per-language TeX
+ * pattern dictionaries (e.g. German `hyph-de-1996.pattern`, English
+ * `hyph-en-us.pattern`) selectable by language tag / dictionary id at layout time
+ * — instead of only the generic @algorithm fallback.
  */
 JNIEXPORT jboolean JNICALL
 Java_com_komgareader_render_crengine_CrengineNative_nativeInit(
-        JNIEnv* env, jobject /*thiz*/, jstring jFontPath) {
+        JNIEnv* env, jobject /*thiz*/, jobjectArray jFontPaths, jstring jHyphDir) {
     CRLog::setLogLevel(CRLog::LL_ERROR);
 
-    // Don't enumerate system fonts; we register exactly one ourselves.
+    // Don't enumerate system fonts; we register exactly the bundled ones.
     InitFontManager(lString8::empty_str, false);
 
-    const char* fontPath = env->GetStringUTFChars(jFontPath, nullptr);
-    bool registered = fontMan->RegisterFont(lString8(fontPath));
-    LOGI("RegisterFont(%s) -> %d, fontCount=%d", fontPath, registered, fontMan->GetFontCount());
-    env->ReleaseStringUTFChars(jFontPath, fontPath);
+    jsize fontCount = env->GetArrayLength(jFontPaths);
+    for (jsize i = 0; i < fontCount; i++) {
+        auto jPath = (jstring) env->GetObjectArrayElement(jFontPaths, i);
+        const char* fontPath = env->GetStringUTFChars(jPath, nullptr);
+        bool registered = fontMan->RegisterFont(lString8(fontPath));
+        LOGI("RegisterFont(%s) -> %d", fontPath, registered);
+        env->ReleaseStringUTFChars(jPath, fontPath);
+        env->DeleteLocalRef(jPath);
+    }
+    LOGI("font manager ready, fontCount=%d", fontMan->GetFontCount());
 
-    // Hyphenation manager with no dictionaries; per-document hyphenation is
-    // switched on later via the @algorithm pseudo-dictionary (no pattern file).
-    HyphMan::initDictionaries(lString32::empty_str);
+    // Load the bundled pattern dictionaries. initDictionaries scans the directory
+    // for *.pattern files and registers each by its in-file language tag; the
+    // active dictionary is then chosen per document via PROP_HYPHENATION_DICT /
+    // crengine.textlang.main.lang. Default off until a document requests it.
+    const char* hyphDir = env->GetStringUTFChars(jHyphDir, nullptr);
+    bool hyphLoaded = HyphMan::initDictionaries(Utf8ToUnicode(lString8(hyphDir)));
+    LOGI("initDictionaries(%s) -> %d", hyphDir, hyphLoaded);
+    env->ReleaseStringUTFChars(jHyphDir, hyphDir);
     HyphMan::activateDictionary(lString32(HYPH_DICT_ID_NONE));
 
-    // Idempotent: a repeated nativeInit re-registers the same font and gets
+    // Idempotent: a repeated nativeInit re-registers the same fonts and gets
     // 'false' back (already known) — that is not a failure. The real success
     // condition is that the font manager ends up with at least one usable font.
     return (fontMan->GetFontCount() > 0) ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
+ * Registered font face names, RECORD_SEP-separated ("" if none). Lets a test
+ * assert that all bundled families (e.g. "Literata", "Bitter") are registered.
+ */
+JNIEXPORT jstring JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeFontFaces(
+        JNIEnv* env, jobject /*thiz*/) {
+    lString32Collection faces;
+    if (fontMan != nullptr)
+        fontMan->getFaceList(faces);
+    lString32 out;
+    for (int i = 0; i < faces.length(); i++) {
+        if (!out.empty())
+            out.append(1, RECORD_SEP);
+        out.append(faces[i]);
+    }
+    return env->NewStringUTF(UnicodeToUtf8(out).c_str());
+}
+
+/*
+ * True if a hyphenation dictionary with [jId] (e.g. "hyph-de-1996.pattern") was
+ * loaded and can be activated. Lets a test assert the real DE/EN pattern
+ * dictionaries are reachable at runtime.
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeActivateDictionary(
+        JNIEnv* env, jobject /*thiz*/, jstring jId) {
+    const char* id = env->GetStringUTFChars(jId, nullptr);
+    bool ok = HyphMan::activateDictionary(Utf8ToUnicode(lString8(id)));
+    env->ReleaseStringUTFChars(jId, id);
+    return ok ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

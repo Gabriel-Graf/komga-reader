@@ -2,6 +2,7 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.SettingEntity
 import com.komgareader.data.db.SettingsDao
+import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -28,7 +29,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val novelMarginPreset: Flow<String> =
         dao.observe(KEY_NOVEL_MARGIN_PRESET).map { it ?: "NORMAL" }
     override val novelFontFamily: Flow<String> =
-        dao.observe(KEY_NOVEL_FONT_FAMILY).map { it ?: "DejaVuSans" }
+        dao.observe(KEY_NOVEL_FONT_FAMILY).map { it ?: NovelFonts.DEFAULT }
     override val novelTextAlign: Flow<String> =
         dao.observe(KEY_NOVEL_TEXT_ALIGN).map { it ?: "JUSTIFY" }
     override val novelHyphenationLang: Flow<String> =

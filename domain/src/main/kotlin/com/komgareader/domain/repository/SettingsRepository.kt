@@ -17,7 +17,7 @@ interface SettingsRepository {
     val novelFontSizeEm: Flow<Float>          // Schriftgröße in em (1.0 = Basis)
     val novelLineHeight: Flow<Float>          // Zeilenhöhe als Faktor (1.0 = einfach)
     val novelMarginPreset: Flow<String>       // "NARROW" | "NORMAL" | "WIDE"
-    val novelFontFamily: Flow<String>         // Schriftfamilie (gebündelt, z.B. "DejaVuSans")
+    val novelFontFamily: Flow<String>         // Registrierter Familienname (gebündelt, z.B. "DejaVu Sans")
     val novelTextAlign: Flow<String>          // "LEFT" | "JUSTIFY"
     val novelHyphenationLang: Flow<String>    // "" = aus, sonst Sprachcode ("de"/"en")
     suspend fun setThemeMode(value: String)

@@ -6,13 +6,14 @@ package com.komgareader.domain.render
  * Mapper auf die [ReflowConfig], die die Reflow-Engine (Naht B) versteht.
  *
  * Die Defaults entsprechen den Settings-Defaults (em 1.0, lineHeight 1.0, Rand
- * NORMAL, Schrift DejaVuSans, Ausrichtung JUSTIFY, Trennung aus).
+ * NORMAL, Schrift = [NovelFonts.DEFAULT] "DejaVu Sans", Ausrichtung JUSTIFY,
+ * Trennung aus).
  */
 data class NovelSettings(
     val fontSizeEm: Float = 1.0f,
     val lineHeight: Float = 1.0f,
     val marginPreset: String = MARGIN_NORMAL,
-    val fontFamily: String = "DejaVuSans",
+    val fontFamily: String = NovelFonts.DEFAULT,
     val textAlign: String = "JUSTIFY",
     val hyphenationLang: String = "",
 ) {

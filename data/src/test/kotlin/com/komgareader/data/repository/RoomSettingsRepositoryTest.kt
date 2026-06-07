@@ -2,6 +2,7 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.SettingEntity
 import com.komgareader.data.db.SettingsDao
+import com.komgareader.domain.render.NovelFonts
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -77,9 +78,10 @@ class RoomSettingsRepositoryTest {
     }
 
     @Test
-    fun `novelFontFamily default ist DejaVuSans ohne gesetzten Wert`() = runTest {
+    fun `novelFontFamily default ist der registrierte Familienname DejaVu Sans`() = runTest {
         val repo = RoomSettingsRepository(FakeSettingsDao())
-        assertEquals("DejaVuSans", repo.novelFontFamily.first())
+        assertEquals(NovelFonts.DEFAULT, repo.novelFontFamily.first())
+        assertEquals("DejaVu Sans", repo.novelFontFamily.first())
     }
 
     @Test

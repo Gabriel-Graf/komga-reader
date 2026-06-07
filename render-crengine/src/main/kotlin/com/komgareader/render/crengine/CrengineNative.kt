@@ -17,8 +17,19 @@ object CrengineNative {
         System.loadLibrary("cr3bridge")
     }
 
-    /** Initialise the font manager and register one TTF font (path on disk). */
-    external fun nativeInit(fontPath: String): Boolean
+    /**
+     * Initialise the font manager, register every bundled TTF in [fontPaths] (each
+     * by its real family name), and load the hyphenation pattern dictionaries from
+     * [hyphDir] (a directory with a trailing '/' holding the extracted `*.pattern`
+     * files). Returns true once at least one font is usable.
+     */
+    external fun nativeInit(fontPaths: Array<String>, hyphDir: String): Boolean
+
+    /** Registered font face names, RECORD_SEP-separated ("" if none). */
+    external fun nativeFontFaces(): String
+
+    /** Activate a hyphenation dictionary by id (e.g. "hyph-de-1996.pattern"); true if reachable. */
+    external fun nativeActivateDictionary(id: String): Boolean
 
     /** Open a document from bytes; returns an opaque handle (0 = failure). */
     external fun nativeOpen(bytes: ByteArray, formatHint: String): Long

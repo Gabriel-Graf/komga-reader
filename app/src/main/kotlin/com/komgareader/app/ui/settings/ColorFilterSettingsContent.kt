@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,11 +56,11 @@ import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
-import com.komgareader.app.ui.components.FilteredAsyncImage
+import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
-import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.DitherMode
 
 private const val STEP = 0.05f
 
@@ -96,7 +97,13 @@ fun ColorFilterSettingsContent(
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
         val previewProfile = edit?.let {
-            ColorProfile(id = it.baseProfileId, name = it.name, saturation = it.saturation, contrast = it.contrast, brightness = it.brightness, builtIn = it.builtIn)
+            ColorProfile(
+                id = it.baseProfileId, name = it.name,
+                saturation = it.saturation, contrast = it.contrast, brightness = it.brightness,
+                blackPoint = it.blackPoint, whitePoint = it.whitePoint, gamma = it.gamma,
+                sharpenAmount = it.sharpenAmount, sharpenRadius = it.sharpenRadius,
+                ditherMode = it.ditherMode, ditherLevels = it.ditherLevels, builtIn = it.builtIn,
+            )
         } ?: active
         preview?.let { p ->
             val request = remember(p.url) {
@@ -116,12 +123,11 @@ fun ColorFilterSettingsContent(
                         }
                     }
                 }
-                FilteredAsyncImage(
+                FilteredReaderAsyncImage(
                     model = request,
                     contentDescription = s.colorFilterPreview,
                     contentScale = ContentScale.Crop,
-                    colorFilterOverride = previewProfile.toColorFilterOrNull(),
-                    useOverride = true,
+                    profileOverride = previewProfile,
                     modifier = Modifier
                         .height(240.dp)
                         .aspectRatio(2f / 3f)
@@ -229,6 +235,33 @@ fun ColorFilterSettingsContent(
                     { viewModel.updateContrast(-STEP) }, { viewModel.updateContrast(STEP) })
                 CompactStepperRow(s.colorFilterBrightness, format(e.brightness),
                     { viewModel.updateBrightness(-STEP) }, { viewModel.updateBrightness(STEP) })
+                SectionHeader(s.colorFilterAdvanced)
+                CompactStepperRow(s.colorFilterBlackPoint, format(e.blackPoint),
+                    { viewModel.updateBlackPoint(-STEP) }, { viewModel.updateBlackPoint(STEP) })
+                CompactStepperRow(s.colorFilterWhitePoint, format(e.whitePoint),
+                    { viewModel.updateWhitePoint(-STEP) }, { viewModel.updateWhitePoint(STEP) })
+                CompactStepperRow(s.colorFilterGamma, format(e.gamma),
+                    { viewModel.updateGamma(-STEP) }, { viewModel.updateGamma(STEP) })
+                CompactStepperRow(s.colorFilterSharpen, format(e.sharpenAmount),
+                    { viewModel.updateSharpen(-0.1f) }, { viewModel.updateSharpen(0.1f) })
+                CompactStepperRow(s.colorFilterSharpenRadius, e.sharpenRadius.toString(),
+                    { viewModel.updateSharpenRadius(-1) }, { viewModel.updateSharpenRadius(1) })
+                DitherSelectorRow(
+                    selected = e.ditherMode,
+                    labels = Triple(s.colorFilterDitherNone, s.colorFilterDitherFloyd, s.colorFilterDitherOrdered),
+                    label = s.colorFilterDither,
+                    onSelect = { viewModel.setDitherMode(it) },
+                )
+                if (e.ditherMode != DitherMode.NONE) {
+                    CompactStepperRow(s.colorFilterDitherLevels, e.ditherLevels.toString(),
+                        { viewModel.updateDitherLevels(-2) }, { viewModel.updateDitherLevels(2) })
+                }
+                Text(
+                    s.colorFilterReaderOnlyHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
                 // Aktionen mittig, als umrandete Buttons.
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -272,6 +305,15 @@ fun ColorFilterSettingsContent(
             InfoValueRow(s.colorFilterSaturation, format(p.saturation))
             InfoValueRow(s.colorFilterContrast, format(p.contrast))
             InfoValueRow(s.colorFilterBrightness, format(p.brightness))
+            InfoValueRow(s.colorFilterBlackPoint, format(p.blackPoint))
+            InfoValueRow(s.colorFilterWhitePoint, format(p.whitePoint))
+            InfoValueRow(s.colorFilterGamma, format(p.gamma))
+            InfoValueRow(s.colorFilterSharpen, format(p.sharpenAmount))
+            InfoValueRow(s.colorFilterDither, when (p.ditherMode) {
+                DitherMode.NONE -> s.colorFilterDitherNone
+                DitherMode.FLOYD_STEINBERG -> s.colorFilterDitherFloyd
+                DitherMode.ORDERED -> s.colorFilterDitherOrdered
+            })
         }
     }
 }
@@ -355,3 +397,42 @@ private fun InfoValueRow(label: String, value: String) {
 
 private fun format(v: Float): String =
     java.util.Locale.US.let { "%.2f".format(it, v) }.trimEnd('0').trimEnd('.')
+
+/** Dither-Auswahl als drei umrandete Segmente (Aus / Floyd-Steinberg / Ordered) — E-Ink-flach. */
+@Composable
+private fun DitherSelectorRow(
+    selected: DitherMode,
+    labels: Triple<String, String, String>,
+    label: String,
+    onSelect: (DitherMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        val modes = listOf(
+            DitherMode.NONE to labels.first,
+            DitherMode.FLOYD_STEINBERG to labels.second,
+            DitherMode.ORDERED to labels.third,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            modes.forEach { (mode, text) ->
+                val isActive = mode == selected
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .then(
+                            if (isActive) Modifier.background(MaterialTheme.colorScheme.primary)
+                            else Modifier.border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
+                        )
+                        .clickable { onSelect(mode) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+    }
+}

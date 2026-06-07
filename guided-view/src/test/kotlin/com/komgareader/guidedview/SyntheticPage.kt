@@ -11,15 +11,15 @@ object SyntheticPage {
      * Weiße Seite [w]x[h]; jedes Rechteck in [panels] wird dunkel gefüllt (Panel-Inhalt).
      * [holes] werden danach wieder weiß gefüllt (z. B. Sprechblasen-Inseln).
      */
-    fun of(w: Int, h: Int, panels: List<PanelRect>, holes: List<PanelRect> = emptyList()): RenderedPage {
-        val px = IntArray(w * h) { WHITE }
+    fun of(w: Int, h: Int, panels: List<PanelRect>, holes: List<PanelRect> = emptyList(), bg: Int = 0xFFFFFFFF.toInt()): RenderedPage {
+        val px = IntArray(w * h) { bg }
         fun fill(r: PanelRect, color: Int) {
             for (y in r.y until r.y + r.height) for (x in r.x until r.x + r.width) {
                 if (x in 0 until w && y in 0 until h) px[y * w + x] = color
             }
         }
         panels.forEach { fill(it, BLACK) }
-        holes.forEach { fill(it, WHITE) }
+        holes.forEach { fill(it, bg) }
         return RenderedPage(w, h, px)
     }
 }

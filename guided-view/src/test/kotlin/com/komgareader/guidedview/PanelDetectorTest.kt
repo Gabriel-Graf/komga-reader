@@ -58,4 +58,28 @@ class PanelDetectorTest {
         val page = SyntheticPage.of(1000, 800, listOf(panel, speck))
         assertEquals(1, det.detect(page, ReadingDirection.LEFT_TO_RIGHT).size)
     }
+
+    @Test
+    fun `Art ragt in die Gasse - Panels trennen trotzdem`() {
+        // Zwei Spalten mit 30px-Gasse (x=460..489). Ein Vorsprung aus dem linken Panel
+        // ragt bis x=474 in die Gasse, blockt sie aber NICHT ganz (weiß bleibt x=475..489).
+        // Der frühere XY-Cut wäre an der Tinte in dieser Spalte gescheitert; der Flood-Fill
+        // findet weiterhin einen weißen Durchgang und trennt.
+        val left = PanelRect(20, 20, 440, 760)        // 20..459
+        val right = PanelRect(490, 20, 490, 760)       // 490..979
+        val intrusion = PanelRect(460, 380, 15, 40)    // ragt in die Gasse, hängt am linken Panel
+        val page = SyntheticPage.of(1000, 800, listOf(left, right, intrusion))
+        val out = det.detect(page, ReadingDirection.LEFT_TO_RIGHT)
+        assertEquals(2, out.size, "Erwarte 2 getrennte Panels trotz Gassen-Vorsprung, war ${out.size}")
+    }
+
+    @Test
+    fun `Otsu segmentiert auch bei nicht-weißem Hintergrund`() {
+        // Hellgrauer Seitenhintergrund statt reinweiß: eine feste Schwelle (128) würde noch
+        // funktionieren, aber dies prüft, dass Otsu die Trennung adaptiv hinbekommt.
+        val panels = listOf(PanelRect(20, 20, 440, 760), PanelRect(500, 20, 480, 760))
+        val page = SyntheticPage.of(1000, 800, panels, bg = 0xFFD0D0D0.toInt())
+        val out = det.detect(page, ReadingDirection.LEFT_TO_RIGHT)
+        assertEquals(2, out.size, "Erwarte 2 Panels bei grauem Hintergrund, war ${out.size}")
+    }
 }

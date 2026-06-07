@@ -28,8 +28,13 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.outlined.Bookmark
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.automirrored.outlined.ViewList
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -718,6 +723,164 @@ private fun ChapterRow(
             ),
         )
     }
+}
+
+/**
+ * Kapitel als Kachel: eigenes Cover mit Status-/Aktions-Overlays in den Ecken.
+ * oben-rechts = Lesezeichen + „gelesen"-Häkchen, unten-rechts = Download/Löschen.
+ * Tap öffnet das Kapitel, Long-Press öffnet das Gelesen/Ungelesen-Menü (wie ChapterRow).
+ */
+@Composable
+private fun ChapterTile(
+    book: Book,
+    serverConfig: ServerConfig?,
+    isSelected: Boolean,
+    showBookmark: Boolean,
+    isLocal: Boolean,
+    isDownloading: Boolean,
+    onOpen: () -> Unit,
+    onDownload: () -> Unit,
+    onRemoveDownload: () -> Unit,
+    onSetRead: (Boolean) -> Unit,
+) {
+    val s = LocalStrings.current
+    val ctx = LocalContext.current
+    var menuOpen by remember { mutableStateOf(false) }
+    var tilePos by remember { mutableStateOf(Offset.Zero) }
+    var pressAnchor by remember { mutableStateOf(IntOffset.Zero) }
+    val coverUrl = serverConfig?.let { "${it.baseUrl}books/${book.remoteId}/thumbnail" }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.surface,
+            )
+            .onGloballyPositioned { tilePos = it.positionInWindow() }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onOpen() },
+                    onLongPress = { local ->
+                        pressAnchor = IntOffset(
+                            (tilePos.x + local.x).toInt(),
+                            (tilePos.y + local.y).toInt(),
+                        )
+                        menuOpen = true
+                    },
+                )
+            }
+            .padding(4.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+                .border(
+                    EinkTokens.hairline,
+                    MaterialTheme.colorScheme.outlineVariant,
+                    RoundedCornerShape(EinkTokens.tileRadius),
+                )
+                .clip(RoundedCornerShape(EinkTokens.tileRadius)),
+        ) {
+            if (coverUrl != null) {
+                val authHeaders = AuthHeaders.forCovers(serverConfig)
+                FilteredAsyncImage(
+                    model = ImageRequest.Builder(ctx)
+                        .data(coverUrl)
+                        .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                        .crossfade(false)
+                        .build(),
+                    contentDescription = book.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            // oben-rechts: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.
+            Column(
+                Modifier.align(Alignment.TopEnd).padding(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (showBookmark) CoverBadge {
+                    Icon(
+                        Icons.Outlined.Bookmark,
+                        contentDescription = s.resumeHere,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                if (book.readCompleted) CoverBadge {
+                    Icon(
+                        Icons.Outlined.Check,
+                        contentDescription = s.statusRead,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+            // unten-rechts: Download / Löschen / Lade-Spinner.
+            Box(Modifier.align(Alignment.BottomEnd).padding(4.dp)) {
+                when {
+                    isDownloading -> CoverBadge {
+                        LoadingIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    }
+                    isLocal -> CoverBadge(onClick = onRemoveDownload) {
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = s.removeDownload,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                    else -> CoverBadge(onClick = onDownload) {
+                        Icon(
+                            Icons.Outlined.CloudDownload,
+                            contentDescription = s.download,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            book.number?.let { "$it · ${book.title}" } ?: book.title,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+
+    if (menuOpen) {
+        EinkActionMenu(
+            anchor = pressAnchor,
+            onDismiss = { menuOpen = false },
+            items = listOf(
+                s.markRead to { onSetRead(true) },
+                s.markUnread to { onSetRead(false) },
+            ),
+        )
+    }
+}
+
+/**
+ * Opaker Eck-Chip auf dem Cover: solide Fläche + Hairline-Rahmen, damit Icons auf
+ * jedem (Kaleido-)Cover kontraststark bleiben. Optional klickbar (Download/Löschen).
+ */
+@Composable
+private fun CoverBadge(
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(6.dp)
+    val base = Modifier
+        .background(MaterialTheme.colorScheme.surface, shape)
+        .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, shape)
+    val sized = if (onClick != null) base.size(36.dp).clickable(onClick = onClick) else base.padding(4.dp)
+    Box(sized, contentAlignment = Alignment.Center) { content() }
 }
 
 /**

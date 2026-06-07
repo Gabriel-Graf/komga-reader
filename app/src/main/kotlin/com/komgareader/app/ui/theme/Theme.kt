@@ -4,10 +4,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
@@ -49,6 +51,26 @@ private val EinkShapes = Shapes(
     large = RoundedCornerShape(12.dp),
 )
 
+/**
+ * E-Ink-Typografie: Material-Default rendert Fließ- und Label-Text in [FontWeight.Normal] (400) —
+ * auf E-Ink (kein sub-pixel-Smoothing, gedämpfter Kontrast) wirkt das bei kleiner Schrift **zu
+ * dünn/blass** (Such-Placeholder, Kapitel-Untertitel, „Lädt…", leere-Tab-Platzhalter). Darum hier
+ * **zentral** die Gewichte anheben: Body → Medium (500), Labels + kleine Titel → SemiBold (600).
+ * Große Überschriften bleiben (Größe trägt den Kontrast). Eine Quelle der Wahrheit — kein
+ * `fontWeight` an jeder einzelnen `Text`-Stelle.
+ */
+private val Base = Typography()
+private val EinkTypography = Base.copy(
+    bodyLarge = Base.bodyLarge.copy(fontWeight = FontWeight.Medium),
+    bodyMedium = Base.bodyMedium.copy(fontWeight = FontWeight.Medium),
+    // bodySmall (kleinste sekundäre Texte) + Button-Labels brauchen auf E-Ink mehr Gewicht.
+    bodySmall = Base.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+    labelLarge = Base.labelLarge.copy(fontWeight = FontWeight.Bold),
+    labelMedium = Base.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+    labelSmall = Base.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+    titleSmall = Base.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+)
+
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
 @Composable
@@ -61,6 +83,7 @@ fun KomgaReaderTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composab
     MaterialTheme(
         colorScheme = if (dark) DarkEink else LightEink,
         shapes = EinkShapes,
+        typography = EinkTypography,
         content = content,
     )
 }

@@ -3,6 +3,8 @@ package com.komgareader.app.ui.series
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +16,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,7 +30,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bookmark
@@ -47,7 +52,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -70,6 +75,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -80,6 +86,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
@@ -103,6 +110,7 @@ fun SeriesDetailScreen(
     val localIds by viewModel.localBookIds.collectAsState()
     val downloadingIds by viewModel.downloadingIds.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
+    val downloadPercents by viewModel.bookDownloadPercent.collectAsState()
     val cancelling by viewModel.cancelling.collectAsState()
     val chapterViewMode by viewModel.chapterViewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -167,6 +175,7 @@ fun SeriesDetailScreen(
                     viewerModes = current.viewerModes,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
+                    downloadPercents = downloadPercents,
                     downloadProgress = downloadProgress,
                     cancelling = cancelling,
                     onOpenBook = onOpenBook,
@@ -218,6 +227,7 @@ private fun SeriesDetailContent(
     viewerModes: Map<String, String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
+    downloadPercents: Map<String, Int>,
     downloadProgress: DownloadProgress?,
     cancelling: Boolean,
     onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
@@ -263,6 +273,20 @@ private fun SeriesDetailContent(
                 ChapterInfoHero(
                     book = info,
                     serverConfig = serverConfig,
+                    genres = seriesGenres,
+                    contentType = contentType,
+                    isLocal = info.remoteId in localIds,
+                    isDownloading = info.remoteId in downloadingIds,
+                    downloadPercent = downloadPercents[info.remoteId] ?: 0,
+                    onRead = {
+                        onOpenChapter(info)
+                        onOpenBook(
+                            info.remoteId, info.pageCount, info.format.name, false,
+                            viewerModes[info.remoteId] ?: "PAGED",
+                        )
+                    },
+                    onDownload = { onDownload(info) },
+                    onRemoveDownload = { onRemoveDownload(info.remoteId) },
                     onBack = { infoBook = null },
                     modifier = Modifier.padding(12.dp),
                 )
@@ -316,6 +340,7 @@ private fun SeriesDetailContent(
                     showBookmark = book.remoteId == bookmarkBookId,
                     isLocal = book.remoteId in localIds,
                     isDownloading = book.remoteId in downloadingIds,
+                    downloadPercent = downloadPercents[book.remoteId] ?: 0,
                     onOpen = {
                         onOpenChapter(book)
                         onOpenBook(
@@ -350,7 +375,7 @@ private fun SeriesDetailContent(
                         onSetRead = { read -> onSetRead(book, read) },
                         onShowInfo = { infoBook = book },
                     )
-                    HorizontalDivider()
+                    HorizontalDivider(thickness = EinkTokens.hairline)
                 }
             }
         }
@@ -389,6 +414,7 @@ private fun SeriesHeroCard(
     val coverUrl = serverConfig?.let { "${it.baseUrl}series/$seriesRemoteId/thumbnail" }
     val statusText = status?.takeIf { it.isNotBlank() }?.let { s.localizedSeriesStatus(it) }
     val subtitle = listOfNotNull("$bookCount ${s.chapters}", statusText).joinToString(" · ")
+    var fullDescription by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = modifier
@@ -410,13 +436,14 @@ private fun SeriesHeroCard(
                     contentDescription = seriesTitle,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .width(140.dp)
-                        .aspectRatio(2f / 3f),
+                        .width(HERO_COVER_WIDTH)
+                        .height(HERO_COVER_HEIGHT),
                 )
             }
 
-            // Titel + Kapitel/Status + Genre-Chips (Endpadding lässt Platz fürs Burger-Icon)
-            Column(modifier = Modifier.weight(1f).padding(end = 36.dp)) {
+            // Titel + Status + Genres + Typ, darunter die Beschreibung (füllt bis zur Cover-Unterkante).
+            // Endpadding lässt Platz fürs Aktions-Icon oben rechts.
+            Column(modifier = Modifier.weight(1f).height(HERO_COVER_HEIGHT).padding(end = 36.dp)) {
                 Text(
                     seriesTitle,
                     style = MaterialTheme.typography.titleLarge,
@@ -436,6 +463,13 @@ private fun SeriesHeroCard(
                 // sonst „Unbekannt" (fällt beim Lesen auf paginiert zurück).
                 Spacer(Modifier.height(8.dp))
                 TypeChip(label = s.localizedContentType(contentType))
+                Spacer(Modifier.height(8.dp))
+                TruncatedDescription(
+                    text = description ?: s.noDescription,
+                    muted = description == null,
+                    onReadMore = { fullDescription = description },
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                )
             }
         }
             // Burger oben rechts in der Hero-Ecke: öffnet das Typ-Zuweisungs-Menü darunter.
@@ -453,18 +487,8 @@ private fun SeriesHeroCard(
                         )
                     },
             ) {
-                Icon(Icons.Filled.Menu, contentDescription = s.assignType)
+                Icon(Icons.Filled.MoreVert, contentDescription = s.assignType)
             }
-        }
-
-        // Beschreibung (Serie, Fallback ausgewähltes Buch) — nur wenn vorhanden
-        if (description != null) {
-            Spacer(Modifier.height(12.dp))
-            Text(
-                description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
         }
 
         // Aktionsschaltflächen: Lesen (primär) + Download/Entfernen-Toggle
@@ -480,7 +504,7 @@ private fun SeriesHeroCard(
                 when {
                     // Abbruch läuft: aktuelles Kapitel wird noch fertig geladen → Lade-Anzeige
                     // (E-Ink: „Lädt…", Smartphone: Spinner) statt Stop-Button.
-                    cancelling -> OutlinedButton(
+                    cancelling -> EinkOutlinedButton(
                         onClick = {},
                         enabled = false,
                         modifier = Modifier.weight(1f),
@@ -493,7 +517,7 @@ private fun SeriesHeroCard(
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        OutlinedButton(
+                        EinkOutlinedButton(
                             onClick = {},
                             enabled = false,
                             modifier = Modifier.weight(1f),
@@ -504,10 +528,15 @@ private fun SeriesHeroCard(
                             } else {
                                 ""
                             }
-                            Text("${p.current}/${p.total}$speed", maxLines = 1)
+                            // Voller Kontrast trotz disabled-Button (E-Ink: graues disabled = zu blass).
+                            Text(
+                                "${p.current}/${p.total}$speed",
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                         // Abbrechen-Rechteck rechts: stoppt den Serien-Download (kein weiteres Kapitel).
-                        OutlinedButton(
+                        EinkOutlinedButton(
                             onClick = onCancelDownload,
                             contentPadding = PaddingValues(0.dp),
                             modifier = Modifier.width(48.dp),
@@ -519,12 +548,12 @@ private fun SeriesHeroCard(
                             )
                         }
                     }
-                    allLocal -> OutlinedButton(onClick = onRemoveAll, modifier = Modifier.weight(1f)) {
+                    allLocal -> EinkOutlinedButton(onClick = onRemoveAll, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(s.removeDownload, maxLines = 1)
                     }
-                    else -> OutlinedButton(onClick = onDownloadAll, modifier = Modifier.weight(1f)) {
+                    else -> EinkOutlinedButton(onClick = onDownloadAll, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(s.downloadAll, maxLines = 1)
@@ -532,8 +561,14 @@ private fun SeriesHeroCard(
                 }
             }
         }
+        fullDescription?.let { desc ->
+            DescriptionModal(title = seriesTitle, text = desc, onDismiss = { fullDescription = null })
+        }
     }
 }
+
+private val HERO_COVER_WIDTH = 160.dp
+private val HERO_COVER_HEIGHT = 240.dp
 
 /**
  * Typ-Chip: gefüllt (solides Schwarz / invertiert) zur Abgrenzung von den outline-Genre-Chips.
@@ -664,16 +699,25 @@ private fun ChaptersSectionHeader(
 private fun ChapterInfoHero(
     book: Book,
     serverConfig: ServerConfig?,
+    genres: List<String>,
+    contentType: ContentType?,
+    isLocal: Boolean,
+    isDownloading: Boolean,
+    downloadPercent: Int,
+    onRead: () -> Unit,
+    onDownload: () -> Unit,
+    onRemoveDownload: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val s = LocalStrings.current
     val ctx = LocalContext.current
     val coverUrl = serverConfig?.let { "${it.baseUrl}books/${book.remoteId}/thumbnail" }
+    var fullDescription by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
             .padding(12.dp),
     ) {
         Box(Modifier.fillMaxWidth()) {
@@ -688,14 +732,28 @@ private fun ChapterInfoHero(
                             .build(),
                         contentDescription = book.title,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.width(140.dp).aspectRatio(2f / 3f),
+                        modifier = Modifier.width(HERO_COVER_WIDTH).height(HERO_COVER_HEIGHT),
                     )
                 }
-                Column(modifier = Modifier.weight(1f).padding(end = 36.dp)) {
+                // Genres + Typ bleiben wie beim Serien-Hero (ändern sich nicht pro Kapitel).
+                Column(modifier = Modifier.weight(1f).height(HERO_COVER_HEIGHT).padding(end = 36.dp)) {
                     Text(
                         book.number?.let { "$it · ${book.title}" } ?: book.title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
+                    )
+                    if (genres.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        GenreChips(genres = genres)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    TypeChip(label = s.localizedContentType(contentType))
+                    Spacer(Modifier.height(8.dp))
+                    TruncatedDescription(
+                        text = book.summary?.takeIf { it.isNotBlank() } ?: s.noDescription,
+                        muted = book.summary.isNullOrBlank(),
+                        onReadMore = { fullDescription = book.summary },
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                     )
                 }
             }
@@ -704,14 +762,104 @@ private fun ChapterInfoHero(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = s.backToSeries)
             }
         }
-        book.summary?.takeIf { it.isNotBlank() }?.let { summary ->
-            Spacer(Modifier.height(12.dp))
-            Text(
-                summary,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+        // Lese-/Download-Aktionen — beziehen sich auf dieses Kapitel.
+        Spacer(Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Button(onClick = onRead, modifier = Modifier.weight(1f)) {
+                Text(s.read, maxLines = 1)
+            }
+            when {
+                isDownloading -> EinkOutlinedButton(
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    // Fortschritt in % (≤1 fps) statt nur „Lädt"; Button behält Maße (weight 1f).
+                    // Voller Kontrast trotz disabled-Button (E-Ink: graues disabled = zu blass).
+                    Text("$downloadPercent%", maxLines = 1, color = MaterialTheme.colorScheme.onSurface)
+                }
+                isLocal -> EinkOutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(s.removeDownload, maxLines = 1)
+                }
+                else -> EinkOutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(s.download, maxLines = 1)
+                }
+            }
+        }
+        fullDescription?.let { desc ->
+            DescriptionModal(
+                title = book.number?.let { "$it · ${book.title}" } ?: book.title,
+                text = desc,
+                onDismiss = { fullDescription = null },
             )
         }
+    }
+}
+
+/**
+ * Beschreibung im Hero, neben dem Cover: füllt den Platz unter den Tags bis zur Cover-Unterkante.
+ * Passt der Text nicht, wird er mit „…" gekürzt und ein „Mehr lesen" eingeblendet, das den
+ * vollständigen Text in einem Readonly-Modal zeigt — der Hero behält so seine Form.
+ */
+@Composable
+private fun TruncatedDescription(
+    text: String,
+    muted: Boolean,
+    onReadMore: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val s = LocalStrings.current
+    val style = MaterialTheme.typography.bodyMedium
+    BoxWithConstraints(modifier) {
+        val density = LocalDensity.current
+        val lineHeightDp = with(density) { style.lineHeight.toDp() }
+        val fitLines = (maxHeight.value / lineHeightDp.value).toInt().coerceAtLeast(1)
+        var overflow by remember(text, fitLines) { mutableStateOf(false) }
+        Column(Modifier.fillMaxSize()) {
+            Text(
+                text,
+                style = style,
+                color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurface,
+                // Bei Überlauf eine Zeile für „Mehr lesen" reservieren.
+                maxLines = if (overflow) (fitLines - 1).coerceAtLeast(1) else fitLines,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { if (it.hasVisualOverflow) overflow = true },
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+            )
+            if (overflow) {
+                Text(
+                    s.readMore,
+                    style = style,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.clickable(onClick = onReadMore),
+                )
+            }
+        }
+    }
+}
+
+/** Readonly-Modal mit nur einem X oben — zeigt die vollständige Beschreibung, scrollbar. */
+@Composable
+private fun DescriptionModal(title: String, text: String, onDismiss: () -> Unit) {
+    val s = LocalStrings.current
+    EinkInfoDialog(title = title, onDismiss = onDismiss, closeLabel = s.close) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .heightIn(max = 420.dp)
+                .verticalScroll(rememberScrollState()),
+        )
     }
 }
 
@@ -765,7 +913,7 @@ private fun ChapterRow(
             Text(
                 book.title,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isSelected) FontWeight.Bold else null,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             val percent = readPercent(book)
@@ -783,15 +931,13 @@ private fun ChapterRow(
         // Status-/Aktions-Icons: Lesezeichen (Leseposition) · Häkchen (gelesen) · Cloud/Entfernen.
         // E-Ink: Gelesen wird als Häkchen-Logo gezeigt, nicht über Textfarbe.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (!book.summary.isNullOrBlank()) {
-                IconButton(onClick = onShowInfo, modifier = Modifier.size(36.dp)) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = s.chapterInfo,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+            IconButton(onClick = onShowInfo, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    Icons.Outlined.Info,
+                    contentDescription = s.chapterInfo,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
+                )
             }
             if (showBookmark) {
                 Icon(
@@ -858,6 +1004,7 @@ private fun ChapterTile(
     showBookmark: Boolean,
     isLocal: Boolean,
     isDownloading: Boolean,
+    downloadPercent: Int,
     onOpen: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
@@ -917,22 +1064,20 @@ private fun ChapterTile(
                     modifier = Modifier.fillMaxSize(),
                 )
             }
-            // oben-links: Info (Beschreibung), nur wenn vorhanden.
-            if (!book.summary.isNullOrBlank()) {
-                Box(Modifier.align(Alignment.TopStart).padding(4.dp)) {
-                    CoverBadge(onClick = onShowInfo) {
-                        Icon(
-                            Icons.Outlined.Info,
-                            contentDescription = s.chapterInfo,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
+            // oben-rechts: Info — öffnet immer die Kapitel-Beschreibung (auch wenn keine da ist).
+            Box(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+                CoverBadge(onClick = onShowInfo) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = s.chapterInfo,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
-            // oben-rechts: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.
+            // oben-links: Lesezeichen + Häkchen (nur was zutrifft), vertikal gestapelt.
             Column(
-                Modifier.align(Alignment.TopEnd).padding(4.dp),
+                Modifier.align(Alignment.TopStart).padding(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 if (showBookmark) CoverBadge {
@@ -956,7 +1101,11 @@ private fun ChapterTile(
             Box(Modifier.align(Alignment.BottomEnd).padding(4.dp)) {
                 when {
                     isDownloading -> CoverBadge {
-                        LoadingIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text(
+                            "$downloadPercent%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                     isLocal -> CoverBadge(onClick = onRemoveDownload) {
                         Icon(
@@ -991,7 +1140,7 @@ private fun ChapterTile(
         Text(
             book.number?.let { "$it · ${book.title}" } ?: book.title,
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            fontWeight = if (isSelected) FontWeight.Bold else null,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -1020,11 +1169,12 @@ private fun CoverBadge(
     content: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(6.dp)
-    val base = Modifier
+    var chip = Modifier
         .background(MaterialTheme.colorScheme.surface, shape)
         .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, shape)
-    val sized = if (onClick != null) base.size(36.dp).clickable(onClick = onClick) else base.padding(4.dp)
-    Box(sized, contentAlignment = Alignment.Center) { content() }
+    if (onClick != null) chip = chip.clickable(onClick = onClick)
+    // Chip umschließt das Icon eng (wie der Lesezeichen-Chip) — auch klickbar, kein fixes 36dp.
+    Box(chip.padding(4.dp), contentAlignment = Alignment.Center) { content() }
 }
 
 /**

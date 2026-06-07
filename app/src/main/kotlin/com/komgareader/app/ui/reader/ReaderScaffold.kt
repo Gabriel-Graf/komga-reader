@@ -3,6 +3,7 @@ package com.komgareader.app.ui.reader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,7 +41,7 @@ fun ReaderScaffold(
     background: Color = Color.Black,
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
     tapModifier: Modifier? = null,
-    footer: (@Composable () -> Unit)? = null,
+    footer: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val chromeVisible by chrome.chromeVisible.collectAsState()

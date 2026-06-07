@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -182,9 +183,13 @@ fun NovelReaderScreen(
  * Status-Fuß des Roman-Readers: Fortschritt in %, Seite X / N und der Titel des
  * aktuellen Kapitels (sofern vorhanden). Flach, ohne Schatten — eine schmale,
  * halbtransparente Leiste am unteren Rand. Alle Texte lokalisiert ([LocalStrings]).
+ *
+ * [BoxScope]-Erweiterung: die Leiste richtet sich nur am unteren Rand des Scaffolds
+ * aus (`align(BottomCenter)`) — **kein** `fillMaxSize`-Box, der sonst über den ganzen
+ * Reader läge und die Tap-Zonen-Gesten schlucken würde.
  */
 @Composable
-private fun NovelStatusFooter(
+private fun BoxScope.NovelStatusFooter(
     progressPercent: Int,
     currentPage: Int,
     pageCount: Int,
@@ -192,36 +197,34 @@ private fun NovelStatusFooter(
 ) {
     val strings = LocalStrings.current
     val pageLabel = "${strings.novelPageOfCount} ${currentPage + 1} / ${pageCount.coerceAtLeast(1)}"
-    Box(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(Color.LightGray.copy(alpha = 0.85f))
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    Row(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .background(Color.LightGray.copy(alpha = 0.85f))
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "$progressPercent %",
+            color = Color.Black,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            text = pageLabel,
+            color = Color.Black,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        if (!chapterTitle.isNullOrBlank()) {
             Text(
-                text = "$progressPercent %",
+                text = chapterTitle,
                 color = Color.Black,
                 style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
-            Text(
-                text = pageLabel,
-                color = Color.Black,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            if (!chapterTitle.isNullOrBlank()) {
-                Text(
-                    text = chapterTitle,
-                    color = Color.Black,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-            }
         }
     }
 }

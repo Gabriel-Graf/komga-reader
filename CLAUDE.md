@@ -44,5 +44,6 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 - `@.claude/rules/source-extensibility.md` — neue Server/Metadaten quellen-agnostisch hinzufügen (Schritt-für-Schritt)
 - `@.claude/rules/eink-design-language.md` — die E-Ink-Designsprache verbatim
 - `@.claude/rules/roadmap-and-invariants.md` — Phasen P1–P4, was noch kommt, was nicht aus den Augen verloren werden darf
+- `@.claude/rules/shared-structure-before-variants.md` — Gemeinsames vor der N-ten Variante extrahieren (schon beim Planen mitdenken)
 
 > Lizenz: **AGPL-3.0-or-later** (MuPDF ist AGPL). Jede Verteilung legt den Quellcode offen. `LICENSE`/`NOTICE` im Root.

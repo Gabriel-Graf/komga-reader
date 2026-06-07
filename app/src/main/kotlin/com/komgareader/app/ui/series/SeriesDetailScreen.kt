@@ -229,6 +229,9 @@ private fun SeriesDetailContent(
     var chaptersExpanded by rememberSaveable { mutableStateOf(true) }
 
     val currentBook = books.firstOrNull { it.remoteId == selectedBook } ?: books.firstOrNull()
+    // Genau EIN Lesezeichen: am weitesten gelesenen Kapitel (letztes mit Leseposition in
+    // Lesereihenfolge). Springt man von Kapitel 1 zu 5, wandert es zu 5 — kein Sammeln.
+    val bookmarkBookId = books.lastOrNull { it.lastReadPage != null }?.remoteId
     // Beschreibung: Serien-Summary hat Vorrang, sonst Summary des ausgewählten Buchs.
     val description = seriesSummary?.takeIf { it.isNotBlank() }
         ?: currentBook?.summary?.takeIf { it.isNotBlank() }
@@ -290,6 +293,7 @@ private fun SeriesDetailContent(
                         ChapterRow(
                             book = book,
                             isSelected = book.remoteId == currentBook?.remoteId,
+                            showBookmark = book.remoteId == bookmarkBookId,
                             isLocal = book.remoteId in localIds,
                             isDownloading = book.remoteId in downloadingIds,
                             onOpen = {
@@ -610,6 +614,7 @@ private fun ChaptersSectionHeader(
 private fun ChapterRow(
     book: Book,
     isSelected: Boolean,
+    showBookmark: Boolean,
     isLocal: Boolean,
     isDownloading: Boolean,
     onOpen: () -> Unit,
@@ -621,9 +626,6 @@ private fun ChapterRow(
     var menuOpen by remember { mutableStateOf(false) }
     var rowPos by remember { mutableStateOf(Offset.Zero) }
     var pressAnchor by remember { mutableStateOf(IntOffset.Zero) }
-    // Lesezeichen, sobald eine Leseposition existiert — bleibt auch nach „gelesen" sichtbar
-    // (drei Zeichen: Lesezeichen · Häkchen · Cloud/Delete).
-    val showBookmark = book.lastReadPage != null
 
     Row(
         Modifier

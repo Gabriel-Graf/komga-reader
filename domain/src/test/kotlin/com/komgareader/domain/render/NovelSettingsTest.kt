@@ -35,12 +35,12 @@ class NovelSettingsTest {
 
     @Test fun `margin-preset NORMAL ergibt normale Raender`() {
         val cfg = NovelSettings(marginPreset = "NORMAL").toReflowConfig()
-        assertEquals(Margins(24, 24, 24, 24), cfg.margin)
+        assertEquals(Margins(25, 25, 25, 25), cfg.margin)
     }
 
     @Test fun `margin-preset WIDE ergibt breite Raender`() {
         val cfg = NovelSettings(marginPreset = "WIDE").toReflowConfig()
-        assertEquals(Margins(48, 48, 48, 48), cfg.margin)
+        assertEquals(Margins(50, 50, 50, 50), cfg.margin)
     }
 
     @Test fun `unbekanntes margin-preset faellt auf NORMAL zurueck`() {

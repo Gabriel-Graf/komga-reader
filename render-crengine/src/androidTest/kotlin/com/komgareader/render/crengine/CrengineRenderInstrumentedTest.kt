@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.komgareader.domain.render.Hyphenation
+import com.komgareader.domain.render.Margins
 import com.komgareader.domain.render.ReflowConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -188,6 +189,68 @@ class CrengineRenderInstrumentedTest {
                 pagesLarge > pagesSmall,
             )
         }
+    }
+
+    /**
+     * Beweis, dass die Seitenränder tatsächlich auf das gerenderte Bild wirken
+     * (Regression für BUG 2): Der linke Inhaltsrand des **Textkörpers** liegt bei
+     * WIDE weiter rechts als bei NARROW. Schlägt fehl, solange der Bridge
+     * `view->Render(width, height)` statt `view->Render(0, 0)` aufruft — denn nur
+     * bei 0,0 leitet LVDocView die Layoutbreite aus der Seitenfläche ABZÜGLICH der
+     * Ränder ab; mit den vollen Viewport-Maßen wird der Text über die volle Breite
+     * gesetzt und der linke Rand bleibt für NARROW wie WIDE identisch.
+     *
+     * px-Werte (12/50) müssen in der crengine-ng-Erlaubnisliste liegen, sonst setzt
+     * `limitValueList` sie still auf 8 zurück (siehe [NovelSettings.marginFor]).
+     */
+    @Test
+    fun seitenraender_verschieben_den_linken_inhaltsrand() {
+        initFontManager()
+        val narrow = Margins(top = 12, bottom = 12, left = 12, right = 12)
+        val wide = Margins(top = 50, bottom = 50, left = 50, right = 50)
+
+        val narrowEdge = openDocument().use { doc ->
+            doc.applyLayout(ReflowConfig(margin = narrow))
+            firstTextColumnInBand(doc.renderPage(0, zoom = 1f, rotation = 0))
+        }
+        val wideEdge = openDocument().use { doc ->
+            doc.applyLayout(ReflowConfig(margin = wide))
+            firstTextColumnInBand(doc.renderPage(0, zoom = 1f, rotation = 0))
+        }
+
+        assertTrue("NARROW hat Text im Band (linker Rand gefunden), war $narrowEdge", narrowEdge >= 0)
+        assertTrue("WIDE hat Text im Band (linker Rand gefunden), war $wideEdge", wideEdge >= 0)
+        assertTrue(
+            "WIDE-Margin muss den Text-Inhaltsrand weiter nach rechts schieben " +
+                "(NARROW=$narrowEdge, WIDE=$wideEdge)",
+            wideEdge > narrowEdge,
+        )
+    }
+
+    /**
+     * Linkester Spaltenindex, in dem der **Textkörper** beginnt (linker Inhaltsrand).
+     * Gemessen in einem schmalen vertikalen Band (Zeilen 100..400) statt über die ganze
+     * Höhe — so triggern Kopf-/Fußzeilen-Dekorationen am Seitenrand (die unabhängig vom
+     * Inhaltsrand am linken Bildrand liegen) den gemessenen Rand nicht fälschlich.
+     */
+    private fun firstTextColumnInBand(
+        page: com.komgareader.domain.render.RenderedPage,
+        bandTop: Int = 100,
+        bandBottom: Int = 400,
+    ): Int {
+        val w = page.width
+        val top = bandTop.coerceIn(0, page.height)
+        val bottom = bandBottom.coerceIn(top, page.height)
+        for (x in 0 until w) {
+            for (y in top until bottom) {
+                val argb = page.pixels[y * w + x]
+                val r = (argb shr 16) and 0xff
+                val g = (argb shr 8) and 0xff
+                val b = argb and 0xff
+                if ((r + g + b) / 3 < 80) return x
+            }
+        }
+        return -1
     }
 
     @Test

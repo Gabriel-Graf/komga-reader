@@ -195,6 +195,11 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeApplyLayout(
     view->propsUpdateDefaults(props);
     view->propsApply(props);
 
+    // propsApply liest die PROP_PAGE_MARGIN_* bereits über updatePageMargins() in
+    // m_pageMargins ein; dieser Aufruf hält das defensiv konsistent, falls die
+    // Margin-Props ohne Wertänderung erneut gesetzt werden.
+    view->updatePageMargins();
+
     // Font size is set directly (it is scaled for DPI internally).
     if (fontSizePx > 0)
         view->setFontSize(fontSizePx);
@@ -204,7 +209,13 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeApplyLayout(
     view->setStyleSheet(lString8(css));
     env->ReleaseStringUTFChars(jUserCss, css);
 
-    view->Render(width, height);
+    // WICHTIG: Render(0, 0) — nicht Render(width, height). Nur bei dx==0/dy==0
+    // leitet LVDocView::Render die Inhalts-Layoutbreite aus der Seitenfläche
+    // ABZÜGLICH der Seitenränder (m_pageMargins) ab. Mit den vollen Viewport-Maßen
+    // würde der Text über die volle Breite gesetzt und die Ränder blieben wirkungslos
+    // (linker Inhaltsrand verschob sich nicht). Resize(width,height) oben hat die
+    // Seitenfläche bereits gesetzt, also ergibt 0,0 die ränder-bewusste Geometrie.
+    view->Render(0, 0);
 }
 
 /* Page count of the currently laid-out document. */

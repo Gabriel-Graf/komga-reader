@@ -48,6 +48,18 @@ interface BrowsableSource : MediaSource {
     suspend fun pages(bookRemoteId: String): List<PageRef>
     /** Liefert die rohen Bytes einer Seite (Stream) oder des Buchs (Download). */
     suspend fun openPage(ref: PageRef): ByteArray
+
+    /**
+     * Lädt die komplette Buchdatei (z.B. EPUB/CBZ) als rohe Bytes. Für Reader, die das
+     * ganze Dokument brauchen (Reflow, MuPDF) statt seitenweisem Streaming über [openPage].
+     */
+    suspend fun downloadFile(bookRemoteId: String): ByteArray
+
+    /**
+     * Löst auf, zu welcher Serie ein Buch gehört (für die Kapitel-Liste des Webtoon-Strips).
+     * Gibt die quellen-interne Serien-`remoteId` zurück.
+     */
+    suspend fun seriesIdOf(bookRemoteId: String): String
 }
 
 /** Quelle, die Lese-Fortschritt server-seitig synchronisieren kann (z.B. Komga). */

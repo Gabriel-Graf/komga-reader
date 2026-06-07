@@ -68,7 +68,7 @@ class OpdsSource internal constructor(
     /**
      * Lädt das Buch über den Acquisition-Link herunter und liefert die rohen Bytes.
      */
-    suspend fun downloadFile(bookRemoteId: String): ByteArray {
+    override suspend fun downloadFile(bookRemoteId: String): ByteArray {
         val entries = fetchFeed(catalogUrl)
         val entry = entries.firstOrNull { it.id == bookRemoteId }
             ?: error("Kein OPDS-Eintrag mit ID '$bookRemoteId' gefunden")
@@ -86,6 +86,13 @@ class OpdsSource internal constructor(
             }
         }
     }
+
+    /**
+     * In einem flachen OPDS-Katalog trägt derselbe Atom-Eintrag sowohl die Serie als auch
+     * das Buch — die `remoteId` des Buchs ist zugleich die der Serie. Daher ist die
+     * Serien-ID schlicht die übergebene Buch-ID.
+     */
+    override suspend fun seriesIdOf(bookRemoteId: String): String = bookRemoteId
 
     private suspend fun fetchFeed(url: String): List<OpdsEntry> = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(url).build()

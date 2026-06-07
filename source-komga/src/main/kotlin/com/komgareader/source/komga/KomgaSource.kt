@@ -74,6 +74,9 @@ class KomgaSource internal constructor(
     override suspend fun openPage(ref: PageRef): ByteArray =
         api.getPage(ref.bookRemoteId, ref.pageNumber).bytes()
 
+    override suspend fun downloadFile(bookRemoteId: String): ByteArray =
+        downloadFile(bookRemoteId, onProgress = { _, _ -> })
+
     /**
      * Lädt die ganze Buchdatei. [onProgress] meldet `(gelesene Bytes, Gesamtbytes)`
      * fortlaufend während des Streams — Gesamtbytes ist `-1`, wenn der Server keine
@@ -81,7 +84,7 @@ class KomgaSource internal constructor(
      */
     suspend fun downloadFile(
         bookRemoteId: String,
-        onProgress: (read: Long, total: Long) -> Unit = { _, _ -> },
+        onProgress: (read: Long, total: Long) -> Unit,
     ): ByteArray {
         val body = api.getFile(bookRemoteId)
         val total = body.contentLength()
@@ -100,8 +103,7 @@ class KomgaSource internal constructor(
         return sink.toByteArray()
     }
 
-    /** Auflösen, zu welcher Serie ein Buch gehört (für die Kapitel-Liste des Webtoon-Strips). */
-    suspend fun seriesIdOf(bookRemoteId: String): String =
+    override suspend fun seriesIdOf(bookRemoteId: String): String =
         api.getBook(bookRemoteId).seriesId
 
     override suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress) {

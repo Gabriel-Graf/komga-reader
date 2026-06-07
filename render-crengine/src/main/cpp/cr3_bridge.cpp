@@ -70,7 +70,10 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeInit(
     HyphMan::initDictionaries(lString32::empty_str);
     HyphMan::activateDictionary(lString32(HYPH_DICT_ID_NONE));
 
-    return (registered && fontMan->GetFontCount() > 0) ? JNI_TRUE : JNI_FALSE;
+    // Idempotent: a repeated nativeInit re-registers the same font and gets
+    // 'false' back (already known) — that is not a failure. The real success
+    // condition is that the font manager ends up with at least one usable font.
+    return (fontMan->GetFontCount() > 0) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

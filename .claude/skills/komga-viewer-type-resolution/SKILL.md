@@ -8,7 +8,7 @@ description: Use when touching Viewer-/Reader-Mode selection in the Komga-Reader
 `ResolveViewerType(series, book, fallback)` — Reihenfolge NICHT ändern:
 
 1. `series.contentTypeOverride` → map
-2. `book.format == EPUB` → EPUB
+2. `book.format == EPUB` → NOVEL
 3. `readingDirection ∈ {VERTICAL, WEBTOON}` → WEBTOON
 4. `fallback (shelf.defaultContentType)` → map
 5. `book.format ∈ {CBZ, CBR, PDF}` → PAGED
@@ -19,14 +19,19 @@ liegen fast immer als CBZ vor; ein explizites WEBTOON-Bibliothek-Tag muss den
 Format-Default (PAGED) schlagen, sonst bliebe der Bibliotheks-Default für Comics
 wirkungslos (CBZ erzwänge sonst immer PAGED).
 
-`map`: MANGA/COMIC → PAGED, WEBTOON → WEBTOON, NOVEL → EPUB.
+`map`: MANGA/COMIC → PAGED, WEBTOON → WEBTOON, NOVEL → NOVEL.
 
 Komga `readingDirection`: `LEFT_TO_RIGHT → LTR`, `RIGHT_TO_LEFT → RTL`,
 `VERTICAL → VERTICAL`, `WEBTOON → WEBTOON`, sonst `null`. EPUB/Novel =
 `BookFormat.EPUB` (mediaProfile), **nicht** Leserichtung.
 
-App: `ViewerMode` nur `PAGED`/`WEBTOON`; `ViewerType.EPUB`/`PAGED` → `ViewerMode.PAGED`,
-`ViewerType.WEBTOON` → `ViewerMode.WEBTOON`. EPUB-Buch wählt Reader per Format.
+App: `ViewerMode` nur `PAGED`/`WEBTOON`; `ViewerType.NOVEL`/`EPUB`/`PAGED` → `ViewerMode.PAGED`,
+`ViewerType.WEBTOON` → `ViewerMode.WEBTOON`. Reflowbares Buch wählt Reader per Format.
+
+`ViewerType.EPUB` ist Legacy (alter EPUB-Viewer wird ausgemustert) und wird in
+Phase 4 mit der NovelReader-Migration entfernt; reflowbare Bücher lösen jetzt
+nach `ViewerType.NOVEL` auf. Die NovelReader-Verdrahtung folgt in Phase 4 — bis
+dahin fällt `NOVEL` über den `else`-Zweig auf `ViewerMode.PAGED` zurück.
 
 Auflösung passiert pro Buch in `SeriesDetailViewModel` (Fallback aus
 `Shelf.defaultContentType`, per `shelfId` nachgeschlagen).

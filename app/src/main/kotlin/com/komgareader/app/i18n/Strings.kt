@@ -108,6 +108,8 @@ interface Strings {
     val colorFilterPreview: String
     val colorFilterCopySuffix: String
     val colorFilterNewProfile: String
+    val colorFilterPrevImage: String
+    val colorFilterNextImage: String
     val close: String
 }
 
@@ -218,6 +220,8 @@ object StringsDe : Strings {
     override val colorFilterPreview = "Vorschau"
     override val colorFilterCopySuffix = " (Kopie)"
     override val colorFilterNewProfile = "Neues Profil"
+    override val colorFilterPrevImage = "Vorheriges"
+    override val colorFilterNextImage = "Nächstes"
     override val close = "Schließen"
 }
 
@@ -328,6 +332,8 @@ object StringsEn : Strings {
     override val colorFilterPreview = "Preview"
     override val colorFilterCopySuffix = " (copy)"
     override val colorFilterNewProfile = "New profile"
+    override val colorFilterPrevImage = "Previous"
+    override val colorFilterNextImage = "Next"
     override val close = "Close"
 }
 

@@ -1,6 +1,7 @@
 package com.komgareader.app.ui.settings
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,10 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -75,20 +81,33 @@ fun ColorFilterSettingsScreen(
                         .apply { p.headers.forEach { addHeader(it.key, it.value) } }
                         .crossfade(false).build()
                 }
-                Box(
-                    Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
+                Box(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    // Crop füllt den 2:3-Rahmen (keine weißen Letterbox-Balken oben/unten).
                     FilteredAsyncImage(
                         model = request,
                         contentDescription = s.colorFilterPreview,
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.Crop,
                         colorFilterOverride = previewProfile.toColorFilterOrNull(),
                         useOverride = true,
                         modifier = Modifier
+                            .align(Alignment.Center)
                             .fillMaxWidth(0.5f)
                             .aspectRatio(2f / 3f)
+                            .clip(RoundedCornerShape(4.dp))
                             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
+                    )
+                    // Bild-Navigation: in den Seitenrändern, vertikal mittig neben dem Cover.
+                    PreviewNavButton(
+                        icon = Icons.AutoMirrored.Outlined.ArrowBack,
+                        label = s.colorFilterPrevImage,
+                        onClick = { viewModel.previousPreview() },
+                        modifier = Modifier.align(Alignment.CenterStart),
+                    )
+                    PreviewNavButton(
+                        icon = Icons.AutoMirrored.Outlined.ArrowForward,
+                        label = s.colorFilterNextImage,
+                        onClick = { viewModel.nextPreview() },
+                        modifier = Modifier.align(Alignment.CenterEnd),
                     )
                 }
             }
@@ -193,6 +212,26 @@ private fun InfoValueRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth()) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         Text(value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/** Kleiner beschrifteter Pfeil-Button (Icon über Text) zum Durchblättern der Vorschau-Cover. */
+@Composable
+private fun PreviewNavButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall)
     }
 }
 

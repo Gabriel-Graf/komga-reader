@@ -49,16 +49,37 @@ class ColorFilterViewModel @Inject constructor(
     private val _preview = MutableStateFlow<PreviewCover?>(null)
     val preview: StateFlow<PreviewCover?> = _preview
 
+    // Kandidaten-Cover + Header für die Vorschau; Verlauf der zuvor gezeigten Bilder. Beides nur
+    // im Speicher — beim Schließen der Settings (ViewModel weg) bewusst verworfen.
+    private var candidates: List<String> = emptyList()
+    private var headers: Map<String, String> = emptyMap()
+    private val history = ArrayDeque<String>()
+
     init { loadPreviewCover() }
 
     private fun loadPreviewCover() = viewModelScope.launch {
         val config = servers.config.first() ?: return@launch
         val source = sourceProvider.from(config) ?: return@launch
-        runCatching { source.browse(0, SourceFilter()).items }
+        headers = AuthHeaders.forCovers(config)
+        candidates = runCatching { source.browse(0, SourceFilter()).items }
             .getOrNull()
             ?.mapNotNull { it.coverUrl }
-            ?.randomOrNull()
-            ?.let { url -> _preview.value = PreviewCover(url, AuthHeaders.forCovers(config)) }
+            ?: emptyList()
+        candidates.randomOrNull()?.let { _preview.value = PreviewCover(it, headers) }
+    }
+
+    /** Nächstes, zufällig anderes Vorschau-Cover; das aktuelle wandert in den Verlauf. */
+    fun nextPreview() {
+        val current = _preview.value?.url
+        val next = candidates.filter { it != current }.randomOrNull() ?: return
+        if (current != null) history.addLast(current)
+        _preview.value = PreviewCover(next, headers)
+    }
+
+    /** Vorheriges Vorschau-Cover aus dem Verlauf (no-op, wenn keiner vorhanden). */
+    fun previousPreview() {
+        val prev = history.removeLastOrNull() ?: return
+        _preview.value = PreviewCover(prev, headers)
     }
 
     fun setActive(id: Long) = viewModelScope.launch { colorProfiles.setActive(id) }

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.komgareader.app.ui.theme.EinkTokens
 
 /**
@@ -79,10 +80,12 @@ fun EinkInfoDialog(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    // usePlatformDefaultWidth=false + schmale Surface → kompaktes, inhaltsgerechtes Modal
+    // (der Default-Dialog wäre für die wenigen Werte unnötig breit).
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
             modifier = modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.6f)
                 .border(
                     EinkTokens.strongBorder,
                     MaterialTheme.colorScheme.outline,

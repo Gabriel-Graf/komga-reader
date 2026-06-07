@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SettingEntity::class, ServerEntity::class, DownloadEntity::class,
         ShelfEntity::class, SeriesOverrideEntity::class, ReadProgressEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -132,5 +132,13 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
                 PRIMARY KEY(`bookRemoteId`)
             )""",
         )
+    }
+}
+
+/** v8 → v9: Serien-Metadaten (Titel/Cover) am Download für Offline-Browsing. */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesTitle` TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesCoverUrl` TEXT")
     }
 }

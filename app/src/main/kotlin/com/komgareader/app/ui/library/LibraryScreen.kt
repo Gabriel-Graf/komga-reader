@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudQueue
+import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material3.Button
 import com.komgareader.app.ui.components.LoadingIndicator
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val localSeriesIds by viewModel.localSeriesIds.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -78,6 +80,7 @@ fun LibraryScreen(
         BrowseTab(
             state = state,
             query = query,
+            localSeriesIds = localSeriesIds,
             onOpenSeries = onOpenSeries,
             onRefresh = viewModel::refresh,
             onDownload = viewModel::downloadSeries,
@@ -90,6 +93,7 @@ fun LibraryScreen(
 private fun BrowseTab(
     state: LibraryUiState,
     query: String,
+    localSeriesIds: Set<String>,
     onOpenSeries: (seriesId: String) -> Unit,
     onRefresh: () -> Unit,
     onDownload: (Series) -> Unit,
@@ -138,6 +142,7 @@ private fun BrowseTab(
                         SeriesCover(
                             series = series,
                             serverConfig = current.serverConfig,
+                            isLocal = series.remoteId in localSeriesIds,
                             onClick = { onOpenSeries(series.remoteId) },
                             onLongClick = { onDownload(series) },
                         )
@@ -153,6 +158,7 @@ private fun BrowseTab(
 private fun SeriesCover(
     series: Series,
     serverConfig: ServerConfig?,
+    isLocal: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
 ) {
@@ -188,7 +194,8 @@ private fun SeriesCover(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Outlined.CloudQueue,
+                // Lokal vorhanden → Download-Logo; sonst Cloud (nur online verfügbar).
+                if (isLocal) Icons.Outlined.DownloadDone else Icons.Outlined.CloudQueue,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurface,

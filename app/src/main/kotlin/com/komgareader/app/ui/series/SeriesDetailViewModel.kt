@@ -259,6 +259,8 @@ class SeriesDetailViewModel @Inject constructor(
             val total = books.size
             val pending = books.filter { it.remoteId !in localBookIds.value }
             var done = total - pending.size
+            val seriesTitle = (state.value as? SeriesDetailUiState.Content)?.seriesTitle ?: seriesId
+            val seriesCover = "${config.baseUrl}series/$seriesId/thumbnail"
             // Geschwindigkeit über ein gleitendes 1-Sekunden-Fenster, das über Kapitelgrenzen
             // hinweg weiterläuft — der zuletzt berechnete Wert bleibt sichtbar, bis ein neuer kommt.
             var windowStart = android.os.SystemClock.elapsedRealtime()
@@ -292,6 +294,8 @@ class SeriesDetailViewModel @Inject constructor(
                                 format = book.format.name,
                                 totalPages = book.pageCount,
                                 bytes = bytes,
+                                seriesTitle = seriesTitle,
+                                seriesCoverUrl = seriesCover,
                             )
                         }
                     }.onFailure { e ->
@@ -359,6 +363,8 @@ class SeriesDetailViewModel @Inject constructor(
                         format = book.format.name,
                         totalPages = book.pageCount,
                         bytes = bytes,
+                        seriesTitle = (state.value as? SeriesDetailUiState.Content)?.seriesTitle ?: seriesId,
+                        seriesCoverUrl = "${config.baseUrl}series/$seriesId/thumbnail",
                     )
                     Log.i(TAG, "Download gespeichert: ${book.title} (${bytes.size} Bytes)")
                 }

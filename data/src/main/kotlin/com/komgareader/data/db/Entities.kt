@@ -73,4 +73,6 @@ data class DownloadEntity(
     val format: String,
     val localPath: String,
     val totalPages: Int,
+    val seriesTitle: String = "",
+    val seriesCoverUrl: String? = null,
 )

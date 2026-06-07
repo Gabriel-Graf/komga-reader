@@ -907,7 +907,7 @@ private fun ChapterRow(
             Text(
                 book.title,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isSelected) FontWeight.Bold else null,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             val percent = readPercent(book)
@@ -1134,7 +1134,7 @@ private fun ChapterTile(
         Text(
             book.number?.let { "$it · ${book.title}" } ?: book.title,
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            fontWeight = if (isSelected) FontWeight.Bold else null,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,

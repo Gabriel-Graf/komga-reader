@@ -63,8 +63,9 @@ private val Base = Typography()
 private val EinkTypography = Base.copy(
     bodyLarge = Base.bodyLarge.copy(fontWeight = FontWeight.Medium),
     bodyMedium = Base.bodyMedium.copy(fontWeight = FontWeight.Medium),
-    bodySmall = Base.bodySmall.copy(fontWeight = FontWeight.Medium),
-    labelLarge = Base.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+    // bodySmall (kleinste sekundäre Texte) + Button-Labels brauchen auf E-Ink mehr Gewicht.
+    bodySmall = Base.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+    labelLarge = Base.labelLarge.copy(fontWeight = FontWeight.Bold),
     labelMedium = Base.labelMedium.copy(fontWeight = FontWeight.SemiBold),
     labelSmall = Base.labelSmall.copy(fontWeight = FontWeight.SemiBold),
     titleSmall = Base.titleSmall.copy(fontWeight = FontWeight.SemiBold),

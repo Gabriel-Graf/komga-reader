@@ -1,10 +1,5 @@
 package com.komgareader.app.ui.series
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,13 +26,16 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.automirrored.outlined.ViewList
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import com.komgareader.app.ui.components.LoadingIndicator
-import com.komgareader.app.ui.components.LocalEinkMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -80,6 +78,7 @@ import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.i18n.localizedContentType
 import com.komgareader.app.i18n.localizedSeriesStatus
 import com.komgareader.domain.model.Book
@@ -99,6 +98,7 @@ fun SeriesDetailScreen(
     val downloadingIds by viewModel.downloadingIds.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
     val cancelling by viewModel.cancelling.collectAsState()
+    val chapterViewMode by viewModel.chapterViewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var typeMenuOpen by remember { mutableStateOf(false) }
     var burgerAnchor by remember { mutableStateOf(IntOffset.Zero) }
@@ -173,6 +173,10 @@ fun SeriesDetailScreen(
                     onSetRead = viewModel::setRead,
                     onOpenTypeMenu = { typeMenuOpen = true },
                     onTypeMenuAnchor = { burgerAnchor = it },
+                    gridMode = chapterViewMode == "GRID",
+                    onToggleViewMode = {
+                        viewModel.setChapterViewMode(if (chapterViewMode == "GRID") "LIST" else "GRID")
+                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
@@ -220,13 +224,14 @@ private fun SeriesDetailContent(
     onSetRead: (Book, Boolean) -> Unit,
     onOpenTypeMenu: () -> Unit,
     onTypeMenuAnchor: (IntOffset) -> Unit,
+    gridMode: Boolean,
+    onToggleViewMode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // „Weiterlesen": erstes noch nicht abgeschlossenes Kapitel (laufendes oder nächstes
     // ungelesenes); sind alle gelesen, das erste. So öffnet „Lesen" das richtige Kapitel.
     val continueBookId = books.firstOrNull { !it.readCompleted }?.remoteId ?: books.firstOrNull()?.remoteId
     var selectedBook by rememberSaveable(books) { mutableStateOf(continueBookId) }
-    var chaptersExpanded by rememberSaveable { mutableStateOf(true) }
 
     val currentBook = books.firstOrNull { it.remoteId == selectedBook } ?: books.firstOrNull()
     // Genau EIN Lesezeichen: am weitesten gelesenen Kapitel (letztes mit Leseposition in
@@ -270,45 +275,35 @@ private fun SeriesDetailContent(
             )
         }
 
-        // Kollabierbare Kapitelliste
         item {
             ChaptersSectionHeader(
                 count = books.size,
-                expanded = chaptersExpanded,
-                onToggle = { chaptersExpanded = !chaptersExpanded },
+                gridMode = gridMode,
+                onToggleViewMode = onToggleViewMode,
             )
         }
 
         item {
-            // E-Ink: kein Bewegungs-Effekt (Ghosting) → sofortiges Auf-/Zuklappen.
-            // Smartphone: vertikales Falten von oben (kein Diagonal-Schrumpfen in die Ecke).
-            val eink = LocalEinkMode.current
-            AnimatedVisibility(
-                visible = chaptersExpanded,
-                enter = if (eink) EnterTransition.None else expandVertically(expandFrom = Alignment.Top),
-                exit = if (eink) ExitTransition.None else shrinkVertically(shrinkTowards = Alignment.Top),
-            ) {
-                Column {
-                    books.forEach { book ->
-                        ChapterRow(
-                            book = book,
-                            isSelected = book.remoteId == currentBook?.remoteId,
-                            showBookmark = book.remoteId == bookmarkBookId,
-                            isLocal = book.remoteId in localIds,
-                            isDownloading = book.remoteId in downloadingIds,
-                            onOpen = {
-                                onOpenChapter(book)
-                                onOpenBook(
-                                    book.remoteId, book.pageCount, book.format.name, false,
-                                    viewerModes[book.remoteId] ?: "PAGED",
-                                )
-                            },
-                            onDownload = { onDownload(book) },
-                            onRemoveDownload = { onRemoveDownload(book.remoteId) },
-                            onSetRead = { read -> onSetRead(book, read) },
-                        )
-                        HorizontalDivider()
-                    }
+            Column {
+                books.forEach { book ->
+                    ChapterRow(
+                        book = book,
+                        isSelected = book.remoteId == currentBook?.remoteId,
+                        showBookmark = book.remoteId == bookmarkBookId,
+                        isLocal = book.remoteId in localIds,
+                        isDownloading = book.remoteId in downloadingIds,
+                        onOpen = {
+                            onOpenChapter(book)
+                            onOpenBook(
+                                book.remoteId, book.pageCount, book.format.name, false,
+                                viewerModes[book.remoteId] ?: "PAGED",
+                            )
+                        },
+                        onDownload = { onDownload(book) },
+                        onRemoveDownload = { onRemoveDownload(book.remoteId) },
+                        onSetRead = { read -> onSetRead(book, read) },
+                    )
+                    HorizontalDivider()
                 }
             }
         }
@@ -586,16 +581,15 @@ private fun GenreChips(genres: List<String>) {
 @Composable
 private fun ChaptersSectionHeader(
     count: Int,
-    expanded: Boolean,
-    onToggle: () -> Unit,
+    gridMode: Boolean,
+    onToggleViewMode: () -> Unit,
 ) {
     val s = LocalStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onToggle)
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -603,10 +597,15 @@ private fun ChaptersSectionHeader(
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.weight(1f),
         )
-        Icon(
-            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-            contentDescription = if (expanded) "Einklappen" else "Ausklappen",
-        )
+        // Toggle Liste ⇄ Kachel: zeigt das Ziel-Layout-Icon. Sofortiger Wechsel (E-Ink).
+        IconButton(onClick = onToggleViewMode) {
+            Icon(
+                if (gridMode) Icons.AutoMirrored.Outlined.ViewList else Icons.Outlined.GridView,
+                contentDescription =
+                    if (gridMode) s.chapterViewSwitchToList else s.chapterViewSwitchToGrid,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

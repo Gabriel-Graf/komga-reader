@@ -139,6 +139,23 @@ nur ein Detail geändert hat.
   Refresh). Referenz-Implementierung: `SeriesDetailViewModel` (`_readOverrides`/`_typeOverride`
   → `state`-`combine`, `baseState` lädt nur bei `servers.config`).
 
+## Muster: lange Beschreibung neben dem Cover (Truncate + „Mehr lesen")
+
+Beschreibungstexte (Serie/Kapitel) stehen **neben** dem Cover, unter den Tags, und füllen den
+Platz bis zur **Cover-Unterkante** (rechte Spalte `height(HERO_COVER_HEIGHT)`, Beschreibung mit
+`weight(1f)`). Passt der Text nicht in die verfügbare Höhe:
+
+- mit **„…"** kürzen (`TextOverflow.Ellipsis`; `maxLines` aus Box-Höhe / Zeilenhöhe via
+  `BoxWithConstraints` berechnet, Überlauf über `onTextLayout { hasVisualOverflow }` erkannt —
+  bei Überlauf eine Zeile für den Button reservieren),
+- eine **„Mehr lesen"**-Zeile einblenden,
+- die den **vollständigen Text in einem Readonly-Modal** zeigt: `EinkInfoDialog` (Titel +
+  **nur X** oben, kein Footer), Inhalt scrollbar (`verticalScroll` + `heightIn(max=…)`).
+
+So behält die Hero-Karte **immer** ihre Form — egal wie lang die Beschreibung ist. Fehlt eine
+Beschreibung, steht dort der Platzhalter (`noDescription`, gedämpft `onSurfaceVariant`).
+Referenz: `TruncatedDescription` / `DescriptionModal` in `SeriesDetailScreen.kt`.
+
 ## Checkliste pro UI-Stück
 
 1. Token aus der Tabelle nehmen — keine Magic-dp/Farben inline.
@@ -156,6 +173,12 @@ nur ein Detail geändert hat.
   Regel: Rahmen **≥ 1.5 dp**, Farbe mindestens mittelgrau (`outlineVariant` = `#777777`/`#8A8A8A`),
   für Betonung `outline` (schwarz). Wer einen Divider/Rahmen setzt, prüft ihn auf echter
   E-Ink-Hardware (oder Emulator `eink_test`) — „sieht man am LCD" reicht nicht.
+  **Einheitliche Linienstärke (Pflicht):** Material-Stock-Controls bringen zu dünne Ränder mit —
+  ein nackter `OutlinedButton` rendert ~1 dp, ein `HorizontalDivider` 1 dp; auf E-Ink kaum
+  sichtbar. Daher **nie nackt**: Buttons über den Wrapper **`EinkOutlinedButton`**
+  (`ui/components/EinkButtons.kt`, Rand = `EinkTokens.hairline` = 1.5 dp/`outline`), Divider mit
+  `thickness = EinkTokens.hairline`. **Alle** gleich-dünnen Linien teilen sich **eine** Stärke
+  (`EinkTokens.hairline`) — keine gemischten 1 dp/1.5 dp-Ränder im selben Screen.
 - Magic-dp/-Farben inline statt Token. Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
 - **Asymmetrie bei Geschwister-Elementen.** Elemente in **derselben Zeile** oder mit **gleicher Rolle**
   müssen sich Maße teilen: ein Button neben einem Eingabefeld/Dropdown ist **gleich hoch** (gemeinsame

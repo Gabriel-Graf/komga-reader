@@ -52,7 +52,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -110,6 +110,7 @@ fun SeriesDetailScreen(
     val localIds by viewModel.localBookIds.collectAsState()
     val downloadingIds by viewModel.downloadingIds.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
+    val downloadPercents by viewModel.bookDownloadPercent.collectAsState()
     val cancelling by viewModel.cancelling.collectAsState()
     val chapterViewMode by viewModel.chapterViewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -174,6 +175,7 @@ fun SeriesDetailScreen(
                     viewerModes = current.viewerModes,
                     localIds = localIds,
                     downloadingIds = downloadingIds,
+                    downloadPercents = downloadPercents,
                     downloadProgress = downloadProgress,
                     cancelling = cancelling,
                     onOpenBook = onOpenBook,
@@ -225,6 +227,7 @@ private fun SeriesDetailContent(
     viewerModes: Map<String, String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
+    downloadPercents: Map<String, Int>,
     downloadProgress: DownloadProgress?,
     cancelling: Boolean,
     onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
@@ -274,6 +277,7 @@ private fun SeriesDetailContent(
                     contentType = contentType,
                     isLocal = info.remoteId in localIds,
                     isDownloading = info.remoteId in downloadingIds,
+                    downloadPercent = downloadPercents[info.remoteId] ?: 0,
                     onRead = {
                         onOpenChapter(info)
                         onOpenBook(
@@ -336,6 +340,7 @@ private fun SeriesDetailContent(
                     showBookmark = book.remoteId == bookmarkBookId,
                     isLocal = book.remoteId in localIds,
                     isDownloading = book.remoteId in downloadingIds,
+                    downloadPercent = downloadPercents[book.remoteId] ?: 0,
                     onOpen = {
                         onOpenChapter(book)
                         onOpenBook(
@@ -370,7 +375,7 @@ private fun SeriesDetailContent(
                         onSetRead = { read -> onSetRead(book, read) },
                         onShowInfo = { infoBook = book },
                     )
-                    HorizontalDivider()
+                    HorizontalDivider(thickness = EinkTokens.hairline)
                 }
             }
         }
@@ -499,7 +504,7 @@ private fun SeriesHeroCard(
                 when {
                     // Abbruch läuft: aktuelles Kapitel wird noch fertig geladen → Lade-Anzeige
                     // (E-Ink: „Lädt…", Smartphone: Spinner) statt Stop-Button.
-                    cancelling -> OutlinedButton(
+                    cancelling -> EinkOutlinedButton(
                         onClick = {},
                         enabled = false,
                         modifier = Modifier.weight(1f),
@@ -512,7 +517,7 @@ private fun SeriesHeroCard(
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        OutlinedButton(
+                        EinkOutlinedButton(
                             onClick = {},
                             enabled = false,
                             modifier = Modifier.weight(1f),
@@ -526,7 +531,7 @@ private fun SeriesHeroCard(
                             Text("${p.current}/${p.total}$speed", maxLines = 1)
                         }
                         // Abbrechen-Rechteck rechts: stoppt den Serien-Download (kein weiteres Kapitel).
-                        OutlinedButton(
+                        EinkOutlinedButton(
                             onClick = onCancelDownload,
                             contentPadding = PaddingValues(0.dp),
                             modifier = Modifier.width(48.dp),
@@ -538,12 +543,12 @@ private fun SeriesHeroCard(
                             )
                         }
                     }
-                    allLocal -> OutlinedButton(onClick = onRemoveAll, modifier = Modifier.weight(1f)) {
+                    allLocal -> EinkOutlinedButton(onClick = onRemoveAll, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(s.removeDownload, maxLines = 1)
                     }
-                    else -> OutlinedButton(onClick = onDownloadAll, modifier = Modifier.weight(1f)) {
+                    else -> EinkOutlinedButton(onClick = onDownloadAll, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(s.downloadAll, maxLines = 1)
@@ -693,6 +698,7 @@ private fun ChapterInfoHero(
     contentType: ContentType?,
     isLocal: Boolean,
     isDownloading: Boolean,
+    downloadPercent: Int,
     onRead: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
@@ -761,19 +767,20 @@ private fun ChapterInfoHero(
                 Text(s.read, maxLines = 1)
             }
             when {
-                isDownloading -> OutlinedButton(
+                isDownloading -> EinkOutlinedButton(
                     onClick = {},
                     enabled = false,
                     modifier = Modifier.weight(1f),
                 ) {
-                    LoadingIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    // Fortschritt in % (≤1 fps) statt nur „Lädt"; Button behält Maße (weight 1f).
+                    Text("$downloadPercent%", maxLines = 1)
                 }
-                isLocal -> OutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
+                isLocal -> EinkOutlinedButton(onClick = onRemoveDownload, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(s.removeDownload, maxLines = 1)
                 }
-                else -> OutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
+                else -> EinkOutlinedButton(onClick = onDownload, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Filled.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(s.download, maxLines = 1)
@@ -991,6 +998,7 @@ private fun ChapterTile(
     showBookmark: Boolean,
     isLocal: Boolean,
     isDownloading: Boolean,
+    downloadPercent: Int,
     onOpen: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
@@ -1087,7 +1095,11 @@ private fun ChapterTile(
             Box(Modifier.align(Alignment.BottomEnd).padding(4.dp)) {
                 when {
                     isDownloading -> CoverBadge {
-                        LoadingIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text(
+                            "$downloadPercent%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                     isLocal -> CoverBadge(onClick = onRemoveDownload) {
                         Icon(

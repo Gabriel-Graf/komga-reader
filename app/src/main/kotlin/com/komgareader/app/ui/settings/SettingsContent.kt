@@ -15,7 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -156,7 +156,7 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
             }) { Text(s.connect) }
             if (server != null) {
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { viewModel.disconnect() }) { Text(s.disconnect) }
+                EinkOutlinedButton(onClick = { viewModel.disconnect() }) { Text(s.disconnect) }
             }
         }
     }
@@ -256,7 +256,7 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
             Button(onClick = { folderPicker.launch(null) }) { Text(s.chooseFolder) }
             if (downloadDir != null) {
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { viewModel.setDownloadDir(null) }) { Text(s.resetFolder) }
+                EinkOutlinedButton(onClick = { viewModel.setDownloadDir(null) }) { Text(s.resetFolder) }
             }
         }
     }

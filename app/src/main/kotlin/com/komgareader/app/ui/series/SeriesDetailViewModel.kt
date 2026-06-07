@@ -238,6 +238,10 @@ class SeriesDetailViewModel @Inject constructor(
     private val _downloadingIds = MutableStateFlow<Set<String>>(emptySet())
     val downloadingIds: StateFlow<Set<String>> = _downloadingIds
 
+    /** Download-Fortschritt einzelner Kapitel in Prozent (bookRemoteId → 0..100), ≤1×/s aktualisiert. */
+    private val _bookDownloadPercent = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val bookDownloadPercent: StateFlow<Map<String, Int>> = _bookDownloadPercent
+
     /** Einmalige Fehlermeldungen an die UI. */
     private val _events = MutableSharedFlow<SeriesDetailEvent>(extraBufferCapacity = 4)
     val events = _events.asSharedFlow()
@@ -281,10 +285,11 @@ class SeriesDetailViewModel @Inject constructor(
             try {
                 for (book in pending) {
                     _downloadingIds.update { it + book.remoteId }
+                    _bookDownloadPercent.update { it + (book.remoteId to 0) }
                     runCatching {
                         withContext(Dispatchers.IO) {
                             var fileLastRead = 0L
-                            val bytes = source.downloadFile(book.remoteId) { read, _ ->
+                            val bytes = source.downloadFile(book.remoteId) { read, fileTotal ->
                                 windowBytes += read - fileLastRead
                                 fileLastRead = read
                                 val now = android.os.SystemClock.elapsedRealtime()
@@ -294,6 +299,10 @@ class SeriesDetailViewModel @Inject constructor(
                                     windowStart = now
                                     windowBytes = 0L
                                     _downloadProgress.value = DownloadProgress(done, total, speed)
+                                    if (fileTotal > 0) {
+                                        val pct = (read * 100 / fileTotal).toInt().coerceIn(0, 100)
+                                        _bookDownloadPercent.update { it + (book.remoteId to pct) }
+                                    }
                                 }
                             }
                             check(bytes.isNotEmpty()) { "Server lieferte leere Datei für ${book.remoteId}" }
@@ -316,12 +325,14 @@ class SeriesDetailViewModel @Inject constructor(
                         _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Download fehlgeschlagen"))
                     }
                     _downloadingIds.update { it - book.remoteId }
+                    _bookDownloadPercent.update { it - book.remoteId }
                     done++
                     // Kapitelgrenze: Zähler hochsetzen, zuletzt bekannte Geschwindigkeit halten.
                     _downloadProgress.value = DownloadProgress(done, total, speed)
                 }
             } finally {
                 _downloadingIds.value = emptySet()
+                _bookDownloadPercent.value = emptyMap()
                 _downloadProgress.value = null
                 if (_cancelling.value) {
                     // Genau EINE Abbruch-Meldung (tryEmit, da der Scope hier evtl. abgebrochen ist).
@@ -361,10 +372,22 @@ class SeriesDetailViewModel @Inject constructor(
                 return@launch
             }
             _downloadingIds.update { it + book.remoteId }
+            _bookDownloadPercent.update { it + (book.remoteId to 0) }
             runCatching {
                 // Netzwerk + Datei-I/O explizit auf IO-Dispatcher ausführen
                 withContext(Dispatchers.IO) {
-                    val bytes = source.downloadFile(book.remoteId)
+                    var lastTick = 0L
+                    val bytes = source.downloadFile(book.remoteId) { read, total ->
+                        if (total > 0) {
+                            val now = android.os.SystemClock.elapsedRealtime()
+                            val pct = (read * 100 / total).toInt().coerceIn(0, 100)
+                            // ~1 fps: höchstens 1 Update/s, 100 % sofort (kein E-Ink-Flackern).
+                            if (pct >= 100 || now - lastTick >= 1000) {
+                                lastTick = now
+                                _bookDownloadPercent.update { it + (book.remoteId to pct) }
+                            }
+                        }
+                    }
                     check(bytes.isNotEmpty()) { "Server lieferte leere Datei für ${book.remoteId}" }
                     downloadManager.store(
                         bookRemoteId = book.remoteId,
@@ -384,6 +407,7 @@ class SeriesDetailViewModel @Inject constructor(
                 _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Download fehlgeschlagen"))
             }
             _downloadingIds.update { it - book.remoteId }
+            _bookDownloadPercent.update { it - book.remoteId }
         }
     }
 

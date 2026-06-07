@@ -3,6 +3,8 @@ package com.komgareader.app.ui.series
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +16,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,7 +30,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bookmark
@@ -70,6 +75,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -80,6 +86,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
@@ -402,6 +409,7 @@ private fun SeriesHeroCard(
     val coverUrl = serverConfig?.let { "${it.baseUrl}series/$seriesRemoteId/thumbnail" }
     val statusText = status?.takeIf { it.isNotBlank() }?.let { s.localizedSeriesStatus(it) }
     val subtitle = listOfNotNull("$bookCount ${s.chapters}", statusText).joinToString(" · ")
+    var fullDescription by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = modifier
@@ -423,13 +431,14 @@ private fun SeriesHeroCard(
                     contentDescription = seriesTitle,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .width(140.dp)
-                        .aspectRatio(2f / 3f),
+                        .width(HERO_COVER_WIDTH)
+                        .height(HERO_COVER_HEIGHT),
                 )
             }
 
-            // Titel + Kapitel/Status + Genre-Chips (Endpadding lässt Platz fürs Burger-Icon)
-            Column(modifier = Modifier.weight(1f).padding(end = 36.dp)) {
+            // Titel + Status + Genres + Typ, darunter die Beschreibung (füllt bis zur Cover-Unterkante).
+            // Endpadding lässt Platz fürs Aktions-Icon oben rechts.
+            Column(modifier = Modifier.weight(1f).height(HERO_COVER_HEIGHT).padding(end = 36.dp)) {
                 Text(
                     seriesTitle,
                     style = MaterialTheme.typography.titleLarge,
@@ -449,6 +458,13 @@ private fun SeriesHeroCard(
                 // sonst „Unbekannt" (fällt beim Lesen auf paginiert zurück).
                 Spacer(Modifier.height(8.dp))
                 TypeChip(label = s.localizedContentType(contentType))
+                Spacer(Modifier.height(8.dp))
+                TruncatedDescription(
+                    text = description ?: s.noDescription,
+                    muted = description == null,
+                    onReadMore = { fullDescription = description },
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                )
             }
         }
             // Burger oben rechts in der Hero-Ecke: öffnet das Typ-Zuweisungs-Menü darunter.
@@ -466,18 +482,9 @@ private fun SeriesHeroCard(
                         )
                     },
             ) {
-                Icon(Icons.Filled.Menu, contentDescription = s.assignType)
+                Icon(Icons.Filled.MoreVert, contentDescription = s.assignType)
             }
         }
-
-        // Beschreibung (Serie, Fallback ausgewähltes Buch); sonst Hinweis „keine Beschreibung".
-        Spacer(Modifier.height(12.dp))
-        Text(
-            description ?: s.noDescription,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (description != null) MaterialTheme.colorScheme.onSurface
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
 
         // Aktionsschaltflächen: Lesen (primär) + Download/Entfernen-Toggle
         if (currentBook != null) {
@@ -544,8 +551,14 @@ private fun SeriesHeroCard(
                 }
             }
         }
+        fullDescription?.let { desc ->
+            DescriptionModal(title = seriesTitle, text = desc, onDismiss = { fullDescription = null })
+        }
     }
 }
+
+private val HERO_COVER_WIDTH = 160.dp
+private val HERO_COVER_HEIGHT = 240.dp
 
 /**
  * Typ-Chip: gefüllt (solides Schwarz / invertiert) zur Abgrenzung von den outline-Genre-Chips.
@@ -689,6 +702,7 @@ private fun ChapterInfoHero(
     val s = LocalStrings.current
     val ctx = LocalContext.current
     val coverUrl = serverConfig?.let { "${it.baseUrl}books/${book.remoteId}/thumbnail" }
+    var fullDescription by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -707,11 +721,11 @@ private fun ChapterInfoHero(
                             .build(),
                         contentDescription = book.title,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.width(140.dp).aspectRatio(2f / 3f),
+                        modifier = Modifier.width(HERO_COVER_WIDTH).height(HERO_COVER_HEIGHT),
                     )
                 }
                 // Genres + Typ bleiben wie beim Serien-Hero (ändern sich nicht pro Kapitel).
-                Column(modifier = Modifier.weight(1f).padding(end = 36.dp)) {
+                Column(modifier = Modifier.weight(1f).height(HERO_COVER_HEIGHT).padding(end = 36.dp)) {
                     Text(
                         book.number?.let { "$it · ${book.title}" } ?: book.title,
                         style = MaterialTheme.typography.titleLarge,
@@ -723,6 +737,13 @@ private fun ChapterInfoHero(
                     }
                     Spacer(Modifier.height(8.dp))
                     TypeChip(label = s.localizedContentType(contentType))
+                    Spacer(Modifier.height(8.dp))
+                    TruncatedDescription(
+                        text = book.summary?.takeIf { it.isNotBlank() } ?: s.noDescription,
+                        muted = book.summary.isNullOrBlank(),
+                        onReadMore = { fullDescription = book.summary },
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                    )
                 }
             }
             // Zurück zur Serien-Hero-Karte.
@@ -730,14 +751,6 @@ private fun ChapterInfoHero(
                 Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = s.backToSeries)
             }
         }
-        val summaryText = book.summary?.takeIf { it.isNotBlank() }
-        Spacer(Modifier.height(12.dp))
-        Text(
-            summaryText ?: s.noDescription,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (summaryText != null) MaterialTheme.colorScheme.onSurface
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         // Lese-/Download-Aktionen — beziehen sich auf dieses Kapitel.
         Spacer(Modifier.height(14.dp))
         Row(
@@ -767,6 +780,73 @@ private fun ChapterInfoHero(
                 }
             }
         }
+        fullDescription?.let { desc ->
+            DescriptionModal(
+                title = book.number?.let { "$it · ${book.title}" } ?: book.title,
+                text = desc,
+                onDismiss = { fullDescription = null },
+            )
+        }
+    }
+}
+
+/**
+ * Beschreibung im Hero, neben dem Cover: füllt den Platz unter den Tags bis zur Cover-Unterkante.
+ * Passt der Text nicht, wird er mit „…" gekürzt und ein „Mehr lesen" eingeblendet, das den
+ * vollständigen Text in einem Readonly-Modal zeigt — der Hero behält so seine Form.
+ */
+@Composable
+private fun TruncatedDescription(
+    text: String,
+    muted: Boolean,
+    onReadMore: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val s = LocalStrings.current
+    val style = MaterialTheme.typography.bodyMedium
+    BoxWithConstraints(modifier) {
+        val density = LocalDensity.current
+        val lineHeightDp = with(density) { style.lineHeight.toDp() }
+        val fitLines = (maxHeight.value / lineHeightDp.value).toInt().coerceAtLeast(1)
+        var overflow by remember(text, fitLines) { mutableStateOf(false) }
+        Column(Modifier.fillMaxSize()) {
+            Text(
+                text,
+                style = style,
+                color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurface,
+                // Bei Überlauf eine Zeile für „Mehr lesen" reservieren.
+                maxLines = if (overflow) (fitLines - 1).coerceAtLeast(1) else fitLines,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { if (it.hasVisualOverflow) overflow = true },
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+            )
+            if (overflow) {
+                Text(
+                    s.readMore,
+                    style = style,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.clickable(onClick = onReadMore),
+                )
+            }
+        }
+    }
+}
+
+/** Readonly-Modal mit nur einem X oben — zeigt die vollständige Beschreibung, scrollbar. */
+@Composable
+private fun DescriptionModal(title: String, text: String, onDismiss: () -> Unit) {
+    val s = LocalStrings.current
+    EinkInfoDialog(title = title, onDismiss = onDismiss, closeLabel = s.close) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .heightIn(max = 420.dp)
+                .verticalScroll(rememberScrollState()),
+        )
     }
 }
 

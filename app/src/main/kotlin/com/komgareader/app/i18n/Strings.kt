@@ -35,6 +35,7 @@ interface Strings {
     val chapterInfo: String
     val backToSeries: String
     val noDescription: String
+    val readMore: String
     val read: String
     val stream: String
     val download: String
@@ -164,11 +165,12 @@ object StringsDe : Strings {
     override val chapterInfo = "Beschreibung"
     override val backToSeries = "Zurück zur Serie"
     override val noDescription = "Keine Beschreibung vorhanden"
+    override val readMore = "Mehr lesen"
     override val read = "Lesen"
     override val stream = "Stream"
     override val download = "Herunterladen"
     override val downloadShort = "Laden"
-    override val downloadAll = "Alle laden"
+    override val downloadAll = "Alle herunterladen"
     override val downloaded = "Heruntergeladen ✓"
     override val downloadedShort = "Gespeichert"
     override val removeDownload = "Entfernen"
@@ -293,6 +295,7 @@ object StringsEn : Strings {
     override val chapterInfo = "Description"
     override val backToSeries = "Back to series"
     override val noDescription = "No description available"
+    override val readMore = "Read more"
     override val read = "Read"
     override val stream = "Stream"
     override val download = "Download"

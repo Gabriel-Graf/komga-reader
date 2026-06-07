@@ -39,40 +39,7 @@ object ImageBinarization {
         return threshold
     }
 
-    /**
-     * true, wenn der Seitenhintergrund überwiegend hell ist (weißer/heller Hintergrund), sonst dunkel.
-     * Strategie: Otsu-Schwelle trennt die Seite in zwei Klassen; wenn der Mittelwert der OBEREN
-     * Klasse (hellere Pixel) nahe Weiß (> 200) liegt, ist die obere Klasse der Hintergrund.
-     * Liegt er darunter (z. B. ~176 bei hellen Panels auf schwarzem Hintergrund), ist die
-     * untere Klasse (dunkle Pixel) der Hintergrund.
-     */
-    fun isLightBackground(page: RenderedPage): Boolean {
-        if (page.pixels.isEmpty()) return true
-        val threshold = otsuThreshold(page)
-        var sumHigh = 0L; var countHigh = 0
-        for (p in page.pixels) {
-            val lum = luminance(p)
-            if (lum > threshold) { sumHigh += lum; countHigh++ }
-        }
-        if (countHigh == 0) return true
-        val meanHigh = sumHigh / countHigh
-        // Obere Klasse nahe Weiß (> 200) → heller Hintergrund; sonst dunkler Hintergrund.
-        return meanHigh > 200
-    }
-
-    /**
-     * Hintergrund-Maske mit Polarität.
-     * [lightBackground]=true: helle Pixel (Luminanz > [threshold]) sind Hintergrund (weißer Gutter).
-     * [lightBackground]=false: dunkle Pixel (Luminanz ≤ [threshold]) sind Hintergrund (schwarze Gasse).
-     * Otsu-Konvention: dunkle Klasse = [0..T], helle Klasse = [T+1..255].
-     */
-    fun backgroundMask(page: RenderedPage, threshold: Int, lightBackground: Boolean): BooleanArray =
-        BooleanArray(page.pixels.size) {
-            val lum = luminance(page.pixels[it])
-            if (lightBackground) lum > threshold else lum <= threshold
-        }
-
-    /** true = Hintergrund (Luminanz > [threshold]). Rückwärts-kompatibel mit hellem Hintergrund. */
+    /** true = Hintergrund (Luminanz > [threshold]). */
     fun backgroundMask(page: RenderedPage, threshold: Int): BooleanArray =
-        backgroundMask(page, threshold, lightBackground = true)
+        BooleanArray(page.pixels.size) { luminance(page.pixels[it]) > threshold }
 }

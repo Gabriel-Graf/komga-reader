@@ -87,4 +87,31 @@ class PixelPipelineTest {
         assertTrue(g(px[1]) < 100, "Kanten-Pixel dunkle Seite: ${g(px[1])} < 100")
         assertTrue(g(px[2]) > 160, "Kanten-Pixel helle Seite: ${g(px[2])} > 160")
     }
+
+    @Test
+    fun `Floyd-Steinberg erhält die mittlere Helligkeit eines Graufelds`() {
+        val n = 16 * 16
+        val px = IntArray(n) { argb(120, 120, 120) }
+        applyPixelPipeline(px, 16, 16, profile(ditherMode = com.komgareader.domain.model.DitherMode.FLOYD_STEINBERG, ditherLevels = 4))
+        val mean = px.map { g(it) }.average()
+        assertTrue(mean in 100.0..140.0, "mean=$mean")
+    }
+
+    @Test
+    fun `Ordered ist deterministisch`() {
+        val a = IntArray(8 * 8) { argb(90, 130, 200) }
+        val b = a.copyOf()
+        val p = profile(ditherMode = com.komgareader.domain.model.DitherMode.ORDERED, ditherLevels = 8)
+        applyPixelPipeline(a, 8, 8, p)
+        applyPixelPipeline(b, 8, 8, p)
+        assertTrue(a.contentEquals(b))
+    }
+
+    @Test
+    fun `Dither auf 256 Stufen ist nahezu verlustfrei`() {
+        val px = intArrayOf(argb(10, 128, 240))
+        val copy = px.copyOf()
+        applyPixelPipeline(px, 1, 1, profile(ditherMode = com.komgareader.domain.model.DitherMode.ORDERED, ditherLevels = 256))
+        assertTrue(px.contentEquals(copy), "256 Stufen ≈ keine Quantisierung")
+    }
 }

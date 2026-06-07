@@ -1,6 +1,7 @@
 package com.komgareader.domain.color
 
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.DitherMode
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -32,6 +33,11 @@ fun applyPixelPipeline(px: IntArray, width: Int, height: Int, profile: ColorProf
         applyToneLut(px, buildToneLut(profile.blackPoint, profile.whitePoint, profile.gamma))
     }
     if (profile.sharpenAmount > 0f) applyUnsharp(px, width, height, profile.sharpenAmount, profile.sharpenRadius)
+    when (profile.ditherMode) {
+        DitherMode.FLOYD_STEINBERG -> applyFloydSteinberg(px, width, height, profile.ditherLevels)
+        DitherMode.ORDERED -> applyOrdered(px, width, height, profile.ditherLevels)
+        DitherMode.NONE -> {}
+    }
 }
 
 /** Levels (Schwarz-/Weißpunkt-Streckung) gefolgt von Gamma, als kombinierte 256-LUT. */
@@ -108,6 +114,63 @@ private fun boxBlur(src: IntArray, width: Int, height: Int, radius: Int): IntArr
         }
     }
     return out
+}
+
+/** Quantisiert einen 0..255-Wert auf [levels] gleichverteilte Stufen. */
+private fun quantize(value: Int, levels: Int): Int {
+    if (levels >= 256) return value.coerceIn(0, 255)
+    val step = 255f / (levels - 1)
+    return (Math.round(value / step) * step).roundToInt().coerceIn(0, 255)
+}
+
+/** Floyd-Steinberg-Fehlerdiffusion pro Kanal (sequentiell). */
+private fun applyFloydSteinberg(px: IntArray, width: Int, height: Int, levels: Int) {
+    if (levels >= 256) return
+    val ch = intArrayOf(16, 8, 0)
+    for (shift in ch) {
+        val buf = FloatArray(px.size) { ((px[it] shr shift) and 0xFF).toFloat() }
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val i = y * width + x
+                val old = buf[i].roundToInt().coerceIn(0, 255)
+                val new = quantize(old, levels)
+                val err = buf[i] - new
+                buf[i] = new.toFloat()
+                if (x + 1 < width) buf[i + 1] += err * 7f / 16f
+                if (y + 1 < height) {
+                    if (x > 0) buf[i + width - 1] += err * 3f / 16f
+                    buf[i + width] += err * 5f / 16f
+                    if (x + 1 < width) buf[i + width + 1] += err * 1f / 16f
+                }
+            }
+        }
+        val mask = (0xFF shl shift).inv()
+        for (i in px.indices) {
+            val v = buf[i].roundToInt().coerceIn(0, 255)
+            px[i] = (px[i] and mask) or (v shl shift)
+        }
+    }
+}
+
+/** Ordered (Bayer-4x4) Dithering pro Kanal — parallelisierbar, deterministisch. */
+private fun applyOrdered(px: IntArray, width: Int, height: Int, levels: Int) {
+    if (levels >= 256) return
+    val bayer = arrayOf(
+        intArrayOf(0, 8, 2, 10), intArrayOf(12, 4, 14, 6),
+        intArrayOf(3, 11, 1, 9), intArrayOf(15, 7, 13, 5),
+    )
+    val step = 255f / (levels - 1)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val i = y * width + x
+            val t = (bayer[y and 3][x and 3] / 16f - 0.5f) * step
+            val a = px[i] and -0x1000000
+            val r = quantize((((px[i] shr 16) and 0xFF) + t).roundToInt().coerceIn(0, 255), levels)
+            val g = quantize((((px[i] shr 8) and 0xFF) + t).roundToInt().coerceIn(0, 255), levels)
+            val b = quantize(((px[i] and 0xFF) + t).roundToInt().coerceIn(0, 255), levels)
+            px[i] = a or (r shl 16) or (g shl 8) or b
+        }
+    }
 }
 
 /** Wendet die lineare ColorMatrix (siehe [buildColorMatrix]) pro Pixel an, geklemmt 0..255. */

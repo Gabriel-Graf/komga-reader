@@ -53,7 +53,7 @@ class ReaderViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val downloadManager: DownloadManager,
     private val settings: SettingsRepository,
-) : ViewModel() {
+) : ViewModel(), ReaderChromeState {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
     private val format: BookFormat = runCatching {
@@ -76,6 +76,11 @@ class ReaderViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ReaderUiState())
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
+
+    /** Overlay-Sichtbarkeit als eigener Flow für das geteilte [ReaderScaffold]. */
+    override val chromeVisible: StateFlow<Boolean> = _uiState
+        .map { it.chromeVisible }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.chromeVisible)
 
     /** Von Buttons angeforderte Seite; Pager beobachtet dies und scrollt. */
     private val _requestedPage = MutableStateFlow(-1)
@@ -247,7 +252,8 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    fun onPageSettled(index: Int) {
+    override fun onPageSettled(page: Int) {
+        val index = page
         _currentPage.value = index
         // Im Webtoon-Strip wird der globale Index auf Kapitel + Seite abgebildet,
         // damit der Fortschritt für das richtige Kapitel gepusht wird.
@@ -283,14 +289,14 @@ class ReaderViewModel @Inject constructor(
     }
 
     /** Tap-Zonen-Navigation: Seite ansteuern (Pager beobachtet requestedPage). */
-    fun navigateTo(index: Int) {
-        if (index != _currentPage.value) {
-            _currentPage.value = index
-            _requestedPage.value = index
+    override fun navigateTo(page: Int) {
+        if (page != _currentPage.value) {
+            _currentPage.value = page
+            _requestedPage.value = page
         }
     }
 
-    fun toggleChrome() {
+    override fun toggleChrome() {
         _uiState.value = _uiState.value.copy(chromeVisible = !_uiState.value.chromeVisible)
     }
 

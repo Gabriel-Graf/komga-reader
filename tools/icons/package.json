@@ -1,0 +1,7 @@
+{
+  "name": "komga-reader-icon-generator",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test", "generate": "node generate.mjs" },
+  "dependencies": { "lucide-static": "^0.460.0" }
+}

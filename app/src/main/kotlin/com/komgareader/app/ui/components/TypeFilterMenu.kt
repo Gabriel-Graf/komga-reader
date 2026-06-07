@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +16,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.localizedContentType
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.domain.model.ContentType
 
 /**
@@ -69,7 +68,7 @@ private fun FilterRow(label: String, checked: Boolean, onClick: () -> Unit) {
         )
         if (checked) {
             Icon(
-                Icons.Filled.Check,
+                AppIcons.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp),

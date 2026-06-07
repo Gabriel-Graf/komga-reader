@@ -19,7 +19,7 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
    oder `app`. Metadaten/Features fließen durch das Domain-Modell + `MediaSource`-Interface, jede Quelle
    füllt was sie kann. → `@.claude/rules/source-extensibility.md`
 3. **E-Ink-Designsprache ist Pflicht, nicht Geschmack.** Flach, 1.5px-Border statt Schatten, keine
-   Animationen, monochrom-kräftig, Material Symbols Outlined, `BaseDialog`. → `@.claude/rules/eink-design-language.md`
+   Animationen, monochrom-kräftig, Lucide-Icons via `AppIcons`-Registry, `BaseDialog`. → `@.claude/rules/eink-design-language.md`
 4. **Viewer-Auflösung ist deterministisch:** `Series.contentTypeOverride ?: Shelf.contentType → ViewerType`.
    Kein fragiles Auto-Erkennen des Inhaltstyps.
 5. **Offline-first + TDD + E2E.** Lesefortschritt lokal (`dirty`) → Sync-Queue. Jedes Feature mit

@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ViewDay
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +26,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
+import com.komgareader.app.ui.icons.AppIcons
 import coil.request.ImageRequest
 import com.komgareader.eink.onyx.OnyxRefresher
 
@@ -119,7 +118,7 @@ fun PagedReaderScreen(
             onBack = onBack,
             actions = {
                 IconButton(onClick = onToggleMode) {
-                    Icon(Icons.Filled.ViewDay, contentDescription = "Zu Webtoon-Modus wechseln", tint = Color.White)
+                    Icon(AppIcons.ReaderMode, contentDescription = "Zu Webtoon-Modus wechseln", tint = Color.White)
                 }
             },
         )

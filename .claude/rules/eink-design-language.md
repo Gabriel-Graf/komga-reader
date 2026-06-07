@@ -12,8 +12,9 @@ Notwendigkeit, kein Geschmack**. Jede UI-Arbeit folgt ihr (Spec §8).
   (`AnimatedVisibility` für simples Auf-/Zuklappen ist ok, aber kein Bewegungs-Schnickschnack.)
 - **Maximaler Kontrast, monochrom:** weißer Hintergrund / schwarze Schrift (Dark-Mode invertiert).
   **Keine Akzentfarbe** — Akzent = solides Schwarz bzw. invertiert Weiß. Theme: `app/ui/theme/Theme.kt`.
-- **Icons:** **Material Symbols Outlined, Weight ~500** (`material-icons-extended`) — monochrom,
-  E-Ink-kräftig. Zentrale Icon-Registry (in `ui-core`/`app`), keine Streu-Icons.
+- **Icons:** **Lucide** (gleichmäßiger Outline-Strich, als `ImageVector` generiert mit E-Ink-Stroke
+  2.5px) — monochrom, E-Ink-kräftig. Zentrale Registry `app/ui/icons/AppIcons.kt` (SSOT), generiert
+  via `tools/icons`; nie Material-Icons, nie Streu-Icons. Details: `eink-ui`-Skill, Sektion „Icon-System".
 - **Aktions-Icons beschriftet:** im Boox-nativen Look tragen Aktionen Text-Labels, nicht nur Glyphen.
 - **`BaseDialog`:** ein Composable als Basis **aller** Dialoge — sticky Header/Footer, scrollender Body,
   Hardware-Back = abbrechen. **Max. ein Dialog** gleichzeitig über dem Main-View.

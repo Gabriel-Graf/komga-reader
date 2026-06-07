@@ -10,15 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Dashboard
-import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.FilterList
-import androidx.compose.material.icons.outlined.LibraryBooks
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +42,7 @@ import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.StatusCluster
 import com.komgareader.app.ui.components.TypeFilterMenu
 import com.komgareader.app.ui.groups.GroupsScreen
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.library.LibraryScreen
 import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
@@ -91,10 +83,10 @@ fun HomeScreen(
 
     val items = remember(s) {
         listOf(
-            BottomNavItem(Icons.Outlined.LibraryBooks, s.tabBrowse),
-            BottomNavItem(Icons.Outlined.Dashboard, s.tabGroups),
-            BottomNavItem(Icons.Outlined.Extension, s.navPlugins),
-            BottomNavItem(Icons.Outlined.Settings, s.settingsTitle),
+            BottomNavItem(AppIcons.Library, s.tabBrowse),
+            BottomNavItem(AppIcons.Groups, s.tabGroups),
+            BottomNavItem(AppIcons.Plugins, s.navPlugins),
+            BottomNavItem(AppIcons.Settings, s.settingsTitle),
         )
     }
 
@@ -157,17 +149,17 @@ fun HomeScreen(
                                         )
                                     },
                                 ) {
-                                    Icon(Icons.Outlined.FilterList, contentDescription = s.filterByType)
+                                    Icon(AppIcons.Filter, contentDescription = s.filterByType)
                                 }
                             }
                         }
                         Box(Modifier.align(Alignment.CenterEnd)) {
                             when (selected) {
                                 TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
-                                    Icon(Icons.Outlined.Sync, contentDescription = null)
+                                    Icon(AppIcons.Refresh, contentDescription = null)
                                 }
                                 TAB_GROUPS -> IconButton(onClick = { showCreateGroup = true }) {
-                                    Icon(Icons.Outlined.Add, contentDescription = s.newGroup)
+                                    Icon(AppIcons.Plus, contentDescription = s.newGroup)
                                 }
                             }
                         }
@@ -243,7 +235,7 @@ private fun TypeFilterChip(label: String, onRemove: () -> Unit) {
             color = MaterialTheme.colorScheme.surface,
         )
         Icon(
-            Icons.Outlined.Close,
+            AppIcons.Close,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.surface,
             modifier = Modifier.size(14.dp),

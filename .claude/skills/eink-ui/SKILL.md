@@ -1,6 +1,6 @@
 ---
 name: eink-ui
-description: Use when building or refactoring UI in the Komga E-Ink Reader (Jetpack Compose, Onyx Boox Go Color 7 Gen2). Captures the device-native "Onyx-look" design language — flat high-contrast e-ink surfaces, bottom menubar, labelled action icons, tile-landing settings, hairline cards, black-bordered modals, outlined Material Symbols icon mapping. Load at the start of any visual/UI task in this app.
+description: Use when building or refactoring UI in the Komga E-Ink Reader (Jetpack Compose, Onyx Boox Go Color 7 Gen2). Captures the device-native "Onyx-look" design language — flat high-contrast e-ink surfaces, bottom menubar, labelled action icons, tile-landing settings, hairline cards, black-bordered modals, Lucide icons via central AppIcons registry. Load at the start of any visual/UI task in this app.
 ---
 
 # E-Ink UI (Onyx-Boox-Look)
@@ -8,8 +8,8 @@ description: Use when building or refactoring UI in the Komga E-Ink Reader (Jetp
 Design-Sprache, extrahiert aus der **Stock-Firmware der Onyx Boox Go Color 7 Gen2**
 (Bibliothek/Shop/Notizen/Speicher/Apps/Einstellungen-Launcher). Ziel: die App fühlt
 sich **nativ zum Gerät** an. Die exakten Onyx-Icon-Assets sind proprietär — wir treffen
-ihre Form-Sprache mit **Material Symbols (Outlined, dünner Strich)**, kopieren aber keine
-Assets.
+ihre Form-Sprache mit **Lucide-Icons (gleichmäßiger Outline-Strich, E-Ink-getunt auf
+2.5px)**, kopieren aber keine Assets. Siehe „Icon-System" unten.
 
 > Grundprinzip bleibt das bestehende E-Ink-Theme: maximaler Kontrast, **keine** Verläufe/
 > Schatten/Animationen (Ghosting-arm), Tiefe über Rahmen statt Elevation.
@@ -78,25 +78,55 @@ oben, Aktionen unten (Bestätigen rechts, Abbrechen links). Genau **ein** Modal 
 Zentrierte Line-Art-Illustration/Icon + Label + darunter gestapelte **full-width
 Outlined-Buttons** für Primäraktionen (vgl. „Keine Bücher" → Buch hinzufügen / …).
 
-## Icon-Mapping (Material Symbols Outlined)
+## Icon-System: Lucide via zentrale `AppIcons`-Registry (Pflicht)
 
-| Zweck | Icon |
-|-------|------|
-| Bibliothek | `Outlined.LibraryBooks` |
-| Gruppen | `Outlined.Dashboard` |
-| Plugins | `Outlined.Extension` (Puzzle ≈ Onyx-Hexagon-Apps) |
-| Einstellungen | `Outlined.Settings` |
-| Verbindung/Server | `Outlined.Cloud` |
-| Darstellung/Theme | `Outlined.Contrast` |
-| Reader | `Outlined.ChromeReaderMode` |
-| Downloads | `Outlined.Download` |
-| Sprache | `Outlined.Language` |
-| Über | `Outlined.Info` |
-| Sync/Refresh | `Outlined.Sync` |
-| Suche | `Outlined.Search` |
-| Zurück | `AutoMirrored.Outlined.ArrowBack` |
+Die App nutzt **keine Material-Icons mehr** (`material-icons-extended` ist aus den
+Gradle-Deps entfernt). Stattdessen: **Lucide-Glyphen**, als `ImageVector` aus den
+Lucide-MIT-SVGs **generiert** mit E-Ink-tauglichem, **dickerem Stroke (2.5px)** statt
+Lucides 2px-Default. Lucides gleichmäßig dünner Outline-Stil trifft den Onyx-Look genauer
+als die teils gefüllten Material-Glyphen.
 
-Immer **Outlined**-Variante (dünner Strich = Onyx-Look), nie `Filled`.
+**Drei Schichten:**
+1. `tools/icons/` — Node-Generator. `icon-set.mjs` listet die benötigten Glyphen
+   (kebab → Kotlin-Property), `lib/svg-to-pathdata.mjs` (pure, unit-getestet) wandelt
+   SVG-Primitive in Path-`d`, `generate.mjs` emittiert die generierte Kotlin-Datei.
+2. `app/ui/icons/LucideIcons.kt` — **generiert**, NICHT von Hand editieren. Hält die
+   `ImageVector`s + die zentrale **`STROKE`-Konstante** (Stroke ist hier tunbar **ohne**
+   Neu-Generierung, da der `d`-Pfad strokeunabhängig ist).
+3. `app/ui/icons/AppIcons.kt` — **SSOT**. Semantische Namen (Zweck, nicht Glyph) →
+   Lucide-Glyph. **Die UI nutzt ausschließlich `AppIcons.*`.**
+
+**Regel:** In `app/` **nie** `androidx.compose.material.icons.*` importieren und **nie**
+`LucideIcons.*` direkt verwenden — immer `AppIcons.<Zweck>`. Es gibt **eine** Variante pro
+Zweck (Outline-Look), kein Filled/Outlined-Mix. (`androidx.compose.material3.Icon` — das
+Composable — bleibt natürlich.)
+
+| Zweck (`AppIcons.X`) | Lucide-Glyph | | Zweck | Lucide-Glyph |
+|---|---|---|---|---|
+| `Library` | Library | | `Download` | CloudDownload |
+| `Groups` | LayoutDashboard | | `Local` (auf Gerät) | HardDriveDownload |
+| `Plugins` | Puzzle | | `Cloud` (nur online) | Cloud |
+| `Settings` | Settings | | `Filter` | ListFilter |
+| `Connection` | Server | | `Overflow` | EllipsisVertical |
+| `Contrast` | Contrast | | `Stop` | CircleStop |
+| `Palette` | Palette | | `Edit` | SquarePen |
+| `Reader` | BookOpen | | `GridView`/`ListView` | LayoutGrid / List |
+| `Language` | Languages | | `Bookmark` | Bookmark |
+| `Info` | Info | | `ReaderMode` | GalleryVertical |
+| `Refresh` | RefreshCw | | `PanelMode` | Grid2x2 |
+| `Search` | Search | | `Check`/`Close` | Check / X |
+| `Back`/`Forward` | ArrowLeft / ArrowRight | | `Plus`/`Minus` | Plus / Minus |
+| `ChevronRight`/`Down`/`Up` | ChevronRight/Down/Up | | `Delete` | Trash2 |
+
+**Neues Icon hinzufügen:**
+1. Glyph-Namen auf [lucide.dev/icons](https://lucide.dev/icons) suchen.
+2. `tools/icons/icon-set.mjs` um `"kebab-name": "PascalName"` ergänzen.
+3. `cd tools/icons && npm run generate` → `LucideIcons.kt` neu.
+4. In `AppIcons.kt` einen **semantischen** Eintrag ergänzen, der auf `LucideIcons.PascalName` zeigt.
+5. Aufruf-Stelle nutzt `AppIcons.<Zweck>`.
+
+**Stroke anpassen:** nur `STROKE` in `LucideIcons.kt` ändern (kein Neu-Generieren).
+**Auf echter Boox/`eink_test` verifizieren** — zu dünn = auf E-Ink blass.
 
 ## Settings-Architektur
 
@@ -160,7 +190,7 @@ Referenz: `TruncatedDescription` / `DescriptionModal` in `SeriesDetailScreen.kt`
 
 1. Token aus der Tabelle nehmen — keine Magic-dp/Farben inline.
 2. Existierende `ui/components/`-Composable nutzen; fehlt eine, dort ergänzen (nicht lokal duplizieren).
-3. Outlined-Icon aus dem Mapping.
+3. Icon über `AppIcons.<Zweck>` (siehe „Icon-System") — nie Material-Icons, nie `LucideIcons.*` direkt.
 4. Modal? → `EinkModal` (schwarzer Rand).
 5. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute.
 6. Keine Animation/Schatten/Verläufe (E-Ink).

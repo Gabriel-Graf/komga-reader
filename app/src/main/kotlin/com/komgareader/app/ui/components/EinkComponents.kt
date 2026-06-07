@@ -17,12 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 
 /**
@@ -85,7 +80,7 @@ fun SettingsTile(
         }
         if (showChevron) {
             Icon(
-                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                AppIcons.ChevronRight,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -136,7 +131,7 @@ fun ChoiceRow(
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
             if (selected) {
                 Icon(
-                    Icons.Outlined.Check,
+                    AppIcons.Check,
                     contentDescription = null,
                     modifier = Modifier.size(22.dp),
                     tint = MaterialTheme.colorScheme.onSurface,
@@ -168,14 +163,14 @@ fun StepperRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        StepperButton(Icons.Outlined.Remove, enabled = canDecrement, contentDescription = "−", onClick = onDecrement)
+        StepperButton(AppIcons.Minus, enabled = canDecrement, contentDescription = "−", onClick = onDecrement)
         Text(
             text = display(value),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(64.dp).padding(horizontal = 8.dp),
         )
-        StepperButton(Icons.Outlined.Add, enabled = canIncrement, contentDescription = "+", onClick = onIncrement)
+        StepperButton(AppIcons.Plus, enabled = canIncrement, contentDescription = "+", onClick = onIncrement)
     }
 }
 
@@ -218,7 +213,7 @@ fun SubPageScaffold(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null)
+                        Icon(AppIcons.Back, contentDescription = null)
                     }
                 },
             )
@@ -259,7 +254,7 @@ fun StepperRow(
     ) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
         IconButton(onClick = onDecrement, enabled = enabled) {
-            Icon(Icons.Outlined.Remove, contentDescription = "−", modifier = Modifier.size(22.dp))
+            Icon(AppIcons.Minus, contentDescription = "−", modifier = Modifier.size(22.dp))
         }
         Text(
             valueText,
@@ -268,7 +263,7 @@ fun StepperRow(
             textAlign = TextAlign.Center,
         )
         IconButton(onClick = onIncrement, enabled = enabled) {
-            Icon(Icons.Outlined.Add, contentDescription = "+", modifier = Modifier.size(22.dp))
+            Icon(AppIcons.Plus, contentDescription = "+", modifier = Modifier.size(22.dp))
         }
     }
 }

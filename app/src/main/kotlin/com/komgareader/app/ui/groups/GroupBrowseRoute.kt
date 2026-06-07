@@ -17,11 +17,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CloudQueue
-import androidx.compose.material.icons.filled.DownloadDone
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import com.komgareader.app.ui.components.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.components.FilteredAsyncImage
+import com.komgareader.app.ui.icons.AppIcons
 import coil.request.ImageRequest
 import com.komgareader.app.data.AuthHeaders
 import com.komgareader.domain.model.Series
@@ -74,12 +70,12 @@ fun GroupBrowseRoute(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(AppIcons.Back, contentDescription = "Zurück")
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = null)
+                        Icon(AppIcons.Refresh, contentDescription = null)
                     }
                 },
             )
@@ -165,7 +161,7 @@ private fun GroupSeriesCover(
         ) {
             Icon(
                 // Lokal komplett vorhanden → Download-Logo; sonst Cloud (nur online verfügbar).
-                if (isLocal) Icons.Filled.DownloadDone else Icons.Filled.CloudQueue,
+                if (isLocal) AppIcons.Local else AppIcons.Cloud,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurface,

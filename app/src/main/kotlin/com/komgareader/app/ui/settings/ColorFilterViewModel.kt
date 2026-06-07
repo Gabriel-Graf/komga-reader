@@ -49,6 +49,10 @@ class ColorFilterViewModel @Inject constructor(
     private val _preview = MutableStateFlow<PreviewCover?>(null)
     val preview: StateFlow<PreviewCover?> = _preview
 
+    // True, sobald ein Verlauf existiert (steuert die Sichtbarkeit des „Vorheriges"-Buttons).
+    private val _canGoBack = MutableStateFlow(false)
+    val canGoBack: StateFlow<Boolean> = _canGoBack
+
     // Kandidaten-Cover + Header für die Vorschau; Verlauf der zuvor gezeigten Bilder. Beides nur
     // im Speicher — beim Schließen der Settings (ViewModel weg) bewusst verworfen.
     private var candidates: List<String> = emptyList()
@@ -73,12 +77,14 @@ class ColorFilterViewModel @Inject constructor(
         val current = _preview.value?.url
         val next = candidates.filter { it != current }.randomOrNull() ?: return
         if (current != null) history.addLast(current)
+        _canGoBack.value = history.isNotEmpty()
         _preview.value = PreviewCover(next, headers)
     }
 
     /** Vorheriges Vorschau-Cover aus dem Verlauf (no-op, wenn keiner vorhanden). */
     fun previousPreview() {
         val prev = history.removeLastOrNull() ?: return
+        _canGoBack.value = history.isNotEmpty()
         _preview.value = PreviewCover(prev, headers)
     }
 

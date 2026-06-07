@@ -12,6 +12,7 @@ import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.source.ContainerSource
 import com.komgareader.domain.source.SourceContainer
+import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.source.SourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,34 @@ class GroupsViewModel @Inject constructor(
 
     private val _containers = MutableStateFlow<List<SourceContainer>>(emptyList())
     val containers: StateFlow<List<SourceContainer>> = _containers
+
+    /** Erste bis zu 4 Cover-URLs je Bibliothek (shelfId → Cover) für das Collage-Grid. */
+    private val _covers = MutableStateFlow<Map<Long, List<String?>>>(emptyMap())
+    val covers: StateFlow<Map<Long, List<String?>>> = _covers
+
+    /**
+     * Lädt für jede Bibliothek die ersten vier Titel und cacht deren Cover-URLs.
+     * Wird bei Änderung der Bibliotheksliste vom Screen angestoßen.
+     */
+    fun loadCovers() {
+        viewModelScope.launch {
+            val config = serverRepository.config.first()
+            val source = sourceProvider.from(config) ?: return@launch
+            state.value.shelves.forEach { shelf ->
+                val containerIds = shelf.sources
+                    .firstOrNull { it.sourceId == source.id }
+                    ?.containerIds
+                    ?: emptyList()
+                val coverUrls = runCatching {
+                    source.browse(0, SourceFilter(containerIds = containerIds))
+                        .items
+                        .take(4)
+                        .map { it.coverUrl }
+                }.getOrDefault(emptyList())
+                _covers.value = _covers.value + (shelf.id to coverUrls)
+            }
+        }
+    }
 
     /** Lädt die Library-Liste der verbundenen Quelle (für das Modal). */
     fun loadContainers() {

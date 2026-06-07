@@ -5,3 +5,6 @@ local.properties
 .idea/
 *.iml
 .DS_Store
+
+# Git worktrees (isolierte Arbeitsbereiche)
+.claude/worktrees/

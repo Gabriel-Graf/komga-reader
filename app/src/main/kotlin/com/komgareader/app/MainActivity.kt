@@ -27,14 +27,6 @@ import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
-import com.komgareader.app.ui.settings.AboutScreen
-import com.komgareader.app.ui.settings.AppearanceSettingsScreen
-import com.komgareader.app.ui.settings.ColorFilterSettingsScreen
-import com.komgareader.app.ui.settings.ConnectionSettingsScreen
-import com.komgareader.app.ui.settings.DownloadsSettingsScreen
-import com.komgareader.app.ui.settings.LanguageSettingsScreen
-import com.komgareader.app.ui.settings.ReaderSettingsScreen
-import com.komgareader.app.ui.settings.SettingsPage
 import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
@@ -102,29 +94,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onOpenSeries = { seriesId -> nav.navigate("series/$seriesId") },
                                 onOpenGroup = { shelfId, _ -> nav.navigate("group/$shelfId") },
-                                onOpenSettingsPage = { page -> nav.navigate(settingsRoute(page)) },
                             )
-                        }
-                        composable("settings/connection") {
-                            ConnectionSettingsScreen(onBack = { nav.popBackStack() })
-                        }
-                        composable("settings/appearance") {
-                            AppearanceSettingsScreen(onBack = { nav.popBackStack() })
-                        }
-                        composable("settings/colorfilter") {
-                            ColorFilterSettingsScreen(onBack = { nav.popBackStack() })
-                        }
-                        composable("settings/reader") {
-                            ReaderSettingsScreen(onBack = { nav.popBackStack() })
-                        }
-                        composable("settings/downloads") {
-                            DownloadsSettingsScreen(onBack = { nav.popBackStack() })
-                        }
-                        composable("settings/language") {
-                            LanguageSettingsScreen(onBack = { nav.popBackStack() })
-                        }
-                        composable("settings/about") {
-                            AboutScreen(onBack = { nav.popBackStack() })
                         }
                         composable(
                             route = "series/{seriesId}",
@@ -192,15 +162,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-/** Mappt eine Settings-Unterseite auf ihre NavHost-Route. */
-private fun settingsRoute(page: SettingsPage): String = when (page) {
-    SettingsPage.CONNECTION -> "settings/connection"
-    SettingsPage.APPEARANCE -> "settings/appearance"
-    SettingsPage.COLOR_FILTER -> "settings/colorfilter"
-    SettingsPage.READER -> "settings/reader"
-    SettingsPage.DOWNLOADS -> "settings/downloads"
-    SettingsPage.LANGUAGE -> "settings/language"
-    SettingsPage.ABOUT -> "settings/about"
 }

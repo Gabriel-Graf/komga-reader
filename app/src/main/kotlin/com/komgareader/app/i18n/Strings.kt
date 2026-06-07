@@ -111,6 +111,10 @@ interface Strings {
     val colorFilterPrevImage: String
     val colorFilterNextImage: String
     val close: String
+    // Reader-Einstellungen
+    val settingsWebtoon: String
+    val webtoonOverlapHelper: String
+    val webtoonOverlap: String
 }
 
 object StringsDe : Strings {
@@ -223,6 +227,10 @@ object StringsDe : Strings {
     override val colorFilterPrevImage = "Vorheriges"
     override val colorFilterNextImage = "Nächstes"
     override val close = "Schließen"
+    // Reader-Einstellungen
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
+    override val webtoonOverlap = "Überlappung"
 }
 
 object StringsEn : Strings {
@@ -335,6 +343,10 @@ object StringsEn : Strings {
     override val colorFilterPrevImage = "Previous"
     override val colorFilterNextImage = "Next"
     override val close = "Close"
+    // Reader settings
+    override val settingsWebtoon = "Webtoon"
+    override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
+    override val webtoonOverlap = "Overlap"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

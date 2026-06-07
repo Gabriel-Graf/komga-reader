@@ -107,7 +107,7 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 
 /**
  * Auswahlzeile mit Häkchen rechts statt RadioButton-Kreis (ruhiger auf E-Ink).
- * Für Theme-/Sprach-/Modus-Auswahl.
+ * Für Theme-/Sprach-/Modus-Auswahl. [query] markiert Suchtreffer im Label.
  */
 @Composable
 fun ChoiceRow(
@@ -115,6 +115,7 @@ fun ChoiceRow(
     selected: Boolean,
     modifier: Modifier = Modifier,
     trailing: @Composable (() -> Unit)? = null,
+    query: String = "",
     onSelect: () -> Unit,
 ) {
     Row(
@@ -124,7 +125,12 @@ fun ChoiceRow(
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        HighlightText(
+            text = label,
+            query = query,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
         // Fester Häkchen-Slot: reserviert die Breite auch ohne Auswahl, damit ein optionales
         // [trailing]-Element (z. B. Info-Button) zeilenübergreifend bündig ganz rechts sitzt.
         Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
@@ -138,6 +144,57 @@ fun ChoiceRow(
             }
         }
         trailing?.invoke()
+    }
+}
+
+/**
+ * Zeile mit ±-Steppern für einen numerischen Wert — E-Ink-tauglich (kein Slider,
+ * der auf E-Ink schlecht zeichnet). Label links, [−] Wert [+] rechts. [display]
+ * formatiert den Wert (z. B. "25 %").
+ */
+@Composable
+fun StepperRow(
+    label: String,
+    value: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    modifier: Modifier = Modifier,
+    canDecrement: Boolean = true,
+    canIncrement: Boolean = true,
+    display: (Int) -> String = { it.toString() },
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        StepperButton(Icons.Outlined.Remove, enabled = canDecrement, contentDescription = "−", onClick = onDecrement)
+        Text(
+            text = display(value),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(64.dp).padding(horizontal = 8.dp),
+        )
+        StepperButton(Icons.Outlined.Add, enabled = canIncrement, contentDescription = "+", onClick = onIncrement)
+    }
+}
+
+@Composable
+private fun StepperButton(
+    icon: ImageVector,
+    enabled: Boolean,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    val tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .border(EinkTokens.hairline, tint, RoundedCornerShape(6.dp))
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(22.dp))
     }
 }
 

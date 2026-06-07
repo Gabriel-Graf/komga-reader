@@ -24,6 +24,8 @@ class SettingsViewModel @Inject constructor(
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
     val displayMode = settings.displayMode.stateIn(viewModelScope, SharingStarted.Eagerly, "EINK")
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val webtoonOverlapPercent =
+        settings.webtoonOverlapPercent.stateIn(viewModelScope, SharingStarted.Eagerly, 25)
     val server = servers.config.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val activeColorProfile = colorProfiles.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, ColorProfile.OFF)
@@ -32,6 +34,8 @@ class SettingsViewModel @Inject constructor(
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
     fun setDisplayMode(value: String) = viewModelScope.launch { settings.setDisplayMode(value) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
+    fun setWebtoonOverlap(percent: Int) =
+        viewModelScope.launch { settings.setWebtoonOverlapPercent(percent) }.let {}
     fun saveServer(
         name: String,
         baseUrl: String,

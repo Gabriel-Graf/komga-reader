@@ -1016,11 +1016,12 @@ private fun CoverBadge(
     content: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(6.dp)
-    val base = Modifier
+    var chip = Modifier
         .background(MaterialTheme.colorScheme.surface, shape)
         .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, shape)
-    val sized = if (onClick != null) base.size(36.dp).clickable(onClick = onClick) else base.padding(4.dp)
-    Box(sized, contentAlignment = Alignment.Center) { content() }
+    if (onClick != null) chip = chip.clickable(onClick = onClick)
+    // Chip umschließt das Icon eng (wie der Lesezeichen-Chip) — auch klickbar, kein fixes 36dp.
+    Box(chip.padding(4.dp), contentAlignment = Alignment.Center) { content() }
 }
 
 /**

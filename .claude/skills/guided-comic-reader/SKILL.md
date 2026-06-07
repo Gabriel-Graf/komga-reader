@@ -69,12 +69,28 @@ Panel-Wechsel/Zoom-Out = Bildwechsel → Full-Refresh über `OnyxRefresher`/`Ref
 (wie Seitenwechsel). Kein blindes Invalidieren. No-Op auf Nicht-Boox (HW-gated).
 E-Ink-Designsprache gilt ([[eink-ui]]): flach, 1.5px-Border, monochrom, keine Animation.
 
+## Detektor-Algorithmus (Flood-Fill + Connected-Components)
+
+`PanelDetector` arbeitet in vier Stufen (reines Kotlin, host-testbar, keine Android-Deps):
+Otsu-Binarisierung → Edge-Seed-Gutter-Flood (vom Seitenrand, Full-Bleed-Panels bleiben erhalten) →
+Component-Bounding-Boxes (RegionLabeling) → Min-Fläche-Filter + Contained-Merge → Lesereihenfolge
+(Zeilen-Bänder, LTR/RTL). Units: `ImageBinarization` / `GutterFill` / `RegionLabeling` /
+`ReadingOrder` / `PanelDetector`.
+
+**Degenerate-Guard (im ViewModel):** Liefert der Detektor <2 Panels ODER ein Panel belegt >85 % der
+Seitenfläche → Vollseite-Fallback (Seite verhält sich wie Paged, kein Panel-Zoom).
+
+**Letterbox-bewusste Tap/Zoom:** Tap-Koordinaten und Zoom-Rechteck rechnen gegen das
+Content-Rechteck (bei ContentScale.Fit: `contentW`×`contentH` innerhalb des Viewports), nicht
+gegen den rohen Viewport. `PanelGeometry.fitScale(panel, contentW, contentH, viewportW, viewportH,
+marginFraction)` liefert den korrekten Faktor inklusive Letterbox-Offset.
+
 ## Schnitt (was wohin)
 
 - `PanelDetector` — `guided-view`, vorhanden, nicht anfassen.
 - `GuidedNavigator` (Panel-Sequenz inkl. Seitengrenzen) + `PanelGeometry` (Skalierung,
   hitTest, Zoom-Rechteck) — **pure**, TDD zuerst, isoliert testbar.
-- `ComicReaderViewModel` — Zustand, Detektion anstoßen, Cache, Toggle.
+- `ComicReaderViewModel` — Zustand, Detektion anstoßen, Cache, Toggle, Degenerate-Guard.
 - `ComicReaderScreen` — dünne Compose-Shell (Coil-Vollseite + gezoomtes Panel + Tap-Zonen).
 
 ## Anti-Pattern (sofort ablehnen)
@@ -84,6 +100,7 @@ E-Ink-Designsprache gilt ([[eink-ui]]): flach, 1.5px-Border, monochrom, keine An
 - Animierter Panel-Pan/Zoom auf E-Ink.
 - Neuer `ContentType`-Wert — COMIC existiert.
 - Panel-Tap-Logik gegen un-zurückskalierte Downscale-Koordinaten (Treffer daneben).
+- Tap/Zoom gegen Viewport statt Content-Rechteck (Letterbox ignorieren) — Treffer und Zoom-Pivot stimmen nicht.
 
 Bezug: [[viewer-type-resolution]], [[eink-ui]], `guided-view`-Modul, Naht B
 (`architecture-seams.md`). Tests: `GuidedNavigatorTest`, `PanelGeometryTest`,

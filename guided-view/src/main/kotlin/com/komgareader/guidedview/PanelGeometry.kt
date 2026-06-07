@@ -29,15 +29,6 @@ object PanelGeometry {
         return if (i >= 0) i else null
     }
 
-    /**
-     * Faktor, mit dem die Seite skaliert werden muss, damit [panel] (abzüglich
-     * [marginFraction] Rand) bildschirmfüllend wird. Pivot ist die Panel-Mitte.
-     */
-    fun zoomScale(panel: NormRect, marginFraction: Float): Float {
-        val largest = maxOf(panel.width, panel.height).coerceAtLeast(0.0001f)
-        return (1f - 2f * marginFraction) / largest
-    }
-
     /** Größter normalisierter Flächenanteil (w*h) unter den Panels; 0 wenn leer. */
     fun maxAreaFraction(panels: List<NormRect>): Float =
         panels.maxOfOrNull { it.width * it.height } ?: 0f

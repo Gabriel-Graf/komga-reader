@@ -36,14 +36,6 @@ class PanelGeometryTest {
     }
 
     @Test
-    fun `zoomScale füllt das größere Panel-Maß abzüglich Rand`() {
-        val n = PanelGeometry.normalize(panel, 1000, 800) // width 0.4, height 0.5
-        // größeres Maß = 0.5; Rand 0.05 -> Scale = (1 - 2*0.05) / 0.5 = 1.8
-        val s = PanelGeometry.zoomScale(n, marginFraction = 0.05f)
-        assertTrue(kotlin.math.abs(s - 1.8f) < 0.001f, "Scale war $s")
-    }
-
-    @Test
     fun `maxAreaFraction liefert den größten Flächenanteil`() {
         val a = NormRect(0f, 0f, 0.3f, 0.4f)
         val b = NormRect(0.5f, 0.5f, 0.4f, 0.5f)

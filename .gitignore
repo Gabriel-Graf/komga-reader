@@ -8,3 +8,6 @@ local.properties
 
 # Git worktrees (isolierte Arbeitsbereiche)
 .claude/worktrees/
+
+# Lokaler Real-Page-Korpus für PanelDetector-Harness (urheberrechtlich, nie committen)
+guided-view/realpages/

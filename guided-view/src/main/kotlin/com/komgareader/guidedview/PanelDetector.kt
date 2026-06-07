@@ -19,15 +19,17 @@ class PanelDetector(
     fun detect(page: RenderedPage, direction: ReadingDirection): List<PanelRect> {
         if (page.width <= 0 || page.height <= 0 || page.pixels.isEmpty()) return emptyList()
         val threshold = ImageBinarization.otsuThreshold(page)
-        val background = ImageBinarization.backgroundMask(page, threshold)
+        val lightBg = ImageBinarization.isLightBackground(page)
+        val background = ImageBinarization.backgroundMask(page, threshold, lightBg)
         val flooded = GutterFill.floodFromEdges(background, page.width, page.height)
         val regions = RegionLabeling.labelRegions(flooded, page.width, page.height)
 
         val minArea = page.width.toLong() * page.height * minPanelAreaFraction
         val filtered = regions.filter { it.width.toLong() * it.height >= minArea }
 
-        // Dunkle Maske (Inverse der Hintergrundmaske) für BorderLineSplit aufbereiten
-        val darkMask = BooleanArray(background.size) { !background[it] }
+        // Dunkle Maske: immer echte dunkle Pixel (Otsu-Klasse [0..T], unabhängig von der Hintergrund-Polarität),
+        // da Rahmengitter stets dunkle Linien sind.
+        val darkMask = BooleanArray(background.size) { ImageBinarization.luminance(page.pixels[it]) <= threshold }
         // Seitenüberspannende Komponenten (schwarze Rahmengitter ohne Weißgutter) aufteilen
         val expanded = filtered.flatMap { box ->
             val wide = box.width > page.width * 0.6 && box.height > page.height * 0.5

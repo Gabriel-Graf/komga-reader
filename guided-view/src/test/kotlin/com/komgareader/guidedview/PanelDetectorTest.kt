@@ -128,4 +128,18 @@ class PanelDetectorTest {
         assertTrue(out[0].x < 460 && out[0].y < 460, "Das verbliebene Panel ist das umrandete oben-links")
     }
 
+    @Test
+    fun `dunkle Seite mit schwarzem Hintergrund trennt helle Panels`() {
+        // Seite überwiegend SCHWARZ; zwei hellere Panels nebeneinander, getrennt durch schwarzen Gutter
+        val px = IntArray(1000 * 800) { 0xFF0A0A0A.toInt() }
+        fun fillPanel(ox: Int) {
+            for (y in 80 until 720) for (x in ox until ox + 380) px[y * 1000 + x] = 0xFFB0B0B0.toInt()
+        }
+        fillPanel(80)   // linkes Panel x=80..459
+        fillPanel(540)  // rechtes Panel x=540..919 (schwarzer Gutter 460..539)
+        val page = com.komgareader.domain.render.RenderedPage(1000, 800, px)
+        val out = PanelDetector().detect(page, ReadingDirection.LEFT_TO_RIGHT)
+        assertEquals(2, out.size, "Erwarte 2 helle Panels auf schwarzem Hintergrund, war ${out.size}")
+    }
+
 }

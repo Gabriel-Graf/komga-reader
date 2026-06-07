@@ -104,29 +104,12 @@ fun HomeScreen(
                 title = {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         StatusCluster(modifier = Modifier.align(Alignment.CenterStart))
-                        EinkSearchBar(
-                            query = query,
-                            onQueryChange = { query = it },
-                            onSubmit = { submitSearch() },
-                            placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
-                            actionLabel = s.searchAction,
-                            clearLabel = s.clearSearch,
-                            onClear = { query = ""; submitted = "" },
-                            leading = if (selected == TAB_LIBRARY && typeFilter.value.isNotEmpty()) {
-                                {
-                                    typeFilter.value.forEach { type ->
-                                        TypeFilterChip(
-                                            label = s.localizedContentType(type),
-                                            onRemove = { typeFilter.value = typeFilter.value - type },
-                                        )
-                                    }
-                                }
-                            } else {
-                                null
-                            },
-                            modifier = Modifier.fillMaxWidth(0.6f).widthIn(max = 360.dp),
-                        )
-                        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+                        // Filter sitzt links direkt an der Suchleiste (sucht-bezogen);
+                        // Reload bzw. Neu steht allein rechts.
+                        Row(
+                            Modifier.align(Alignment.Center).fillMaxWidth(0.62f).widthIn(max = 400.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             if (selected == TAB_LIBRARY) {
                                 IconButton(
                                     onClick = { filterMenuOpen = true },
@@ -141,6 +124,30 @@ fun HomeScreen(
                                     Icon(AppIcons.Filter, contentDescription = s.filterByType)
                                 }
                             }
+                            EinkSearchBar(
+                                query = query,
+                                onQueryChange = { query = it },
+                                onSubmit = { submitSearch() },
+                                placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
+                                actionLabel = s.searchAction,
+                                clearLabel = s.clearSearch,
+                                onClear = { query = ""; submitted = "" },
+                                leading = if (selected == TAB_LIBRARY && typeFilter.value.isNotEmpty()) {
+                                    {
+                                        typeFilter.value.forEach { type ->
+                                            TypeFilterChip(
+                                                label = s.localizedContentType(type),
+                                                onRemove = { typeFilter.value = typeFilter.value - type },
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    null
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
                             when (selected) {
                                 TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
                                     Icon(AppIcons.Refresh, contentDescription = null)

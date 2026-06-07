@@ -72,9 +72,11 @@ class ComicReaderViewModel @Inject constructor(
         panelCache[page]?.let { return it }
         val det = loader.detect(pages[page], headers)
         val norms = det.panels.map { PanelGeometry.normalize(it, det.pageWidth, det.pageHeight) }
-        panelCache[page] = norms
-        unitsPerPage[page] = if (norms.size < 2) 1 else norms.size
-        return norms
+        // Degenerate-Guard: weniger als 2 Panels ODER ein Panel >85 % Seitenfläche → Vollseite.
+        val usable = if (norms.size < 2 || PanelGeometry.maxAreaFraction(norms) > 0.85f) emptyList() else norms
+        panelCache[page] = usable
+        unitsPerPage[page] = if (usable.isEmpty()) 1 else usable.size
+        return usable
     }
 
     private fun ensurePanels(page: Int) {

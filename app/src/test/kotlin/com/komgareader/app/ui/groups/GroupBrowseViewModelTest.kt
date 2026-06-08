@@ -66,8 +66,10 @@ class GroupBrowseViewModelTest {
     }
 
     private class FakeServerRepository(cfg: ServerConfig?) : ServerRepository {
+        override val configs: Flow<List<ServerConfig>> = flowOf(listOfNotNull(cfg))
         override val config: Flow<ServerConfig?> = flowOf(cfg)
         override suspend fun save(config: ServerConfig) = error("not used")
+        override suspend fun remove(id: Long) = error("not used")
         override suspend fun clear() = error("not used")
     }
 

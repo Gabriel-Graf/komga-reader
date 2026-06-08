@@ -16,10 +16,30 @@ data class ServerConfig(
     val username: String? = null,
     val password: String? = null,
     val kind: SourceKind = SourceKind.KOMGA,
+    /**
+     * Lokale Datenbank-Identität dieser Verbindung (Rowid; 0 = noch nicht gespeichert).
+     * **Nicht** die `sourceId` — die leitet jede Quelle aus name/kind/url ab. Dient dem
+     * Bearbeiten/Entfernen genau dieser Verbindung, wenn mehrere Server konfiguriert sind.
+     */
+    val id: Long = 0,
 )
 
 interface ServerRepository {
+    /** Alle konfigurierten Server-Verbindungen (mehrere gleichzeitig möglich, gemischte Quellenarten). */
+    val configs: Flow<List<ServerConfig>>
+
+    /**
+     * Erste konfigurierte Verbindung (oder null) — Übergangs-API, solange einzelne Consumer
+     * noch single-source denken. Neue Consumer nutzen [configs].
+     */
     val config: Flow<ServerConfig?>
+
+    /** Fügt eine Verbindung hinzu (id == 0) oder aktualisiert sie (id != 0). */
     suspend fun save(config: ServerConfig)
+
+    /** Entfernt die Verbindung mit dieser Rowid. */
+    suspend fun remove(id: Long)
+
+    /** Entfernt alle Verbindungen. */
     suspend fun clear()
 }

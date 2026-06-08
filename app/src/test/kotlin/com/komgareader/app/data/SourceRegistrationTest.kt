@@ -60,6 +60,24 @@ class SourceRegistrationTest {
     }
 
     @Test
+    fun `sync registriert mehrere quellen gleichzeitig und entfernt nicht mehr gelistete`() {
+        val sources = SourceManager()
+        val registration = SourceRegistration(sources, KomgaSourceProvider())
+        val a = ServerConfig(name = "A", baseUrl = "http://a", apiKey = "k")
+        val b = ServerConfig(name = "B", baseUrl = "http://b", apiKey = "k")
+
+        val ids = registration.sync(listOf(a, b))
+        assertEquals(2, ids.size)
+        assertEquals(2, sources.sources.value.size) // beide registriert (n Komga gleichzeitig)
+
+        registration.sync(listOf(a)) // b entfernt
+        assertEquals(1, sources.sources.value.size)
+
+        registration.sync(emptyList())
+        assertEquals(0, sources.sources.value.size)
+    }
+
+    @Test
     fun `null-config deaktiviert die zuvor aktive quelle`() {
         val sources = SourceManager()
         val registration = SourceRegistration(sources, KomgaSourceProvider())

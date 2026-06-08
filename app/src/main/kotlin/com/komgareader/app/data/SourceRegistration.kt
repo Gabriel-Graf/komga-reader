@@ -19,44 +19,37 @@ class SourceRegistration @Inject constructor(
     private val komgaProvider: KomgaSourceProvider,
 ) {
     private val lock = Any()
-    private var activeId: Long? = null
+    private var activeIds: Set<Long> = emptySet()
 
-    /**
-     * Aktiviert die Quelle aus [config] (registriert sie); null deaktiviert die bisherige.
-     * Gibt die aktive sourceId zurück (null wenn keine/Aufbau fehlschlug).
-     *
-     * **Idempotent + atomar:** Bleibt die Config unverändert (gleiche `sourceId`, noch
-     * registriert), passiert NICHTS — kein Ab-/Neu-Registrieren. Das verhindert die Race,
-     * in der ein paralleler Coil-Fetcher `sources.get(id) == null` zwischen unregister und
-     * register sehen würde (`current()` ruft dies bei jedem Aufruf). Beim echten Wechsel wird
-     * die NEUE Quelle **vor** dem Abmelden der alten registriert — die neue id hat nie ein
-     * Null-Fenster. `synchronized`, damit nebenläufige Aufrufe sich nicht verschränken.
-     */
-    fun activate(config: ServerConfig?): Long? = synchronized(lock) {
-        if (config == null) {
-            activeId?.let { sources.unregister(it) }
-            activeId = null
-            return@synchronized null
-        }
-        val source: BrowsableSource? = when (config.kind) {
-            SourceKind.OPDS -> OpdsSourceFactory.create(config.name, config.baseUrl)
-            else -> komgaProvider.from(config)
-        }
-        if (source == null) {
-            activeId?.let { sources.unregister(it) }
-            activeId = null
-            return@synchronized null
-        }
-        // Unverändert + noch registriert → kein Churn (das ist der Race-Fix).
-        if (source.id == activeId && sources.get(source.id) != null) {
-            return@synchronized source.id
-        }
-        val previous = activeId
-        sources.register(source)                                   // neue id zuerst → kein Null-Fenster
-        if (previous != null && previous != source.id) sources.unregister(previous)
-        activeId = source.id
-        return@synchronized source.id
+    private fun build(config: ServerConfig): BrowsableSource? = when (config.kind) {
+        SourceKind.OPDS -> OpdsSourceFactory.create(config.name, config.baseUrl)
+        else -> komgaProvider.from(config)
     }
 
-    fun activeSourceId(): Long? = synchronized(lock) { activeId }
+    /**
+     * Registriert **genau** die Quellen aus [configs] im [SourceManager] — beliebig viele,
+     * gemischte Quellenarten (n Komga, OPDS, später Plugin-Server). Gibt die aktiven `sourceId`s
+     * zurück.
+     *
+     * **Idempotent + atomar + ohne Churn:** Schon registrierte (gleiche `sourceId`) bleiben
+     * unangetastet — neu hinzugekommene werden registriert, nicht mehr gelistete abgemeldet.
+     * Das verhindert die Race, in der ein paralleler Coil-Fetcher `sources.get(id) == null` sähe.
+     * `synchronized`, damit nebenläufige Aufrufe sich nicht verschränken.
+     */
+    fun sync(configs: List<ServerConfig>): Set<Long> = synchronized(lock) {
+        val built = configs.mapNotNull { build(it) }
+        val desiredIds = built.map { it.id }.toSet()
+        built.forEach { if (sources.get(it.id) == null) sources.register(it) } // nur Neue → kein Churn
+        (activeIds - desiredIds).forEach { sources.unregister(it) }            // Entfernte abmelden
+        activeIds = desiredIds
+        desiredIds
+    }
+
+    /** Übergangs-API: genau eine Quelle (null = keine). Delegiert an [sync]. */
+    fun activate(config: ServerConfig?): Long? =
+        sync(listOfNotNull(config)).firstOrNull()
+
+    fun activeSourceIds(): Set<Long> = synchronized(lock) { activeIds }
+
+    fun activeSourceId(): Long? = activeSourceIds().firstOrNull()
 }

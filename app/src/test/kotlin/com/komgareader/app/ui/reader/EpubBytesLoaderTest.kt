@@ -56,8 +56,10 @@ class EpubBytesLoaderTest {
     }
 
     private class FakeServerRepository : ServerRepository {
+        override val configs: Flow<List<ServerConfig>> = flowOf(emptyList())
         override val config: Flow<ServerConfig?> = flowOf(null)
         override suspend fun save(config: ServerConfig) = error("not used")
+        override suspend fun remove(id: Long) = error("not used")
         override suspend fun clear() = error("not used")
     }
 

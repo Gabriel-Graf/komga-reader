@@ -11,7 +11,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Room-gestützte Implementierung von [ServerRepository].
+ * Room-gestützte Implementierung von [ServerRepository]. **Mehrere** Verbindungen gleichzeitig
+ * (mehrere Komga, OPDS, später Plugin-Server — beliebig gemischt), jede mit eigener Rowid.
  *
  * Credentials (API-Key, Passwort) werden AES/GCM-verschlüsselt als Blobs direkt in der
  * server-Tabelle abgelegt. Der AndroidKeyStore-Schlüssel überlebt App-Updates — daher
@@ -22,24 +23,20 @@ class RoomServerRepository(
     private val credentialStore: KeystoreCredentialStore,
 ) : ServerRepository {
 
-    override val config: Flow<ServerConfig?> = dao.observe().map { e ->
-        e?.let {
-            ServerConfig(
-                name = it.name,
-                baseUrl = it.baseUrl,
-                apiKey = decryptIfPresent(it.apiKeyCiphertext, it.apiKeyIv),
-                username = it.username,
-                password = decryptIfPresent(it.passwordCiphertext, it.passwordIv),
-                kind = runCatching { SourceKind.valueOf(it.kind) }.getOrDefault(SourceKind.KOMGA),
-            )
-        }
+    override val configs: Flow<List<ServerConfig>> = dao.observeAll().map { list ->
+        list.map { it.toConfig() }
     }
+
+    override val config: Flow<ServerConfig?> = configs.map { it.firstOrNull() }
 
     override suspend fun save(config: ServerConfig) {
         val apiBlob = config.apiKey?.takeIf { it.isNotBlank() }?.let { credentialStore.encrypt(it) }
         val pwBlob = config.password?.takeIf { it.isNotBlank() }?.let { credentialStore.encrypt(it) }
+        // Neue Verbindung (id == 0) bekommt die nächste freie Rowid; eine bestehende wird ersetzt.
+        val id = if (config.id != 0L) config.id else dao.maxId() + 1
         dao.save(
             ServerEntity(
+                id = id,
                 name = config.name,
                 baseUrl = config.baseUrl,
                 kind = config.kind.name,
@@ -52,9 +49,23 @@ class RoomServerRepository(
         )
     }
 
+    override suspend fun remove(id: Long) {
+        dao.delete(id)
+    }
+
     override suspend fun clear() {
         dao.clear()
     }
+
+    private fun ServerEntity.toConfig() = ServerConfig(
+        id = id,
+        name = name,
+        baseUrl = baseUrl,
+        apiKey = decryptIfPresent(apiKeyCiphertext, apiKeyIv),
+        username = username,
+        password = decryptIfPresent(passwordCiphertext, passwordIv),
+        kind = runCatching { SourceKind.valueOf(kind) }.getOrDefault(SourceKind.KOMGA),
+    )
 
     private fun decryptIfPresent(ciphertext: String?, iv: String?): String? {
         if (ciphertext == null || iv == null) return null

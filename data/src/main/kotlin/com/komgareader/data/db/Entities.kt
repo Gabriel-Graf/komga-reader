@@ -15,7 +15,9 @@ data class SettingEntity(@PrimaryKey val key: String, val value: String)
  */
 @Entity(tableName = "server")
 data class ServerEntity(
-    @PrimaryKey val id: Int = 1,
+    // Rowid (Long). Früher fix 1 (Single-Server); jetzt mehrere Verbindungen. Int→Long ist in
+    // SQLite dieselbe INTEGER-Affinität → KEIN Schema-Change, keine Migration nötig.
+    @PrimaryKey val id: Long = 0,
     val name: String,
     val baseUrl: String,
     /** Quellenart (`SourceKind`-Name: "KOMGA" | "OPDS" | …); Default KOMGA für Bestandsdaten. */

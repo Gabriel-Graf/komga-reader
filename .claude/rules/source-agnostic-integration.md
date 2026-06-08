@@ -44,8 +44,16 @@ wird über `SourceRegistration` aus der aktiven `ServerConfig` befüllt; `Active
 Reader, alle Browse-/Detail-VMs und das Cover-/Seiten-Laden (Coil `SourcePageFetcher`/
 `SourceCoverFetcher` über `openPage`/`coverBytes`) laufen über die Naht; `AuthHeaders`
 existiert nicht mehr. `KomgaSourceProvider` lebt nur noch in der Wiring-Schicht
-(`ActiveSource`/`SourceRegistration`). Offen: OPDS als *live registrierbare* zweite Quelle
-(`ServerConfig.kind` + Room-Migration + Typwahl-UI) — der Canary aus Phase 7.
+(`ActiveSource`/`SourceRegistration`).
+
+**Multi-Source pro Werk (Stand 2026-06-09, #7 P2/P3):** Consumer lösen nicht mehr „die erste/
+aktive" Quelle auf, sondern **die des konkreten Werks** über `ActiveSource.get(item.sourceId)`;
+`LibraryViewModel` aggregiert über `all()`. Die `sourceId` wird **durch die Navigation gefädelt**
+(`series/{seriesId}/{sourceId}`, `reader/{bookId}/{sourceId}/…`) — Callbacks tragen `series.sourceId`/
+`book.sourceId`. **Lackmustest verschärft:** funktioniert das Feature, wenn **zwei** Quellen
+gleichzeitig aktiv sind und das Werk zur **zweiten** gehört? `current()` als Werk-Resolver = Bug.
+Settings verwaltet eine Server-Liste (Hinzufügen/Einzel-Entfernen). Offen: OPDS als end-to-end
+*verifizierte* zweite Live-Quelle — der Canary aus Phase 7.
 
 ```kotlin
 // Ist (verdrahtet): ActiveSource resolvt die aktive Quelle agnostisch als BrowsableSource.

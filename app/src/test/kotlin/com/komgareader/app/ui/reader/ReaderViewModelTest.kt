@@ -80,12 +80,16 @@ class ReaderViewModelTest {
         override suspend fun clear() = error("not used")
     }
 
-    private class FakeActiveSource(private val source: BrowsableSource?) : ActiveSource(
+    /** Multi-source-fähig: löst Quellen per `id` auf, genau wie der echte [ActiveSource]. */
+    private class FakeActiveSource(private val sources: List<BrowsableSource>) : ActiveSource(
         sources = SourceManager(),
         servers = FakeServerRepository(),
         registration = SourceRegistration(SourceManager(), KomgaSourceProvider()),
     ) {
-        override suspend fun current(): BrowsableSource? = source
+        constructor(source: BrowsableSource?) : this(listOfNotNull(source))
+        override suspend fun current(): BrowsableSource? = sources.firstOrNull()
+        override suspend fun get(sourceId: Long): BrowsableSource? = sources.firstOrNull { it.id == sourceId }
+        override suspend fun all(): List<BrowsableSource> = sources
     }
 
     private class FakeDownloads(private val book: DownloadedBook? = null) : DownloadRepository {
@@ -154,14 +158,16 @@ class ReaderViewModelTest {
         source: BrowsableSource?,
         mode: String,
         stream: Boolean = true,
+        sourceId: Long = 42L,
+        active: ActiveSource = FakeActiveSource(source),
         downloadBook: DownloadedBook? = null,
         localBytes: ByteArray = ByteArray(0),
         documentFactory: DocumentFactory = FakeDocumentFactory(FakeDocument(0)),
     ): ReaderViewModel = ReaderViewModel(
         savedStateHandle = SavedStateHandle(
-            mapOf("bookId" to "b1", "format" to "CBZ", "viewerMode" to mode, "stream" to stream),
+            mapOf("bookId" to "b1", "sourceId" to sourceId, "format" to "CBZ", "viewerMode" to mode, "stream" to stream),
         ),
-        active = FakeActiveSource(source),
+        active = active,
         bus = HardwareButtonBus(),
         downloadRepository = FakeDownloads(downloadBook),
         localBookBytes = FakeLocalBookBytes(localBytes),
@@ -203,6 +209,27 @@ class ReaderViewModelTest {
             assertEquals(5, content.pages.size)
             assertEquals(SourceImage(sourceId = 42L, bookRemoteId = "b1", pageNumber = 1), content.pages.first())
             assertEquals(SourceImage(sourceId = 42L, bookRemoteId = "b2", pageNumber = 1), content.pages[2])
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `paged-laden loest bei mehreren quellen die per sourceId auf - nicht die erste`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            // Zwei aktive Quellen; geöffnet wird das Werk der ZWEITEN (id 99). Greift der Reader
+            // fälschlich auf „die erste/aktive" zu, lädt er 5 statt 2 Seiten.
+            val first = FakeSource(id = 42L, pageCount = 5)
+            val second = FakeSource(id = 99L, pageCount = 2)
+            val vm = readerVm(
+                source = second, mode = "PAGED", sourceId = 99L,
+                active = FakeActiveSource(listOf(first, second)),
+            )
+
+            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Streamed
+            assertEquals(2, content.pages.size)
+            assertEquals(SourceImage(sourceId = 99L, bookRemoteId = "b1", pageNumber = 1), content.pages.first())
         } finally {
             Dispatchers.resetMain()
         }

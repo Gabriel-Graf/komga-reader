@@ -28,6 +28,9 @@ interface Strings {
     val disconnect: String
     val connected: String
     val notConnected: String
+    val connectedServers: String
+    val addServer: String
+    val removeServer: String
     // Detail-Screen
     val chapters: String
     val chapterViewSwitchToGrid: String
@@ -220,6 +223,9 @@ object StringsDe : Strings {
     override val disconnect = "Trennen"
     override val connected = "Verbunden"
     override val notConnected = "Nicht verbunden"
+    override val connectedServers = "Verbundene Server"
+    override val addServer = "Server hinzufügen"
+    override val removeServer = "Entfernen"
     // Detail-Screen
     override val chapters = "Kapitel"
     override val chapterViewSwitchToGrid = "Kachelansicht"
@@ -414,6 +420,9 @@ object StringsEn : Strings {
     override val disconnect = "Disconnect"
     override val connected = "Connected"
     override val notConnected = "Not connected"
+    override val connectedServers = "Connected servers"
+    override val addServer = "Add server"
+    override val removeServer = "Remove"
     // Detail-Screen
     override val chapters = "Chapters"
     override val chapterViewSwitchToGrid = "Grid view"

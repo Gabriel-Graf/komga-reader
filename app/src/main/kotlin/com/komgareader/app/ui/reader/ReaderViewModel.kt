@@ -56,6 +56,9 @@ class ReaderViewModel @Inject constructor(
 ) : ViewModel(), Viewer {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
+
+    /** Quelle dieses Werks (Naht A) — aus der Navigation, nicht „die erste/aktive". */
+    private val routeSourceId: Long = checkNotNull(savedStateHandle["sourceId"])
     private val format: BookFormat = runCatching {
         BookFormat.valueOf(savedStateHandle.get<String>("format") ?: "CBZ")
     }.getOrDefault(BookFormat.CBZ)
@@ -145,7 +148,7 @@ class ReaderViewModel @Inject constructor(
                     // Auch beim lokalen Download auf der letzten Seite fortsetzen:
                     // Server-Progress best-effort holen (offline → Seite 0).
                     val startPage = runCatching {
-                        (active.current() as? SyncingSource)?.pullProgress(bookId)
+                        (active.get(routeSourceId) as? SyncingSource)?.pullProgress(bookId)
                             ?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
                     }.getOrNull() ?: 0
                     _currentPage.value = startPage
@@ -154,8 +157,8 @@ class ReaderViewModel @Inject constructor(
                 }
             }
 
-            // Kein lokaler Download (oder forceStream) → Stream über die aktive Quelle.
-            val source = active.current()
+            // Kein lokaler Download (oder forceStream) → Stream über die Quelle dieses Werks.
+            val source = active.get(routeSourceId)
             if (source == null) {
                 _content.value = ReaderContent.Error("Kein Server verbunden.")
                 return@launch
@@ -274,7 +277,7 @@ class ReaderViewModel @Inject constructor(
 
     private fun pushProgress(targetBookId: String, page: Int, totalPages: Int) {
         viewModelScope.launch {
-            val source = active.current() as? SyncingSource ?: return@launch
+            val source = active.get(routeSourceId) as? SyncingSource ?: return@launch
             runCatching {
                 source.pushProgress(
                     targetBookId,

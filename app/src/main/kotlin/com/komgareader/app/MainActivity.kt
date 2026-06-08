@@ -119,18 +119,21 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = nav, startDestination = "home") {
                         composable("home") {
                             HomeScreen(
-                                onOpenSeries = { seriesId -> nav.navigate("series/$seriesId") },
+                                onOpenSeries = { seriesId, sourceId -> nav.navigate("series/$seriesId/$sourceId") },
                                 onOpenGroup = { shelfId, _ -> nav.navigate("group/$shelfId") },
                             )
                         }
                         composable(
-                            route = "series/{seriesId}",
-                            arguments = listOf(navArgument("seriesId") { type = NavType.StringType }),
+                            route = "series/{seriesId}/{sourceId}",
+                            arguments = listOf(
+                                navArgument("seriesId") { type = NavType.StringType },
+                                navArgument("sourceId") { type = NavType.LongType },
+                            ),
                         ) {
                             SeriesDetailScreen(
                                 onBack = { nav.popBackStack() },
-                                onOpenBook = { bookId, pageCount, format, forceStream, viewerMode ->
-                                    nav.navigate("reader/$bookId/$pageCount/$format/$forceStream/$viewerMode")
+                                onOpenBook = { bookId, sourceId, pageCount, format, forceStream, viewerMode ->
+                                    nav.navigate("reader/$bookId/$sourceId/$pageCount/$format/$forceStream/$viewerMode")
                                 },
                             )
                         }
@@ -142,29 +145,31 @@ class MainActivity : ComponentActivity() {
                             GroupBrowseRoute(
                                 shelfId = shelfId,
                                 onBack = { nav.popBackStack() },
-                                onOpenSeries = { seriesId ->
-                                    nav.navigate("series_vm/$seriesId/$shelfId")
+                                onOpenSeries = { seriesId, sourceId ->
+                                    nav.navigate("series_vm/$seriesId/$shelfId/$sourceId")
                                 },
                             )
                         }
                         composable(
-                            route = "series_vm/{seriesId}/{shelfId}",
+                            route = "series_vm/{seriesId}/{shelfId}/{sourceId}",
                             arguments = listOf(
                                 navArgument("seriesId") { type = NavType.StringType },
                                 navArgument("shelfId") { type = NavType.LongType },
+                                navArgument("sourceId") { type = NavType.LongType },
                             ),
                         ) {
                             SeriesDetailScreen(
                                 onBack = { nav.popBackStack() },
-                                onOpenBook = { bookId, pageCount, format, forceStream, viewerMode ->
-                                    nav.navigate("reader/$bookId/$pageCount/$format/$forceStream/$viewerMode")
+                                onOpenBook = { bookId, sourceId, pageCount, format, forceStream, viewerMode ->
+                                    nav.navigate("reader/$bookId/$sourceId/$pageCount/$format/$forceStream/$viewerMode")
                                 },
                             )
                         }
                         composable(
-                            route = "reader/{bookId}/{pageCount}/{format}/{stream}",
+                            route = "reader/{bookId}/{sourceId}/{pageCount}/{format}/{stream}",
                             arguments = listOf(
                                 navArgument("bookId") { type = NavType.StringType },
+                                navArgument("sourceId") { type = NavType.LongType },
                                 navArgument("pageCount") { type = NavType.IntType },
                                 navArgument("format") { type = NavType.StringType },
                                 navArgument("stream") { type = NavType.BoolType; defaultValue = false },
@@ -173,9 +178,10 @@ class MainActivity : ComponentActivity() {
                             ReaderRoute(onBack = { nav.popBackStack() })
                         }
                         composable(
-                            route = "reader/{bookId}/{pageCount}/{format}/{stream}/{viewerMode}",
+                            route = "reader/{bookId}/{sourceId}/{pageCount}/{format}/{stream}/{viewerMode}",
                             arguments = listOf(
                                 navArgument("bookId") { type = NavType.StringType },
+                                navArgument("sourceId") { type = NavType.LongType },
                                 navArgument("pageCount") { type = NavType.IntType },
                                 navArgument("format") { type = NavType.StringType },
                                 navArgument("stream") { type = NavType.BoolType; defaultValue = false },

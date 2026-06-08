@@ -109,6 +109,9 @@ class SeriesDetailViewModel @Inject constructor(
 
     private val seriesId: String = checkNotNull(savedStateHandle["seriesId"])
     private val shelfId: Long? = savedStateHandle.get<Long>("shelfId")
+
+    /** Quelle dieser Serie (Naht A) — aus der Navigation, nicht „die erste/aktive". */
+    private val sourceId: Long = checkNotNull(savedStateHandle["sourceId"])
     private val resolveViewerType = ResolveViewerType()
     private val resolveShelfContentType = ResolveShelfContentType()
 
@@ -122,7 +125,7 @@ class SeriesDetailViewModel @Inject constructor(
         servers.config.flatMapLatest { config ->
             flow {
                 emit(SeriesDetailUiState.Loading)
-                val source = active.current()
+                val source = active.get(sourceId)
                 if (config == null || source == null) { emit(SeriesDetailUiState.NoServer); return@flow }
                 emit(runCatching { source.books(seriesId) }
                     .fold(
@@ -276,7 +279,7 @@ class SeriesDetailViewModel @Inject constructor(
             val config = servers.config.first() ?: run {
                 _events.emit(SeriesDetailEvent.DownloadError("Kein Server verbunden")); return@launch
             }
-            val source = active.current() ?: run {
+            val source = active.get(sourceId) ?: run {
                 _events.emit(SeriesDetailEvent.DownloadError("Quelle nicht verfügbar")); return@launch
             }
             val total = books.size
@@ -375,7 +378,7 @@ class SeriesDetailViewModel @Inject constructor(
                 _events.emit(SeriesDetailEvent.DownloadError("Kein Server verbunden"))
                 return@launch
             }
-            val source = active.current() ?: run {
+            val source = active.get(sourceId) ?: run {
                 _events.emit(SeriesDetailEvent.DownloadError("Quelle nicht verfügbar"))
                 return@launch
             }
@@ -427,7 +430,7 @@ class SeriesDetailViewModel @Inject constructor(
         // Sofort optimistisch einblenden — kein Voll-Reload der Seite.
         _readOverrides.update { it + (book.remoteId to read) }
         viewModelScope.launch {
-            val source = active.current() as? SyncingSource ?: return@launch
+            val source = active.get(sourceId) as? SyncingSource ?: return@launch
             runCatching { source.setRead(book.remoteId, read, book.pageCount) }
                 .onFailure { e ->
                     Log.e(TAG, "Read-Status setzen fehlgeschlagen: ${book.remoteId}", e)
@@ -445,7 +448,7 @@ class SeriesDetailViewModel @Inject constructor(
         // Sofort optimistisch (Chip + Viewer) — kein Voll-Reload.
         _typeOverride.value = TypeOverride(type)
         viewModelScope.launch {
-            val source = active.current() ?: return@launch
+            val source = active.get(sourceId) ?: return@launch
             runCatching { overrideRepository.set(source.id, seriesId, type) }
                 .onFailure {
                     Log.e(TAG, "Typ setzen fehlgeschlagen", it)
@@ -473,7 +476,7 @@ class SeriesDetailViewModel @Inject constructor(
 
     /** Pusht alle noch nicht synchronisierten lokalen Fortschritte zum Server (still bei Offline). */
     private suspend fun syncDirtyProgress() {
-        val source = active.current() as? SyncingSource ?: return
+        val source = active.get(sourceId) as? SyncingSource ?: return
         readProgressRepository.dirty().forEach { lp ->
             runCatching {
                 source.pushProgress(

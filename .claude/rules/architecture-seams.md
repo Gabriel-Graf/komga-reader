@@ -42,8 +42,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (Coil `SourcePageFetcher`/`SourceCoverFetcher` → `BrowsableSource.openPage`/`coverBytes`); es gibt
   **kein** `AuthHeaders` mehr und keine quellen-spezifische URL/Auth in der UI. `BrowsableSource`
   trägt jetzt `downloadFile(…, onProgress)`, `seriesIdOf`, `coverBytes`. `KomgaSource`-Typen leben
-  nur noch in `ActiveSource`/`SourceRegistration`/`KomgaSourceProvider`. **Offen:** OPDS als live
-  registrierbare zweite Quelle (`ServerConfig.kind` + Room-Migration + Typwahl-UI) — Phase-7-Canary.
+  nur noch in `ActiveSource`/`SourceRegistration`/`KomgaSourceProvider`.
+- **Multi-Source verdrahtet (2026-06-09, #7 P2/P3):** N Quellen gleichzeitig, gemischt.
+  `ActiveSource` bietet `all()` (Aggregation) + `get(sourceId)` (genau die Quelle eines Werks);
+  `current()` bleibt nur Übergangs-API. Die `sourceId` jedes Werks wird **durch die Navigation
+  gefädelt** (`series/{seriesId}/{sourceId}`, `reader/{bookId}/{sourceId}/…`), und alle Consumer
+  lösen **pro Werk** über `get(item.sourceId)` auf statt „die erste/aktive" (`LibraryViewModel`
+  aggregiert über `all()`; `SeriesDetail`/`Reader`/`Novel`/`GroupBrowse`/`Groups` via `get`).
+  Settings verwaltet eine **Server-Liste** (Hinzufügen + Einzel-Entfernen). Emulator-verifiziert.
+  **Offen:** OPDS als end-to-end *verifizierte* zweite Live-Quelle (Registrierung/Typwahl-UI
+  existiert; gemischter Betrieb mit Komga noch nicht am Gerät bewiesen) — Phase-7-Canary.
   Details/Integrationsregel: `source-agnostic-integration.md`.
 
 ## Naht B — Render & E-Ink (`render-core`, `eink-onyx`)

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -60,7 +62,7 @@ private const val OVERLAP_MAX = 50
 @Composable
 fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
-    val server by viewModel.server.collectAsState()
+    val servers by viewModel.serverList.collectAsState()
 
     var nameInput by remember { mutableStateOf("") }
     var urlInput by remember { mutableStateOf("") }
@@ -70,8 +72,25 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        val statusText = if (server != null) "${s.connected}: ${server!!.name}" else s.notConnected
-        HighlightText(statusText, query, MaterialTheme.typography.bodyLarge)
+        // Verbundene Server (mehrere gleichzeitig, gemischt) — jeder einzeln entfernbar.
+        SectionHeader(s.connectedServers)
+        if (servers.isEmpty()) {
+            HighlightText(s.notConnected, query, MaterialTheme.typography.bodyLarge)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                servers.forEach { cfg ->
+                    ServerRow(
+                        config = cfg,
+                        query = query,
+                        removeLabel = s.removeServer,
+                        onRemove = { viewModel.removeServer(cfg.id) },
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider()
+        SectionHeader(s.addServer)
 
         // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -170,11 +189,34 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
                 nameInput = ""; urlInput = ""; apiKeyInput = ""; usernameInput = ""; passwordInput = ""
                 kindInput = SourceKind.KOMGA
             }) { Text(s.connect) }
-            if (server != null) {
-                Spacer(Modifier.width(8.dp))
-                EinkOutlinedButton(onClick = { viewModel.disconnect() }) { Text(s.disconnect) }
-            }
         }
+    }
+}
+
+/**
+ * Eine Zeile der Server-Liste: Name + Quellenart + URL links, „Entfernen" rechts.
+ * Flach mit 1.5px-Border (E-Ink-Designsprache), kein Schatten.
+ */
+@Composable
+private fun ServerRow(
+    config: com.komgareader.domain.repository.ServerConfig,
+    query: String,
+    removeLabel: String,
+    onRemove: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            HighlightText("${config.name}  ·  ${config.kind.name}", query, MaterialTheme.typography.bodyLarge)
+            HighlightText(config.baseUrl, query, MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.width(8.dp))
+        EinkOutlinedButton(onClick = onRemove) { Text(removeLabel) }
     }
 }
 

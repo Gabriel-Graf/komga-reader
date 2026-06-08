@@ -70,6 +70,8 @@ class EpubBytesLoaderTest {
         registration = SourceRegistration(SourceManager(), KomgaSourceProvider()),
     ) {
         override suspend fun current(): BrowsableSource? = source
+        override suspend fun get(sourceId: Long): BrowsableSource? = source?.takeIf { it.id == sourceId }
+        override suspend fun all(): List<BrowsableSource> = listOfNotNull(source)
     }
 
     private class FakeDownloads(private val book: DownloadedBook? = null) : DownloadRepository {
@@ -95,10 +97,10 @@ class EpubBytesLoaderTest {
     )
 
     @Test
-    fun `load mit forceStream liefert die downloadFile-Bytes der aktiven Quelle`() = runBlocking {
+    fun `load mit forceStream liefert die downloadFile-Bytes der Quelle dieses Werks`() = runBlocking {
         val loader = loader(FakeSource(fileBytes = "EPUB".toByteArray()))
 
-        val bytes = loader.load(bookId = "b1", forceStream = true)
+        val bytes = loader.load(bookId = "b1", sourceId = 7L, forceStream = true)
 
         assertEquals("EPUB", String(bytes))
     }
@@ -115,7 +117,7 @@ class EpubBytesLoaderTest {
             local = FakeLocalBookBytes("LOCAL".toByteArray()),
         )
 
-        val bytes = loader.load(bookId = "b1", forceStream = false)
+        val bytes = loader.load(bookId = "b1", sourceId = 7L, forceStream = false)
 
         assertEquals("LOCAL", String(bytes))
     }
@@ -127,7 +129,7 @@ class EpubBytesLoaderTest {
             FakeSource(progress = ReadProgress(bookId = 0, page = 26, totalPages = 51, updatedAt = 0)),
         )
 
-        val fraction = loader.startProgressFraction(bookId = "b1")
+        val fraction = loader.startProgressFraction(bookId = "b1", sourceId = 7L)
 
         assertEquals(0.5f, fraction)
     }
@@ -136,6 +138,6 @@ class EpubBytesLoaderTest {
     fun `startProgressFraction ist 0 ohne aktive Quelle`() = runBlocking {
         val loader = loader(source = null)
 
-        assertEquals(0f, loader.startProgressFraction(bookId = "b1"))
+        assertEquals(0f, loader.startProgressFraction(bookId = "b1", sourceId = 7L))
     }
 }

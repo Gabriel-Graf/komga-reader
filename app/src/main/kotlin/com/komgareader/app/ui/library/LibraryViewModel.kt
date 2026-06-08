@@ -92,8 +92,11 @@ class LibraryViewModel @Inject constructor(
             .flatMapLatest { (config, shelves) ->
                 flow {
                     emit(LibraryUiState.Loading)
-                    val source = active.current()
-                    if (config == null || source == null) {
+                    // Multi-source: über ALLE konfigurierten Quellen (Naht A) aggregieren —
+                    // n Komga, OPDS, später Plugin-Server, gemischt. Jede Serie trägt ihre
+                    // `sourceId`, sodass das Öffnen die richtige Quelle trifft.
+                    val sources = active.all()
+                    if (config == null || sources.isEmpty()) {
                         // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
                         val local = downloadRepository.downloads.first().localSeries()
                         emit(
@@ -108,28 +111,34 @@ class LibraryViewModel @Inject constructor(
                         )
                         return@flow
                     }
-                    val overrides = runCatching { overrideRepository.all(source.id) }.getOrDefault(emptyMap())
-                    emit(runCatching { source.browse(0, SourceFilter()) }
-                        .fold(
-                            {
+                    val overrides = sources
+                        .flatMap { runCatching { overrideRepository.all(it.id) }.getOrDefault(emptyMap()).entries }
+                        .associate { it.key to it.value }
+                    val results = sources.map { source ->
+                        runCatching { source.browse(0, SourceFilter()).items }
+                    }
+                    emit(
+                        if (results.any { it.isSuccess }) {
+                            // Teilerfolg zählt: Werke aller erreichbaren Quellen zeigen.
+                            val series = results.mapNotNull { it.getOrNull() }.flatten()
+                            LibraryUiState.Content(
+                                series, config,
+                                effectiveTypes = resolveTypes(series, shelves, overrides),
+                            )
+                        } else {
+                            // Keine Quelle erreichbar → nur lokal vorhandene Werke zeigen.
+                            val local = downloadRepository.downloads.first().localSeries()
+                            if (local.isNotEmpty()) {
                                 LibraryUiState.Content(
-                                    it.items, config,
-                                    effectiveTypes = resolveTypes(it.items, shelves, overrides),
+                                    local, config, offline = true,
+                                    effectiveTypes = resolveTypes(local, shelves, overrides),
                                 )
-                            },
-                            { error ->
-                                // Server weg → nur lokal vorhandene Werke zeigen.
-                                val local = downloadRepository.downloads.first().localSeries(source.id)
-                                if (local.isNotEmpty()) {
-                                    LibraryUiState.Content(
-                                        local, config, offline = true,
-                                        effectiveTypes = resolveTypes(local, shelves, overrides),
-                                    )
-                                } else {
-                                    LibraryUiState.Error(error.message ?: "Verbindung fehlgeschlagen")
-                                }
-                            },
-                        ))
+                            } else {
+                                val error = results.firstNotNullOfOrNull { it.exceptionOrNull() }
+                                LibraryUiState.Error(error?.message ?: "Verbindung fehlgeschlagen")
+                            }
+                        },
+                    )
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)
@@ -140,7 +149,7 @@ class LibraryViewModel @Inject constructor(
 
     fun downloadSeries(series: Series) {
         viewModelScope.launch {
-            val source = active.current() ?: return@launch
+            val source = active.get(series.sourceId) ?: return@launch
             runCatching {
                 val books = withContext(Dispatchers.IO) { source.books(series.remoteId) }
                 events.emit(LibraryEvent.DownloadStarted(books.size))

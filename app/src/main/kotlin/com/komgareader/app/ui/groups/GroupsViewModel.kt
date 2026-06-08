@@ -7,19 +7,20 @@ import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.model.ShelfSource
-import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.source.ContainerSource
 import com.komgareader.domain.source.SourceContainer
 import com.komgareader.domain.source.SourceFilter
-import com.komgareader.domain.source.SourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,6 +31,7 @@ data class GroupsUiState(
     val serverSourceId: Long? = null,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class GroupsViewModel @Inject constructor(
     private val shelfRepository: ShelfRepository,
@@ -40,13 +42,21 @@ class GroupsViewModel @Inject constructor(
     val state: StateFlow<GroupsUiState> = combine(
         shelfRepository.shelves,
         serverRepository.config,
-    ) { shelves, config ->
-        GroupsUiState(
-            shelves = shelves,
-            serverConfig = config,
-            serverSourceId = config?.let { computeSourceId(it) },
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroupsUiState())
+    ) { shelves, config -> shelves to config }
+        .flatMapLatest { (shelves, config) ->
+            flow {
+                // Echte id der aktiven Quelle (Naht A, beliebige Quellenart) — kein
+                // KOMGA-only-Nachrechnen. Neue Gruppen hängen an dieser Quelle.
+                emit(
+                    GroupsUiState(
+                        shelves = shelves,
+                        serverConfig = config,
+                        serverSourceId = active.current()?.id,
+                    ),
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroupsUiState())
 
     private val _containers = MutableStateFlow<List<SourceContainer>>(emptyList())
     val containers: StateFlow<List<SourceContainer>> = _containers
@@ -61,18 +71,17 @@ class GroupsViewModel @Inject constructor(
      */
     fun loadCovers() {
         viewModelScope.launch {
-            val source = active.current() ?: return@launch
             state.value.shelves.forEach { shelf ->
-                val containerIds = shelf.sources
-                    .firstOrNull { it.sourceId == source.id }
-                    ?.containerIds
-                    ?: emptyList()
-                val covers = runCatching {
-                    source.browse(0, SourceFilter(containerIds = containerIds))
-                        .items
-                        .take(4)
-                        .map { SourceCover(it.sourceId, it.remoteId, isSeries = true) }
-                }.getOrDefault(emptyList())
+                // Multi-source: jede Quelle (Naht A) des Regals über ihre `sourceId` auflösen
+                // und ihre ersten Cover beisteuern — bis zu 4 über alle Quellen des Regals.
+                val covers = shelf.sources.flatMap { ss ->
+                    val source = active.get(ss.sourceId) ?: return@flatMap emptyList()
+                    runCatching {
+                        source.browse(0, SourceFilter(containerIds = ss.containerIds))
+                            .items
+                            .map { SourceCover(it.sourceId, it.remoteId, isSeries = true) }
+                    }.getOrDefault(emptyList())
+                }.take(4)
                 _covers.value = _covers.value + (shelf.id to covers)
             }
         }
@@ -106,10 +115,5 @@ class GroupsViewModel @Inject constructor(
 
     fun deleteGroup(id: Long) {
         viewModelScope.launch { shelfRepository.delete(id) }
-    }
-
-    private fun computeSourceId(config: ServerConfig): Long {
-        val normalizedBase = if (config.baseUrl.endsWith("/")) config.baseUrl else "${config.baseUrl}/"
-        return SourceId.of(config.name, SourceKind.KOMGA, normalizedBase)
     }
 }

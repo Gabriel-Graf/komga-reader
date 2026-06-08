@@ -69,8 +69,13 @@ class GroupBrowseViewModel @Inject constructor(
                     return@flow
                 }
                 emit(GroupBrowseUiState.Loading)
-                val source = active.current()
-                if (config == null || source == null) {
+                // Quellen-agnostisch + multi-source: jede im Regal referenzierte Quelle (Naht A)
+                // über ihre `sourceId` auflösen und mit ihren eigenen containerIds browsen, dann
+                // mergen. Funktioniert für ein Regal mit einer Quelle (heute) wie mit mehreren.
+                val resolved = shelf.sources.mapNotNull { ss ->
+                    active.get(ss.sourceId)?.let { src -> src to ss.containerIds }
+                }
+                if (config == null || resolved.isEmpty()) {
                     // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
                     val local = downloadRepository.downloads.first().localSeries()
                     emit(
@@ -79,29 +84,28 @@ class GroupBrowseViewModel @Inject constructor(
                     )
                     return@flow
                 }
-                val containerIds = shelf.sources
-                    .firstOrNull { it.sourceId == source.id }
-                    ?.containerIds
-                    ?: emptyList()
-                emit(runCatching { source.browse(0, SourceFilter(containerIds = containerIds)) }
-                    .fold(
-                        { result ->
-                            GroupBrowseUiState.Content(
-                                shelf = shelf,
-                                series = result.items,
-                                serverConfig = config,
-                            )
-                        },
-                        { error ->
-                            // Server nicht erreichbar → nur lokal vorhandene Werke dieser Quelle zeigen.
-                            val local = downloadRepository.downloads.first().localSeries(source.id)
-                            if (local.isNotEmpty()) {
-                                GroupBrowseUiState.Content(shelf, local, config, offline = true)
-                            } else {
-                                GroupBrowseUiState.Error(error.message ?: "Verbindung fehlgeschlagen")
-                            }
-                        },
-                    ))
+                val results = resolved.map { (src, containerIds) ->
+                    runCatching { src.browse(0, SourceFilter(containerIds = containerIds)).items }
+                }
+                emit(
+                    if (results.any { it.isSuccess }) {
+                        GroupBrowseUiState.Content(
+                            shelf = shelf,
+                            series = results.mapNotNull { it.getOrNull() }.flatten(),
+                            serverConfig = config,
+                        )
+                    } else {
+                        // Keine Quelle erreichbar → nur lokal vorhandene Werke der Regal-Quellen zeigen.
+                        val downloads = downloadRepository.downloads.first()
+                        val local = shelf.sources.flatMap { downloads.localSeries(it.sourceId) }
+                        if (local.isNotEmpty()) {
+                            GroupBrowseUiState.Content(shelf, local, config, offline = true)
+                        } else {
+                            val error = results.firstNotNullOfOrNull { it.exceptionOrNull() }
+                            GroupBrowseUiState.Error(error?.message ?: "Verbindung fehlgeschlagen")
+                        }
+                    },
+                )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroupBrowseUiState.Loading)

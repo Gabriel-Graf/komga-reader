@@ -75,6 +75,9 @@ class NovelReaderViewModel @Inject constructor(
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
     private val forceStream: Boolean = savedStateHandle.get<Boolean>("stream") ?: false
 
+    /** Quelle dieses Werks (Naht A) — aus der Navigation, nicht „die erste/aktive". */
+    private val routeSourceId: Long = checkNotNull(savedStateHandle["sourceId"])
+
     private val _uiState = MutableStateFlow(NovelUiState())
     val uiState: StateFlow<NovelUiState> = _uiState.asStateFlow()
 
@@ -148,9 +151,6 @@ class NovelReaderViewModel @Inject constructor(
     private val documentMutex = Mutex()
     private var opened = false
 
-    /** Id der aktiven Quelle (quellen-übergreifender `novel_progress`-Schlüssel). */
-    private var sourceId: Long? = null
-
     /** Zuletzt persistierter Anker — verhindert redundante Schreib-/Push-Vorgänge je Seite. */
     private var lastSavedAnchor: String? = null
 
@@ -173,14 +173,13 @@ class NovelReaderViewModel @Inject constructor(
         opened = true
         viewModelScope.launch {
             runCatching {
-                val bytes = bytesLoader.load(bookId, forceStream)
-                sourceId = bytesLoader.activeSourceId()
+                val bytes = bytesLoader.load(bookId, routeSourceId, forceStream)
                 // EINE kohärente Wiederaufnahme: der lokale Xpointer ist die Wahrheit (exakt,
                 // Schrift-/Viewport-unabhängig). Fehlt er, fällt es auf den groben Komga-%-Stand
                 // zurück (geräteübergreifend). Anker hat IMMER Vorrang vor dem Anteil.
-                val local = sourceId?.let { novelProgress.get(it, bookId) }
+                val local = novelProgress.get(routeSourceId, bookId)
                 val savedAnchor = local?.anchor?.takeIf { it.isNotEmpty() }
-                val fallbackFraction = local?.fraction ?: bytesLoader.startProgressFraction(bookId)
+                val fallbackFraction = local?.fraction ?: bytesLoader.startProgressFraction(bookId, routeSourceId)
                 // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
                 // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
                 val initialConfig = reflowConfig.first()
@@ -408,7 +407,7 @@ class NovelReaderViewModel @Inject constructor(
      * übersprungen.
      */
     private fun persistProgress(page: Int) {
-        val src = sourceId ?: return
+        val src = routeSourceId
         viewModelScope.launch {
             val anchor = documentMutex.withLock {
                 val doc = document ?: return@launch
@@ -418,7 +417,7 @@ class NovelReaderViewModel @Inject constructor(
             lastSavedAnchor = anchor
             val fraction = readingFraction(page)
             novelProgress.save(src, bookId, anchor, fraction)
-            if (bytesLoader.pushNovelFraction(bookId, fraction)) {
+            if (bytesLoader.pushNovelFraction(bookId, src, fraction)) {
                 novelProgress.markSynced(src, bookId)
             }
         }
@@ -465,14 +464,14 @@ class NovelReaderViewModel @Inject constructor(
 
     private fun persistOnClose() {
         val doc = document ?: return
-        val src = sourceId ?: return
+        val src = routeSourceId
         val anchor = doc.currentAnchor()
         if (anchor.isEmpty() || anchor == lastSavedAnchor) return
         lastSavedAnchor = anchor
         val fraction = readingFraction(_uiState.value.currentPage)
         appScope.launch {
             novelProgress.save(src, bookId, anchor, fraction)
-            if (bytesLoader.pushNovelFraction(bookId, fraction)) {
+            if (bytesLoader.pushNovelFraction(bookId, src, fraction)) {
                 novelProgress.markSynced(src, bookId)
             }
         }

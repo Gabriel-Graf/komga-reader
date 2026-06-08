@@ -7,6 +7,7 @@ import com.komgareader.app.data.SourceRegistration
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.Shelf
+import com.komgareader.domain.model.ShelfSource
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.DownloadedBook
@@ -73,12 +74,16 @@ class GroupBrowseViewModelTest {
         override suspend fun clear() = error("not used")
     }
 
-    private class FakeActiveSource(private val source: BrowsableSource?) : ActiveSource(
+    /** Multi-source-fähig: löst Quellen per `id` auf, genau wie der echte [ActiveSource]. */
+    private class FakeActiveSource(private val sources: List<BrowsableSource>) : ActiveSource(
         sources = SourceManager(),
         servers = FakeServerRepository(null),
         registration = SourceRegistration(SourceManager(), KomgaSourceProvider()),
     ) {
-        override suspend fun current(): BrowsableSource? = source
+        constructor(source: BrowsableSource?) : this(listOfNotNull(source))
+        override suspend fun current(): BrowsableSource? = sources.firstOrNull()
+        override suspend fun get(sourceId: Long): BrowsableSource? = sources.firstOrNull { it.id == sourceId }
+        override suspend fun all(): List<BrowsableSource> = sources
     }
 
     private class FakeShelves(items: List<Shelf>) : ShelfRepository {
@@ -95,11 +100,12 @@ class GroupBrowseViewModelTest {
         override suspend fun remove(bookRemoteId: String) = error("not used")
     }
 
-    private fun series(remoteId: String) = Series(id = 0, sourceId = 99L, remoteId = remoteId, title = remoteId)
+    private fun series(remoteId: String, sourceId: Long = 99L) =
+        Series(id = 0, sourceId = sourceId, remoteId = remoteId, title = remoteId)
 
     @Test
     fun `state laedt serien ueber active source (quellen-agnostisch)`() = runTest(dispatcher) {
-        val shelf = Shelf(id = 1L, name = "Regal", sources = emptyList())
+        val shelf = Shelf(id = 1L, name = "Regal", sources = listOf(ShelfSource(sourceId = 99L, containerIds = emptyList())))
         val vm = GroupBrowseViewModel(
             savedStateHandle = SavedStateHandle(mapOf("shelfId" to 1L)),
             shelfRepository = FakeShelves(listOf(shelf)),
@@ -117,5 +123,35 @@ class GroupBrowseViewModelTest {
         val content = seen.last() as GroupBrowseUiState.Content
         assertEquals(3, content.series.size)
         assertEquals(listOf("a", "b", "c"), content.series.map { it.remoteId })
+    }
+
+    @Test
+    fun `state merged serien aus allen quellen des regals - nicht nur der ersten`() = runTest(dispatcher) {
+        // Regal referenziert ZWEI Quellen; jede liefert eigene Serien. Greift der VM nur auf
+        // „die erste/aktive" zu, fehlen die Serien der zweiten Quelle (b) → Merge bräche.
+        val shelf = Shelf(
+            id = 1L, name = "Regal",
+            sources = listOf(
+                ShelfSource(sourceId = 42L, containerIds = emptyList()),
+                ShelfSource(sourceId = 99L, containerIds = emptyList()),
+            ),
+        )
+        val first = FakeSource(id = 42L, series = listOf(series("a", 42L)))
+        val second = FakeSource(id = 99L, series = listOf(series("b", 99L)))
+        val vm = GroupBrowseViewModel(
+            savedStateHandle = SavedStateHandle(mapOf("shelfId" to 1L)),
+            shelfRepository = FakeShelves(listOf(shelf)),
+            serverRepository = FakeServerRepository(ServerConfig("Heim", "http://h")),
+            active = FakeActiveSource(listOf(first, second)),
+            downloadRepository = FakeDownloads(),
+        )
+
+        val seen = mutableListOf<GroupBrowseUiState>()
+        val job = backgroundScope.launch { vm.state.collect { seen += it } }
+        advanceUntilIdle()
+        job.cancel()
+
+        val content = seen.last() as GroupBrowseUiState.Content
+        assertEquals(listOf("a", "b"), content.series.map { it.remoteId })
     }
 }

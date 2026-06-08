@@ -52,7 +52,7 @@ import com.komgareader.domain.repository.ServerConfig
 fun GroupBrowseRoute(
     shelfId: Long,
     onBack: () -> Unit,
-    onOpenSeries: (seriesId: String) -> Unit,
+    onOpenSeries: (seriesId: String, sourceId: Long) -> Unit,
     viewModel: GroupBrowseViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -113,7 +113,7 @@ fun GroupBrowseRoute(
                         GroupSeriesCover(
                             series = series,
                             isLocal = series.remoteId in localSeriesIds,
-                            onClick = { onOpenSeries(series.remoteId) },
+                            onClick = { onOpenSeries(series.remoteId, series.sourceId) },
                         )
                     }
                 }

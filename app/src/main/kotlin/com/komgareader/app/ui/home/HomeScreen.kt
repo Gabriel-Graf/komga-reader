@@ -62,7 +62,7 @@ private const val TAB_SETTINGS = 3
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onOpenSeries: (seriesId: String) -> Unit,
+    onOpenSeries: (seriesId: String, sourceId: Long) -> Unit,
     onOpenGroup: (shelfId: Long, serverSourceId: Long) -> Unit,
 ) {
     val s = LocalStrings.current

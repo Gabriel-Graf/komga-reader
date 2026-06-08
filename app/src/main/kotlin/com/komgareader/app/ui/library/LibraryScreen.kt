@@ -55,7 +55,7 @@ fun LibraryScreen(
     query: String = "",
     typeFilter: Set<ContentType> = emptySet(),
     downloadedOnly: Boolean = false,
-    onOpenSeries: (seriesId: String) -> Unit = {},
+    onOpenSeries: (seriesId: String, sourceId: Long) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
@@ -99,7 +99,7 @@ private fun BrowseTab(
     typeFilter: Set<ContentType>,
     downloadedOnly: Boolean,
     localSeriesIds: Set<String>,
-    onOpenSeries: (seriesId: String) -> Unit,
+    onOpenSeries: (seriesId: String, sourceId: Long) -> Unit,
     onRefresh: () -> Unit,
     onDownload: (Series) -> Unit,
     modifier: Modifier = Modifier,
@@ -163,7 +163,7 @@ private fun BrowseTab(
                         SeriesCover(
                             series = series,
                             isLocal = series.remoteId in localSeriesIds,
-                            onClick = { onOpenSeries(series.remoteId) },
+                            onClick = { onOpenSeries(series.remoteId, series.sourceId) },
                             onLongClick = { onDownload(series) },
                         )
                     }

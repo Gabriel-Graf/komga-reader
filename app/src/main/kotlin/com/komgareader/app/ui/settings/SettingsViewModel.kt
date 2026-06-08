@@ -28,7 +28,8 @@ class SettingsViewModel @Inject constructor(
     val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val webtoonOverlapPercent =
         settings.webtoonOverlapPercent.stateIn(viewModelScope, SharingStarted.Eagerly, 25)
-    val server = servers.config.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /** Alle konfigurierten Server (mehrere gleichzeitig, gemischte Quellenarten). */
+    val serverList = servers.configs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeColorProfile = colorProfiles.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, ColorProfile.OFF)
 
@@ -61,5 +62,7 @@ class SettingsViewModel @Inject constructor(
     }.let {}
 
     private fun String.trimToNull(): String? = trim().ifBlank { null }
-    fun disconnect() = viewModelScope.launch { servers.clear() }.let {}
+
+    /** Entfernt genau eine Server-Verbindung (per Rowid) — die anderen bleiben. */
+    fun removeServer(id: Long) = viewModelScope.launch { servers.remove(id) }.let {}
 }

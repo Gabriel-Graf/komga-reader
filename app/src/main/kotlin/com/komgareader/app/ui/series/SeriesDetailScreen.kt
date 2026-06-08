@@ -81,7 +81,7 @@ import com.komgareader.domain.repository.ServerConfig
 @Composable
 fun SeriesDetailScreen(
     onBack: () -> Unit,
-    onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
+    onOpenBook: (bookId: String, sourceId: Long, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
@@ -209,7 +209,7 @@ private fun SeriesDetailContent(
     downloadPercents: Map<String, Int>,
     downloadProgress: DownloadProgress?,
     cancelling: Boolean,
-    onOpenBook: (bookId: String, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
+    onOpenBook: (bookId: String, sourceId: Long, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     onOpenChapter: (Book) -> Unit,
     onDownload: (Book) -> Unit,
     onRemoveDownload: (String) -> Unit,
@@ -260,7 +260,7 @@ private fun SeriesDetailContent(
                     onRead = {
                         onOpenChapter(info)
                         onOpenBook(
-                            info.remoteId, info.pageCount, info.format.name, false,
+                            info.remoteId, info.sourceId, info.pageCount, info.format.name, false,
                             viewerModes[info.remoteId] ?: "PAGED",
                         )
                     },
@@ -289,7 +289,7 @@ private fun SeriesDetailContent(
                     currentBook?.let {
                         onOpenChapter(it)
                         onOpenBook(
-                            it.remoteId, it.pageCount, it.format.name, false,
+                            it.remoteId, it.sourceId, it.pageCount, it.format.name, false,
                             viewerModes[it.remoteId] ?: "PAGED",
                         )
                     }
@@ -323,7 +323,7 @@ private fun SeriesDetailContent(
                     onOpen = {
                         onOpenChapter(book)
                         onOpenBook(
-                            book.remoteId, book.pageCount, book.format.name, false,
+                            book.remoteId, book.sourceId, book.pageCount, book.format.name, false,
                             viewerModes[book.remoteId] ?: "PAGED",
                         )
                     },
@@ -345,7 +345,7 @@ private fun SeriesDetailContent(
                         onOpen = {
                             onOpenChapter(book)
                             onOpenBook(
-                                book.remoteId, book.pageCount, book.format.name, false,
+                                book.remoteId, book.sourceId, book.pageCount, book.format.name, false,
                                 viewerModes[book.remoteId] ?: "PAGED",
                             )
                         },

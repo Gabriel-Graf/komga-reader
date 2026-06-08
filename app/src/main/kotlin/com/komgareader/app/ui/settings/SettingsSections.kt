@@ -38,6 +38,7 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
         searchTerms = listOf(
             s.settingsConnection, s.settingsServer, s.serverDisplayName, s.serverUrl, s.serverUrlHelper,
             s.serverApiKeyOptional, s.serverUsername, s.serverPassword, s.connect, s.disconnect,
+            s.connectedServers, s.addServer,
         ),
         content = { q -> ConnectionSettingsContent(viewModel, q) },
     ),

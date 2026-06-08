@@ -8,12 +8,14 @@ import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.eink.NoOpEinkController
 import com.komgareader.domain.eink.EinkController
+import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.usecase.NovelProgressMapper
 import com.komgareader.eink.onyx.OnyxEinkController
 import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.domain.source.SourceManager
 import com.komgareader.render.crengine.CrengineDocumentFactory
+import com.komgareader.render.mupdf.MupdfDocumentFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -55,6 +57,15 @@ object AppModule {
     @Provides
     @Singleton
     fun novelProgressMapper(): NovelProgressMapper = NovelProgressMapper()
+
+    /**
+     * Render-Factory (Naht B) hinter dem [DocumentFactory]-Interface (DIP): MuPDF rendert
+     * cbz/cbr/pdf für lokale Downloads. Der Reader kennt nur das Interface — eine andere
+     * Engine klinkt sich hier ein, ohne den Reader zu berühren.
+     */
+    @Provides
+    @Singleton
+    fun documentFactory(): DocumentFactory = MupdfDocumentFactory()
 
     /**
      * Reflow-Engine-Factory (Naht B) hinter dem [ReflowableDocumentFactory]-Interface.

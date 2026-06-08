@@ -15,12 +15,12 @@ import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.reader.WebtoonChapter
 import com.komgareader.domain.reader.WebtoonStrip
 import com.komgareader.domain.render.Document
+import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SyncingSource
 import com.komgareader.domain.source.buildPageRefs
-import com.komgareader.render.mupdf.MupdfDocumentFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -50,6 +50,7 @@ class ReaderViewModel @Inject constructor(
     private val bus: HardwareButtonBus,
     private val downloadRepository: DownloadRepository,
     private val localBookBytes: LocalBookBytes,
+    private val documentFactory: DocumentFactory,
     private val settings: SettingsRepository,
 ) : ViewModel(), ReaderChromeState {
 
@@ -130,7 +131,7 @@ class ReaderViewModel @Inject constructor(
                 if (localDownload != null) {
                     val bytes = withContext(Dispatchers.IO) { localBookBytes.bytesOf(localDownload) }
                     val ext = ".${localDownload.format.lowercase()}"
-                    val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ext) }
+                    val doc = withContext(Dispatchers.IO) { documentFactory.open(bytes, ext) }
                     document = doc
                     val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
                     // Auch beim lokalen Download auf der letzten Seite fortsetzen:

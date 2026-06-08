@@ -17,6 +17,8 @@ import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.DownloadedBook
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.render.Document
+import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.PageRef
@@ -83,15 +85,30 @@ class ReaderViewModelTest {
         override suspend fun current(): BrowsableSource? = source
     }
 
-    private class FakeDownloads : DownloadRepository {
+    private class FakeDownloads(private val book: DownloadedBook? = null) : DownloadRepository {
         override val downloads: Flow<List<DownloadedBook>> = flowOf(emptyList())
-        override suspend fun get(bookRemoteId: String): DownloadedBook? = null
+        override suspend fun get(bookRemoteId: String): DownloadedBook? = book
         override suspend fun put(book: DownloadedBook) = error("not used")
         override suspend fun remove(bookRemoteId: String) = error("not used")
     }
 
-    private class FakeLocalBookBytes : LocalBookBytes {
-        override fun bytesOf(book: DownloadedBook): ByteArray = ByteArray(0)
+    private class FakeLocalBookBytes(private val bytes: ByteArray = ByteArray(0)) : LocalBookBytes {
+        override fun bytesOf(book: DownloadedBook): ByteArray = bytes
+    }
+
+    private class FakeDocument(private val pages: Int) : Document {
+        override fun pageCount(): Int = pages
+        override fun pageSize(index: Int) = error("not used")
+        override fun renderPage(index: Int, zoom: Float, rotation: Int) = error("not used")
+        override fun close() = Unit
+    }
+
+    /** Beweist, dass der VM die **injizierte** [DocumentFactory] (DIP) nutzt, nicht eine selbst gebaute. */
+    private class FakeDocumentFactory(private val doc: Document) : DocumentFactory {
+        var openedWith: String? = null
+        override fun open(bytes: ByteArray, formatHint: String): Document {
+            openedWith = String(bytes); return doc
+        }
     }
 
     private class FakeSettings : SettingsRepository {
@@ -130,15 +147,28 @@ class ReaderViewModelTest {
         format = BookFormat.CBZ, pageCount = pageCount, downloadState = DownloadState.REMOTE,
     )
 
-    private fun readerVm(source: BrowsableSource?, mode: String): ReaderViewModel = ReaderViewModel(
+    private fun readerVm(
+        source: BrowsableSource?,
+        mode: String,
+        stream: Boolean = true,
+        downloadBook: DownloadedBook? = null,
+        localBytes: ByteArray = ByteArray(0),
+        documentFactory: DocumentFactory = FakeDocumentFactory(FakeDocument(0)),
+    ): ReaderViewModel = ReaderViewModel(
         savedStateHandle = SavedStateHandle(
-            mapOf("bookId" to "b1", "format" to "CBZ", "viewerMode" to mode, "stream" to true),
+            mapOf("bookId" to "b1", "format" to "CBZ", "viewerMode" to mode, "stream" to stream),
         ),
         active = FakeActiveSource(source),
         bus = HardwareButtonBus(),
-        downloadRepository = FakeDownloads(),
-        localBookBytes = FakeLocalBookBytes(),
+        downloadRepository = FakeDownloads(downloadBook),
+        localBookBytes = FakeLocalBookBytes(localBytes),
+        documentFactory = documentFactory,
         settings = FakeSettings(),
+    )
+
+    private fun downloadedBook() = DownloadedBook(
+        bookRemoteId = "b1", sourceId = 42L, seriesRemoteId = "s1",
+        title = "T", format = "cbz", localPath = "/tmp/x.cbz", totalPages = 3,
     )
 
     @Test
@@ -170,6 +200,28 @@ class ReaderViewModelTest {
             assertEquals(5, content.pages.size)
             assertEquals(SourceImage(sourceId = 42L, bookRemoteId = "b1", pageNumber = 1), content.pages.first())
             assertEquals(SourceImage(sourceId = 42L, bookRemoteId = "b2", pageNumber = 1), content.pages[2])
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `rendered-pfad oeffnet lokalen download ueber injizierte DocumentFactory`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val factory = FakeDocumentFactory(FakeDocument(pages = 3))
+            val vm = readerVm(
+                source = FakeSource(),
+                mode = "PAGED",
+                stream = false,
+                downloadBook = downloadedBook(),
+                localBytes = "BYTES".toByteArray(),
+                documentFactory = factory,
+            )
+
+            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Rendered
+            assertEquals(3, content.pageCount)
+            assertEquals("BYTES", factory.openedWith)
         } finally {
             Dispatchers.resetMain()
         }

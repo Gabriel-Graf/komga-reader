@@ -134,6 +134,7 @@ class ReaderViewModelTest {
         override val novelTextAlign: Flow<String> = flowOf("LEFT")
         override val novelHyphenationLang: Flow<String> = flowOf("")
         override val novelFontWeight: Flow<Int> = flowOf(400)
+        override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")
@@ -149,6 +150,7 @@ class ReaderViewModelTest {
         override suspend fun setNovelTextAlign(align: String) = error("not used")
         override suspend fun setNovelHyphenationLang(lang: String) = error("not used")
         override suspend fun setNovelFontWeight(value: Int) = error("not used")
+        override suspend fun setDeviceManagedRefresh(value: Boolean) = error("not used")
     }
 
     private fun book(remoteId: String, pageCount: Int) = Book(

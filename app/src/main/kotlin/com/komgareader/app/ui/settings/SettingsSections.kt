@@ -68,6 +68,7 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
         searchTerms = listOf(
             s.settingsReader, s.settingsWebtoon, s.webtoonOverlap, s.webtoonOverlapHelper,
             s.settingsDisplayMode, s.displayModeHelper, s.displayEink, s.displaySmartphone,
+            s.settingsEinkRefresh, s.deviceManagedRefresh, s.deviceManagedRefreshHelper,
         ),
         content = { q -> ReaderSettingsContent(viewModel, q) },
     ),

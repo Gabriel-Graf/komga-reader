@@ -166,6 +166,10 @@ interface Strings {
     val settingsWebtoon: String
     val webtoonOverlapHelper: String
     val webtoonOverlap: String
+    // E-Ink-Refresh
+    val settingsEinkRefresh: String
+    val deviceManagedRefresh: String
+    val deviceManagedRefreshHelper: String
     // Roman-Typografie-Panel
     val novelTypography: String
     val novelFontSize: String
@@ -372,6 +376,11 @@ object StringsDe : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
     override val webtoonOverlap = "Überlappung"
+    override val settingsEinkRefresh = "E-Ink-Refresh"
+    override val deviceManagedRefresh = "Refresh dem Gerät überlassen"
+    override val deviceManagedRefreshHelper =
+        "Das Gerät (Onyx) steuert das Ghosting-Clear selbst — die App erzwingt keinen Voll-Refresh. " +
+            "Schnelles Blättern bleibt aktiv. Aus = die App steuert (Voll-Refresh alle paar Seiten)."
     override val novelTypography = "Typografie"
     override val novelFontSize = "Schriftgröße"
     override val novelLineHeight = "Zeilenabstand"
@@ -572,6 +581,11 @@ object StringsEn : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
     override val webtoonOverlap = "Overlap"
+    override val settingsEinkRefresh = "E-Ink refresh"
+    override val deviceManagedRefresh = "Let the device manage refresh"
+    override val deviceManagedRefreshHelper =
+        "The device (Onyx) handles ghosting clears itself — the app forces no full refresh. " +
+            "Fast paging stays on. Off = the app manages it (full refresh every few pages)."
     override val novelTypography = "Typography"
     override val novelFontSize = "Font size"
     override val novelLineHeight = "Line spacing"

@@ -246,8 +246,30 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
     val overlap by viewModel.webtoonOverlapPercent.collectAsState()
     val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
+    val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+        Column {
+            SectionHeader(s.settingsEinkRefresh)
+            HighlightText(
+                s.deviceManagedRefreshHelper, query, MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 4.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HighlightText(
+                    s.deviceManagedRefresh, query, MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = deviceManagedRefresh,
+                    onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
+                )
+            }
+        }
         Column {
             SectionHeader(s.settingsWebtoon)
             HighlightText(

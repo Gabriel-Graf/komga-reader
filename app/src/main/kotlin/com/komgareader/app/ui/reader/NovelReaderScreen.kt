@@ -39,8 +39,9 @@ import com.komgareader.eink.onyx.OnyxRefresher
  * Overlay, Status-Fuß) — keine Parallel-Linie (siehe `shared-structure-before-variants`).
  *
  * **Keine Animation:** Der Seitenwechsel ist ein sofortiger State-Wechsel
- * (currentPage) + ein gezielter Full-Refresh über den [OnyxRefresher] gegen
- * Ghosting — wie der bewusste Bildwechsel im Comic-Reader (E-Ink, `animation-gating`).
+ * (currentPage). Der Refresh läuft — wie im Paged-Reader — über den geteilten
+ * [com.komgareader.domain.eink.RefreshScheduler]: PARTIAL beim Blättern, periodische
+ * GC-Full-Promotion gegen Ghosting, forceFull nur beim Re-Layout (E-Ink, `animation-gating`).
  */
 @Composable
 fun NovelReaderScreen(
@@ -61,13 +62,17 @@ fun NovelReaderScreen(
     var tocPanelOpen by remember { mutableStateOf(false) }
     var searchPanelOpen by remember { mutableStateOf(false) }
 
-    // Reflow-Seitenwechsel ist ein bewusster Bildwechsel -> sofortiger GC-Full-Refresh
-    // gegen Ghosting (No-Op auf Nicht-Boox). Ein Re-Layout (Typo-Änderung) ändert
-    // pageCount -> ebenfalls als Full-Refresh-Auslöser einbeziehen.
+    // Ein normaler Roman-Seitenwechsel ist KEIN bewusster Bildwechsel, sondern Blättern wie im
+    // Paged-Reader → PARTIAL (schneller DU-Refresh), mit periodischer GC-Promotion gegen Ghosting
+    // über den geteilten Scheduler (alle N Seiten ein Full). NUR ein Re-Layout (Typo-Änderung →
+    // pageCount ändert sich) ist ein bewusster Vollbild-Wechsel → forceFull. Sonst flasht jede
+    // Seite voll (Onyx-„Regal"-Anmutung). No-Op auf Nicht-Boox.
+    var lastPageCount by remember { mutableStateOf(state.pageCount) }
     LaunchedEffect(state.currentPage, state.pageCount) {
         novelVm.onPageSettled(state.currentPage)
-        // Seitenwechsel/Re-Layout = bewusster Bildwechsel → forceFull über den geteilten Scheduler (Viewer-Naht).
-        if (novelVm.refreshScheduler.onContentChange(forceFull = true) == RefreshMode.FULL) {
+        val relayout = state.pageCount != lastPageCount
+        lastPageCount = state.pageCount
+        if (novelVm.refreshScheduler.onContentChange(forceFull = relayout) == RefreshMode.FULL) {
             refresher?.fullRefreshNow(rootView)
         }
     }

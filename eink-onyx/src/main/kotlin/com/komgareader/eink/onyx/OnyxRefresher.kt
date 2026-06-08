@@ -21,6 +21,15 @@ class OnyxRefresher @Inject constructor() {
     /** Wird vom DI-Modul nach der Erstellung gesetzt. */
     var controller: OnyxEinkController? = null
 
+    /**
+     * Wenn true, überlässt die App den Voll-Refresh (Ghosting-Clear) dem Gerät: die
+     * App-seitigen GC-Full-Aufrufe ([fullRefreshNow]/[fullRefreshIfNeeded]) werden zu No-Ops,
+     * der Fast-Modus ([enterFastMode]) bleibt aktiv. Gespeist aus der Einstellung
+     * `deviceManagedRefresh` (Default an). Volatile: aus dem Compose-Main-Thread gesetzt/gelesen.
+     */
+    @Volatile
+    var deviceManaged: Boolean = true
+
     /** Schaltet den App-weiten A2/DW-Schnell-Modus ein. */
     fun enterFastMode() {
         controller?.enterFastMode()
@@ -36,6 +45,7 @@ class OnyxRefresher @Inject constructor() {
      * Sollte alle N Seitenumbrüche aufgerufen werden.
      */
     fun fullRefreshIfNeeded(view: View, pagesSinceLastRefresh: Int, interval: Int = GHOST_CLEAR_INTERVAL) {
+        if (deviceManaged) return
         if (controller != null && pagesSinceLastRefresh >= interval) {
             controller?.fullRefresh(view)
         }
@@ -43,6 +53,7 @@ class OnyxRefresher @Inject constructor() {
 
     /** Sofortiger GC-Full-Refresh — für den E-Ink-Webtoon-Frame-Sprung (ein Refresh pro Frame). */
     fun fullRefreshNow(view: View) {
+        if (deviceManaged) return
         controller?.fullRefresh(view)
     }
 

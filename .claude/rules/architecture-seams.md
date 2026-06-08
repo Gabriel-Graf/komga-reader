@@ -71,6 +71,13 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `mergeRegions`). Die **Ausführung** macht weiter `OnyxRefresher` (`eink-onyx`, gerätenah) +
   `EinkReaderEffect`. Eine Scheduler-Instanz pro Reader-Sitzung, von allen Readern über den
   `Viewer`-Vertrag geteilt. (`triggerGhostClearIfNeeded` ist entfernt.)
+  **Update (2026-06-09): `RefreshScheduler` ist `@Deprecated` + standardmäßig wirkungslos.** Die
+  Einstellung `deviceManagedRefresh` (Default **an**) überlässt den Voll-Refresh dem Onyx-Gerät —
+  `OnyxRefresher.deviceManaged` macht dann `fullRefreshNow`/`fullRefreshIfNeeded` zu No-Ops (der
+  Fast-Modus `enterFastMode` bleibt aktiv). Der Scheduler läuft nur noch als Fallback, wenn der
+  Toggle (Settings → Reader → „E-Ink-Refresh") ausgeschaltet wird; dann blättern alle Reader
+  partial mit periodischer GC-Promotion (auch der Roman-Reader — der erzwang vorher pro Seite FULL).
+  Mittelfristig entfernen.
 - **Reader / Viewer-Naht (Ist, 2026-06-08):** Es gibt den **`Viewer`**-Vertrag
   (`app/ui/reader/Viewer.kt`) — eine **Compose-Zustands**-Naht (chromeVisible-`StateFlow`,
   `toggleChrome`/`navigateTo`/`onPageSettled`, `refreshScheduler`), **nicht** das alte OO-`bind/

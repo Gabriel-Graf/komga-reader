@@ -13,7 +13,17 @@ package com.komgareader.domain.eink
  *
  * Das ersetzt die bisher pro Reader unterschiedliche, fragile Index-Modulo-Logik
  * (`index % interval == 0`, die bei Seitensprüngen falsch zählt) durch **Event-Zählung**.
+ *
+ * @deprecated Die App-seitige Refresh-Steuerung wird zugunsten der geräteeigenen (Onyx)
+ * abgelöst: per Einstellung `deviceManagedRefresh` (Default an) überlässt die App das
+ * Ghosting-Clear dem Gerät — der `OnyxRefresher` führt dann keine GC-Full-Refreshes mehr aus.
+ * Diese Entscheidungslogik läuft zwar noch, bleibt aber ohne Wirkung. Nur als Fallback behalten,
+ * wenn der Toggle ausgeschaltet wird; mittelfristig entfernen.
  */
+@Deprecated(
+    "App-seitige Refresh-Entscheidung wird abgelöst (deviceManagedRefresh, Default an); " +
+        "Onyx steuert den Voll-Refresh selbst. Nur noch Fallback für den ausgeschalteten Toggle.",
+)
 class RefreshScheduler(private val ghostClearInterval: Int = DEFAULT_GHOST_CLEAR_INTERVAL) {
 
     private var partialsSinceFull = 0

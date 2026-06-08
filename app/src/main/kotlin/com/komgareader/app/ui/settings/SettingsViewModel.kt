@@ -26,6 +26,7 @@ class SettingsViewModel @Inject constructor(
     val displayMode = settings.displayMode.stateIn(viewModelScope, SharingStarted.Eagerly, "EINK")
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val deviceManagedRefresh = settings.deviceManagedRefresh.stateIn(viewModelScope, SharingStarted.Eagerly, true)
     val webtoonOverlapPercent =
         settings.webtoonOverlapPercent.stateIn(viewModelScope, SharingStarted.Eagerly, 25)
     /** Alle konfigurierten Server (mehrere gleichzeitig, gemischte Quellenarten). */
@@ -38,6 +39,8 @@ class SettingsViewModel @Inject constructor(
     fun setDisplayMode(value: String) = viewModelScope.launch { settings.setDisplayMode(value) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
     fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
+    fun setDeviceManagedRefresh(value: Boolean) =
+        viewModelScope.launch { settings.setDeviceManagedRefresh(value) }.let {}
     fun setWebtoonOverlap(percent: Int) =
         viewModelScope.launch { settings.setWebtoonOverlapPercent(percent) }.let {}
     fun saveServer(

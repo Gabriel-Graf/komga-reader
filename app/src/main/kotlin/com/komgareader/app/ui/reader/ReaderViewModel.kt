@@ -99,6 +99,14 @@ class ReaderViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, DisplayMode.EINK)
 
     /**
+     * Ob das Gerät den Voll-Refresh selbst steuert (Einstellung; Default an). Speist
+     * [com.komgareader.eink.onyx.OnyxRefresher.deviceManaged] über den [ReaderRoute] — gilt
+     * dann für ALLE Reader (geteilter Refresher-Singleton).
+     */
+    val deviceManagedRefresh: StateFlow<Boolean> = settings.deviceManagedRefresh
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    /**
      * Frame-Sprünge im Webtoon-Modus (Hardware-/Lautstärke-Tasten): +1 = vorwärts,
      * -1 = rückwärts. Der WebtoonReaderScreen scrollt darauf um ~1 Bildschirmhöhe.
      */

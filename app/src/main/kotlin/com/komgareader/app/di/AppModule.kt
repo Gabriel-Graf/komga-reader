@@ -3,6 +3,7 @@ package com.komgareader.app.di
 import android.content.Context
 import android.os.Build
 import coil.ImageLoader
+import com.komgareader.app.data.coil.SourcePageFetcher
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.eink.NoOpEinkController
@@ -11,6 +12,7 @@ import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.usecase.NovelProgressMapper
 import com.komgareader.eink.onyx.OnyxEinkController
 import com.komgareader.eink.onyx.OnyxRefresher
+import com.komgareader.domain.source.SourceManager
 import com.komgareader.render.crengine.CrengineDocumentFactory
 import dagger.Module
 import dagger.Provides
@@ -26,9 +28,29 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    /**
+     * Die eine prozessweite Quellen-Registry (Naht A). Als Singleton bereitgestellt, damit
+     * [com.komgareader.app.data.SourceRegistration] und der [SourcePageFetcher] dieselbe
+     * Instanz teilen — der Fetcher sieht genau die Quellen, die registriert wurden.
+     */
     @Provides
     @Singleton
-    fun imageLoader(@ApplicationContext ctx: Context): ImageLoader = ImageLoader(ctx)
+    fun sourceManager(): SourceManager = SourceManager()
+
+    /**
+     * App-weiter Coil-[ImageLoader] mit registriertem [SourcePageFetcher.Factory]: Bilder
+     * werden über die Quellen-Naht ([SourceManager] → [com.komgareader.domain.source.BrowsableSource.openPage])
+     * geladen, statt quellenspezifische URLs + Auth-Header durch die UI zu reichen.
+     */
+    @Provides
+    @Singleton
+    fun imageLoader(
+        @ApplicationContext ctx: Context,
+        sources: SourceManager,
+    ): ImageLoader =
+        ImageLoader.Builder(ctx)
+            .components { add(SourcePageFetcher.Factory(sources)) }
+            .build()
 
     @Provides
     @Singleton

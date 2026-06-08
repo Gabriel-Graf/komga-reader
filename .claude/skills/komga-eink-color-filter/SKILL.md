@@ -67,4 +67,4 @@ Kern: `domain/color/ColorFilterMatrix.kt`, `domain/model/ColorProfile.kt`,
 `app/ui/components/FilteredImage.kt`, `app/ui/settings/ColorFilterViewModel.kt` + `ColorFilterSettingsScreen.kt`,
 `data/db/AppDatabase.kt` (`seedColorProfiles`/`MIGRATION_6_7`/`SEED_CALLBACK`), `data/repository/RoomColorProfileRepository.kt`.
 Tests: `ColorFilterMatrixTest`, `RoomColorProfileRepositoryTest`, `ColorProfileSeedTest` (instrumentiert).
-Gehört zu [[project-komga-eink-reader]]; UI-Look siehe `komga-eink-ui`.
+Gehört zu [[project-komga-eink-reader]]; UI-Look siehe `komga-eink-ui-polish`.

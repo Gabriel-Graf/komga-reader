@@ -67,7 +67,7 @@ Tap-Mitte bedeutet je Zustand etwas anderes (kein Widerspruch):
 
 Panel-Wechsel/Zoom-Out = Bildwechsel → Full-Refresh über `OnyxRefresher`/`RefreshScheduler`
 (wie Seitenwechsel). Kein blindes Invalidieren. No-Op auf Nicht-Boox (HW-gated).
-E-Ink-Designsprache gilt ([[komga-eink-ui]]): flach, 1.5px-Border, monochrom, keine Animation.
+E-Ink-Designsprache gilt ([[komga-eink-ui-polish]]): flach, 1.5px-Border, monochrom, keine Animation.
 
 ## Detektor-Algorithmus (Flood-Fill + Connected-Components)
 
@@ -111,6 +111,6 @@ marginFraction)` liefert den korrekten Faktor inklusive Letterbox-Offset.
 - Panel-Tap-Logik gegen un-zurückskalierte Downscale-Koordinaten (Treffer daneben).
 - Tap/Zoom gegen Viewport statt Content-Rechteck (Letterbox ignorieren) — Treffer und Zoom-Pivot stimmen nicht.
 
-Bezug: [[komga-viewer-type-resolution]], [[komga-eink-ui]], `guided-view`-Modul, Naht B
+Bezug: [[komga-viewer-type-resolution]], [[komga-eink-ui-polish]], `guided-view`-Modul, Naht B
 (`architecture-seams.md`). Tests: `GuidedNavigatorTest`, `PanelGeometryTest`,
 `ResolveViewerTypeTest` (COMIC-Stufen).

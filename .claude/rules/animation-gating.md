@@ -36,4 +36,4 @@ AnimatedVisibility(
 ## Bezug
 
 Konkretisiert „Keine Animationen" aus `eink-design-language.md` (verbindlich) und das
-Teil-Update-Anti-Pattern aus dem `komga-eink-ui`-Skill. Gehört zu [[project-komga-eink-reader]].
+Teil-Update-Anti-Pattern aus dem `komga-eink-ui-polish`-Skill. Gehört zu [[project-komga-eink-reader]].

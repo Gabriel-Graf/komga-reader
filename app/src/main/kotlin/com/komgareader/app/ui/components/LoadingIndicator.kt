@@ -9,10 +9,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.domain.model.DisplayBehavior
 
 /**
- * App-weit bereitgestellter Anzeige-Modus: `true` = E-Ink. Wird in `MainActivity`
- * aus der Display-Mode-Einstellung gesetzt. Default `true` (E-Ink), passend zum Gerät.
+ * App-weit bereitgestelltes Geräte-Verhalten (zwei orthogonale Achsen: Bewegung ⟂ Akzentfarbe).
+ * Wird in `MainActivity` aus Anzeige-Modus + `EinkController.capabilities` abgeleitet
+ * ([com.komgareader.domain.model.displayBehaviorFor]). Default = mono E-Ink (sicherster Fall).
+ */
+val LocalDisplayBehavior = staticCompositionLocalOf { DisplayBehavior.MONO_EINK }
+
+/**
+ * App-weit bereitgestellter Anzeige-Modus: `true` = E-Ink (= keine Bewegung). **Abgeleitete
+ * dünne Brücke** über [LocalDisplayBehavior] (`!allowsMotion`), damit bestehende Animations-
+ * Gates unverändert weiterlaufen. Neue, farbsensitive Stellen lesen stattdessen
+ * [LocalDisplayBehavior]`.allowsAccentColor`. Default `true` (E-Ink), passend zum Gerät.
  */
 val LocalEinkMode = staticCompositionLocalOf { true }
 

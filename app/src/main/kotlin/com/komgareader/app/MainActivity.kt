@@ -21,6 +21,7 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.stringsFor
 import com.komgareader.app.ui.components.LocalColorProfile
+import com.komgareader.app.ui.components.LocalDisplayBehavior
 import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.app.ui.components.LocalImageFilter
 import com.komgareader.app.ui.components.toColorFilterOrNull
@@ -32,7 +33,10 @@ import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.eink.ButtonEvent
+import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.displayBehaviorFor
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -40,6 +44,9 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var buttonBus: HardwareButtonBus
+
+    /** Geräte-Naht (Boox vs. No-Op) — liefert die [com.komgareader.domain.eink.EinkCapabilities]. */
+    @Inject lateinit var einkController: EinkController
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
@@ -81,11 +88,16 @@ class MainActivity : ComponentActivity() {
 
             val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
             val language = if (languageStr == "en") Language.EN else Language.DE
-            val isEink = displayModeStr != "SMARTPHONE" // Default E-Ink
+            // Geräteklasse auf zwei orthogonalen Achsen ableiten (Bewegung ⟂ Akzentfarbe):
+            // Bewegung folgt der User-Wahl, Akzentfarbe der Hardware (Kaleido). LocalEinkMode
+            // bleibt die abgeleitete Brücke (!allowsMotion) für bestehende Animations-Gates.
+            val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
+            val displayBehavior = displayBehaviorFor(displayMode, einkController.capabilities)
 
             CompositionLocalProvider(
                 LocalStrings provides stringsFor(language),
-                LocalEinkMode provides isEink,
+                LocalDisplayBehavior provides displayBehavior,
+                LocalEinkMode provides !displayBehavior.allowsMotion,
                 LocalImageFilter provides activeColorProfile.toColorFilterOrNull(),
                 LocalColorProfile provides activeColorProfile,
             ) {

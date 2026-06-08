@@ -59,6 +59,7 @@ class ReaderViewModelTest {
         override suspend fun pages(bookRemoteId: String): List<PageRef> =
             buildPageRefs(bookRemoteId, pageCount)
         override suspend fun seriesIdOf(bookRemoteId: String): String = seriesId
+        override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray = error("not used")
         override suspend fun books(seriesRemoteId: String): List<Book> = booksInSeries
         override suspend fun pullProgress(bookRemoteId: String): ReadProgress? = null
 

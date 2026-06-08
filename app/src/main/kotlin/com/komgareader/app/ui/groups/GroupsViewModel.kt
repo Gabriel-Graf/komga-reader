@@ -3,6 +3,7 @@ package com.komgareader.app.ui.groups
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.model.ShelfSource
@@ -50,9 +51,9 @@ class GroupsViewModel @Inject constructor(
     private val _containers = MutableStateFlow<List<SourceContainer>>(emptyList())
     val containers: StateFlow<List<SourceContainer>> = _containers
 
-    /** Erste bis zu 4 Cover-URLs je Bibliothek (shelfId → Cover) für das Collage-Grid. */
-    private val _covers = MutableStateFlow<Map<Long, List<String?>>>(emptyMap())
-    val covers: StateFlow<Map<Long, List<String?>>> = _covers
+    /** Erste bis zu 4 Cover je Bibliothek (shelfId → Cover) für das Collage-Grid. */
+    private val _covers = MutableStateFlow<Map<Long, List<SourceCover>>>(emptyMap())
+    val covers: StateFlow<Map<Long, List<SourceCover>>> = _covers
 
     /**
      * Lädt für jede Bibliothek die ersten vier Titel und cacht deren Cover-URLs.
@@ -66,13 +67,13 @@ class GroupsViewModel @Inject constructor(
                     .firstOrNull { it.sourceId == source.id }
                     ?.containerIds
                     ?: emptyList()
-                val coverUrls = runCatching {
+                val covers = runCatching {
                     source.browse(0, SourceFilter(containerIds = containerIds))
                         .items
                         .take(4)
-                        .map { it.coverUrl }
+                        .map { SourceCover(it.sourceId, it.remoteId, isSeries = true) }
                 }.getOrDefault(emptyList())
-                _covers.value = _covers.value + (shelf.id to coverUrls)
+                _covers.value = _covers.value + (shelf.id to covers)
             }
         }
     }

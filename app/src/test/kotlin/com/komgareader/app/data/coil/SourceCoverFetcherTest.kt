@@ -13,16 +13,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
-class SourcePageFetcherTest {
+class SourceCoverFetcherTest {
 
-    /** Minimale Quelle, die nur [openPage] echt implementiert; alles andere ist ungenutzt. */
-    private class FakePageSource(override val id: Long) : BrowsableSource {
+    /** Minimale Quelle, die nur [coverBytes] echt implementiert. */
+    private class FakeCoverSource(override val id: Long) : BrowsableSource {
         override val name = "Fake"
         override val kind = SourceKind.KOMGA
 
-        override suspend fun openPage(ref: PageRef): ByteArray =
-            "PAGE${ref.pageNumber}".toByteArray()
+        override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray =
+            "COVER:$remoteId:${if (isSeriesCover) "series" else "book"}".toByteArray()
 
+        override suspend fun openPage(ref: PageRef): ByteArray = error("not used")
         override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> = error("not used")
         override suspend fun search(query: String, page: Int): PagedResult<Series> = error("not used")
         override suspend fun books(seriesRemoteId: String): List<Book> = error("not used")
@@ -30,25 +31,34 @@ class SourcePageFetcherTest {
         override suspend fun pages(bookRemoteId: String): List<PageRef> = error("not used")
         override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit): ByteArray = error("not used")
         override suspend fun seriesIdOf(bookRemoteId: String): String = error("not used")
-        override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray = error("not used")
     }
 
     @Test
-    fun `loadPageBytes loest Bytes ueber openPage der registrierten Quelle auf`() = runBlocking {
+    fun `loadCoverBytes loest serien-cover ueber coverBytes der registrierten Quelle auf`() = runBlocking {
         val sources = SourceManager()
-        sources.register(FakePageSource(id = 42L))
+        sources.register(FakeCoverSource(id = 7L))
 
-        val bytes = loadPageBytes(SourceImage(sourceId = 42L, bookRemoteId = "b1", pageNumber = 7), sources)
+        val bytes = loadCoverBytes(SourceCover(sourceId = 7L, remoteId = "s1", isSeries = true), sources)
 
-        assertEquals("PAGE7", String(bytes))
+        assertEquals("COVER:s1:series", String(bytes))
     }
 
     @Test
-    fun `loadPageBytes wirft fuer eine nicht registrierte Quelle`() {
+    fun `loadCoverBytes loest buch-cover ueber coverBytes auf`() = runBlocking {
+        val sources = SourceManager()
+        sources.register(FakeCoverSource(id = 7L))
+
+        val bytes = loadCoverBytes(SourceCover(sourceId = 7L, remoteId = "b1", isSeries = false), sources)
+
+        assertEquals("COVER:b1:book", String(bytes))
+    }
+
+    @Test
+    fun `loadCoverBytes wirft fuer eine nicht registrierte Quelle`() {
         val sources = SourceManager()
 
         assertThrows(IllegalStateException::class.java) {
-            runBlocking { loadPageBytes(SourceImage(sourceId = 99L, bookRemoteId = "b1", pageNumber = 1), sources) }
+            runBlocking { loadCoverBytes(SourceCover(sourceId = 99L, remoteId = "s1", isSeries = true), sources) }
         }
     }
 }

@@ -93,6 +93,23 @@ class OpdsSource internal constructor(
     }
 
     /**
+     * Lädt das Cover (Thumbnail/Image-Link) des Eintrags. Im flachen OPDS-Katalog trägt
+     * derselbe Eintrag Serien- und Buch-Cover — [isSeriesCover] spielt daher keine Rolle.
+     * Ohne Cover-Link → leere Bytes (die UI zeigt dann den Platzhalter).
+     */
+    override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray {
+        val entries = fetchFeed(catalogUrl)
+        val href = entries.firstOrNull { it.id == remoteId }?.coverHref ?: return ByteArray(0)
+        val absoluteUrl = baseUrl.resolve(href) ?: return ByteArray(0)
+        return withContext(Dispatchers.IO) {
+            val request = Request.Builder().url(absoluteUrl).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) ByteArray(0) else response.body?.bytes() ?: ByteArray(0)
+            }
+        }
+    }
+
+    /**
      * In einem flachen OPDS-Katalog trägt derselbe Atom-Eintrag sowohl die Serie als auch
      * das Buch — die `remoteId` des Buchs ist zugleich die der Serie. Daher ist die
      * Serien-ID schlicht die übergebene Buch-ID.

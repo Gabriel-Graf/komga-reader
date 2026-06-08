@@ -68,7 +68,7 @@ import com.komgareader.app.ui.components.AnchoredMenuPopup
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
-import com.komgareader.app.data.AuthHeaders
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.i18n.localizedContentType
@@ -274,7 +274,7 @@ private fun SeriesDetailContent(
                 seriesTitle = seriesTitle,
                 bookCount = books.size,
                 seriesRemoteId = seriesRemoteId,
-                serverConfig = serverConfig,
+                sourceId = books.firstOrNull()?.sourceId,
                 status = seriesStatus,
                 genres = seriesGenres,
                 contentType = contentType,
@@ -371,7 +371,7 @@ private fun SeriesHeroCard(
     seriesTitle: String,
     bookCount: Int,
     seriesRemoteId: String,
-    serverConfig: ServerConfig?,
+    sourceId: Long?,
     status: String?,
     genres: List<String>,
     contentType: ContentType?,
@@ -390,7 +390,7 @@ private fun SeriesHeroCard(
 ) {
     val s = LocalStrings.current
     val ctx = LocalContext.current
-    val coverUrl = serverConfig?.let { "${it.baseUrl}series/$seriesRemoteId/thumbnail" }
+    val seriesCover = sourceId?.let { SourceCover(it, seriesRemoteId, isSeries = true) }
     val statusText = status?.takeIf { it.isNotBlank() }?.let { s.localizedSeriesStatus(it) }
     val subtitle = listOfNotNull("$bookCount ${s.chapters}", statusText).joinToString(" · ")
     var fullDescription by remember { mutableStateOf<String?>(null) }
@@ -404,12 +404,10 @@ private fun SeriesHeroCard(
         Box(Modifier.fillMaxWidth()) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             // Großes Cover links
-            if (coverUrl != null) {
-                val authHeaders = AuthHeaders.forCovers(serverConfig)
+            if (seriesCover != null) {
                 FilteredAsyncImage(
                     model = ImageRequest.Builder(ctx)
-                        .data(coverUrl)
-                        .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                        .data(seriesCover)
                         .crossfade(true)
                         .build(),
                     contentDescription = seriesTitle,
@@ -691,7 +689,7 @@ private fun ChapterInfoHero(
 ) {
     val s = LocalStrings.current
     val ctx = LocalContext.current
-    val coverUrl = serverConfig?.let { "${it.baseUrl}books/${book.remoteId}/thumbnail" }
+    val bookCover = SourceCover(book.sourceId, book.remoteId, isSeries = false)
     var fullDescription by remember { mutableStateOf<String?>(null) }
     Column(
         modifier = modifier
@@ -701,12 +699,10 @@ private fun ChapterInfoHero(
     ) {
         Box(Modifier.fillMaxWidth()) {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                if (coverUrl != null) {
-                    val authHeaders = AuthHeaders.forCovers(serverConfig)
+                run {
                     FilteredAsyncImage(
                         model = ImageRequest.Builder(ctx)
-                            .data(coverUrl)
-                            .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                            .data(bookCover)
                             .crossfade(false)
                             .build(),
                         contentDescription = book.title,
@@ -995,7 +991,7 @@ private fun ChapterTile(
     var menuOpen by remember { mutableStateOf(false) }
     var tilePos by remember { mutableStateOf(Offset.Zero) }
     var pressAnchor by remember { mutableStateOf(IntOffset.Zero) }
-    val coverUrl = serverConfig?.let { "${it.baseUrl}books/${book.remoteId}/thumbnail" }
+    val bookCover = SourceCover(book.sourceId, book.remoteId, isSeries = false)
 
     Column(
         Modifier
@@ -1030,19 +1026,15 @@ private fun ChapterTile(
                 )
                 .clip(RoundedCornerShape(EinkTokens.tileRadius)),
         ) {
-            if (coverUrl != null) {
-                val authHeaders = AuthHeaders.forCovers(serverConfig)
-                FilteredAsyncImage(
-                    model = ImageRequest.Builder(ctx)
-                        .data(coverUrl)
-                        .apply { authHeaders.forEach { (k, v) -> addHeader(k, v) } }
-                        .crossfade(false)
-                        .build(),
-                    contentDescription = book.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+            FilteredAsyncImage(
+                model = ImageRequest.Builder(ctx)
+                    .data(bookCover)
+                    .crossfade(false)
+                    .build(),
+                contentDescription = book.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
             // oben-rechts: Info — öffnet immer die Kapitel-Beschreibung (auch wenn keine da ist).
             Box(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
                 CoverBadge(onClick = onShowInfo) {

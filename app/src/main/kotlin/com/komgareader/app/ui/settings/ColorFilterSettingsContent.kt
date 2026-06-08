@@ -106,9 +106,8 @@ fun ColorFilterSettingsContent(
     // Vorschau-Cover — bleibt oben gepinnt (scrollt nicht mit den Reglern weg).
     val cover: @Composable () -> Unit = {
         preview?.let { p ->
-            val request = remember(p.url) {
-                ImageRequest.Builder(ctx).data(p.url)
-                    .apply { p.headers.forEach { addHeader(it.key, it.value) } }
+            val request = remember(p) {
+                ImageRequest.Builder(ctx).data(p)
                     .crossfade(false).build()
             }
             Row(

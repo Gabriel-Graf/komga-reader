@@ -3,23 +3,19 @@ package com.komgareader.app.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
-import com.komgareader.app.data.AuthHeaders
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
 import com.komgareader.domain.repository.ColorProfileRepository
-import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.source.SourceFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Vorschau-Bildquelle: ein zufälliges Cover + die zugehörigen Auth-Header. */
-data class PreviewCover(val url: String, val headers: Map<String, String>)
 
 /** Editor-Werte (live, noch nicht persistiert). */
 data class EditState(
@@ -41,7 +37,6 @@ data class EditState(
 @HiltViewModel
 class ColorFilterViewModel @Inject constructor(
     private val colorProfiles: ColorProfileRepository,
-    private val servers: ServerRepository,
     private val activeSource: ActiveSource,
 ) : ViewModel() {
 
@@ -54,46 +49,43 @@ class ColorFilterViewModel @Inject constructor(
     private val _edit = MutableStateFlow<EditState?>(null)
     val edit: StateFlow<EditState?> = _edit
 
-    private val _preview = MutableStateFlow<PreviewCover?>(null)
-    val preview: StateFlow<PreviewCover?> = _preview
+    private val _preview = MutableStateFlow<SourceCover?>(null)
+    val preview: StateFlow<SourceCover?> = _preview
 
     // True, sobald ein Verlauf existiert (steuert die Sichtbarkeit des „Vorheriges"-Buttons).
     private val _canGoBack = MutableStateFlow(false)
     val canGoBack: StateFlow<Boolean> = _canGoBack
 
-    // Kandidaten-Cover + Header für die Vorschau; Verlauf der zuvor gezeigten Bilder. Beides nur
+    // Kandidaten-Cover für die Vorschau; Verlauf der zuvor gezeigten Bilder. Beides nur
     // im Speicher — beim Schließen der Settings (ViewModel weg) bewusst verworfen.
-    private var candidates: List<String> = emptyList()
-    private var headers: Map<String, String> = emptyMap()
-    private val history = ArrayDeque<String>()
+    private var candidates: List<SourceCover> = emptyList()
+    private val history = ArrayDeque<SourceCover>()
 
     init { loadPreviewCover() }
 
     private fun loadPreviewCover() = viewModelScope.launch {
-        val config = servers.config.first() ?: return@launch
         val source = activeSource.current() ?: return@launch
-        headers = AuthHeaders.forCovers(config)
         candidates = runCatching { source.browse(0, SourceFilter()).items }
             .getOrNull()
-            ?.mapNotNull { it.coverUrl }
+            ?.map { SourceCover(it.sourceId, it.remoteId, isSeries = true) }
             ?: emptyList()
-        candidates.randomOrNull()?.let { _preview.value = PreviewCover(it, headers) }
+        candidates.randomOrNull()?.let { _preview.value = it }
     }
 
     /** Nächstes, zufällig anderes Vorschau-Cover; das aktuelle wandert in den Verlauf. */
     fun nextPreview() {
-        val current = _preview.value?.url
+        val current = _preview.value
         val next = candidates.filter { it != current }.randomOrNull() ?: return
         if (current != null) history.addLast(current)
         _canGoBack.value = history.isNotEmpty()
-        _preview.value = PreviewCover(next, headers)
+        _preview.value = next
     }
 
     /** Vorheriges Vorschau-Cover aus dem Verlauf (no-op, wenn keiner vorhanden). */
     fun previousPreview() {
         val prev = history.removeLastOrNull() ?: return
         _canGoBack.value = history.isNotEmpty()
-        _preview.value = PreviewCover(prev, headers)
+        _preview.value = prev
     }
 
     fun setActive(id: Long) = viewModelScope.launch { colorProfiles.setActive(id) }

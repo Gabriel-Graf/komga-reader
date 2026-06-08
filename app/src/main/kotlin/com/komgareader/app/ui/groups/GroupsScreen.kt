@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.request.ImageRequest
 import com.komgareader.app.ui.components.FilteredAsyncImage
-import com.komgareader.app.data.AuthHeaders
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.icons.AppIcons
@@ -113,8 +113,7 @@ fun GroupsScreen(
             items(state.shelves, key = { it.id }) { shelf ->
                 GroupTile(
                     shelf = shelf,
-                    coverUrls = covers[shelf.id] ?: emptyList(),
-                    serverConfig = state.serverConfig,
+                    covers = covers[shelf.id] ?: emptyList(),
                     onClick = {
                         val sourceId = state.serverSourceId ?: return@GroupTile
                         onOpenGroup(shelf.id, sourceId)
@@ -152,8 +151,7 @@ fun GroupsScreen(
 @Composable
 private fun GroupTile(
     shelf: Shelf,
-    coverUrls: List<String?>,
-    serverConfig: ServerConfig?,
+    covers: List<SourceCover>,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -167,7 +165,7 @@ private fun GroupTile(
             .clip(RoundedCornerShape(8.dp))
             .combinedClickable(onClick = onClick),
     ) {
-        CompositeCover(coverUrls = coverUrls, serverConfig = serverConfig)
+        CompositeCover(covers = covers)
 
         shelf.defaultContentType?.let { type ->
             TypeChip(
@@ -258,17 +256,14 @@ private fun CornerAction(
  */
 @Composable
 private fun CompositeCover(
-    coverUrls: List<String?>,
-    serverConfig: ServerConfig?,
+    covers: List<SourceCover>,
 ) {
     Column(Modifier.fillMaxSize()) {
         repeat(2) { row ->
             Row(Modifier.fillMaxWidth().weight(1f)) {
                 repeat(2) { col ->
-                    val url = coverUrls.getOrNull(row * 2 + col)
                     CoverSlot(
-                        url = url,
-                        serverConfig = serverConfig,
+                        cover = covers.getOrNull(row * 2 + col),
                         modifier = Modifier.fillMaxSize().weight(1f),
                     )
                 }
@@ -277,20 +272,17 @@ private fun CompositeCover(
     }
 }
 
-/** Einzelne Cover-Zelle der Collage; ohne URL eine ruhige Platzhalter-Fläche. */
+/** Einzelne Cover-Zelle der Collage; ohne Cover eine ruhige Platzhalter-Fläche. */
 @Composable
 private fun CoverSlot(
-    url: String?,
-    serverConfig: ServerConfig?,
+    cover: SourceCover?,
     modifier: Modifier = Modifier,
 ) {
     val ctx = LocalContext.current
     Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
-        if (url != null) {
-            val request = remember(url, serverConfig) {
-                val headers = AuthHeaders.forCovers(serverConfig)
-                ImageRequest.Builder(ctx).data(url)
-                    .apply { headers.forEach { addHeader(it.key, it.value) } }
+        if (cover != null) {
+            val request = remember(cover) {
+                ImageRequest.Builder(ctx).data(cover)
                     .crossfade(false).build()
             }
             FilteredAsyncImage(

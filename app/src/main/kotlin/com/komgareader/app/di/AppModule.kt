@@ -3,6 +3,7 @@ package com.komgareader.app.di
 import android.content.Context
 import android.os.Build
 import coil.ImageLoader
+import com.komgareader.app.data.coil.SourceCoverFetcher
 import com.komgareader.app.data.coil.SourcePageFetcher
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
@@ -51,7 +52,10 @@ object AppModule {
         sources: SourceManager,
     ): ImageLoader =
         ImageLoader.Builder(ctx)
-            .components { add(SourcePageFetcher.Factory(sources)) }
+            .components {
+                add(SourcePageFetcher.Factory(sources))
+                add(SourceCoverFetcher.Factory(sources))
+            }
             .build()
 
     @Provides

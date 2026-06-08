@@ -62,6 +62,7 @@ class GroupBrowseViewModelTest {
         override suspend fun openPage(ref: PageRef): ByteArray = error("not used")
         override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit): ByteArray = error("not used")
         override suspend fun seriesIdOf(bookRemoteId: String): String = error("not used")
+        override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray = error("not used")
     }
 
     private class FakeServerRepository(cfg: ServerConfig?) : ServerRepository {

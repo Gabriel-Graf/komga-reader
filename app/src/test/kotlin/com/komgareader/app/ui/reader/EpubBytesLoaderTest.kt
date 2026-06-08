@@ -50,6 +50,7 @@ class EpubBytesLoaderTest {
         override suspend fun pages(bookRemoteId: String): List<PageRef> = error("not used")
         override suspend fun openPage(ref: PageRef): ByteArray = error("not used")
         override suspend fun seriesIdOf(bookRemoteId: String): String = error("not used")
+        override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray = error("not used")
         override suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress) = error("not used")
         override suspend fun setRead(bookRemoteId: String, read: Boolean, pageCount: Int) = error("not used")
     }

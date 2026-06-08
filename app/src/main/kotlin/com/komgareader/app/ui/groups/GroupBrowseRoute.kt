@@ -43,7 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.icons.AppIcons
 import coil.request.ImageRequest
-import com.komgareader.app.data.AuthHeaders
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.repository.ServerConfig
 
@@ -112,7 +112,6 @@ fun GroupBrowseRoute(
                     items(current.series) { series ->
                         GroupSeriesCover(
                             series = series,
-                            serverConfig = current.serverConfig,
                             isLocal = series.remoteId in localSeriesIds,
                             onClick = { onOpenSeries(series.remoteId) },
                         )
@@ -127,15 +126,13 @@ fun GroupBrowseRoute(
 @Composable
 private fun GroupSeriesCover(
     series: Series,
-    serverConfig: ServerConfig?,
     isLocal: Boolean,
     onClick: () -> Unit,
 ) {
     val ctx = LocalContext.current
-    val headers = remember(serverConfig) { AuthHeaders.forCovers(serverConfig) }
-    val request = remember(series.coverUrl, serverConfig) {
-        ImageRequest.Builder(ctx).data(series.coverUrl)
-            .apply { headers.forEach { addHeader(it.key, it.value) } }
+    val request = remember(series.sourceId, series.remoteId) {
+        ImageRequest.Builder(ctx)
+            .data(SourceCover(series.sourceId, series.remoteId, isSeries = true))
             .crossfade(false).build()
     }
     Box(

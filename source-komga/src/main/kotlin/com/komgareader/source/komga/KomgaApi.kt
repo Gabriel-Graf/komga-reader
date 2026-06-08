@@ -55,6 +55,14 @@ interface KomgaApi {
     @Streaming
     suspend fun getFile(@Path("id") bookId: String): ResponseBody
 
+    @GET("series/{id}/thumbnail")
+    @Streaming
+    suspend fun getSeriesThumbnail(@Path("id") seriesId: String): ResponseBody
+
+    @GET("books/{id}/thumbnail")
+    @Streaming
+    suspend fun getBookThumbnail(@Path("id") bookId: String): ResponseBody
+
     @PATCH("books/{id}/read-progress")
     suspend fun updateProgress(
         @Path("id") bookId: String,

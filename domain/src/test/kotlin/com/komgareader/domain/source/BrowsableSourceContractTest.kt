@@ -21,6 +21,8 @@ private class FakeBrowsable : BrowsableSource {
     override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit) =
         "epub:$bookRemoteId".toByteArray()
     override suspend fun seriesIdOf(bookRemoteId: String) = "s-$bookRemoteId"
+    override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean) =
+        "cover:$remoteId:${if (isSeriesCover) "series" else "book"}".toByteArray()
 }
 
 class BrowsableSourceContractTest {
@@ -29,5 +31,12 @@ class BrowsableSourceContractTest {
         val s: BrowsableSource = FakeBrowsable()
         assertEquals("epub:b1", String(s.downloadFile("b1")))
         assertEquals("s-b1", s.seriesIdOf("b1"))
+    }
+
+    @Test
+    fun `coverBytes liefert Serien- und Buch-Cover über das interface`() = runTest {
+        val s: BrowsableSource = FakeBrowsable()
+        assertEquals("cover:s1:series", String(s.coverBytes("s1", isSeriesCover = true)))
+        assertEquals("cover:b1:book", String(s.coverBytes("b1", isSeriesCover = false)))
     }
 }

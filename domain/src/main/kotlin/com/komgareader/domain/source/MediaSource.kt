@@ -65,6 +65,13 @@ interface BrowsableSource : MediaSource {
      * Gibt die quellen-interne Serien-`remoteId` zurück.
      */
     suspend fun seriesIdOf(bookRemoteId: String): String
+
+    /**
+     * Rohe Bytes des Titelbilds (Cover) — einer Serie ([isSeriesCover] = true) oder eines
+     * Buchs/Kapitels. So lädt die UI Cover über die Naht (Coil-Fetcher) statt über eine
+     * quellen-spezifische URL + Auth-Header. Quellen ohne Cover werfen/liefern leer.
+     */
+    suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray
 }
 
 /** Quelle, die Lese-Fortschritt server-seitig synchronisieren kann (z.B. Komga). */

@@ -38,25 +38,33 @@ Das VM hängt an einer **quellen-agnostischen Grenze**, die `BrowsableSource` li
 der konkrete Quellen-Typ bleibt in *einer* Wiring-Klasse in `app/data`. Zwei
 zulässige Formen, je nach Ausbaustand:
 
-```kotlin
-// Bevorzugt, sobald die Registry verdrahtet ist: SourceManager direkt.
-class XViewModel @Inject constructor(private val sources: SourceManager, ...) {
-    val s = sources.get(activeSourceId) as? BrowsableSource ?: return
-}
+**Ist-Stand (Stand 2026-06-08): `SourceManager` ist in `app` verdrahtet.** Die Registry
+wird über `SourceRegistration` aus der aktiven `ServerConfig` befüllt; `ActiveSource`
+(in `app/data`) ist der verdrahtete agnostische Resolver, den die ViewModels injizieren.
+Reader, alle Browse-/Detail-VMs und das Cover-/Seiten-Laden (Coil `SourcePageFetcher`/
+`SourceCoverFetcher` über `openPage`/`coverBytes`) laufen über die Naht; `AuthHeaders`
+existiert nicht mehr. `KomgaSourceProvider` lebt nur noch in der Wiring-Schicht
+(`ActiveSource`/`SourceRegistration`). Offen: OPDS als *live registrierbare* zweite Quelle
+(`ServerConfig.kind` + Room-Migration + Typwahl-UI) — der Canary aus Phase 7.
 
-// Heute (SourceManager noch nicht in `app` verdrahtet): dünner Resolver in app/data,
-// der den konkreten Typ kapselt und das Interface zurückgibt. GLEICH GROSSER Diff
-// wie KomgaSourceProvider zu injizieren — nur eben agnostisch.
+```kotlin
+// Ist (verdrahtet): ActiveSource resolvt die aktive Quelle agnostisch als BrowsableSource.
 @Singleton
 class ActiveSource @Inject constructor(
+    private val sources: SourceManager,            // verdrahtete Registry
     private val servers: ServerRepository,
-    private val provider: KomgaSourceProvider,   // Komga-Typ NUR hier, in der Wiring-Schicht
-) { suspend fun current(): BrowsableSource? = provider.from(servers.config.first()) }
+    private val registration: SourceRegistration,  // registriert die Config-Quelle; Komga-Typ NUR hier
+) {
+    suspend fun current(): BrowsableSource? {
+        val id = registration.activate(servers.config.first()) ?: return null
+        return sources.get(id) as? BrowsableSource
+    }
+}
 
-class XViewModel @Inject constructor(private val activeSource: ActiveSource, ...) {
-    val s = activeSource.current() ?: return     // BrowsableSource, kein Komga-Typ im VM
-    val books = runCatching { s.inProgressBooks(page = 0) }.getOrNull().orEmpty()
-    // Seiten-Bild: Coil-Fetcher ruft s.openPage(ref) — keine Quellen-URL/Auth im VM.
+class XViewModel @Inject constructor(private val active: ActiveSource, ...) {
+    val s = active.current() ?: return            // BrowsableSource, kein Komga-Typ im VM
+    val books = runCatching { s.books(seriesId) }.getOrNull().orEmpty()
+    // Seiten-/Cover-Bild: Coil-Fetcher ruft s.openPage(ref) / s.coverBytes(...) — keine URL/Auth im VM.
 }
 ```
 
@@ -102,7 +110,7 @@ liefert. „Als Interface getypt" heilt eine konkrete Abhängigkeit im Konstrukt
 | „Team-Lead/Reviewer sagt: mach es wie die anderen VMs, der Konsistenz wegen." | Die anderen VMs sind der Bug in Remediation. „Konsistent mit dem bekannten Fehler" vertieft die Schuld. Der korrekte Weg ist gleich groß — also umsetzen und die Abweichung *im PR begründen*, nicht still mitmachen. |
 | „Heute shippen, agnostisch machen wir später, wenn Kavita kommt." | „Später" ist exakt, wie die 6 Verletzungen entstanden sind. `SourceManager` ist kein größerer Diff. Es gibt kein billigeres „später". |
 | „Kleinster Diff / nicht vergolden — also `KomgaSourceProvider`." | `SourceManager`/`ActiveSource` zu injizieren ist **derselbe** Diff, kein Gold-Plating. Korrekte Naht ≠ Vergolden. Die Ausrede verwechselt beides. |
-| „`SourceManager` ist im `app`-Modul noch nicht verdrahtet → also nehme ich `KomgaSourceProvider`." | Stimmt als Beobachtung, taugt aber nicht als Ausrede: dann den `ActiveSource`-Resolver (oben) nehmen, der `BrowsableSource?` liefert. Der konkrete Typ gehört in *eine* Wiring-Klasse, nie ins VM. |
+| „`SourceManager` ist im `app`-Modul noch nicht verdrahtet → also nehme ich `KomgaSourceProvider`." | **Überholt:** `SourceManager`/`ActiveSource` sind seit 2026-06-08 verdrahtet. `ActiveSource` injizieren, der `BrowsableSource?` liefert. Der konkrete Typ gehört in *eine* Wiring-Klasse, nie ins VM. |
 
 ## Red Flags — STOP
 

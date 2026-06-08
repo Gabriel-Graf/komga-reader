@@ -36,6 +36,15 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 - Quellen-übergreifende DB (`data`): jeder Datensatz trägt `sourceId`. `LocalSource` = id 0.
 - Runtime-Plugin-Loader (Phase 4) hängt sich genau hier ein — das Interface ist dafür schon stabil,
   also keine quellenspezifischen Annahmen ins Interface backen.
+- **Ist-Stand (2026-06-08): die Integrationsseite ist verdrahtet.** `SourceManager` wird in `app`
+  über `SourceRegistration` aus der `ServerConfig` befüllt; `ActiveSource` (app/data) ist der
+  agnostische Resolver für alle ViewModels. Bilder/Seiten **und** Cover fließen über die Naht
+  (Coil `SourcePageFetcher`/`SourceCoverFetcher` → `BrowsableSource.openPage`/`coverBytes`); es gibt
+  **kein** `AuthHeaders` mehr und keine quellen-spezifische URL/Auth in der UI. `BrowsableSource`
+  trägt jetzt `downloadFile(…, onProgress)`, `seriesIdOf`, `coverBytes`. `KomgaSource`-Typen leben
+  nur noch in `ActiveSource`/`SourceRegistration`/`KomgaSourceProvider`. **Offen:** OPDS als live
+  registrierbare zweite Quelle (`ServerConfig.kind` + Room-Migration + Typwahl-UI) — Phase-7-Canary.
+  Details/Integrationsregel: `source-agnostic-integration.md`.
 
 ## Naht B — Render & E-Ink (`render-core`, `eink-onyx`)
 

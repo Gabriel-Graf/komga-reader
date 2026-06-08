@@ -1,21 +1,16 @@
 package com.komgareader.app.ui.reader
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,21 +18,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.isSpecified
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.komgareader.domain.model.DisplayMode
-import com.komgareader.domain.source.PageRef
 import com.komgareader.eink.onyx.OnyxRefresher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -61,8 +54,7 @@ private const val FRAME_OVERLAP = 0.30f
  */
 @Composable
 fun WebtoonReaderScreen(
-    pages: List<PageRef>,
-    authHeaders: Map<String, String>,
+    pages: List<SourceImage>,
     initialPage: Int,
     displayMode: DisplayMode,
     frameSteps: Flow<Int>,
@@ -140,20 +132,7 @@ fun WebtoonReaderScreen(
                     }
                 }
             },
-        footer = {
-            Box(Modifier.fillMaxSize()) {
-                Text(
-                    text = "${listState.firstVisibleItemIndex + 1} / $pageCount",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
-            }
-        },
+        footer = { ReaderStatusBar("${listState.firstVisibleItemIndex + 1} / $pageCount", dark = true) },
     ) {
         LazyColumn(
             state = listState,
@@ -161,11 +140,13 @@ fun WebtoonReaderScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(0.dp),
         ) {
-            itemsIndexed(pages, key = { _, pageRef -> pageRef.url }) { index, pageRef ->
-                val request = remember(pageRef.url, authHeaders) {
+            itemsIndexed(
+                pages,
+                key = { _, img -> "${img.bookRemoteId}-${img.pageNumber}" },
+            ) { index, pageImage ->
+                val request = remember(pageImage) {
                     ImageRequest.Builder(ctx)
-                        .data(pageRef.url)
-                        .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
+                        .data(pageImage)
                         .crossfade(false)
                         .build()
                 }
@@ -175,7 +156,7 @@ fun WebtoonReaderScreen(
                 // bliebe das Item bildschirmhoch und kurze Seiten (Banner/Spacer) erschienen
                 // zentriert mit schwarzen Balken darüber/darunter. (FillWidth allein lässt
                 // AsyncImage bei unbegrenzter Höhe NICHT auf die Bildhöhe wrappen.)
-                var aspect by remember(pageRef.url) { mutableStateOf(0f) }
+                var aspect by remember(pageImage) { mutableStateOf(0f) }
                 FilteredReaderAsyncImage(
                     model = request,
                     contentDescription = "Seite ${index + 1}",

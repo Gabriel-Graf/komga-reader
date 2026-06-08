@@ -1,34 +1,26 @@
 package com.komgareader.app.ui.reader
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.eink.onyx.OnyxRefresher
 
 @Composable
 fun PagedReaderScreen(
-    pages: List<com.komgareader.domain.source.PageRef>,
-    authHeaders: Map<String, String>,
+    pages: List<SourceImage>,
     initialPage: Int,
     onBack: () -> Unit,
     onToggleMode: () -> Unit = {},
@@ -70,30 +62,16 @@ fun PagedReaderScreen(
         onPrev = { viewModel.navigateTo((pagerState.currentPage - 1).coerceAtLeast(0)) },
         onNext = { viewModel.navigateTo((pagerState.currentPage + 1).coerceAtMost(pageCount - 1)) },
         actions = { ReaderModeAction(onToggleMode, "Zu Webtoon-Modus wechseln") },
-        footer = {
-            Box(Modifier.fillMaxSize()) {
-                Text(
-                    text = "${pagerState.currentPage + 1} / $pageCount",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.Black.copy(alpha = 0.6f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
-            }
-        },
+        footer = { ReaderStatusBar("${pagerState.currentPage + 1} / $pageCount", dark = true) },
     ) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
         ) { pageIndex ->
-            val pageRef = pages[pageIndex]
-            val request = remember(pageRef.url, authHeaders) {
+            val pageImage = pages[pageIndex]
+            val request = remember(pageImage) {
                 ImageRequest.Builder(ctx)
-                    .data(pageRef.url)
-                    .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
+                    .data(pageImage)
                     .crossfade(false)
                     .build()
             }

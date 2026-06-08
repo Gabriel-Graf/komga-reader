@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.repository.SettingsRepository
@@ -60,22 +61,20 @@ class ComicReaderViewModel @Inject constructor(
         settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private var pageCount: Int = 0
-    private var pages: List<String> = emptyList()
-    private var headers: Map<String, String> = emptyMap()
+    private var pages: List<SourceImage> = emptyList()
 
     init {
         collectButtonEvents()
     }
 
-    fun init(pageUrls: List<String>, authHeaders: Map<String, String>, startPage: Int) {
-        if (pageUrls.isEmpty()) {
-            pages = emptyList(); headers = emptyMap(); pageCount = 0
+    fun init(pageImages: List<SourceImage>, startPage: Int) {
+        if (pageImages.isEmpty()) {
+            pages = emptyList(); pageCount = 0
             _uiState.value = ComicUiState()
             return
         }
-        pages = pageUrls
-        headers = authHeaders
-        pageCount = pageUrls.size
+        pages = pageImages
+        pageCount = pageImages.size
         _uiState.value = ComicUiState(position = GuidedPosition(startPage.coerceIn(0, pageCount - 1), 0))
         ensurePanels(_uiState.value.position.page)
     }
@@ -87,7 +86,7 @@ class ComicReaderViewModel @Inject constructor(
     private suspend fun loadPanels(page: Int): List<NormRect> {
         if (page !in 0 until pageCount) return emptyList()
         panelCache[page]?.let { return it }
-        val det = loader.detect(pages[page], headers)
+        val det = loader.detect(pages[page])
         val norms = det.panels.map { PanelGeometry.normalize(it, det.pageWidth, det.pageHeight) }
         // Degenerate-Guard: weniger als 2 Panels ODER ein Panel >85 % Seitenfläche → Vollseite.
         val usable = if (norms.size < 2 || PanelGeometry.maxAreaFraction(norms) > 0.85f) emptyList() else norms

@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
@@ -50,8 +51,7 @@ import com.komgareader.guidedview.PanelGeometry
  */
 @Composable
 fun ComicReaderScreen(
-    pages: List<com.komgareader.domain.source.PageRef>,
-    authHeaders: Map<String, String>,
+    pages: List<SourceImage>,
     initialPage: Int,
     onBack: () -> Unit,
     onToggleMode: () -> Unit = {},
@@ -66,7 +66,7 @@ fun ComicReaderScreen(
     val s = LocalStrings.current
 
     LaunchedEffect(Unit) {
-        comicVm.init(pages.map { it.url }, authHeaders, initialPage)
+        comicVm.init(pages, initialPage)
     }
 
     val state by comicVm.uiState.collectAsState()
@@ -137,10 +137,9 @@ fun ComicReaderScreen(
             val offY = (vh - contentH) / 2f
 
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
-                val pageRef = pages[pageIndex]
-                val request = remember(pageRef.url, authHeaders) {
-                    ImageRequest.Builder(ctx).data(pageRef.url)
-                        .apply { authHeaders.forEach { addHeader(it.key, it.value) } }
+                val pageImage = pages[pageIndex]
+                val request = remember(pageImage) {
+                    ImageRequest.Builder(ctx).data(pageImage)
                         .crossfade(false).build()
                 }
                 val isCurrent = pageIndex == state.position.page

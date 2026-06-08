@@ -68,7 +68,6 @@ fun ReaderRoute(
             when (mode) {
                 ViewerMode.PAGED -> PagedReaderScreen(
                     pages = c.pages,
-                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,
@@ -77,7 +76,6 @@ fun ReaderRoute(
                 )
                 ViewerMode.WEBTOON -> WebtoonReaderScreen(
                     pages = c.pages,
-                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     displayMode = displayMode,
                     frameSteps = viewModel.frameStep,
@@ -89,7 +87,6 @@ fun ReaderRoute(
                 )
                 ViewerMode.COMIC -> ComicReaderScreen(
                     pages = c.pages,
-                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,
@@ -101,7 +98,6 @@ fun ReaderRoute(
             when (mode) {
                 ViewerMode.PAGED -> PagedReaderScreen(
                     pages = c.pages,
-                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,
@@ -110,7 +106,6 @@ fun ReaderRoute(
                 )
                 ViewerMode.WEBTOON -> WebtoonReaderScreen(
                     pages = c.pages,
-                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     displayMode = displayMode,
                     frameSteps = viewModel.frameStep,
@@ -122,7 +117,6 @@ fun ReaderRoute(
                 )
                 ViewerMode.COMIC -> ComicReaderScreen(
                     pages = c.pages,
-                    authHeaders = c.authHeaders,
                     initialPage = c.initialPage,
                     onBack = onBack,
                     onToggleMode = viewModel::toggleViewerMode,

@@ -134,7 +134,6 @@ fun NovelReaderScreen(
                 chapterTitle = currentChapterTitle,
             )
         },
-        footerAlwaysVisible = true,
     ) {
         // Der Viewport gibt erst hier seine Pixel-Größe her: damit öffnet das VM das
         // EPUB und schichtet es passend um (idempotent).
@@ -210,7 +209,7 @@ private fun BoxScope.NovelStatusFooter(
         modifier = Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
-            .background(Color.LightGray.copy(alpha = 0.85f))
+            .background(readerOverlayScrim(Color.LightGray, 0.85f))
             .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,

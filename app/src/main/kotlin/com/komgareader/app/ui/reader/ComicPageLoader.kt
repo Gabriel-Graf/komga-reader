@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable
 import androidx.core.graphics.scale
 import coil.ImageLoader
 import coil.request.ImageRequest
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.domain.render.RenderedPage
 import com.komgareader.guidedview.PanelDetector
 import com.komgareader.guidedview.PanelRect
@@ -31,21 +32,20 @@ class ComicPageLoader(
 
     data class PageDetection(val panels: List<PanelRect>, val pageWidth: Int, val pageHeight: Int)
 
-    suspend fun detect(pageUrl: String, headers: Map<String, String>): PageDetection =
+    suspend fun detect(pageImage: SourceImage): PageDetection =
         withContext(Dispatchers.Default) {
-            val bitmap = decode(pageUrl, headers) ?: return@withContext PageDetection(emptyList(), 0, 0)
+            val bitmap = decode(pageImage) ?: return@withContext PageDetection(emptyList(), 0, 0)
             val scaled = downscale(bitmap)
             val page = toRenderedPage(scaled)
             val panels = detector.detect(page, ReadingDirection.LEFT_TO_RIGHT)
             PageDetection(panels, page.width, page.height)
         }
 
-    private suspend fun decode(url: String, headers: Map<String, String>): Bitmap? =
+    private suspend fun decode(pageImage: SourceImage): Bitmap? =
         withContext(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
-                .data(url)
+                .data(pageImage)
                 .allowHardware(false)
-                .apply { headers.forEach { addHeader(it.key, it.value) } }
                 .build()
             val result = imageLoader.execute(request)
             (result.drawable as? BitmapDrawable)?.bitmap

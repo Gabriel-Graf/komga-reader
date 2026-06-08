@@ -4,10 +4,10 @@ import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.komgareader.app.data.AuthHeaders
-import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
-import com.komgareader.data.download.DownloadManager
+import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
@@ -16,11 +16,11 @@ import com.komgareader.domain.reader.WebtoonChapter
 import com.komgareader.domain.reader.WebtoonStrip
 import com.komgareader.domain.render.Document
 import com.komgareader.domain.repository.DownloadRepository
-import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
-import com.komgareader.domain.source.PageRef
+import com.komgareader.domain.source.BrowsableSource
+import com.komgareader.domain.source.SyncingSource
+import com.komgareader.domain.source.buildPageRefs
 import com.komgareader.render.mupdf.MupdfDocumentFactory
-import com.komgareader.source.komga.KomgaSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,11 +46,10 @@ data class ReaderUiState(
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val servers: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val active: ActiveSource,
     private val bus: HardwareButtonBus,
     private val downloadRepository: DownloadRepository,
-    private val downloadManager: DownloadManager,
+    private val localBookBytes: LocalBookBytes,
     private val settings: SettingsRepository,
 ) : ViewModel(), ReaderChromeState {
 
@@ -130,7 +128,7 @@ class ReaderViewModel @Inject constructor(
             if (!forceStream) {
                 val localDownload = downloadRepository.get(bookId)
                 if (localDownload != null) {
-                    val bytes = withContext(Dispatchers.IO) { downloadManager.bytesOf(localDownload) }
+                    val bytes = withContext(Dispatchers.IO) { localBookBytes.bytesOf(localDownload) }
                     val ext = ".${localDownload.format.lowercase()}"
                     val doc = withContext(Dispatchers.IO) { MupdfDocumentFactory().open(bytes, ext) }
                     document = doc
@@ -138,8 +136,8 @@ class ReaderViewModel @Inject constructor(
                     // Auch beim lokalen Download auf der letzten Seite fortsetzen:
                     // Server-Progress best-effort holen (offline → Seite 0).
                     val startPage = runCatching {
-                        val source = sourceProvider.from(servers.config.first())
-                        source?.pullProgress(bookId)?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
+                        (active.current() as? SyncingSource)?.pullProgress(bookId)
+                            ?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
                     }.getOrNull() ?: 0
                     _currentPage.value = startPage
                     _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
@@ -147,27 +145,24 @@ class ReaderViewModel @Inject constructor(
                 }
             }
 
-            // Kein lokaler Download (oder forceStream) → Netzwerk-Pfad
-            val config = servers.config.first()
-            val source = sourceProvider.from(config)
-            if (config == null || source == null) {
+            // Kein lokaler Download (oder forceStream) → Stream über die aktive Quelle.
+            val source = active.current()
+            if (source == null) {
                 _content.value = ReaderContent.Error("Kein Server verbunden.")
                 return@launch
             }
-            val authHeaders = AuthHeaders.forCovers(config)
 
             if (initialViewerMode == ViewerMode.WEBTOON) {
-                loadWebtoonStrip(source, authHeaders)
+                loadWebtoonStrip(source)
             } else {
                 val pages = source.pages(bookId)
-                val startPage = runCatching { source.pullProgress(bookId) }
+                val startPage = runCatching { (source as? SyncingSource)?.pullProgress(bookId) }
                     .getOrNull()
                     ?.let { progress -> (progress.page - 1).coerceIn(0, pages.size - 1) }
                     ?: 0
                 _currentPage.value = startPage
                 _content.value = ReaderContent.Streamed(
-                    pages = pages,
-                    authHeaders = authHeaders,
+                    pages = pages.map { SourceImage(source.id, bookId, it.pageNumber) },
                     initialPage = startPage,
                 )
             }
@@ -183,15 +178,17 @@ class ReaderViewModel @Inject constructor(
      * lädt die LazyColumn/Coil erst beim Sichtbarwerden. So entsteht kein
      * Lade-Sturm bei Serien mit vielen Kapiteln.
      */
-    private suspend fun loadWebtoonStrip(source: KomgaSource, authHeaders: Map<String, String>) {
+    private suspend fun loadWebtoonStrip(source: BrowsableSource) {
         val seriesId = withContext(Dispatchers.IO) { source.seriesIdOf(bookId) }
         val books = withContext(Dispatchers.IO) { source.books(seriesId) }
         val strip = WebtoonStrip(books.map { WebtoonChapter(it.remoteId, it.pageCount) })
-        val flat = books.flatMap { source.pageRefsFromCount(it.remoteId, it.pageCount) }
+        val flat = books.flatMap { b ->
+            buildPageRefs(b.remoteId, b.pageCount).map { SourceImage(source.id, b.remoteId, it.pageNumber) }
+        }
 
         val openedIdx = books.indexOfFirst { it.remoteId == bookId }.coerceAtLeast(0)
         val openedPageCount = books.getOrNull(openedIdx)?.pageCount ?: 0
-        val localStart = runCatching { source.pullProgress(bookId) }
+        val localStart = runCatching { (source as? SyncingSource)?.pullProgress(bookId) }
             .getOrNull()
             ?.let { (it.page - 1).coerceIn(0, (openedPageCount - 1).coerceAtLeast(0)) }
             ?: 0
@@ -200,7 +197,6 @@ class ReaderViewModel @Inject constructor(
         _currentPage.value = initialGlobal
         _content.value = ReaderContent.Webtoon(
             pages = flat,
-            authHeaders = authHeaders,
             initialPage = initialGlobal,
             strip = strip,
         )
@@ -269,8 +265,7 @@ class ReaderViewModel @Inject constructor(
 
     private fun pushProgress(targetBookId: String, page: Int, totalPages: Int) {
         viewModelScope.launch {
-            val config = servers.config.first()
-            val source = sourceProvider.from(config) ?: return@launch
+            val source = active.current() as? SyncingSource ?: return@launch
             runCatching {
                 source.pushProgress(
                     targetBookId,

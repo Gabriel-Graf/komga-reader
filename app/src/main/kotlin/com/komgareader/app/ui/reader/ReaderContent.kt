@@ -1,25 +1,27 @@
 package com.komgareader.app.ui.reader
 
+import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.domain.reader.WebtoonStrip
-import com.komgareader.domain.source.PageRef
 
 sealed interface ReaderContent {
     data object Loading : ReaderContent
-    /** Streaming-Modus: Seitenbilder kommen vom Server. [authHeaders] enthält API-Key oder Basic-Auth. */
+    /**
+     * Streaming-Modus: Seitenbilder kommen über die Quellen-Naht. [pages] sind
+     * [SourceImage]-Modelle; der Coil-`SourcePageFetcher` löst sie über
+     * `openPage` in Bytes auf — kein url/authHeaders in der UI.
+     */
     data class Streamed(
-        val pages: List<PageRef>,
-        val authHeaders: Map<String, String>,
+        val pages: List<SourceImage>,
         val initialPage: Int,
     ) : ReaderContent
     /**
      * Webtoon-Modus: Seiten **aller Kapitel** der Serie nahtlos hintereinander.
-     * [pages] ist die flache, kapitelübergreifende Bildliste; [strip] bildet den
-     * globalen Index auf Kapitel + Seite ab (für kapitel-genauen Fortschritt).
+     * [pages] ist die flache, kapitelübergreifende Bildliste ([SourceImage]); [strip]
+     * bildet den globalen Index auf Kapitel + Seite ab (für kapitel-genauen Fortschritt).
      * [initialPage] ist der globale Startindex.
      */
     data class Webtoon(
-        val pages: List<PageRef>,
-        val authHeaders: Map<String, String>,
+        val pages: List<SourceImage>,
         val initialPage: Int,
         val strip: WebtoonStrip,
     ) : ReaderContent

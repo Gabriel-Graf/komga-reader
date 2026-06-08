@@ -5,30 +5,36 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.i18n.LocalStrings
+import kotlinx.coroutines.delay
+
+/** Anzeigedauer des Start-Hinweises oben mittig, bevor er wieder verschwindet. */
+private const val START_HINT_MILLIS = 1500L
 
 /**
  * Geteiltes Reader-Gerüst: kapselt die über alle Reader identische Chrome-Mechanik —
  * den schwarzen Vollbild-Hintergrund, die Drittel-Tap-Zonen (links → [onPrev],
- * rechts → [onNext], Mitte → `chrome.toggleChrome()`), das durchscheinende
- * [ReaderChromeOverlay] und einen optionalen Status-Fuß ([footer]).
+ * rechts → [onNext], Mitte → `chrome.toggleChrome()`), das [ReaderChromeOverlay], die
+ * Tap-Zonen-Hints, einen optionalen Status-Fuß ([footer]) und den Start-Hinweis.
  *
- * Das gehört nach `shared-structure-before-variants` an genau **eine** Stelle, bevor der
- * vierte Reader (NOVEL) dazukommt: Paged/Epub bauen vollständig darauf, der NOVEL-Reader
- * baut darauf auf statt als Parallel-Linie. Reader mit bespoke Gesten (Comic: Panel-
- * Hit-Test/Zoom; Webtoon: E-Ink-gegatete Frame-Sprünge) liefern ihren eigenen Tap-Handler
- * über [tapModifier] und nutzen das Scaffold nur für Overlay/Footer.
+ * Das gehört nach `shared-structure-before-variants` an genau **eine** Stelle: alle
+ * Reader bauen darauf statt als Parallel-Linie. Reader mit bespoke Gesten (Comic:
+ * Panel-Hit-Test/Zoom; Webtoon: E-Ink-gegatete Frame-Sprünge) liefern ihren eigenen
+ * Tap-Handler über [tapModifier] und nutzen das Scaffold nur für Overlay/Footer.
  *
- * **Keine Animation:** Das Overlay erscheint/verschwindet sofort (kein Fade/Slide), exakt
- * wie der bisherige `if (visible) …`-Pfad — konform zu `animation-gating` (E-Ink).
+ * **Keine Animation auf E-Ink:** Overlay, Footer und Tap-Zonen-Hints erscheinen sofort;
+ * nur der Start-Hinweis blendet auf dem Smartphone per Fade, auf E-Ink sofort
+ * (`animation-gating`).
  */
 @Composable
 fun ReaderScaffold(
@@ -42,10 +48,18 @@ fun ReaderScaffold(
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
     tapModifier: Modifier? = null,
     footer: (@Composable BoxScope.() -> Unit)? = null,
-    footerAlwaysVisible: Boolean = false,
+    showTapZoneHints: Boolean = tapModifier == null,
     content: @Composable () -> Unit,
 ) {
     val chromeVisible by chrome.chromeVisible.collectAsState()
+    val strings = LocalStrings.current
+
+    // Start-Hinweis oben mittig beim Öffnen jedes Readers, verschwindet nach ~1,5 s.
+    var startHintVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(START_HINT_MILLIS)
+        startHintVisible = false
+    }
 
     Box(modifier.fillMaxSize().background(background)) {
         content()
@@ -65,6 +79,12 @@ fun ReaderScaffold(
             }
         Box(taps)
 
+        // Tap-Zonen-Hints (Hintergrund + Pfeil + Letzte/Nächste Seite) nur bei sichtbarem
+        // Chrome und nur für Reader mit den Standard-Drittel-Zonen (echte Seiten-Navigation).
+        if (chromeVisible && showTapZoneHints) {
+            ReaderTapZoneHints()
+        }
+
         ReaderChromeOverlay(
             visible = chromeVisible,
             title = title,
@@ -72,24 +92,13 @@ fun ReaderScaffold(
             actions = actions,
         )
 
-        // Der Status-Fuß folgt standardmäßig der Chrome-Sichtbarkeit; Reader, die ihn
-        // dauerhaft zeigen wollen (NOVEL: Fortschritt/Seite/Kapitel immer sichtbar),
-        // setzen [footerAlwaysVisible]. Default false lässt Paged/Webtoon/Comic/Epub
-        // unverändert.
-        if (footer != null && (footerAlwaysVisible || chromeVisible)) {
+        // Der Status-Fuß ist ein Overlay wie die Top-Leiste: nur sichtbar, wenn das
+        // Chrome sichtbar ist (überdeckt dann ggf. Inhalt) — nicht dauerhaft.
+        if (footer != null && chromeVisible) {
             footer()
         }
-    }
-}
 
-/**
- * Standard-Aktions-Icon, das zwischen den Lesemodi umschaltet — von allen Readern
- * im Overlay rechts genutzt. Hält das identische [AppIcons.ReaderMode]-Glyph an
- * einer Stelle.
- */
-@Composable
-internal fun ReaderModeAction(onToggleMode: () -> Unit, contentDescription: String) {
-    IconButton(onClick = onToggleMode) {
-        Icon(AppIcons.ReaderMode, contentDescription = contentDescription, tint = Color.White)
+        // Liegt zuoberst, weicht aber dem Chrome (sonst überlappten Top-Leiste und Hinweis).
+        ReaderStartHint(text = strings.readerTapHint, visible = startHintVisible && !chromeVisible)
     }
 }

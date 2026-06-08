@@ -2,15 +2,11 @@ package com.komgareader.app.ui.reader
 
 import android.graphics.Bitmap
 import com.komgareader.app.ui.components.FilteredReaderImage
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import com.komgareader.app.ui.components.LoadingIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
@@ -53,20 +48,7 @@ fun EpubReaderScreen(
         onPrev = { viewModel.navigateTo((pagerState.currentPage - 1).coerceAtLeast(0)) },
         onNext = { viewModel.navigateTo((pagerState.currentPage + 1).coerceAtMost(pageCount - 1)) },
         background = Color.White,
-        footer = {
-            Box(Modifier.fillMaxSize()) {
-                Text(
-                    text = "${pagerState.currentPage + 1} / $pageCount",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                        .background(Color.LightGray.copy(alpha = 0.6f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                )
-            }
-        },
+        footer = { ReaderStatusBar("${pagerState.currentPage + 1} / $pageCount", dark = false) },
     ) {
         HorizontalPager(
             state = pagerState,

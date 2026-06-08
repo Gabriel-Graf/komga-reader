@@ -1,6 +1,8 @@
 // Genau die im App-UI verwendeten Glyphen (kebab-SVG-Name → Kotlin-Property).
 // Erweitern: hier ergänzen, dann `npm run generate`. Siehe README.md.
 export const ICONS = {
+  "align-justify": "AlignJustify",
+  "align-left": "AlignLeft",
   "arrow-left": "ArrowLeft",
   "arrow-right": "ArrowRight",
   "book-open": "BookOpen",
@@ -35,5 +37,6 @@ export const ICONS = {
   "settings": "Settings",
   "square-pen": "SquarePen",
   "trash-2": "Trash2",
+  "type": "Type",
   "x": "X",
 };

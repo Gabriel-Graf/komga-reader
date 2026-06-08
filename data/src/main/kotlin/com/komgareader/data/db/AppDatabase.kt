@@ -9,8 +9,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class,
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
+        NovelProgressEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -21,6 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun seriesOverrideDao(): SeriesOverrideDao
     abstract fun readProgressDao(): ReadProgressDao
     abstract fun colorProfileDao(): ColorProfileDao
+    abstract fun novelProgressDao(): NovelProgressDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -217,6 +219,32 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
             "INSERT OR REPLACE INTO `color_profiles` " +
                 "(`id`,`name`,`saturation`,`contrast`,`brightness`,`blackPoint`,`whitePoint`,`gamma`,`sharpenAmount`,`sharpenRadius`,`ditherMode`,`ditherLevels`,`builtIn`) " +
                 "VALUES (3,'Boox Go Color 7 — Voll',1.4,1.15,0.05,0.05,0.95,1.2,0.6,1,'NONE',16,1)",
+        )
+    }
+}
+
+/**
+ * v11 → v12: novel_progress-Tabelle (Roman-Xpointer-Fortschritt, offline-first).
+ *
+ * **Nicht-destruktiv:** Es wird ausschließlich eine NEUE Tabelle angelegt — keine bestehende
+ * Tabelle wird angefasst (kein `ALTER`, kein `DROP`, kein Recreate nötig, weil es keine
+ * Bestandsdaten in dieser Tabelle gibt). Das `CREATE TABLE` bildet exakt das vom Entity
+ * generierte Schema ab (zusammengesetzter PK `sourceId`+`bookId`, keine Spalten-`DEFAULT`s),
+ * damit Rooms Schema-Validierung nach der Migration sauber durchläuft und
+ * `fallbackToDestructiveMigration` NICHT greift (das würde die ganze DB löschen).
+ */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `novel_progress` (
+                `sourceId` INTEGER NOT NULL,
+                `bookId` TEXT NOT NULL,
+                `anchor` TEXT NOT NULL,
+                `fraction` REAL NOT NULL,
+                `dirty` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                PRIMARY KEY(`sourceId`, `bookId`)
+            )""",
         )
     }
 }

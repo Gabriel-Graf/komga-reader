@@ -1,0 +1,17 @@
+# Transient cross-build artifacts of the thirdparty-bldtool.
+# The built prefix (native/prefix/) IS committed (it is the reusable build
+# input for crengine-ng / Phase 1b), but the unpacked upstream sources and
+# per-package state caches are not — they are re-fetchable via build.sh.
+thirdparty/thirdparty-bldtool/sources/
+thirdparty/thirdparty-bldtool/tmp/
+thirdparty/thirdparty-bldtool/*.log
+
+# Per-package build dirs (created next to sources/).
+thirdparty/thirdparty-bldtool/*-build-*/
+
+# Transient crengine-ng cross-build (Phase 1b, build-crengine.sh).
+# The installed crengine-ng artifacts in prefix/ ARE committed; the cloned
+# source and the CMake build tree are not — re-fetchable via build-crengine.sh
+# at the pinned commit.
+sources/
+build/

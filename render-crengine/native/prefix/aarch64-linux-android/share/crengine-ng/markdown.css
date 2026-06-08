@@ -1,0 +1,160 @@
+head, style, form, script { display: none; }
+
+body {
+    $def.all
+    $body.margin
+}
+
+p { $def.all }
+*.justindent { text-align: justify; text-indent: 1.2em; margin-top:0em; margin-bottom: 0em }
+
+empty-line { height: 0.2em; }
+
+hr {
+   height: 2px;
+   background-color: #808080;
+   margin-top: 0.5em;
+   margin-bottom: 0.5em;
+}
+
+b,strong,i,em,dfn,var,q,u,del,s,strike,small,big,sub,sup,acronym,tt,sa mp,kbd,code,font {
+   display: inline;
+}
+
+b,strong { font-weight: bold; }
+i,em,dfn,var { font-style: italic; }
+
+u { text-decoration: underline; }
+del,s,strike { text-decoration: line-through; }
+small { font-size: 80%; }
+big { font-size: 130%; }
+sub { vertical-align: sub; font-size: 70% }
+sup { vertical-align: super; font-size: 70% }
+tt, samp, kbd, code, pre { font-family: "Noto Mono", "FreeMono", "Courier New", "Andale Mono", "Droid Sans Mono", "Menlo", "Liberation Mono", "DeJaVu Sans Mono", monospace; }
+pre, xmp { display: block; $pre.all }
+code, kbd, samp, tt {
+    hyphens: none;
+    $pre.font-face;
+}
+pre code {
+    display: block;
+    border-style: solid;
+    border-width: 1pt;
+    border-color: #b0b0b0;
+    padding: 0.7em;
+    margin-top: 0.7em;
+    margin-bottom: 0.7em;
+}
+nobr { display: inline; hyphenate: none; white-space: nowrap; }
+
+h1,h2 {
+   display: block;
+   $title.all
+}
+h3,h4,h5,h6 {
+   display: block;
+   $subtitle.all
+}
+h1 { font-size: 150% }
+h2 { font-size: 135% }
+h3 { font-size: 125% }
+h4 { font-size: 125% }
+h5 { font-size: 115% }
+h6 { font-size: 105% }
+
+/* Lists */
+ul {
+   display: block;
+   list-style-type: disc;
+   margin-left: 1em;
+   margin-top:0.3em;
+   margin-bottom: 0.3em;
+}
+
+ul[type=disc], li[type=disc] {
+  list-style-type: disc;
+}
+ul[type=circle], li[type=circle] {
+  list-style-type: circle;
+}
+ul[type=square], li[type=square] {
+  list-style-type: square;
+}
+
+ol {
+   display: block;
+   list-style-type: decimal;
+   margin-left: 1em;
+   margin-top:0.3em;
+   margin-bottom: 0.3em;
+}
+
+ol[type=1], li[type=1] {
+  list-style-type: decimal;
+}
+ol[type=a], li[type=a] {
+  list-style-type: lower-alpha;
+}
+ol[type=A], li[type=A] {
+  list-style-type: upper-alpha;
+}
+ol[type=i], li[type=i] {
+  list-style-type: lower-roman;
+}
+ol[type=I], li[type=I] {
+  list-style-type: upper-roman;
+}
+
+ul ul, ol ul {
+   list-style-type: circle;
+}
+
+ol ol ul, ol ul ul, ul ol ul, ul ul ul {
+   list-style-type: square;
+}
+
+li {
+   display: list-item;
+   text-indent: 0em;
+   margin-top: 0.3em;
+   margin-bottom: 0.3em;
+}
+
+dl { margin-left: 0em; list-style-type: disc }
+dt { display: block; margin-left: 0em; margin-top:0.3em; font-weight: bold; }
+dd { display: block; margin-left: 1.3em }
+
+a {
+    display:inline;
+    color: #2579cc;
+    $link.all
+}
+
+span { display: inline; }
+
+cite { display: inline; font-style: italic;}
+div { display: block; }
+blockquote { display: block;
+   margin-left: 1.5em;
+   margin-right: 1.5em;
+   margin-top: 0.5em;
+   margin-bottom: 0.5em;
+}
+
+/* No support for the "quotes:" property, these will use default quote chars */
+q::before               { content: open-quote; }
+q::after                { content: close-quote; }
+
+img {
+   margin: 0.5em;
+   text-align: center;
+   text-indent: 0em;
+   border-style: solid;
+   border-width: medium;
+}
+
+table { font-size: 100% }
+td, th { text-indent: 0px; padding: 3px }
+th { font-weight: bold; text-align: center; }
+table caption { text-indent: 0px; padding: 4px; }
+table, th, td { border-width: 2px; border-style: ridge; border-color: #888; border-collapse: collapse; }

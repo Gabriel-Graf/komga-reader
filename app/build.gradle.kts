@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
     implementation(project(":render-core"))
+    implementation(project(":render-crengine"))
     implementation(project(":guided-view"))
     implementation(libs.coil.compose)
     implementation(libs.hilt.android)

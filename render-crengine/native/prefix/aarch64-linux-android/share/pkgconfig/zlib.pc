@@ -1,0 +1,13 @@
+prefix=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android
+exec_prefix=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android
+libdir=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android/lib
+sharedlibdir=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android/lib
+includedir=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.3.1
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

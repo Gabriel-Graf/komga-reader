@@ -31,9 +31,9 @@ class ResolveViewerTypeTest {
     }
 
     @Test
-    fun `Stufe 2 — EPUB-Format ergibt EPUB`() {
+    fun `Stufe 2 — EPUB-Format ergibt NOVEL`() {
         val result = resolve(series(direction = ReadingDirection.WEBTOON), book(BookFormat.EPUB), fallback = null)
-        assertEquals(ViewerType.EPUB, result)
+        assertEquals(ViewerType.NOVEL, result)
     }
 
     @Test
@@ -72,6 +72,11 @@ class ResolveViewerTypeTest {
     fun `COMIC-Override ergibt COMIC`() {
         val result = resolve(series(override = ContentType.COMIC), book(BookFormat.CBZ), fallback = null)
         assertEquals(ViewerType.COMIC, result)
+    }
+
+    @Test
+    fun `map — Inhaltstyp NOVEL ergibt NOVEL`() {
+        assertEquals(ViewerType.NOVEL, resolve.forContentType(ContentType.NOVEL))
     }
 
 }

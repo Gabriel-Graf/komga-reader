@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +34,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
-import com.komgareader.app.ui.icons.AppIcons
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.komgareader.domain.model.DisplayMode
@@ -57,6 +54,10 @@ private const val FRAME_OVERLAP = 0.30f
  * - [DisplayMode.EINK]: kein Free-Scroll. „Blättern“ = Frame-Sprung um ~1 Bildschirm
  *   über die Tap-Zonen **links/rechts** sowie Hardware-/Lautstärke-Tasten ([frameSteps]),
  *   ohne Animation und mit einem GC-Full-Refresh pro Frame.
+ *
+ * Overlay/Footer laufen über [ReaderScaffold]; die Tap-Zonen sind hier bespoke
+ * (E-Ink-gegatete Frame-Sprünge statt Seiten-Navigation) und werden daher über
+ * `tapModifier` selbst geliefert — die Scaffold-Standard-Drittel greifen nicht.
  */
 @Composable
 fun WebtoonReaderScreen(
@@ -65,8 +66,7 @@ fun WebtoonReaderScreen(
     initialPage: Int,
     displayMode: DisplayMode,
     frameSteps: Flow<Int>,
-    chromeVisible: Boolean,
-    onToggleChrome: () -> Unit,
+    chrome: ReaderChromeState,
     onBack: () -> Unit,
     onPageVisible: (Int) -> Unit,
     onToggleMode: () -> Unit,
@@ -118,7 +118,43 @@ fun WebtoonReaderScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    ReaderScaffold(
+        chrome = chrome,
+        title = "${listState.firstVisibleItemIndex + 1} / $pageCount",
+        onBack = onBack,
+        // Tap-Navigation läuft hier über jumpFrame (siehe tapModifier), nicht über Seiten.
+        onPrev = {},
+        onNext = {},
+        actions = { ReaderModeAction(onToggleMode, "Zu Paged-Modus wechseln") },
+        tapModifier = Modifier
+            .fillMaxSize()
+            // Tap-Zonen-Overlay. E-Ink: links/rechts = Frame zurück/vor, Mitte = Overlay.
+            // Smartphone: Tap togglet Overlay, Drags gehen an die LazyColumn.
+            .pointerInput(eink, pageCount) {
+                detectTapGestures { offset ->
+                    val width = size.width.toFloat()
+                    when {
+                        eink && offset.x < width / 3f -> scope.launch { jumpFrame(-1) }
+                        eink && offset.x > width * 2f / 3f -> scope.launch { jumpFrame(1) }
+                        else -> chrome.toggleChrome()
+                    }
+                }
+            },
+        footer = {
+            Box(Modifier.fillMaxSize()) {
+                Text(
+                    text = "${listState.firstVisibleItemIndex + 1} / $pageCount",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+        },
+    ) {
         LazyColumn(
             state = listState,
             userScrollEnabled = !eink,
@@ -158,47 +194,6 @@ fun WebtoonReaderScreen(
                         ),
                 )
             }
-        }
-
-        // Tap-Zonen-Overlay. E-Ink: links/rechts = Frame zurück/vor, Mitte = Overlay.
-        // Smartphone: Tap togglet Overlay, Drags gehen an die LazyColumn.
-        Box(
-            Modifier
-                .fillMaxSize()
-                .pointerInput(eink, pageCount) {
-                    detectTapGestures { offset ->
-                        val width = size.width.toFloat()
-                        when {
-                            eink && offset.x < width / 3f -> scope.launch { jumpFrame(-1) }
-                            eink && offset.x > width * 2f / 3f -> scope.launch { jumpFrame(1) }
-                            else -> onToggleChrome()
-                        }
-                    }
-                },
-        )
-
-        ReaderChromeOverlay(
-            visible = chromeVisible,
-            title = "${listState.firstVisibleItemIndex + 1} / $pageCount",
-            onBack = onBack,
-            actions = {
-                IconButton(onClick = onToggleMode) {
-                    Icon(AppIcons.ReaderMode, contentDescription = "Zu Paged-Modus wechseln", tint = Color.White)
-                }
-            },
-        )
-
-        if (chromeVisible) {
-            Text(
-                text = "${listState.firstVisibleItemIndex + 1} / $pageCount",
-                color = Color.White,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp)
-                    .background(Color.Black.copy(alpha = 0.6f))
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-            )
         }
     }
 }

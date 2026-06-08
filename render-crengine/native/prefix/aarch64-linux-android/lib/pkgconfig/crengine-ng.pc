@@ -1,0 +1,13 @@
+prefix=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android
+exec_prefix=${prefix}
+libdir=/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/prefix/aarch64-linux-android/lib
+includedir=${prefix}/include
+
+Name: crengine-ng
+Description: Lightweight library designed to implement text viewers and e-book readers.
+Version: 0.9.13
+Requires:
+Requires.private: zlib, libpng, libjpeg, libwebp, libwebpdemux, freetype2 >= 2.10.0, harfbuzz >= 2.6.0, fribidi >= 1.0.0, libunibreak >= 4.0, libzstd >= 1.4.0, libutf8proc
+Libs: -L${libdir} -lcrengine-ng
+Libs.private: 
+Cflags: -I${includedir}/crengine-ng -DLINUX=1 -D_LINUX=1 -DLVLONG_FILE_SUPPORT=1 -DCR_EMULATE_GETTEXT=1

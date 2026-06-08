@@ -6,13 +6,17 @@ Lese-Modus. Die Reihenfolge ist verbindlich — nicht umsortieren.
 | Stufe | Bedingung | Ergebnis |
 |-------|-----------|----------|
 | 1 | `series.contentTypeOverride != null` | map(override) |
-| 2 | `book.format == EPUB` | EPUB |
+| 2 | `book.format == EPUB` | NOVEL |
 | 3 | `series.readingDirection ∈ {VERTICAL, WEBTOON}` | WEBTOON |
 | 4 | `fallback != null` | map(fallback) |
 | 5 | `book.format ∈ {CBZ, CBR, PDF}` | PAGED |
 | 6 | sonst | PAGED |
 
-`map`: MANGA/COMIC → PAGED, WEBTOON → WEBTOON, NOVEL → EPUB.
+`map`: MANGA/COMIC → PAGED, WEBTOON → WEBTOON, NOVEL → NOVEL.
+
+> Der alte EPUB-Viewer wird ausgemustert: reflowbare Bücher lösen seit Phase 3
+> nach `ViewerType.NOVEL` auf (NovelReader). `ViewerType.EPUB` bleibt vorerst als
+> Legacy-Enum-Wert bestehen und wird in Phase 4 mit der App-Migration entfernt.
 
 **Warum Stufe 4 (Bibliotheks-Default) vor Stufe 5 (Format-Default):** Webtoons
 liegen fast immer als CBZ vor. Stünde der Format-Default (CBZ → PAGED) vorher,
@@ -41,10 +45,11 @@ zeigen daher Paged, bis entweder (a) die Serie in Komga korrekt getaggt ist,
 gemappt:
 
 - `ViewerType.WEBTOON` → `ViewerMode.WEBTOON`
-- `ViewerType.PAGED` / `ViewerType.EPUB` → `ViewerMode.PAGED`
+- `ViewerType.PAGED` / `ViewerType.NOVEL` / `ViewerType.EPUB` → `ViewerMode.PAGED`
 
-EPUB-Bücher wählen den passenden Reader anhand des `BookFormat` (EpubReader),
-unabhängig vom `ViewerMode`.
+Reflowbare Bücher (`BookFormat.EPUB` → `ViewerType.NOVEL`) wählen den Reader
+anhand des `BookFormat`. Die Verdrahtung des NovelReaders folgt in Phase 4;
+bis dahin fällt `NOVEL` über den `else`-Zweig auf `ViewerMode.PAGED` zurück.
 
 ## Verweise
 

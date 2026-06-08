@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,7 +40,7 @@ class ComicReaderViewModel @Inject constructor(
     imageLoader: ImageLoader,
     private val bus: HardwareButtonBus,
     private val settings: SettingsRepository,
-) : ViewModel() {
+) : ViewModel(), ReaderChromeState {
 
     private val loader = ComicPageLoader(context, imageLoader)
     private val panelCache = mutableMapOf<Int, List<NormRect>>()
@@ -48,6 +49,11 @@ class ComicReaderViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ComicUiState())
     val uiState: StateFlow<ComicUiState> = _uiState.asStateFlow()
+
+    /** Overlay-Sichtbarkeit als eigener Flow für das geteilte [ReaderScaffold]. */
+    override val chromeVisible: StateFlow<Boolean> = _uiState
+        .map { it.chromeVisible }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.chromeVisible)
 
     /** Debug: erkannte Panel-Rahmen als farbige Rechtecke über die Seite legen. */
     val showPanelOverlay: StateFlow<Boolean> =
@@ -185,12 +191,12 @@ class ComicReaderViewModel @Inject constructor(
         _uiState.value = s.copy(guidedEnabled = !s.guidedEnabled, zoomed = false)
     }
 
-    fun toggleChrome() {
+    override fun toggleChrome() {
         _uiState.value = _uiState.value.copy(chromeVisible = !_uiState.value.chromeVisible)
     }
 
     /** Wird vom Screen aufgerufen, wenn die Vollseite gewechselt hat (Pager-Settle). */
-    fun onPageSettled(page: Int) {
+    override fun onPageSettled(page: Int) {
         if (page == _uiState.value.position.page) return
         _uiState.value = _uiState.value.copy(
             position = GuidedPosition(page, 0),
@@ -200,5 +206,16 @@ class ComicReaderViewModel @Inject constructor(
         )
         ensurePanels(page)
         ensurePanels(page + 1)
+    }
+
+    /**
+     * Tap-Zonen-/Scaffold-Navigation: absolute Vollseite ansteuern. Identisch zum
+     * Pager-Settle (Vollseiten-Blättern erfolgt nur ungezoomt), damit der Pager
+     * über `position.page` nachzieht. Der Comic-Screen blättert die Vollseite
+     * heute selbst über den Pager; diese Methode erfüllt den geteilten Vertrag.
+     */
+    override fun navigateTo(page: Int) {
+        if (_uiState.value.zoomed) return
+        onPageSettled(page.coerceIn(0, (pageCount - 1).coerceAtLeast(0)))
     }
 }

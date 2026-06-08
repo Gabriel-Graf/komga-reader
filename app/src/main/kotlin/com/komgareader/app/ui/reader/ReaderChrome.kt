@@ -41,7 +41,7 @@ fun BoxScope.ReaderChromeOverlay(
             .fillMaxWidth()
             .background(Color.Black.copy(alpha = 0.45f))
             .displayCutoutPadding()
-            .padding(horizontal = 4.dp, vertical = 2.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
@@ -54,8 +54,8 @@ fun BoxScope.ReaderChromeOverlay(
         Text(
             text = title,
             color = Color.White,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f).padding(start = 4.dp),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
         )
         actions()
     }

@@ -16,6 +16,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import coil.Coil
+import coil.ImageLoader
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
@@ -40,6 +42,14 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var buttonBus: HardwareButtonBus
+
+    /**
+     * Der über Hilt gebaute [ImageLoader] mit den Quellen-Naht-Fetchern
+     * ([com.komgareader.app.data.coil.SourcePageFetcher]/[com.komgareader.app.data.coil.SourceCoverFetcher]).
+     * Muss als Coil-**Singleton** gesetzt werden, sonst nutzt `AsyncImage` den Default-Loader,
+     * der `SourceImage`/`SourceCover` nicht auflösen kann → keine Cover/Seiten.
+     */
+    @Inject lateinit var imageLoader: ImageLoader
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
@@ -70,6 +80,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Coils Compose-`AsyncImage` löst über den Singleton-Loader auf — diesen auf den
+        // Hilt-Loader mit den Quellen-Fetchern setzen, sonst bleiben Cover/Seiten leer.
+        Coil.setImageLoader(imageLoader)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enterFullscreen()
         setContent {

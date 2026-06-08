@@ -12,6 +12,8 @@ nicht nur gegen den heutigen Code.
 Ein **quellen- und geräte-agnostischer** Reader, der mehrere Lesemodi, mehrere Server,
 mehrere Gerätearten (E-Ink **und** Nicht-E-Ink) und nutzer-installierbare Plugins in
 **einer** App vereint — alle Variabilität hinter den zwei Nähten (`architecture-seams.md`).
+Die **Oberfläche selbst ist modular**: alles um die Reader-Engines herum (Chrome) ist bis
+zur ganzen UI auswechselbar, damit die Community eigene Looks bauen kann (`ui-modularity` unten).
 
 ## Die Langzeit-Ziele (immer mitdenken, auch wenn die Aufgabe sie nicht nennt)
 
@@ -21,6 +23,7 @@ mehrere Gerätearten (E-Ink **und** Nicht-E-Ink) und nutzer-installierbare Plugi
 | **Multi-Server** | Komga, OPDS, Kavita, mehrere gleichzeitig | App an *eine* Quelle gekoppelt (`source-agnostic-integration.md`) |
 | **Multi-Device** | mono E-Ink, **Farb-E-Ink (Kaleido)**, LCD-Phone/-Tablet | binäre Geräte-Annahme; „E-Ink-Look" global erzwungen statt geräteklassen-abhängig |
 | **Plugins** | nutzer-installierbar: (a) Quellen, (b) UI-Views, (c) Color-Presets | quellenspezifische Annahmen in Interfaces gebacken; kein stabiler Plugin-Vertrag |
+| **Modulare UI** | jedes UI-Element (Overlay, Header, Buttons, Navigation, Tiles, Settings) einzeln austausch-/neubaubar, bis hin zur **komplett ersetzten Oberfläche** — die Reader-Engines bleiben Core | UI als monolithischer Compose-Baum mit hartverdrahteten Chrome-Bausteinen; keine adressierbaren Slots → Community kann nichts ersetzen ohne Fork (`ui-modularity` unten) |
 | **Color-Filter** | Kaleido-Sättigung/Kontrast vor Anzeige, Presets | Filter nur für eine Quelle / nur Cover statt über die Naht für alle |
 
 **Regel:** Wenn eine „minimale" Lösung eines dieser Ziele zumauert (statt es bloß noch
@@ -43,6 +46,7 @@ heißt „bau es noch nicht", nicht „mach es unmöglich".
 - Binäre Geräte-Annahme als *Endzustand* (siehe Geräteklassen unten).
 - Quellenspezifische Annahmen ins `MediaSource`-Interface backen (verbaut Plugins).
 - Beliebigen Plugin-Code mit Host-Rechten / arbiträre Plugin-Compose-UI (siehe Plugins unten).
+- Chrome (Overlay/Header/Buttons/Navigation/Tiles/Settings) hart in den Compose-Baum verdrahten, statt hinter adressierbare, austauschbare Grenzen (`ui-modularity` unten).
 - Verbindliche Doku, die nicht-existierende Typen als real darstellt (`docs-match-code`).
 - „Später agnostisch/erweiterbar machen" als Rechtfertigung für eine zumauernde Abkürzung.
 
@@ -100,6 +104,65 @@ herleitet (und divergiert). Modell: Mihon/Tachiyomi.
      Plugin liefert eine *Beschreibung* (Tap-Zonen→Aktion, Panel-Strategie wie der pure `guided-view`),
      der **Host** rendert + steuert Refresh. Voraussetzung: erst die `Viewer`-Naht extrahieren
      (`shared-structure-before-variants.md`), die UI-Plugin ist dann deren 5. Impl, keine Parallel-Linie.
+
+## ui-modularity — die ganze Oberfläche ist auswechselbar (Soll, Richtung — noch nicht gebaut)
+
+**Das Versprechen:** Über den Reader-Engines soll **jedes** UI-Element einzeln austauschbar,
+neu baubar oder ganz ersetzbar sein — bis hin zu einer **komplett von der Community gebauten
+Oberfläche**. Nicht nur Reader als Plugin (`Viewer`-Naht, Plugins (b) oben), sondern das ganze
+*Chrome* drumherum: Overlays, Header/Top-Bar, Action-Buttons, Navigation/Menubar, Bibliotheks-Tiles,
+Settings-Screens, Dialog-Look. Ziel ist eine Architektur, in der ein „UI-Pack" alle diese Teile
+liefern kann, ohne den Kern anzufassen — gleiches Naht-Prinzip wie bei Quellen und Geräten, nur
+auf die Präsentation angewandt.
+
+### Core bleibt, Chrome wird austauschbar
+
+Die Trennlinie ist die zentrale Design-Entscheidung dieses Ziels:
+
+| Schicht | Beispiele | Status |
+|---|---|---|
+| **Core (bleibt)** | Reader-Engines (paged/webtoon/comic/novel), die `Viewer`-Naht, der `RefreshScheduler`, der Lese-/Sync-Pfad, die Naht-A/B-Verträge | nie durch ein UI-Plugin ersetzbar — sie sind die Lese- und E-Ink-Garantie |
+| **Chrome (austauschbar)** | Overlays, Header, Buttons, Navigation, Tiles, Settings, Dialog-Rahmen, das Theme | soll hinter adressierbaren Slots/Regionen liegen, je einzeln ersetzbar; in der Summe = ganze UI |
+
+Die Reader sind **Core, weil** sie die Render-/Refresh-Korrektheit tragen (Naht B, E-Ink-Invarianten).
+Ein Community-UI darf den Rahmen neu erfinden, aber nicht die Engine, die Pixel auf das E-Ink-Panel bringt.
+
+### Richtung (wie das gebaut werden soll, sobald es dran ist)
+
+- **Adressierbare UI-Slots statt Monolith.** Chrome wird so zerlegt, dass jede Region (Header,
+  Overlay, Button-Leiste, Tile, Settings-Block, …) einen **stabilen, benannten Einhängepunkt** hat.
+  Ein UI-Pack füllt einen, mehrere oder *alle* Slots. Default-Pack = das mitgelieferte Onyx-Look-UI;
+  fehlt ein Slot im Community-Pack, fällt er sauber auf den Default zurück (analog `StubSource`).
+- **Deklarativ, nicht arbiträrer Compose-Code** — dieselbe Entscheidung wie Plugins (b): kein
+  beliebiges Plugin-Compose mit Host-Rechten (Compiler-Kopplung, Crash reißt Host mit,
+  E-Ink-Invarianten nicht erzwingbar). Das Pack liefert eine **Beschreibung** (Slot→Inhalt,
+  Layout, Tap-Zonen→Aktion, Style-Token), der **Host** rendert und steuert Refresh. So bleiben die
+  E-Ink-Invarianten (`eink-design-language.md`, `animation-gating.md`) **vom Host erzwungen**, egal
+  was das Pack will — Bewegung/Akzentfarbe weiter über die Geräteklasse gegatet, nicht vom Pack.
+- **Eigener Vertrag, eingefroren wie die anderen Nähte.** Der Slot-/Theme-Vertrag gehört in ein
+  dünnes API-Modul (Kandidat: neben `plugin-api`), nicht in `domain`/`app`. Stabil halten, additiv
+  erweitern (neuer Slot = optional), damit ein Pack nicht bei jeder App-Version bricht.
+- **Theme zuerst, Layout danach.** Das billigste, risikoärmste Stück ist das **Theme/Token-Pack**
+  (Farben, Radius, Border-Stärke, Icon-Set — wie Color-Presets rein deklarativ). Das tatsächliche
+  *Umbauen* von Layout/Slots ist das schwere Ende und kommt zuletzt — analog zur Plugin-Reihenfolge
+  (c)→(a)→(b).
+
+### Was das schon heute heißt (auch bevor irgendein Plugin existiert)
+
+Auch ohne den Plugin-Mechanismus baut **jede UI-Arbeit ab jetzt auf diese Modularität hin**, statt
+sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
+
+- Chrome-Bausteine als **eigenständige, parametrisierte Composables** mit klarer Grenze bauen — nicht
+  als inline-Blöcke tief im Screen verdrahtet. Wer einen Header/ein Overlay/eine Button-Leiste baut,
+  baut ihn so, dass er sich gegen eine Alternative *austauschen* ließe.
+- Geteiltes Gerüst zentralisieren, bevor die N-te Variante entsteht (`shared-structure-before-variants.md`)
+  — `ReaderScaffold`/`BaseDialog` sind die Keimzellen genau dieser Slot-Idee.
+- Style **über Theme-Token** ziehen (`Theme.kt`), nie hartkodierte Farben/Maße — ein Theme-Pack
+  ersetzt dann Token, nicht Call-Sites.
+
+> **docs-match-code:** Dies ist **Soll/Richtung**, kein Ist. Es gibt **heute keine** UI-Slot-Naht,
+> kein `ui-api`-Modul, keinen Pack-Lader. Wer hier baut, führt den Ist-Stand in dieser Sektion und in
+> `architecture-seams.md` im selben Commit nach und behauptet keinen Typ als real, den `grep` nicht findet.
 
 ## docs-match-code
 

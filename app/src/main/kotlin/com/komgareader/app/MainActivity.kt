@@ -10,6 +10,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import coil.Coil
+import coil.ImageLoader
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -48,6 +50,14 @@ class MainActivity : ComponentActivity() {
     /** Geräte-Naht (Boox vs. No-Op) — liefert die [com.komgareader.domain.eink.EinkCapabilities]. */
     @Inject lateinit var einkController: EinkController
 
+    /**
+     * Der per Hilt gebaute [coil.ImageLoader] mit den Quellen-Naht-Fetchern
+     * ([com.komgareader.app.data.coil.SourcePageFetcher]/[com.komgareader.app.data.coil.SourceCoverFetcher]).
+     * Wird in [onCreate] als Coils prozessweiter Loader gesetzt — sonst nutzen die Compose-`AsyncImage`
+     * Coils Default-Singleton, der `SourceImage`/`SourceCover` NICHT auflöst (Cover blank, Seiten schwarz).
+     */
+    @Inject lateinit var imageLoader: ImageLoader
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
@@ -77,6 +87,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Den Naht-fähigen ImageLoader als Coils prozessweiten Loader setzen, BEVOR irgendein
+        // AsyncImage komponiert — sonst lädt Coils Default-Singleton SourceImage/SourceCover nicht.
+        Coil.setImageLoader(imageLoader)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enterFullscreen()
         setContent {

@@ -6,13 +6,14 @@ package com.komgareader.domain.render
  * Mapper auf die [ReflowConfig], die die Reflow-Engine (Naht B) versteht.
  *
  * Die Defaults entsprechen den Settings-Defaults (em 1.0, lineHeight 1.0, Rand
- * NORMAL, Schrift DejaVuSans, Ausrichtung JUSTIFY, Trennung aus).
+ * NORMAL, Schrift = [NovelFonts.DEFAULT] "DejaVu Sans", Ausrichtung JUSTIFY,
+ * Trennung aus).
  */
 data class NovelSettings(
     val fontSizeEm: Float = 1.0f,
     val lineHeight: Float = 1.0f,
     val marginPreset: String = MARGIN_NORMAL,
-    val fontFamily: String = "DejaVuSans",
+    val fontFamily: String = NovelFonts.DEFAULT,
     val textAlign: String = "JUSTIFY",
     val hyphenationLang: String = "",
 ) {
@@ -33,11 +34,19 @@ data class NovelSettings(
         const val MARGIN_NORMAL = "NORMAL"
         const val MARGIN_WIDE = "WIDE"
 
-        /** Preset-String → konkrete [Margins]; unbekannt fällt auf NORMAL zurück. */
+        /**
+         * Preset-String → konkrete [Margins]; unbekannt fällt auf NORMAL zurück.
+         *
+         * Die px-Werte müssen in der crengine-ng-Erlaubnisliste liegen
+         * ({…,12,…,20,25,…,40,50,…}, siehe `LVDocView::propsUpdateDefaults`):
+         * `limitValueList` setzt einen NICHT gelisteten Wert still auf den Default (8) zurück,
+         * sodass z. B. 24/48 beide auf 8 kollabierten und der Rand-Regler wirkungslos blieb.
+         * 12/25/50 sind gelistet und erhalten die Abstufung NARROW < NORMAL < WIDE.
+         */
         fun marginFor(preset: String): Margins = when (preset) {
             MARGIN_NARROW -> Margins(12, 12, 12, 12)
-            MARGIN_WIDE -> Margins(48, 48, 48, 48)
-            else -> Margins(24, 24, 24, 24)
+            MARGIN_WIDE -> Margins(50, 50, 50, 50)
+            else -> Margins(25, 25, 25, 25)
         }
     }
 }

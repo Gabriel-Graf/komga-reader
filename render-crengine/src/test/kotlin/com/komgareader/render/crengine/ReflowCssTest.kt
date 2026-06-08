@@ -15,6 +15,11 @@ import kotlin.test.assertTrue
  * crengine-ng/include/lvdocviewprops.h (nicht erfunden):
  *   crengine.interline.space, crengine.page.margin.*, font.face.default,
  *   crengine.hyphenation.directory, crengine.textlang.*.
+ *
+ * Hinweis zur Trennung: PROP_HYPHENATION_DICT IST "crengine.hyphenation.directory"
+ * (lvdocviewprops.h:82) — trotz des Namens der Property, die das aktive Wörterbuch
+ * WÄHLT (ihr Wert geht an HyphDictionaryList::activate(id)). Eine separate
+ * "crengine.hyphenation.dict"-Property existiert in crengine-ng nicht.
  */
 class ReflowCssTest {
 
@@ -54,12 +59,36 @@ class ReflowCssTest {
     }
 
     @Test
-    fun hyphenation_sprache_aktiviert_algorithmische_trennung_und_setzt_sprache() {
+    fun hyphenation_de_aktiviert_das_echte_deutsche_pattern_woerterbuch() {
+        // Deutsch -> echtes TeX-Muster-Wörterbuch (hyph-de-1996.pattern), nicht @algorithm.
         val props = ReflowCss.toProperties(
             ReflowConfig(hyphenation = Hyphenation.Language("de")),
         )
-        assertEquals("@algorithm", props["crengine.hyphenation.directory"])
+        assertEquals("hyph-de-1996.pattern", props["crengine.hyphenation.directory"])
         assertEquals("de", props["crengine.textlang.main.lang"])
+        assertEquals("1", props["crengine.textlang.hyphenation.enabled"])
+    }
+
+    @Test
+    fun hyphenation_en_aktiviert_das_echte_englische_pattern_woerterbuch() {
+        // Englisch -> echtes TeX-Muster-Wörterbuch (hyph-en-us.pattern), nicht @algorithm.
+        val props = ReflowCss.toProperties(
+            ReflowConfig(hyphenation = Hyphenation.Language("en")),
+        )
+        assertEquals("hyph-en-us.pattern", props["crengine.hyphenation.directory"])
+        assertEquals("en", props["crengine.textlang.main.lang"])
+        assertEquals("1", props["crengine.textlang.hyphenation.enabled"])
+    }
+
+    @Test
+    fun hyphenation_unbekannte_sprache_faellt_auf_algorithmische_trennung_zurueck() {
+        // Für Sprachen ohne gebündeltes Muster-Wörterbuch bleibt der generische
+        // @algorithm-Pfad erhalten (immer noch echte Trennung, nur geringere Qualität).
+        val props = ReflowCss.toProperties(
+            ReflowConfig(hyphenation = Hyphenation.Language("fr")),
+        )
+        assertEquals("@algorithm", props["crengine.hyphenation.directory"])
+        assertEquals("fr", props["crengine.textlang.main.lang"])
         assertEquals("1", props["crengine.textlang.hyphenation.enabled"])
     }
 

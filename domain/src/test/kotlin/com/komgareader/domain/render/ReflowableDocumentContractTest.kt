@@ -6,9 +6,11 @@ import kotlin.test.assertEquals
 private class FakeReflowDoc : ReflowableDocument {
     var lastCfg: ReflowConfig? = null
     var anchor = "a0"
+    var page = 0
     override fun applyLayout(cfg: ReflowConfig) { lastCfg = cfg }
     override fun chapters() = listOf(Chapter("K1", "a0", 0))
     override fun currentAnchor() = anchor
+    override fun currentPage() = page
     override fun seekToAnchor(a: String) { anchor = a }
     override fun seekToProgress(fraction: Float) { anchor = "p$fraction" }
     override fun search(query: String) = listOf(SearchHit("a0", query))

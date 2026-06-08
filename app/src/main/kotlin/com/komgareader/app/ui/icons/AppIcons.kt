@@ -46,4 +46,8 @@ object AppIcons {
     val Connection: ImageVector get() = LucideIcons.Server
     val ReaderMode: ImageVector get() = LucideIcons.GalleryVertical
     val PanelMode: ImageVector get() = LucideIcons.Grid2x2
+    val Typography: ImageVector get() = LucideIcons.Type
+    val TableOfContents: ImageVector get() = LucideIcons.List
+    val AlignLeft: ImageVector get() = LucideIcons.AlignLeft
+    val AlignJustify: ImageVector get() = LucideIcons.AlignJustify
 }

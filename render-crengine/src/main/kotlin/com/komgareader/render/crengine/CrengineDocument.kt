@@ -95,6 +95,8 @@ class CrengineDocument(
 
     override fun currentAnchor(): String = CrengineNative.nativeCurrentAnchor(handle)
 
+    override fun currentPage(): Int = CrengineNative.nativeCurrentPage(handle)
+
     override fun seekToAnchor(anchor: String) {
         CrengineNative.nativeSeekToAnchor(handle, anchor)
     }

@@ -63,6 +63,23 @@ data class ReadProgressEntity(
     val updatedAt: Long,
 )
 
+/**
+ * Lokaler Roman-Lesefortschritt (ViewerType.NOVEL, crengine-Reflow). Quellen-übergreifend
+ * per [sourceId] + [bookId]. Der [anchor] (crengine-Xpointer) ist die **exakte**,
+ * Schrift- und Viewport-unabhängige Leseposition für das Wiederaufnehmen auf demselben Gerät;
+ * [fraction] (0.0..1.0) ist der grobe Anteil für den geräteübergreifenden %-Sync zu Komga.
+ * [dirty] = lokal geändert, noch nicht zum Server gepusht.
+ */
+@Entity(tableName = "novel_progress", primaryKeys = ["sourceId", "bookId"])
+data class NovelProgressEntity(
+    val sourceId: Long,
+    val bookId: String,
+    val anchor: String,
+    val fraction: Float,
+    val dirty: Boolean,
+    val updatedAt: Long,
+)
+
 /** Lokal gespeichertes Buch (Download-Eintrag). */
 @Entity(tableName = "downloads")
 data class DownloadEntity(

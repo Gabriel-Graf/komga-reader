@@ -12,3 +12,19 @@ Drittsoftware:
   https://gitlab.com/coolreader-ng/crengine-ng — via JNI; arm64-v8a cross-kompiliert (siehe render-crengine/native/PROVENANCE.md).
 - LxReader (JNI-Bitmap-Bridge in render-crengine/src/main/cpp) — GPL-3.0-or-later, Aleksey Chernov, basierend auf CoolReader (Vadim Lopatin).
   https://gitlab.com/coolreader-ng/lxreader
+
+Gebündelte Lese-Schriften (app/src/main/assets/fonts/):
+- DejaVu Sans 2.37 (Sans-Lese-Schrift) — Bitstream-Vera-Lizenz (permissiv, kein Copyleft), DejaVu-Fonts-Projekt.
+  https://dejavu-fonts.github.io
+- Literata 3.103 (Serif-Lese-Schrift) — OFL-1.1, The Literata Project Authors.
+  https://github.com/google/fonts/tree/main/ofl/literata — Lizenztext: assets/fonts/licenses/Literata-OFL.txt
+- Bitter 3.021 (Slab-Serif-Lese-Schrift) — OFL-1.1, The Bitter Project Authors.
+  https://github.com/google/fonts/tree/main/ofl/bitter — Lizenztext: assets/fonts/licenses/Bitter-OFL.txt
+
+Gebündelte Silbentrennungs-Muster (app/src/main/assets/hyph/), aus dem hyph-utf8/TeX-Hyphenation-Paket (via crengine-ng nach .pattern konvertiert):
+- hyph-de-1996.pattern (Deutsch, reformiert 2006) — MIT.
+  https://github.com/hyphenation/tex-hyphen
+- hyph-en-us.pattern (US-Englisch) — permissiv/royalty-free (Knuth/Liang).
+  https://github.com/hyphenation/tex-hyphen
+
+Provenance/Details: render-crengine/native/PROVENANCE.md.

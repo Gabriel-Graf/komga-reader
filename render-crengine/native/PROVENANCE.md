@@ -135,15 +135,67 @@ Der JNI-Bridge-Code (`src/main/cpp/`) und die Test-Assets:
 | Quelle | URL | Lizenz | Verwendung |
 |--------|-----|--------|------------|
 | **LxReader** (`jnigraphicslib.cpp/.h`, `lvcolordrawbufex.cpp/.h`) | https://gitlab.com/coolreader-ng/lxreader | GPL-3.0-or-later | Bitmap-Lock + BGRX→RGBA-Konvertierung, 1:1 übernommen (basierend auf CoolReader, Vadim Lopatin). `cr3_bridge.cpp` ist eigener Code, adaptiert deren Muster. |
-| **DejaVu Sans** (`src/androidTest/assets/fonts/DejaVuSans.ttf`) | https://dejavu-fonts.github.io | Bitstream-Vera + Public-Domain-Erweiterungen (permissiv, kein Copyleft) | **Nur** Test-Asset (Font-Registrierung im Instrumented-Render-Test). Nicht ins App-Release gebündelt. |
 | **sample.epub** (`src/androidTest/assets/`) | — | eigene Test-Fixture (Kopie aus `render-core`) | Reflow-Render-Gate. |
 
 - **LxReader** ist `GPL-3.0-or-later` — die Gesamt-App ist bereits
   **AGPL-3.0-or-later**, also verträglich. `cr3_bridge.cpp` trägt einen
   AGPL-Header.
-- **DejaVu Sans** ist permissiv und attributionsfrei verwendbar; hier reines
-  Test-Asset, kein Risiko.
+
+## Phase 8 — Gebündelte Lese-Fonts + DE/EN-Silbentrennung
+
+Diese Assets werden **ins App-Release gebündelt** (`app/src/main/assets/`) und
+zusätzlich in die render-crengine-Instrumented-Test-Assets gespiegelt
+(`render-crengine/src/androidTest/assets/`). Zur Laufzeit registriert
+`CrengineNative.nativeInit` jede Schrift (per FreeType-Familienname) und lädt das
+entpackte Trennmuster-Verzeichnis über `HyphMan::initDictionaries`.
+
+### Lese-Fonts (`assets/fonts/`)
+
+| Name | Familienname (registriert) | Version | Upstream-URL | Lizenz (SPDX) | Erfassungsdatum |
+|------|----------------------------|---------|--------------|---------------|-----------------|
+| **DejaVu Sans** | `DejaVu Sans` | 2.37 | https://dejavu-fonts.github.io | `Bitstream-Vera` (+ Public-Domain-Erweiterungen, permissiv, kein Copyleft) | 2026-06-07 |
+| **Literata** | `Literata` | 3.103 (variabel: `opsz` 7–72, `wght` 200–900, Default 12/400) | https://github.com/google/fonts/tree/main/ofl/literata (`Literata[opsz,wght].ttf`) | `OFL-1.1` | 2026-06-07 |
+| **Bitter** | `Bitter` | 3.021 (statisch Regular, Latin-Subset via Fontsource-Build von Google Fonts) | https://github.com/google/fonts/tree/main/ofl/bitter · https://cdn.jsdelivr.net/fontsource/fonts/bitter@latest/latin-400-normal.ttf | `OFL-1.1` | 2026-06-07 |
+
+- **Cap/Volumen:** DejaVuSans.ttf 741 KB · Literata.ttf 932 KB · Bitter.ttf 43 KB.
+- **Filter:** keine Nachbearbeitung — die TTFs werden unverändert gebündelt.
+  Glyph-Abdeckung für Deutsch (ä ö ü Ä Ö Ü ß), Akzente und typografische
+  Anführungszeichen/Gedankenstriche bei allen drei verifiziert.
+- **OFL-Volltext** der beiden OFL-Schriften liegt bei:
+  `app/src/main/assets/fonts/licenses/Literata-OFL.txt`,
+  `app/src/main/assets/fonts/licenses/Bitter-OFL.txt` (OFL-1.1 verlangt Mitlieferung).
+- **Familienname-Hinweis:** crengine-ng wählt die Schrift per **exaktem**
+  Abgleich des registrierten FreeType-`family_name`. Maßgeblich ist daher
+  `"DejaVu Sans"` (mit Leerzeichen), nicht `"DejaVuSans"`. SSOT der Familien-/
+  Asset-Zuordnung: `domain/render/NovelFont.kt` (`NovelFonts`).
+
+### Silbentrennungs-Muster (`assets/hyph/`)
+
+Echte TeX-Muster-Wörterbücher aus dem **hyph-utf8 / TeX-Hyphenation**-Paket, von
+crengine-ngs Build ins `.pattern`-Format konvertiert (übernommen aus dem
+crengine-ng-Prefix `share/crengine-ng/hyph/`, gebaut aus dem gepinnten Commit
+`ec57cc1`, siehe oben).
+
+| Name | Sprach-Tag | Quelle | Lizenz (SPDX) | Erfassungsdatum |
+|------|-----------|--------|---------------|-----------------|
+| **hyph-de-1996.pattern** | `de` (reformierte Rechtschreibung 2006) | hyph-utf8 `patterns/tex/hyph-de-1996.tex` (https://github.com/hyphenation/tex-hyphen) via crengine-ng | `MIT` (im Datei-Header dokumentiert) | 2026-06-07 |
+| **hyph-en-us.pattern** | `en-US` | hyph-utf8 `patterns/tex/hyph-en-us.tex` (https://github.com/hyphenation/tex-hyphen) via crengine-ng | permissiv/royalty-free (Knuth/Liang, Copy/Verbreitung mit Copyright-Vermerk erlaubt; im Datei-Header dokumentiert) | 2026-06-07 |
+
+- **Cap/Volumen:** hyph-de-1996.pattern 974 KB · hyph-en-us.pattern 135 KB.
+- **Filter:** unverändert übernommen. Mapping `de`→`hyph-de-1996.pattern`,
+  `en`→`hyph-en-us.pattern` in `render-crengine/.../ReflowCss.kt`; alle anderen
+  Sprachen fallen auf crengine-ngs generischen `@algorithm`-Pfad zurück.
+
+### Phase-8-Risk-Notiz
+
+- **DejaVu Sans** (Bitstream-Vera) und **Literata/Bitter** (OFL-1.1) sind
+  permissiv und AGPL-verträglich. OFL-1.1 verlangt Mitlieferung des Lizenztexts
+  (erfüllt, siehe `assets/fonts/licenses/`) und untersagt den Verkauf der Font-
+  Dateien für sich — beides für eine gebündelte App unproblematisch.
+- **hyph-de-1996** (MIT) und **hyph-en-us** (permissiv, royalty-free) sind
+  GPL-/AGPL-verträglich.
+- Keine NonCommercial-, Gated- oder ToS-only-Quellen. Kein AGPL-inkompatibles Asset.
 
 ---
 
-Letzte Komplettrevision: 2026-06-07 (Phase 1c JNI-Render arm64-v8a; +Phase 1b Cross-Build).
+Letzte Komplettrevision: 2026-06-07 (Phase 8 Lese-Fonts + DE/EN-Silbentrennung; +Phase 1c JNI-Render arm64-v8a; +Phase 1b Cross-Build).

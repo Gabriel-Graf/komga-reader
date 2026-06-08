@@ -11,7 +11,9 @@ sealed interface Hyphenation {
 
 /** Seitenränder in Pixeln. */
 data class Margins(val top: Int, val bottom: Int, val left: Int, val right: Int) {
-    companion object { val NORMAL = Margins(24, 24, 24, 24) }
+    // 25 statt 24: crengine-ng (propsUpdateDefaults/limitValueList) erlaubt nur gelistete
+    // px-Werte und setzt nicht gelistete still auf 8 zurück. 25 ist gelistet, 24 nicht.
+    companion object { val NORMAL = Margins(25, 25, 25, 25) }
 }
 
 /**

@@ -51,10 +51,36 @@ interface ReflowableDocument : Document {
     fun chapters(): List<Chapter>
     /** Anker der aktuell sichtbaren Stelle — stabil über Re-Layouts hinweg. */
     fun currentAnchor(): String
+    /**
+     * Seitenindex (0-basiert) der aktuell sichtbaren Stelle im **aktuellen** Layout.
+     * Nach [applyLayout] + [seekToAnchor] liefert dies den Index, auf den die zuvor
+     * gemerkte Stelle nun fällt — so hält der Reader die Leseposition über ein
+     * Re-Layout hinweg und kann die Seitenzuordnung der Kapitel-Anker neu bestimmen.
+     */
+    fun currentPage(): Int
     /** Springt zur durch [anchor] bezeichneten Stelle. */
     fun seekToAnchor(anchor: String)
     /** Springt an die relative Position [fraction] (0.0 = Anfang, 1.0 = Ende). */
     fun seekToProgress(fraction: Float)
     /** Sucht [query] im Volltext und liefert die Treffer in Lesereihenfolge. */
     fun search(query: String): List<SearchHit>
+}
+
+/**
+ * Öffnet reflowbare Dokumente (Romane) hinter Naht B. Die konkrete Engine
+ * (crengine-ng) lebt vollständig im Render-Modul; das `app`-Modul kennt nur dieses
+ * Interface und nie die Implementierung. Die Factory kapselt zusätzlich den
+ * **prozessweiten, genau einmaligen** Engine-Bootstrap (Font-Manager + Trennmuster),
+ * der vor dem ersten Öffnen laufen muss — der Aufrufer braucht ihn nicht zu kennen.
+ *
+ * [viewportWidth]×[viewportHeight] ist die Pixel-Geometrie, zu der das Dokument
+ * umgeschichtet wird (im Reflow-Modus geometriebestimmend statt Zoom).
+ */
+interface ReflowableDocumentFactory {
+    fun open(
+        bytes: ByteArray,
+        formatHint: String,
+        viewportWidth: Int,
+        viewportHeight: Int,
+    ): ReflowableDocument
 }

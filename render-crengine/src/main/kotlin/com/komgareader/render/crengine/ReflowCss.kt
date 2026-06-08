@@ -26,6 +26,11 @@ object ReflowCss {
     private const val PROP_PAGE_MARGIN_LEFT = "crengine.page.margin.left"
     private const val PROP_PAGE_MARGIN_RIGHT = "crengine.page.margin.right"
     private const val PROP_FONT_FACE = "font.face.default"
+    // PROP_HYPHENATION_DICT (lvdocviewprops.h:82). Trotz des Namens "directory" ist dies
+    // der Property, der das AKTIVE Trennwörterbuch WÄHLT: lvdocview.cpp reicht seinen Wert
+    // an HyphDictionaryList::activate(id) — der id ist "@none", "@algorithm" oder der
+    // Dateiname des registrierten `.pattern` (crhyphman.cpp registriert jedes Wörterbuch
+    // unter id = Dateiname). Es gibt KEINE separate "crengine.hyphenation.dict"-Property.
     private const val PROP_HYPHENATION_DICT = "crengine.hyphenation.directory"
     private const val PROP_TEXTLANG_MAIN_LANG = "crengine.textlang.main.lang"
     private const val PROP_TEXTLANG_HYPHENATION_ENABLED = "crengine.textlang.hyphenation.enabled"
@@ -33,6 +38,20 @@ object ReflowCss {
     // Dictionary-IDs aus crengine-ng/include/crhyphman.h:
     private const val HYPH_DICT_ID_NONE = "@none"
     private const val HYPH_DICT_ID_ALGORITHM = "@algorithm"
+
+    /**
+     * Echte TeX-Muster-Wörterbücher (crengine-ng `share/crengine-ng/hyph/`,
+     * gebündelt als App-Assets). Die Dictionary-ID ist der Dateiname des
+     * `.pattern`-Files — crengine-ng aktiviert ihn über die Dictionary-Liste,
+     * die [CrengineNative.nativeInit] aus dem entpackten Pattern-Verzeichnis lädt.
+     *
+     * Nur Sprachen mit gebündeltem Muster-Wörterbuch; alle anderen fallen auf
+     * [HYPH_DICT_ID_ALGORITHM] (generische, regelbasierte Trennung) zurück.
+     */
+    private val PATTERN_DICTS: Map<String, String> = mapOf(
+        "de" to "hyph-de-1996.pattern",
+        "en" to "hyph-en-us.pattern",
+    )
 
     /**
      * Engine-Properties für [cfg]. [ReflowConfig.fontSizeEm] ist bewusst nicht
@@ -75,8 +94,10 @@ object ReflowCss {
                 props[PROP_TEXTLANG_HYPHENATION_ENABLED] = "0"
             }
             is Hyphenation.Language -> {
-                // Algorithmische Trennung braucht keine gebündelte Pattern-Datei.
-                props[PROP_HYPHENATION_DICT] = HYPH_DICT_ID_ALGORITHM
+                // Für DE/EN das echte TeX-Muster-Wörterbuch aktivieren; sonst
+                // bleibt es bei der generischen algorithmischen Trennung.
+                props[PROP_HYPHENATION_DICT] =
+                    PATTERN_DICTS[hyphenation.lang] ?: HYPH_DICT_ID_ALGORITHM
                 props[PROP_TEXTLANG_MAIN_LANG] = hyphenation.lang
                 props[PROP_TEXTLANG_HYPHENATION_ENABLED] = "1"
             }

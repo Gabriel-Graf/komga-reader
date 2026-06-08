@@ -66,15 +66,12 @@ class KomgaSource internal constructor(
     override suspend fun openPage(ref: PageRef): ByteArray =
         api.getPage(ref.bookRemoteId, ref.pageNumber).bytes()
 
-    override suspend fun downloadFile(bookRemoteId: String): ByteArray =
-        downloadFile(bookRemoteId, onProgress = { _, _ -> })
-
     /**
      * Lädt die ganze Buchdatei. [onProgress] meldet `(gelesene Bytes, Gesamtbytes)`
      * fortlaufend während des Streams — Gesamtbytes ist `-1`, wenn der Server keine
      * Content-Length liefert. Standard-Aufrufer ohne Callback bekommen unverändert die Bytes.
      */
-    suspend fun downloadFile(
+    override suspend fun downloadFile(
         bookRemoteId: String,
         onProgress: (read: Long, total: Long) -> Unit,
     ): ByteArray {

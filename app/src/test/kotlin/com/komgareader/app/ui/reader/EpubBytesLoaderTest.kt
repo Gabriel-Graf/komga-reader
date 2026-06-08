@@ -40,7 +40,7 @@ class EpubBytesLoaderTest {
         override val name = "Fake"
         override val kind = SourceKind.KOMGA
 
-        override suspend fun downloadFile(bookRemoteId: String): ByteArray = fileBytes
+        override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit): ByteArray = fileBytes
         override suspend fun pullProgress(bookRemoteId: String): ReadProgress? = progress
 
         override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> = error("not used")

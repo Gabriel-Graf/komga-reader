@@ -2,8 +2,8 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.AuthHeaders
-import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
 import com.komgareader.domain.repository.ColorProfileRepository
@@ -42,7 +42,7 @@ data class EditState(
 class ColorFilterViewModel @Inject constructor(
     private val colorProfiles: ColorProfileRepository,
     private val servers: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val activeSource: ActiveSource,
 ) : ViewModel() {
 
     val profiles = colorProfiles.observeAll()
@@ -71,7 +71,7 @@ class ColorFilterViewModel @Inject constructor(
 
     private fun loadPreviewCover() = viewModelScope.launch {
         val config = servers.config.first() ?: return@launch
-        val source = sourceProvider.from(config) ?: return@launch
+        val source = activeSource.current() ?: return@launch
         headers = AuthHeaders.forCovers(config)
         candidates = runCatching { source.browse(0, SourceFilter()).items }
             .getOrNull()

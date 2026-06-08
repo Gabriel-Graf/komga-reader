@@ -28,7 +28,7 @@ class SourcePageFetcherTest {
         override suspend fun books(seriesRemoteId: String): List<Book> = error("not used")
         override suspend fun seriesDetail(seriesRemoteId: String): Series? = error("not used")
         override suspend fun pages(bookRemoteId: String): List<PageRef> = error("not used")
-        override suspend fun downloadFile(bookRemoteId: String): ByteArray = error("not used")
+        override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit): ByteArray = error("not used")
         override suspend fun seriesIdOf(bookRemoteId: String): String = error("not used")
     }
 

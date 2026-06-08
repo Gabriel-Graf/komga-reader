@@ -66,7 +66,7 @@ class ReaderViewModelTest {
         override suspend fun search(query: String, page: Int): PagedResult<Series> = error("not used")
         override suspend fun seriesDetail(seriesRemoteId: String): Series? = error("not used")
         override suspend fun openPage(ref: PageRef): ByteArray = error("not used")
-        override suspend fun downloadFile(bookRemoteId: String): ByteArray = error("not used")
+        override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit): ByteArray = error("not used")
         override suspend fun pushProgress(bookRemoteId: String, progress: ReadProgress) = error("not used")
         override suspend fun setRead(bookRemoteId: String, read: Boolean, pageCount: Int) = error("not used")
     }

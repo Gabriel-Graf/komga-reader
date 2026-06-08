@@ -2,7 +2,7 @@ package com.komgareader.app.ui.groups
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.ActiveSource
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.model.ShelfSource
@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,7 +33,7 @@ data class GroupsUiState(
 class GroupsViewModel @Inject constructor(
     private val shelfRepository: ShelfRepository,
     private val serverRepository: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val active: ActiveSource,
 ) : ViewModel() {
 
     val state: StateFlow<GroupsUiState> = combine(
@@ -61,8 +60,7 @@ class GroupsViewModel @Inject constructor(
      */
     fun loadCovers() {
         viewModelScope.launch {
-            val config = serverRepository.config.first()
-            val source = sourceProvider.from(config) ?: return@launch
+            val source = active.current() ?: return@launch
             state.value.shelves.forEach { shelf ->
                 val containerIds = shelf.sources
                     .firstOrNull { it.sourceId == source.id }
@@ -82,8 +80,7 @@ class GroupsViewModel @Inject constructor(
     /** Lädt die Library-Liste der verbundenen Quelle (für das Modal). */
     fun loadContainers() {
         viewModelScope.launch {
-            val config = serverRepository.config.first()
-            val source = sourceProvider.from(config)
+            val source = active.current()
             _containers.value = if (source is ContainerSource) {
                 runCatching { source.listContainers() }.getOrDefault(emptyList())
             } else {

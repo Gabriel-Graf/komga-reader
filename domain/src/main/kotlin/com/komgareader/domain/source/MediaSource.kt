@@ -52,8 +52,13 @@ interface BrowsableSource : MediaSource {
     /**
      * Lädt die komplette Buchdatei (z.B. EPUB/CBZ) als rohe Bytes. Für Reader, die das
      * ganze Dokument brauchen (Reflow, MuPDF) statt seitenweisem Streaming über [openPage].
+     * [onProgress] meldet `(gelesene Bytes, Gesamtbytes)` fortlaufend (Gesamt `-1`/`0` wenn
+     * unbekannt); Quellen ohne Stream-Fortschritt melden best-effort am Ende. Default = ignorieren.
      */
-    suspend fun downloadFile(bookRemoteId: String): ByteArray
+    suspend fun downloadFile(
+        bookRemoteId: String,
+        onProgress: (read: Long, total: Long) -> Unit = { _, _ -> },
+    ): ByteArray
 
     /**
      * Löst auf, zu welcher Serie ein Buch gehört (für die Kapitel-Liste des Webtoon-Strips).

@@ -3,7 +3,7 @@ package com.komgareader.app.ui.groups
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.localSeries
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.Shelf
@@ -44,7 +44,7 @@ class GroupBrowseViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val shelfRepository: ShelfRepository,
     private val serverRepository: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val active: ActiveSource,
     private val downloadRepository: DownloadRepository,
 ) : ViewModel() {
 
@@ -69,7 +69,7 @@ class GroupBrowseViewModel @Inject constructor(
                     return@flow
                 }
                 emit(GroupBrowseUiState.Loading)
-                val source = sourceProvider.from(config)
+                val source = active.current()
                 if (config == null || source == null) {
                     // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
                     val local = downloadRepository.downloads.first().localSeries()

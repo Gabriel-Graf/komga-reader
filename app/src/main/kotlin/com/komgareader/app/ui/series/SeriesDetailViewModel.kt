@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.ui.reader.ViewerMode
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.Book
@@ -20,6 +20,7 @@ import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.ShelfRepository
+import com.komgareader.domain.source.SyncingSource
 import com.komgareader.domain.usecase.ResolveShelfContentType
 import com.komgareader.domain.usecase.ResolveViewerType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -92,7 +93,7 @@ private data class TypeOverride(val type: ContentType?)
 class SeriesDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val servers: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val active: ActiveSource,
     private val downloadManager: DownloadManager,
     private val downloadRepository: DownloadRepository,
     private val shelfRepository: ShelfRepository,
@@ -121,7 +122,7 @@ class SeriesDetailViewModel @Inject constructor(
         servers.config.flatMapLatest { config ->
             flow {
                 emit(SeriesDetailUiState.Loading)
-                val source = sourceProvider.from(config)
+                val source = active.current()
                 if (config == null || source == null) { emit(SeriesDetailUiState.NoServer); return@flow }
                 emit(runCatching { source.books(seriesId) }
                     .fold(
@@ -275,7 +276,7 @@ class SeriesDetailViewModel @Inject constructor(
             val config = servers.config.first() ?: run {
                 _events.emit(SeriesDetailEvent.DownloadError("Kein Server verbunden")); return@launch
             }
-            val source = sourceProvider.from(config) ?: run {
+            val source = active.current() ?: run {
                 _events.emit(SeriesDetailEvent.DownloadError("Quelle nicht verfügbar")); return@launch
             }
             val total = books.size
@@ -374,7 +375,7 @@ class SeriesDetailViewModel @Inject constructor(
                 _events.emit(SeriesDetailEvent.DownloadError("Kein Server verbunden"))
                 return@launch
             }
-            val source = sourceProvider.from(config) ?: run {
+            val source = active.current() ?: run {
                 _events.emit(SeriesDetailEvent.DownloadError("Quelle nicht verfügbar"))
                 return@launch
             }
@@ -426,8 +427,7 @@ class SeriesDetailViewModel @Inject constructor(
         // Sofort optimistisch einblenden — kein Voll-Reload der Seite.
         _readOverrides.update { it + (book.remoteId to read) }
         viewModelScope.launch {
-            val config = servers.config.first() ?: return@launch
-            val source = sourceProvider.from(config) ?: return@launch
+            val source = active.current() as? SyncingSource ?: return@launch
             runCatching { source.setRead(book.remoteId, read, book.pageCount) }
                 .onFailure { e ->
                     Log.e(TAG, "Read-Status setzen fehlgeschlagen: ${book.remoteId}", e)
@@ -445,8 +445,7 @@ class SeriesDetailViewModel @Inject constructor(
         // Sofort optimistisch (Chip + Viewer) — kein Voll-Reload.
         _typeOverride.value = TypeOverride(type)
         viewModelScope.launch {
-            val config = servers.config.first() ?: return@launch
-            val source = sourceProvider.from(config) ?: return@launch
+            val source = active.current() ?: return@launch
             runCatching { overrideRepository.set(source.id, seriesId, type) }
                 .onFailure {
                     Log.e(TAG, "Typ setzen fehlgeschlagen", it)
@@ -474,8 +473,7 @@ class SeriesDetailViewModel @Inject constructor(
 
     /** Pusht alle noch nicht synchronisierten lokalen Fortschritte zum Server (still bei Offline). */
     private suspend fun syncDirtyProgress() {
-        val config = servers.config.first() ?: return
-        val source = sourceProvider.from(config) ?: return
+        val source = active.current() as? SyncingSource ?: return
         readProgressRepository.dirty().forEach { lp ->
             runCatching {
                 source.pushProgress(

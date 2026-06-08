@@ -2,7 +2,7 @@ package com.komgareader.app.ui.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.localSeries
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.ContentType
@@ -56,7 +56,7 @@ sealed interface LibraryEvent {
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val servers: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val active: ActiveSource,
     private val downloadManager: DownloadManager,
     private val downloadRepository: DownloadRepository,
     private val shelfRepository: ShelfRepository,
@@ -92,7 +92,7 @@ class LibraryViewModel @Inject constructor(
             .flatMapLatest { (config, shelves) ->
                 flow {
                     emit(LibraryUiState.Loading)
-                    val source = sourceProvider.from(config)
+                    val source = active.current()
                     if (config == null || source == null) {
                         // Getrennt: trotzdem lokale Werke zeigen, sonst „kein Server".
                         val local = downloadRepository.downloads.first().localSeries()
@@ -140,8 +140,7 @@ class LibraryViewModel @Inject constructor(
 
     fun downloadSeries(series: Series) {
         viewModelScope.launch {
-            val config = servers.config.first() ?: return@launch
-            val source = sourceProvider.from(config) ?: return@launch
+            val source = active.current() ?: return@launch
             runCatching {
                 val books = withContext(Dispatchers.IO) { source.books(series.remoteId) }
                 events.emit(LibraryEvent.DownloadStarted(books.size))

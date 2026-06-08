@@ -67,8 +67,13 @@ class OpdsSource internal constructor(
 
     /**
      * Lädt das Buch über den Acquisition-Link herunter und liefert die rohen Bytes.
+     * OPDS lädt die Datei am Stück (kein Stream-Fortschritt) — [onProgress] wird daher
+     * best-effort genau einmal am Ende mit `(size, size)` gemeldet.
      */
-    override suspend fun downloadFile(bookRemoteId: String): ByteArray {
+    override suspend fun downloadFile(
+        bookRemoteId: String,
+        onProgress: (read: Long, total: Long) -> Unit,
+    ): ByteArray {
         val entries = fetchFeed(catalogUrl)
         val entry = entries.firstOrNull { it.id == bookRemoteId }
             ?: error("Kein OPDS-Eintrag mit ID '$bookRemoteId' gefunden")
@@ -82,7 +87,7 @@ class OpdsSource internal constructor(
                 check(response.isSuccessful) {
                     "Download fehlgeschlagen: HTTP ${response.code} für $absoluteUrl"
                 }
-                response.body!!.bytes()
+                response.body!!.bytes().also { onProgress(it.size.toLong(), it.size.toLong()) }
             }
         }
     }

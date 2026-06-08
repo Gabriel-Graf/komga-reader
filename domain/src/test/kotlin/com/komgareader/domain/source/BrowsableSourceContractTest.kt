@@ -18,7 +18,8 @@ private class FakeBrowsable : BrowsableSource {
     override suspend fun seriesDetail(seriesRemoteId: String): Series? = null
     override suspend fun pages(bookRemoteId: String) = buildPageRefs(bookRemoteId, 2)
     override suspend fun openPage(ref: PageRef) = byteArrayOf(ref.pageNumber.toByte())
-    override suspend fun downloadFile(bookRemoteId: String) = "epub:$bookRemoteId".toByteArray()
+    override suspend fun downloadFile(bookRemoteId: String, onProgress: (Long, Long) -> Unit) =
+        "epub:$bookRemoteId".toByteArray()
     override suspend fun seriesIdOf(bookRemoteId: String) = "s-$bookRemoteId"
 }
 

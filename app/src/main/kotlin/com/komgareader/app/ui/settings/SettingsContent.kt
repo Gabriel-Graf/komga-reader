@@ -49,6 +49,7 @@ import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.SourceKind
 
 /** Schrittweite und Grenzen der Webtoon-Überlappung (in Prozent). */
 private const val OVERLAP_STEP = 5
@@ -66,10 +67,23 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     var apiKeyInput by remember { mutableStateOf("") }
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
+    var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         val statusText = if (server != null) "${s.connected}: ${server!!.name}" else s.notConnected
         HighlightText(statusText, query, MaterialTheme.typography.bodyLarge)
+
+        // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val select: (SourceKind) -> Unit = { kindInput = it }
+            if (kindInput == SourceKind.KOMGA) {
+                Button(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
+                EinkOutlinedButton(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
+            } else {
+                EinkOutlinedButton(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
+                Button(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
+            }
+        }
 
         OutlinedTextField(
             value = nameInput,
@@ -152,8 +166,9 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         )
         Row {
             Button(onClick = {
-                viewModel.saveServer(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput)
+                viewModel.saveServer(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput)
                 nameInput = ""; urlInput = ""; apiKeyInput = ""; usernameInput = ""; passwordInput = ""
+                kindInput = SourceKind.KOMGA
             }) { Text(s.connect) }
             if (server != null) {
                 Spacer(Modifier.width(8.dp))

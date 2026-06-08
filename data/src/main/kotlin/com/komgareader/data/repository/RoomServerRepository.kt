@@ -4,6 +4,7 @@ import com.komgareader.data.db.ServerDao
 import com.komgareader.data.db.ServerEntity
 import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.data.security.KeystoreCredentialStore.CipherBlob
+import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,7 @@ class RoomServerRepository(
                 apiKey = decryptIfPresent(it.apiKeyCiphertext, it.apiKeyIv),
                 username = it.username,
                 password = decryptIfPresent(it.passwordCiphertext, it.passwordIv),
+                kind = runCatching { SourceKind.valueOf(it.kind) }.getOrDefault(SourceKind.KOMGA),
             )
         }
     }
@@ -40,6 +42,7 @@ class RoomServerRepository(
             ServerEntity(
                 name = config.name,
                 baseUrl = config.baseUrl,
+                kind = config.kind.name,
                 username = config.username,
                 apiKeyCiphertext = apiBlob?.ciphertext,
                 apiKeyIv = apiBlob?.iv,

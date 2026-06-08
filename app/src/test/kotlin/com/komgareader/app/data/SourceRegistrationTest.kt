@@ -30,6 +30,18 @@ class SourceRegistrationTest {
     }
 
     @Test
+    fun `opds-config registriert eine opds-quelle mit deterministischer id`() {
+        val sources = SourceManager()
+        val registration = SourceRegistration(sources, KomgaSourceProvider())
+        val config = ServerConfig(name = "Feed", baseUrl = "http://o/opds", kind = SourceKind.OPDS)
+
+        val id = registration.activate(config)
+
+        assertEquals(SourceId.of("Feed", SourceKind.OPDS, "http://o/opds"), id)
+        assertTrue(sources.get(id!!) is BrowsableSource)
+    }
+
+    @Test
     fun `null-config deaktiviert die zuvor aktive quelle`() {
         val sources = SourceManager()
         val registration = SourceRegistration(sources, KomgaSourceProvider())

@@ -3,6 +3,7 @@ package com.komgareader.app.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
@@ -44,14 +45,17 @@ class SettingsViewModel @Inject constructor(
         apiKey: String,
         username: String,
         password: String,
+        kind: SourceKind = SourceKind.KOMGA,
     ) = viewModelScope.launch {
         servers.save(
             ServerConfig(
+                // OPDS-URLs nicht Komga-normalisieren (Feed-Pfad bleibt wie eingegeben).
                 name = name,
-                baseUrl = KomgaUrl.normalize(baseUrl),
+                baseUrl = if (kind == SourceKind.OPDS) baseUrl.trim() else KomgaUrl.normalize(baseUrl),
                 apiKey = apiKey.trimToNull(),
                 username = username.trimToNull(),
                 password = password.trimToNull(),
+                kind = kind,
             )
         )
     }.let {}

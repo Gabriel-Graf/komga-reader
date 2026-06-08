@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
+    implementation(project(":source-opds"))
     implementation(project(":render-core"))
     implementation(project(":render-crengine"))
     implementation(project(":guided-view"))

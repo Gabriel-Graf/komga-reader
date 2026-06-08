@@ -1,13 +1,17 @@
 package com.komgareader.app.data
 
+import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
+import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceManager
+import com.komgareader.source.opds.OpdsSourceFactory
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Registriert die aktive Quelle (heute: eine Komga-Verbindung) im [SourceManager].
- * Der konkrete Quellen-Typ (KomgaSourceProvider) lebt NUR hier in der Wiring-Schicht.
+ * Registriert die aktive Quelle aus der [ServerConfig] im [SourceManager] — Komga oder OPDS,
+ * je nach [ServerConfig.kind]. Die konkreten Quellen-Typen (KomgaSourceProvider, OpdsSourceFactory)
+ * leben NUR hier in der Wiring-Schicht; ViewModels sehen nur `BrowsableSource` (über ActiveSource).
  */
 @Singleton
 class SourceRegistration @Inject constructor(
@@ -26,7 +30,11 @@ class SourceRegistration @Inject constructor(
             activeId = null
             return null
         }
-        val source = komgaProvider.from(config) ?: run {
+        val source: BrowsableSource? = when (config.kind) {
+            SourceKind.OPDS -> OpdsSourceFactory.create(config.name, config.baseUrl)
+            else -> komgaProvider.from(config)
+        }
+        if (source == null) {
             activeId = null
             return null
         }

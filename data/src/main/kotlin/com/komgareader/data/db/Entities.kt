@@ -1,5 +1,6 @@
 package com.komgareader.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -17,6 +18,8 @@ data class ServerEntity(
     @PrimaryKey val id: Int = 1,
     val name: String,
     val baseUrl: String,
+    /** Quellenart (`SourceKind`-Name: "KOMGA" | "OPDS" | …); Default KOMGA für Bestandsdaten. */
+    @ColumnInfo(defaultValue = "KOMGA") val kind: String = "KOMGA",
     val username: String? = null,
     /** Base64-kodiertes AES/GCM-Chiffrat des API-Keys, oder null wenn nicht gesetzt. */
     val apiKeyCiphertext: String? = null,

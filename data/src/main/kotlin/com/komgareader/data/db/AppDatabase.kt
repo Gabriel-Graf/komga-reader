@@ -11,7 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
         NovelProgressEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -246,6 +246,18 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
                 PRIMARY KEY(`sourceId`, `bookId`)
             )""",
         )
+    }
+}
+
+/**
+ * v12 → v13: Quellenart je Server-Verbindung. **Additiv** — `ALTER ADD COLUMN` mit
+ * `DEFAULT 'KOMGA'`, exakt passend zu `@ColumnInfo(defaultValue = "KOMGA")` auf [ServerEntity.kind],
+ * damit Rooms Schema-Validierung sauber durchläuft und `fallbackToDestructiveMigration` NICHT greift.
+ * Bestandsverbindungen (Komga) behalten so ihre verschlüsselten Credentials — kein Recreate, kein Wipe.
+ */
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `kind` TEXT NOT NULL DEFAULT 'KOMGA'")
     }
 }
 

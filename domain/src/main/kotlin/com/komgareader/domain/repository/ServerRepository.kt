@@ -1,10 +1,13 @@
 package com.komgareader.domain.repository
 
+import com.komgareader.domain.model.SourceKind
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Persistierte Komga-Verbindung. Genau eine im MVP (null = nicht konfiguriert).
+ * Persistierte Server-Verbindung. Genau eine im MVP (null = nicht konfiguriert).
  * Authentifizierung entweder per [apiKey] oder per [username]+[password] — nie beides gleichzeitig.
+ * [kind] wählt die Quellenart (Komga-REST vs. OPDS-Feed); Default [SourceKind.KOMGA] für
+ * Bestandskonfigurationen (migrations-kompatibel).
  */
 data class ServerConfig(
     val name: String,
@@ -12,6 +15,7 @@ data class ServerConfig(
     val apiKey: String? = null,
     val username: String? = null,
     val password: String? = null,
+    val kind: SourceKind = SourceKind.KOMGA,
 )
 
 interface ServerRepository {

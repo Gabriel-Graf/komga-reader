@@ -1,36 +1,66 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "9172ee63ac4cf5d06088d0fbab020ad086003722",
-  "generatedAt": "2026-06-07T18:27:58.878Z",
+  "gitCommitHash": "83f6b53845c281757688d3e0b350de53a7ce0910",
+  "generatedAt": "2026-06-08T20:53:36.148Z",
   "files": {
-    "CLAUDE.md": {
-      "filePath": "CLAUDE.md",
-      "contentHash": "bf1ef3e4aaf0c150d292bc42906409049bbb5881c6fe056581227cf58608605e",
+    ".understand-anything/.understandignore": {
+      "filePath": ".understand-anything/.understandignore",
+      "contentHash": "344946dec0bd7f9d3a39b22ebc821d5317cb5c59bfd54312c1a302da62a81152",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 50,
+      "totalLines": 32,
+      "hasStructuralAnalysis": false
+    },
+    ".understand-anything/fingerprints.json": {
+      "filePath": ".understand-anything/fingerprints.json",
+      "contentHash": "e26406895eccc3232b90d9831a82c6e770e380309b86847a3d731950f55acb86",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2951,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/knowledge-graph.json": {
+      "filePath": ".understand-anything/knowledge-graph.json",
+      "contentHash": "b5267370129282ea92c1d14dff37d4e3da1c6a37b410f0357c06fbf53291e183",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9980,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/meta.json": {
+      "filePath": ".understand-anything/meta.json",
+      "contentHash": "65af2683bfc588a0329f65ab22e0f4c5fadc929dcbe145d114d6a7cffca52fde",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
       "hasStructuralAnalysis": true
     },
     "NOTICE": {
       "filePath": "NOTICE",
-      "contentHash": "d9881c081265686b3f95bad1f09e12cc0381f4404c142c352395a060385fcda5",
+      "contentHash": "93c5c630165c939d0ec4b41a83fbb8d175f5c6627775d84714d441c6aaa413fa",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 11,
+      "totalLines": 31,
       "hasStructuralAnalysis": false
     },
     "app/build.gradle.kts": {
       "filePath": "app/build.gradle.kts",
-      "contentHash": "96a4d817d70475f5460cfbbd13a492567bfeed7ed0ee841db855ae42fd34576d",
+      "contentHash": "e59578098c4416bc2a8a52b7e70a20f2146f6c072b7c8767b4136c1a322d7f81",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 66,
+      "totalLines": 70,
       "hasStructuralAnalysis": false
     },
     "app/src/androidTest/kotlin/com/komgareader/app/DownloadInstrumentedTest.kt": {
@@ -63,6 +93,26 @@
       "totalLines": 38,
       "hasStructuralAnalysis": false
     },
+    "app/src/androidTest/kotlin/com/komgareader/app/NovelRelayoutBitmapTest.kt": {
+      "filePath": "app/src/androidTest/kotlin/com/komgareader/app/NovelRelayoutBitmapTest.kt",
+      "contentHash": "f6e79b6100d8cdac53d51f0fb8f11f43c09003dafcd74651973ec6fd2d0f67a2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 56,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/androidTest/kotlin/com/komgareader/app/OpdsCanaryInstrumentedTest.kt": {
+      "filePath": "app/src/androidTest/kotlin/com/komgareader/app/OpdsCanaryInstrumentedTest.kt",
+      "contentHash": "afae14e79aed1e7517ece25c49d0444c5f47fc4785def627981ca4d6efed0c85",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 91,
+      "hasStructuralAnalysis": false
+    },
     "app/src/androidTest/kotlin/com/komgareader/app/ReaderFlowInstrumentedTest.kt": {
       "filePath": "app/src/androidTest/kotlin/com/komgareader/app/ReaderFlowInstrumentedTest.kt",
       "contentHash": "273f57c289d33d19f176c386ca7e808d0b0fa8e576776662cc20c69b15c99d49",
@@ -91,6 +141,26 @@
       "imports": [],
       "exports": [],
       "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/assets/hyph/hyph-de-1996.pattern": {
+      "filePath": "app/src/main/assets/hyph/hyph-de-1996.pattern",
+      "contentHash": "176ea5de4f0aa741e59177a09a99f782d64bbe362a04c8043ec9154198d0851d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35130,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/assets/hyph/hyph-en-us.pattern": {
+      "filePath": "app/src/main/assets/hyph/hyph-en-us.pattern",
+      "contentHash": "29688be2e27884e7904c48cd7e6b54ee460d63fcf9c61a0eab02463ead1b5afc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5019,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/KomgaReaderApp.kt": {
@@ -123,14 +193,14 @@
       "totalLines": 36,
       "hasStructuralAnalysis": false
     },
-    "app/src/main/kotlin/com/komgareader/app/data/AuthHeaders.kt": {
-      "filePath": "app/src/main/kotlin/com/komgareader/app/data/AuthHeaders.kt",
-      "contentHash": "a3f8ea43edc394edfcb85d14c6447708662d69a93981b4034067053e1b8652ac",
+    "app/src/main/kotlin/com/komgareader/app/data/ActiveSource.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/data/ActiveSource.kt",
+      "contentHash": "d1db058633c6b19777949c316d6a4e9ffcf5a5a95669f745ab4c5c6b7e68d87f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 21,
+      "totalLines": 29,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/data/KomgaSourceProvider.kt": {
@@ -153,14 +223,74 @@
       "totalLines": 28,
       "hasStructuralAnalysis": false
     },
-    "app/src/main/kotlin/com/komgareader/app/di/AppModule.kt": {
-      "filePath": "app/src/main/kotlin/com/komgareader/app/di/AppModule.kt",
-      "contentHash": "9fb2eb6857e27cf6afb313b98f3196c5d14fbc2de54cb76cb573c2bec5eac1cc",
+    "app/src/main/kotlin/com/komgareader/app/data/SourceRegistration.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/data/SourceRegistration.kt",
+      "contentHash": "644a2e9230a53907397828ac9e234d59bf24875025129a7eb0a7e8f1b2b2ccec",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 46,
+      "totalLines": 48,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/data/coil/SourceCover.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/data/coil/SourceCover.kt",
+      "contentHash": "cee4be371ee5a244c64571c652939aa650ac25e9c6a012a1b4a8d7717bb2a3e4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/data/coil/SourceCoverFetcher.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/data/coil/SourceCoverFetcher.kt",
+      "contentHash": "8522a2d865e0648f87f880a1d4742428c7588da128dcd3dbf4c2f93c8fca1e00",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 53,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/data/coil/SourceImage.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/data/coil/SourceImage.kt",
+      "contentHash": "3baa6f43c7a5466fb2f1d4c7484089051c3d349886b4956a1362fc8c13328912",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/data/coil/SourcePageFetcher.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/data/coil/SourcePageFetcher.kt",
+      "contentHash": "9e1d0ef9500c06900223101d235657d5659ee8ec4c5b178d461c172e6139cfd4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 63,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/di/AppModule.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/di/AppModule.kt",
+      "contentHash": "ff5a663a2fe66423ce4e76552a1ad822961e7b07638a7d738016d3de5dd07ccc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 116,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/di/ApplicationScope.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/di/ApplicationScope.kt",
+      "contentHash": "474540a7b33973877f6039da2ec4a14effdf6d429bba92c403ff706ed55ff4a6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/eink/HardwareButtons.kt": {
@@ -195,12 +325,12 @@
     },
     "app/src/main/kotlin/com/komgareader/app/i18n/Strings.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/i18n/Strings.kt",
-      "contentHash": "87d29c1d3a8da2a11ca068d647276fe4be06bc1f1b9cc5fc08e9dd5838aea8a1",
+      "contentHash": "7d5d822eb31e96f38f4356493b53e4c5dc807f660a5de3d7ccaacdb73885c50f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 525,
+      "totalLines": 611,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/components/AnchoredMenuPopup.kt": {
@@ -245,12 +375,12 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/components/EinkModal.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/components/EinkModal.kt",
-      "contentHash": "e51ed380efba91fbc56ade41144f9ad5785f4e2e662ebc7296f2a51ea66fc792",
+      "contentHash": "97346c33abcf729be3de2622551d4810861019ac14b61c4cdf6295b3eb359846",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 110,
+      "totalLines": 119,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/components/EinkSearchBar.kt": {
@@ -325,17 +455,17 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupBrowseRoute.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupBrowseRoute.kt",
-      "contentHash": "ed9717f4b1e114a3c7ca5c5bbca04b15829d9a10e0035f143b69a0331b727a80",
+      "contentHash": "2dc5b4e3b9206696b386a5fff65aa45caf91ff841a291ae5ce542dca03fdca72",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 184,
+      "totalLines": 181,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupBrowseViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupBrowseViewModel.kt",
-      "contentHash": "f9b3f0b32f159a87f23ff6521e1d2da0119b9986639c6ebb04f03b9d4f3e0136",
+      "contentHash": "c5eaec45102f65b96afa7c20ba69ad4308484517f2a8532656e2c1fbcf81e7b7",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -345,22 +475,22 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupsScreen.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupsScreen.kt",
-      "contentHash": "9005a2ed4111c0294815165f077213526ec61e8dc3c8768d0831d69477e303a7",
+      "contentHash": "284094a51641bf425cfb4b5379ec184e95d582dd61c0b80b941d89baafa8fa92",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 397,
+      "totalLines": 389,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupsViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/groups/GroupsViewModel.kt",
-      "contentHash": "cd64057f8266deda3189a048f89ecdf791078d0a0ea579f71c2de5237a13717d",
+      "contentHash": "44a3cd5f38300932c738913131465f95e1d9626e8b5dca0b149126c30b2684b7",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 118,
+      "totalLines": 116,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/home/HomeScreen.kt": {
@@ -375,42 +505,42 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/icons/AppIcons.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/icons/AppIcons.kt",
-      "contentHash": "998db285bd0806c2c872b02629e4b1655759f9530f0a2abbc79f4a4137f771a5",
+      "contentHash": "ee053eb49e767cc1911cdaafd232e31a647743ce036683a6030b9afb3f0bf394",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 50,
+      "totalLines": 54,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/icons/LucideIcons.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/icons/LucideIcons.kt",
-      "contentHash": "b8445e106f1fa345462a2940e41e7a000c79c002c57ec44c583fdf257afd4588",
+      "contentHash": "4f476ccb7cd58e3618c1b3f6fe27b4efa68de0792e878dcb05165d2e68fe49af",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 69,
+      "totalLines": 72,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/library/LibraryScreen.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/library/LibraryScreen.kt",
-      "contentHash": "e309bdf18780c452a674dcc40285af404601f987018b199d8ed82a6115a462d1",
+      "contentHash": "d9b915a57f2146a19af37b2788d4c82b8d71c07a95e722ddf69d9b68fbd5f0e0",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 240,
+      "totalLines": 237,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/library/LibraryViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/library/LibraryViewModel.kt",
-      "contentHash": "7f059f360ae3491c0b1e74b6f2c2e005731a2b7e8b042ff4a102cca5f49f4be3",
+      "contentHash": "0a50b969f8e749fe23c545dddfd83dac6bae4860314648ff867e6a67aaa7ba77",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 171,
+      "totalLines": 170,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/library/SeriesFilter.kt": {
@@ -435,7 +565,7 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ComicPageLoader.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ComicPageLoader.kt",
-      "contentHash": "20627cdbf7b833a1ca6bab56d3f03feb9ddacb77b24abff9f75688556e4bb4e8",
+      "contentHash": "e73c960fda5f5afccad4f62f645e6f9ca329b2c51630ac37eb2731fce1511c59",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -445,22 +575,22 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ComicReaderScreen.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ComicReaderScreen.kt",
-      "contentHash": "81995fc47cdd25a04c58401103d1852cb68aca6b80bc3c9d520d5d6bba89ad13",
+      "contentHash": "6853303f57c97c071506c15fc39953242134357ccb30a6ca186802f1f367bb9d",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 199,
+      "totalLines": 206,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ComicReaderViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ComicReaderViewModel.kt",
-      "contentHash": "349a08a926643c5f3e427554ebd0e42d97d9603958000520d6666067844bbf9e",
+      "contentHash": "4ed2b962209d55bf5e7c8d8bd0268674f6e2e26e4fbb9daa7f21165065256584",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 205,
+      "totalLines": 221,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/EinkReaderEffect.kt": {
@@ -473,44 +603,114 @@
       "totalLines": 45,
       "hasStructuralAnalysis": false
     },
-    "app/src/main/kotlin/com/komgareader/app/ui/reader/EpubReaderScreen.kt": {
-      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/EpubReaderScreen.kt",
-      "contentHash": "a1906ebab1f4a117ebd23c5d44b7b3048739f00fbe0c0ba714806ea032f6d53e",
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/EpubBytesLoader.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/EpubBytesLoader.kt",
+      "contentHash": "be808e570f1603f541da5ba646a3c53cc57f66ed5d93666d128eccd432ffc95e",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 123,
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/EpubReaderScreen.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/EpubReaderScreen.kt",
+      "contentHash": "74b3ec54031cc53a24ec911821144c1a4d79ddb2e5e053e2a4b642310116f775",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 78,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelReaderScreen.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelReaderScreen.kt",
+      "contentHash": "3516841ae46998f654ddce79b6c68bcbd1474aff9570f9a64fa8c2cb2c91f1ba",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 239,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelReaderViewModel.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelReaderViewModel.kt",
+      "contentHash": "1a2e73a41d65132167538bc74123e1cfd1390c1cf3ef7a95c1c084a2e81f15ff",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 477,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelSearchPanel.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelSearchPanel.kt",
+      "contentHash": "34ca5749cf019894bf112305eb0f3a8d3957c29d1265c4cd012b388d6829c55a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 129,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelTocPanel.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelTocPanel.kt",
+      "contentHash": "e6559df20247c0519028a467ed61526f013d4f4c53e3c5f030d19e1d184f274a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelTypoPanel.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/NovelTypoPanel.kt",
+      "contentHash": "0c408a7190bd6586e87af81148fa01a2280c4c51c72057625bc5893ff399eebb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 152,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/PagedReaderScreen.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/PagedReaderScreen.kt",
-      "contentHash": "808656fce68513edcb4af084506d573242c600fa36e5c4b4b2aa99cc60c4a826",
+      "contentHash": "13b861e6e7fb7b925c5fe206161fb9615466473c460519e1712b3e2d34198f3f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 140,
+      "totalLines": 87,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderChrome.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderChrome.kt",
-      "contentHash": "ad92a7109ea29bed50f87a9f45179dc5052b07c0299888b5a0c6516bb6454c17",
+      "contentHash": "cbabf969606a986a4e759b537135f546eb1ff36c7b4a1cd1bf02a635a21d4df6",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 63,
+      "totalLines": 185,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderChromeState.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderChromeState.kt",
+      "contentHash": "0c04763ae7e2e57b8e4859b081a9566843a430065a4a60317d1b4a769aa493d9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 27,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderContent.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderContent.kt",
-      "contentHash": "458a6d9d8c1941e470e1fe2371fd92fc5e03bcb8300237ed4325115dbb00423e",
+      "contentHash": "261b7284d876cf3fecacb41841a8227e59d998e5dd37e47ef8ba18af5eef2d6f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 30,
+      "totalLines": 41,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderEinkHolder.kt": {
@@ -525,22 +725,32 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderRoute.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderRoute.kt",
-      "contentHash": "9b101cc9daa23a751ede4c318711015669c03c9e61c74c36f560d3b496f17036",
+      "contentHash": "8cc8337da2fa25340f7eb0d7eb94d6e74c386e327d2c3348477a022afea9a5b5",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 131,
+      "totalLines": 129,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderScaffold.kt": {
+      "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderScaffold.kt",
+      "contentHash": "72bb2b552f54c7ede68dff633120110d3fb5aa1a0577e99d6a3c3a35e5456973",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 105,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/ReaderViewModel.kt",
-      "contentHash": "650b5ef8313c1b0c6061143d883306eea83085a345b53c85ae3a5700eaca82c6",
+      "contentHash": "5333dbf482d12d42e153566864698a30ba06d3e3bcb8aa4bb3313adb70d57f23",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 303,
+      "totalLines": 302,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/ViewerMode.kt": {
@@ -555,27 +765,27 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/reader/WebtoonReaderScreen.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/reader/WebtoonReaderScreen.kt",
-      "contentHash": "a4c3161bfd882d0471207309e312f71daea68103a453eed9a99e82e2b5735404",
+      "contentHash": "894e3f353b07c685a353c68d861ddd3aa5e8cc4220b5f7f1af5897762d989694",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 205,
+      "totalLines": 181,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/series/SeriesDetailScreen.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/series/SeriesDetailScreen.kt",
-      "contentHash": "4b69c57a832e5919269374627dce26028105629c58ae9032e6717b0f533254d8",
+      "contentHash": "184d417df86bdd2486eefdaedb1ed019702edf3f3a880256a054bec765059c34",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 1183,
+      "totalLines": 1175,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/series/SeriesDetailViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/series/SeriesDetailViewModel.kt",
-      "contentHash": "4318385139d798a0336bf5c9661363f55b5c939d9a7de950ba52a209829c4daf",
+      "contentHash": "b6e16b6dfd0f6eb3eb06a00285c583aac2bc96886efc76d1e10f26d211bb038f",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -585,32 +795,32 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/settings/ColorFilterSettingsContent.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/settings/ColorFilterSettingsContent.kt",
-      "contentHash": "414a9b61b23acfcda16ec757f64b7ea5e809957a8f82938a54667adc3eec5dba",
+      "contentHash": "3e0ef2b38cbd4939d26fa4c5e5fa4fbcba03cf8bbdf89ef754aa3f5b06be33dc",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 498,
+      "totalLines": 497,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/settings/ColorFilterViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/settings/ColorFilterViewModel.kt",
-      "contentHash": "754e81a49f3306f0abc5b43789643e8c5f18a661edf32353c2b465541b338eab",
+      "contentHash": "bfb1c0b161fa3224bb6834de4248fbe7395631be0700ae6cd44357cc3b63ff0a",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 172,
+      "totalLines": 164,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/settings/SettingsContent.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/settings/SettingsContent.kt",
-      "contentHash": "dd581062d12e41e411f6f631b248e6fb2654231113118de48554d6df3134c8dd",
+      "contentHash": "3c26ffef40f0dd82cef8947e4be5d7ffffbaaa6c5c265f5dc9e7e00bdb9d78e4",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 311,
+      "totalLines": 326,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/settings/SettingsScreen.kt": {
@@ -645,12 +855,12 @@
     },
     "app/src/main/kotlin/com/komgareader/app/ui/settings/SettingsViewModel.kt": {
       "filePath": "app/src/main/kotlin/com/komgareader/app/ui/settings/SettingsViewModel.kt",
-      "contentHash": "ca7c20890379c7eda78c5845862845a15a4cce53302d19b922ad1fed8e5fe0e3",
+      "contentHash": "c76db15d9b2042c13f5116d93f91a9eb115876da3e969eb23894f3fda067f0ec",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 62,
+      "totalLines": 66,
       "hasStructuralAnalysis": false
     },
     "app/src/main/kotlin/com/komgareader/app/ui/theme/EinkTokens.kt": {
@@ -683,6 +893,56 @@
       "totalLines": 9,
       "hasStructuralAnalysis": false
     },
+    "app/src/test/kotlin/com/komgareader/app/data/ActiveSourceTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/data/ActiveSourceTest.kt",
+      "contentHash": "dc46c03e8c48e2f80f44f118facc61ba8eca0a3c5b59edced5c085bd8729c107",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/test/kotlin/com/komgareader/app/data/SourceRegistrationTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/data/SourceRegistrationTest.kt",
+      "contentHash": "2d519f361c031fc0b8630e21266923870b304058d9139b8d926a563f210a6bbb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 56,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/test/kotlin/com/komgareader/app/data/coil/SourceCoverFetcherTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/data/coil/SourceCoverFetcherTest.kt",
+      "contentHash": "489ebae2a5828dc9cedefb105981cc0e0ece92209b9b366cddff765a52e85974",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 65,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/test/kotlin/com/komgareader/app/data/coil/SourcePageFetcherTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/data/coil/SourcePageFetcherTest.kt",
+      "contentHash": "7cd8c609d90a443c2dd1d798f5c48b0384a7fb8ad35290c3f9475672c501e306",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 55,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/test/kotlin/com/komgareader/app/ui/groups/GroupBrowseViewModelTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/ui/groups/GroupBrowseViewModelTest.kt",
+      "contentHash": "98f0336004bda253aae4d87ac900054df1732425d35804f64ceea87750935c76",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 120,
+      "hasStructuralAnalysis": false
+    },
     "app/src/test/kotlin/com/komgareader/app/ui/library/SeriesFilterTest.kt": {
       "filePath": "app/src/test/kotlin/com/komgareader/app/ui/library/SeriesFilterTest.kt",
       "contentHash": "821d9f94752b4c8ac30c5077096277983be578b7a043035c45a7654ea08d7798",
@@ -691,6 +951,26 @@
       "imports": [],
       "exports": [],
       "totalLines": 117,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/test/kotlin/com/komgareader/app/ui/reader/EpubBytesLoaderTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/ui/reader/EpubBytesLoaderTest.kt",
+      "contentHash": "1289be61ae47803d417518b2692f94297e3eb574a5885c3a4762ea8063318853",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 140,
+      "hasStructuralAnalysis": false
+    },
+    "app/src/test/kotlin/com/komgareader/app/ui/reader/ReaderViewModelTest.kt": {
+      "filePath": "app/src/test/kotlin/com/komgareader/app/ui/reader/ReaderViewModelTest.kt",
+      "contentHash": "099e93c5c493ccc5efb7a61417f2b7b9e20b4aa80c8db2d366b8be8479df3f72",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 231,
       "hasStructuralAnalysis": false
     },
     "app/src/test/kotlin/com/komgareader/app/ui/settings/SettingsSearchTest.kt": {
@@ -733,6 +1013,26 @@
       "totalLines": 57,
       "hasStructuralAnalysis": false
     },
+    "data/src/androidTest/kotlin/com/komgareader/data/NovelProgressDaoTest.kt": {
+      "filePath": "data/src/androidTest/kotlin/com/komgareader/data/NovelProgressDaoTest.kt",
+      "contentHash": "97d284c088fcfe265b4eabc00af2971541b9f80b8cd013146d1a37585d4f11d4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 98,
+      "hasStructuralAnalysis": false
+    },
+    "data/src/androidTest/kotlin/com/komgareader/data/NovelProgressMigrationTest.kt": {
+      "filePath": "data/src/androidTest/kotlin/com/komgareader/data/NovelProgressMigrationTest.kt",
+      "contentHash": "22bb6a2343bd6ab663adf1b7e0739a481cd577ce05824bead8176585a297bbe5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 138,
+      "hasStructuralAnalysis": false
+    },
     "data/src/androidTest/kotlin/com/komgareader/data/PersistenceInstrumentedTest.kt": {
       "filePath": "data/src/androidTest/kotlin/com/komgareader/data/PersistenceInstrumentedTest.kt",
       "contentHash": "817ef1815cbdf6c528659a801fcba09e35d70c8dd282c1fe34e3a4f0412eac40",
@@ -755,12 +1055,12 @@
     },
     "data/src/main/kotlin/com/komgareader/data/db/AppDatabase.kt": {
       "filePath": "data/src/main/kotlin/com/komgareader/data/db/AppDatabase.kt",
-      "contentHash": "c8fbc14afc7de03ac5df393927f5d8232ba9a556200e603fe6d346329288a47d",
+      "contentHash": "4b4e9c068d29c6eee0d06b8371961fd0570f7ce21142cca4d40b689422e86b40",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 247,
+      "totalLines": 287,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/db/ColorProfileDao.kt": {
@@ -785,12 +1085,22 @@
     },
     "data/src/main/kotlin/com/komgareader/data/db/Entities.kt": {
       "filePath": "data/src/main/kotlin/com/komgareader/data/db/Entities.kt",
-      "contentHash": "65c0bd606808c50754c3ac3c3f2252234cfb2ab117ec60b5bff43ae6a6a965ff",
+      "contentHash": "ff30c86d659d513cc56f27677b4242c5452dbc84330186817e4454482b7ea2f0",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 97,
+      "totalLines": 117,
+      "hasStructuralAnalysis": false
+    },
+    "data/src/main/kotlin/com/komgareader/data/db/NovelProgressDao.kt": {
+      "filePath": "data/src/main/kotlin/com/komgareader/data/db/NovelProgressDao.kt",
+      "contentHash": "deb4262c7ee10e49c5e9b0129f3942ae169c68665112bfb07e5a271c1f793ca4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/db/ReadProgressDao.kt": {
@@ -845,22 +1155,22 @@
     },
     "data/src/main/kotlin/com/komgareader/data/di/DataModule.kt": {
       "filePath": "data/src/main/kotlin/com/komgareader/data/di/DataModule.kt",
-      "contentHash": "f8e550ad63f2c219552549317a635d0dc10f0929cac9dffcbe27bfefec94ee50",
+      "contentHash": "b6cd3b54323abbc9aa5747574e2d9b411eeccd3c6b1f2c40508da6510fe7e98e",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 96,
+      "totalLines": 111,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/download/DownloadManager.kt": {
       "filePath": "data/src/main/kotlin/com/komgareader/data/download/DownloadManager.kt",
-      "contentHash": "517d56a65a71429d0f213de7ac5cf88766a83f90e5a3588dcd96f0e609305cf5",
+      "contentHash": "473418cebb57628853c90c6a4344870af7efa38881bc92327504ad3ef4c683a1",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 130,
+      "totalLines": 140,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/repository/RoomColorProfileRepository.kt": {
@@ -881,6 +1191,16 @@
       "imports": [],
       "exports": [],
       "totalLines": 48,
+      "hasStructuralAnalysis": false
+    },
+    "data/src/main/kotlin/com/komgareader/data/repository/RoomNovelProgressRepository.kt": {
+      "filePath": "data/src/main/kotlin/com/komgareader/data/repository/RoomNovelProgressRepository.kt",
+      "contentHash": "8e36e081863d238406f9a61d56dcb2cf71f6582e85c6f2936666c6e4a2b3265e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/repository/RoomReadProgressRepository.kt": {
@@ -905,22 +1225,22 @@
     },
     "data/src/main/kotlin/com/komgareader/data/repository/RoomServerRepository.kt": {
       "filePath": "data/src/main/kotlin/com/komgareader/data/repository/RoomServerRepository.kt",
-      "contentHash": "057e831a2f9f80248641fcebcbafeb14bf609169eda157984e878d487ddb8ce0",
+      "contentHash": "57554025f03dee0005b08c339810a3c097d9a20bcebb7ae5058e4beff0bffda8",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 62,
+      "totalLines": 65,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/repository/RoomSettingsRepository.kt": {
       "filePath": "data/src/main/kotlin/com/komgareader/data/repository/RoomSettingsRepository.kt",
-      "contentHash": "5c4c5655d6eab17594f9e1e17ce6a75513668fa8fefa90abdb23e0f8d586ae76",
+      "contentHash": "eb981075842b77c1ed253c365bc97743b705c87ba1c8674e263f819a46da193d",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 51,
+      "totalLines": 83,
       "hasStructuralAnalysis": false
     },
     "data/src/main/kotlin/com/komgareader/data/repository/RoomShelfRepository.kt": {
@@ -973,14 +1293,24 @@
       "totalLines": 104,
       "hasStructuralAnalysis": false
     },
-    "data/src/test/kotlin/com/komgareader/data/repository/RoomSettingsRepositoryTest.kt": {
-      "filePath": "data/src/test/kotlin/com/komgareader/data/repository/RoomSettingsRepositoryTest.kt",
-      "contentHash": "b7068eb115072b7033c2f62800ad6c66433469fce196369739db22882be7bbb7",
+    "data/src/test/kotlin/com/komgareader/data/repository/RoomNovelProgressRepositoryTest.kt": {
+      "filePath": "data/src/test/kotlin/com/komgareader/data/repository/RoomNovelProgressRepositoryTest.kt",
+      "contentHash": "afcb174a519c17b39c7976e2d1f2e07219ee15c1104101686dc5d543297b7098",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 40,
+      "totalLines": 66,
+      "hasStructuralAnalysis": false
+    },
+    "data/src/test/kotlin/com/komgareader/data/repository/RoomSettingsRepositoryTest.kt": {
+      "filePath": "data/src/test/kotlin/com/komgareader/data/repository/RoomSettingsRepositoryTest.kt",
+      "contentHash": "9056dd2a31b34925c8196fa3842e17513fd08fb23f67e428ad42435d62f223d2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 120,
       "hasStructuralAnalysis": false
     },
     "data/src/test/kotlin/com/komgareader/data/repository/RoomShelfRepositoryEncodingTest.kt": {
@@ -992,386 +1322,6 @@
       "exports": [],
       "totalLines": 33,
       "hasStructuralAnalysis": false
-    },
-    "docs/domain/viewer-type-resolution.md": {
-      "filePath": "docs/domain/viewer-type-resolution.md",
-      "contentHash": "16c83382cef45d3200c4b250dd9fc27f0f2ae002b1734e8e1ae44968f3394421",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 55,
-      "hasStructuralAnalysis": true
-    },
-    "docs/mockups/detail-redesign.html": {
-      "filePath": "docs/mockups/detail-redesign.html",
-      "contentHash": "f01dfc96455770df582650fbec37979138778a7cb9a02d0a30c3dac8cd3f44b1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 174,
-      "hasStructuralAnalysis": false
-    },
-    "docs/superpowers/plans/2026-06-06-eink-color-filter.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-eink-color-filter.md",
-      "contentHash": "e09a5ecdc272a4637d4de2cbecc9bf7ca9105554c002dd3edb3b103dde42029f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1456,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-guided-comic-reader.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-guided-comic-reader.md",
-      "contentHash": "19b297e5cf3e7df07c32e3e0ff29e3fd278d6e135fadcf9802daff87fa997fc6",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 923,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-komga-libraries-viewer-detection.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-komga-libraries-viewer-detection.md",
-      "contentHash": "8db4f2469af39d074c51ca42c5879482834888f4f6c24801f66a04a7d6d2151c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1402,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-2-mupdf-spike.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-2-mupdf-spike.md",
-      "contentHash": "0129360f9cf170d5794c02c3bd25f3dbd29aa4f2ef10decb235859af9fa44df1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 39,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-3-komga-source.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-3-komga-source.md",
-      "contentHash": "c0487db2da9611fcd9a785cc2e2859775fb310d4e6b5958ba47315b73cc93c1d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 895,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-4a-app-skeleton.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-4a-app-skeleton.md",
-      "contentHash": "e6ffb368d5bbcb9a522d9c30b080961ccd9694d3658a4211efd81ebbb89fbb23",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 575,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-4b-render-core.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-4b-render-core.md",
-      "contentHash": "ab3327a86dc2adb898e400b025dca1bea17e3349490320a7afe76b68516b5f39",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 316,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-4c-persistence.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-4c-persistence.md",
-      "contentHash": "581d87cd2c04e369a3b0ab35488687ad2537630434bf5719c96d90cfbea0cae9",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 367,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-4d-library-ui.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-4d-library-ui.md",
-      "contentHash": "aae56511246e296483e709e42875872e6d5c50f95d66f9f2f9b876ab44aa2d18",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 257,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-4e-reader.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-4e-reader.md",
-      "contentHash": "ce0f34f759581901dd477da45fda6ea00f006d11766ba7912834a4bb9e768252",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 169,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase1-foundation.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase1-foundation.md",
-      "contentHash": "1a7e4c17a3d775d6f7b5d2021750a7420911e8898f0b3b03f6cc6b9ebd52093c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 962,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase2a-webtoon.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase2a-webtoon.md",
-      "contentHash": "0d5d752de59e920d3203839b5b62011499d955205d04f49ac61c574667c4fb07",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 59,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase2b-epub.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase2b-epub.md",
-      "contentHash": "22d112b443ab6cc71d4063c2739fd2a6f290d92c22af5d73ffeb83238b006840",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 96,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase2c-download.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase2c-download.md",
-      "contentHash": "636ea5689ccfa229dc718cc783e478d2120886cc96379eec6316d0f23012b0eb",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 118,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase2d-opds.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase2d-opds.md",
-      "contentHash": "0f482c9de116873dd067ddeb43158c18efee8b8cc2930754814b12c06f45f4d1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 73,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-06-phase2e-guided-view.md": {
-      "filePath": "docs/superpowers/plans/2026-06-06-phase2e-guided-view.md",
-      "contentHash": "c248d49d64451f11bc4a8cdb0f9c43df295a25f96f4e938c5b379b674bebb7b1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 72,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-chapter-tile-view.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-chapter-tile-view.md",
-      "contentHash": "3d9d1678c1b819298a25b288c8009022b68bb0fd8c782e217fe1920ee9c4c84f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 764,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-eink-color-filter-phase2.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-eink-color-filter-phase2.md",
-      "contentHash": "94d3396597614d3fb0c609f128c528147c767e91755cb12194075fe1969c5f0e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1477,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-lucide-icon-refactor.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-lucide-icon-refactor.md",
-      "contentHash": "78a26676b2eb940c639d77fef7279354aa76cc691f4a10da3f5c21a78a44b2f3",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 567,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-novel-reflow-reader.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-novel-reflow-reader.md",
-      "contentHash": "4bc155082489e2ab8938e5b270cfef77b1489beb4d26c500eee8d84a56795e6b",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 586,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-panel-detector-v2.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-panel-detector-v2.md",
-      "contentHash": "2033208d1503ca004aa895a33620e765be0295d65314b31cc32bfd359c18c060",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 361,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-robust-panel-detector.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-robust-panel-detector.md",
-      "contentHash": "34cfe37ea4826e7e53533460ae68c7655bd0f5c33a2b357f694211fc59ab5e06",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1026,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-search-reset-and-type-filter.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-search-reset-and-type-filter.md",
-      "contentHash": "374d30b5ff9f53e4082144474f7fffdf459e5108db2c5c545ee5c302f1232e01",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 850,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/2026-06-07-settings-master-detail.md": {
-      "filePath": "docs/superpowers/plans/2026-06-07-settings-master-detail.md",
-      "contentHash": "ff07248c7dd413d4deb079e24cc8dc87c7124393d86e90df0b2f262270d38555",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1113,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/plans/webtoon-eink-reader.md": {
-      "filePath": "docs/superpowers/plans/webtoon-eink-reader.md",
-      "contentHash": "a16d0f78e6e4564f53a7f42286d0c8da1d5dece273d6376caccb1c58b4002412",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 54,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-06-eink-color-filter-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-06-eink-color-filter-design.md",
-      "contentHash": "9b622701ae8e552201e1b22d3896b5dfb7bb80cece8705101f54192c5fe749c8",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 182,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-06-guided-comic-reader-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-06-guided-comic-reader-design.md",
-      "contentHash": "7acd963cb3560e0b64dffbdb528bacd6b317f34a2c7bf7c3a7f8cc996c490a5f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 170,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-06-komga-eink-reader-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-06-komga-eink-reader-design.md",
-      "contentHash": "63ac715576244359ddd8a08acea2dae7a8a580f3088e4a56a93ff475b7723b59",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 248,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-06-komga-libraries-viewer-detection-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-06-komga-libraries-viewer-detection-design.md",
-      "contentHash": "e56ed6f9c6cd6eefde19ec4cfab9d427865beb3232328e49a1c5f5b52e9f06ae",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 233,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-chapter-tile-view-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-chapter-tile-view-design.md",
-      "contentHash": "1f70214cfc28b420aa93d0935d593ddebe7a65a09ae6cd0d9247e6ed460c8b4e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 170,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-eink-color-filter-phase2-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-eink-color-filter-phase2-design.md",
-      "contentHash": "d43fa4365b9c19853a830592bc42e9203f7e6185d58e9e6a3dd06e5779c048a5",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 237,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-novel-reflow-reader-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-novel-reflow-reader-design.md",
-      "contentHash": "83133fbeed2f8e5e6d7ea7db9f7af28346d5490f48849a7a394d21cbb8798055",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 296,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-panel-detector-v2-line-detection-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-panel-detector-v2-line-detection-design.md",
-      "contentHash": "600d2dc23838f95d816c2b4c6a95832175a11121343fab1f5f018ce2a5d46641",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 95,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-robust-panel-detector-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-robust-panel-detector-design.md",
-      "contentHash": "9cd17c5a50b4e4f7f1421eeea2e2de78c42beb58f075ba9e47ea01a9a94fea6b",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 132,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-search-reset-and-type-filter-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-search-reset-and-type-filter-design.md",
-      "contentHash": "043cfdd930d1b75d8f196584657bc9a43b4ce97ba2b94605d191c86350a398e3",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 139,
-      "hasStructuralAnalysis": true
-    },
-    "docs/superpowers/specs/2026-06-07-settings-master-detail-design.md": {
-      "filePath": "docs/superpowers/specs/2026-06-07-settings-master-detail-design.md",
-      "contentHash": "3c0087cef034381f4a00848a0a4e6c074c9ea341802eee38a46876b6792e0df7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 212,
-      "hasStructuralAnalysis": true
     },
     "domain/build.gradle.kts": {
       "filePath": "domain/build.gradle.kts",
@@ -1535,12 +1485,12 @@
     },
     "domain/src/main/kotlin/com/komgareader/domain/model/ViewerType.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/model/ViewerType.kt",
-      "contentHash": "6af9387c67b3389144aaf02724750007a3fc137c78c648a5f817b615d023aa57",
+      "contentHash": "623521e300b622585a4072c85242f454a4a7feba5f2b8d4606ebd9f8c28004a4",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 5,
+      "totalLines": 10,
       "hasStructuralAnalysis": false
     },
     "domain/src/main/kotlin/com/komgareader/domain/reader/WebtoonStrip.kt": {
@@ -1555,12 +1505,42 @@
     },
     "domain/src/main/kotlin/com/komgareader/domain/render/Document.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/render/Document.kt",
-      "contentHash": "8bbc7d7998f3fad9f364abca0dad4a1428a03e98cea114a1f8ae4b3bd6b8bfdb",
+      "contentHash": "2a6002427a1ff62956b53970952df34620e9b204f87b9c9b7012402ecfab8709",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 36,
+      "totalLines": 87,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/main/kotlin/com/komgareader/domain/render/NovelFont.kt": {
+      "filePath": "domain/src/main/kotlin/com/komgareader/domain/render/NovelFont.kt",
+      "contentHash": "d52da19af3cd17cdd86a8746bedcd483d24bd4ba047902bdc25086b957f18ec9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/main/kotlin/com/komgareader/domain/render/NovelSettings.kt": {
+      "filePath": "domain/src/main/kotlin/com/komgareader/domain/render/NovelSettings.kt",
+      "contentHash": "7e7a823f2496d4b1e76593dd03a6abccc0a877bae7ddc866676ad900b277ba4e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 53,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/main/kotlin/com/komgareader/domain/render/ReflowConfig.kt": {
+      "filePath": "domain/src/main/kotlin/com/komgareader/domain/render/ReflowConfig.kt",
+      "contentHash": "696721433df739805c8a58d8a1e4c8537ec0da0f4a3a89429dcc1e070b672d19",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
       "hasStructuralAnalysis": false
     },
     "domain/src/main/kotlin/com/komgareader/domain/repository/ColorProfileRepository.kt": {
@@ -1593,6 +1573,16 @@
       "totalLines": 19,
       "hasStructuralAnalysis": false
     },
+    "domain/src/main/kotlin/com/komgareader/domain/repository/NovelProgressRepository.kt": {
+      "filePath": "domain/src/main/kotlin/com/komgareader/domain/repository/NovelProgressRepository.kt",
+      "contentHash": "002ca0ec84f573e4005fd3fbba9b601861f854c9fbb8628b07e3f79a2465f1bc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": false
+    },
     "domain/src/main/kotlin/com/komgareader/domain/repository/ReadProgressRepository.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/repository/ReadProgressRepository.kt",
       "contentHash": "bb8d2b990f89078d2fd923af77b2239a970e660935fe011a5a5723f59b045e23",
@@ -1615,22 +1605,22 @@
     },
     "domain/src/main/kotlin/com/komgareader/domain/repository/ServerRepository.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/repository/ServerRepository.kt",
-      "contentHash": "3cdb8c73ba84458a54c1f5385f6037a9314888f1f4b7f753f897ebf459006389",
+      "contentHash": "1fd266b3d47879b214e4fcb4d1a3622f9fa59aaf2b4f42782f64e521b7960ce1",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 22,
+      "totalLines": 26,
       "hasStructuralAnalysis": false
     },
     "domain/src/main/kotlin/com/komgareader/domain/repository/SettingsRepository.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/repository/SettingsRepository.kt",
-      "contentHash": "9d2ff025eb80b41a8f34136cb0485e16938e24514c788e96ccc4f023042724e9",
+      "contentHash": "a93be6c138b522934a6fce9c4cf8a44cfeda34eb9e14eabd15241bedb38581d5",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 24,
+      "totalLines": 38,
       "hasStructuralAnalysis": false
     },
     "domain/src/main/kotlin/com/komgareader/domain/repository/ShelfRepository.kt": {
@@ -1645,12 +1635,22 @@
     },
     "domain/src/main/kotlin/com/komgareader/domain/source/MediaSource.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/source/MediaSource.kt",
-      "contentHash": "301635ace38eaeb8a4f4f05a553f134a45aab7f87bdc2f5caecc1e236fc54635",
+      "contentHash": "4f3518cd569e5ac70160b565a028f85d3159090c73edfbb4444a8a0c4417367f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 80,
+      "totalLines": 104,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/main/kotlin/com/komgareader/domain/source/PageRefs.kt": {
+      "filePath": "domain/src/main/kotlin/com/komgareader/domain/source/PageRefs.kt",
+      "contentHash": "55a3bd680a2ea09780796ac64a713539c70dd344c9da6bc652d88149eac45614",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
       "hasStructuralAnalysis": false
     },
     "domain/src/main/kotlin/com/komgareader/domain/source/SourceId.kt": {
@@ -1683,6 +1683,16 @@
       "totalLines": 16,
       "hasStructuralAnalysis": false
     },
+    "domain/src/main/kotlin/com/komgareader/domain/usecase/NovelProgressMapper.kt": {
+      "filePath": "domain/src/main/kotlin/com/komgareader/domain/usecase/NovelProgressMapper.kt",
+      "contentHash": "c1b61594d178ed851b3a31f560f77d142bd21e18af538d372edafb585b3c785f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 49,
+      "hasStructuralAnalysis": false
+    },
     "domain/src/main/kotlin/com/komgareader/domain/usecase/ResolveProgressConflict.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/usecase/ResolveProgressConflict.kt",
       "contentHash": "f2f9d5fb450b965b501e8c77f65a283b2d93426d1937dce4270aed262d74a928",
@@ -1705,7 +1715,7 @@
     },
     "domain/src/main/kotlin/com/komgareader/domain/usecase/ResolveViewerType.kt": {
       "filePath": "domain/src/main/kotlin/com/komgareader/domain/usecase/ResolveViewerType.kt",
-      "contentHash": "1bb703c8a91e06b6bdc7afa771b644e030ff942fdaf2344b6e96a682d4feb3fd",
+      "contentHash": "36eff9bee65cb5c5e70677d67f7be43b5c9cfc55a1df0a4cd564bc08146bc9d9",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -1763,6 +1773,46 @@
       "totalLines": 63,
       "hasStructuralAnalysis": false
     },
+    "domain/src/test/kotlin/com/komgareader/domain/render/NovelFontsTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/render/NovelFontsTest.kt",
+      "contentHash": "b7c8d3179786ce2e4848f96e03fbe4b086da12f748188f02a41ad775459e21ed",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/test/kotlin/com/komgareader/domain/render/NovelSettingsTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/render/NovelSettingsTest.kt",
+      "contentHash": "8f1afc7ccb88264d4264b7e9535a1bce7b8ac53aae5a30f6d459eb1bc52a6ac8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 76,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/test/kotlin/com/komgareader/domain/render/ReflowConfigTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/render/ReflowConfigTest.kt",
+      "contentHash": "81a59e41d5f8ac78be37907126d848da0beeab527d489a2b71bf7ecf5124c65c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/test/kotlin/com/komgareader/domain/render/ReflowableDocumentContractTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/render/ReflowableDocumentContractTest.kt",
+      "contentHash": "29ae8b4dccd9868e3a5fabd3178531d4ee4af4afe176032d54c7ea0c2934b8d0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
+      "hasStructuralAnalysis": false
+    },
     "domain/src/test/kotlin/com/komgareader/domain/repository/KomgaUrlTest.kt": {
       "filePath": "domain/src/test/kotlin/com/komgareader/domain/repository/KomgaUrlTest.kt",
       "contentHash": "393e0fe87a49d1091b0b5859a70372b2fb0431d67921bd70907633afd17366e5",
@@ -1771,6 +1821,26 @@
       "imports": [],
       "exports": [],
       "totalLines": 56,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/test/kotlin/com/komgareader/domain/source/BrowsableSourceContractTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/source/BrowsableSourceContractTest.kt",
+      "contentHash": "08b86b2341c4d22281a257304630c1a36eb8ce1a8a615f5bdea6264f7b320e9c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/test/kotlin/com/komgareader/domain/source/PageRefsTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/source/PageRefsTest.kt",
+      "contentHash": "84464f486c07dcdc9ddf1ea027b853de7d6395272df7058c745b8adecccd7c13",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
       "hasStructuralAnalysis": false
     },
     "domain/src/test/kotlin/com/komgareader/domain/source/SourceIdTest.kt": {
@@ -1791,6 +1861,16 @@
       "imports": [],
       "exports": [],
       "totalLines": 53,
+      "hasStructuralAnalysis": false
+    },
+    "domain/src/test/kotlin/com/komgareader/domain/usecase/NovelProgressMapperTest.kt": {
+      "filePath": "domain/src/test/kotlin/com/komgareader/domain/usecase/NovelProgressMapperTest.kt",
+      "contentHash": "0e72438cba76bc17523029271f5428eff1ae981ec19904da9c5a1dd8f1965f38",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 58,
       "hasStructuralAnalysis": false
     },
     "domain/src/test/kotlin/com/komgareader/domain/usecase/ResolveProgressConflictTest.kt": {
@@ -1815,12 +1895,12 @@
     },
     "domain/src/test/kotlin/com/komgareader/domain/usecase/ResolveViewerTypeTest.kt": {
       "filePath": "domain/src/test/kotlin/com/komgareader/domain/usecase/ResolveViewerTypeTest.kt",
-      "contentHash": "01346525e5a0df3fb12c2cef1c675dd15f0d94c840629dd13b4d9bbc5a69af85",
+      "contentHash": "240375234a08b88e8f35ac252252380102d1a948645037c994079c77878a687b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 78,
+      "totalLines": 83,
       "hasStructuralAnalysis": false
     },
     "eink-onyx/build.gradle.kts": {
@@ -1872,16 +1952,6 @@
       "exports": [],
       "totalLines": 74,
       "hasStructuralAnalysis": true
-    },
-    "gradle/wrapper/gradle-wrapper.jar": {
-      "filePath": "gradle/wrapper/gradle-wrapper.jar",
-      "contentHash": "809f7d03c4b935f944b16736dc7e55390b4bf0da487c2de65a04cb00d603be1b",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 152,
-      "hasStructuralAnalysis": false
     },
     "gradle/wrapper/gradle-wrapper.properties": {
       "filePath": "gradle/wrapper/gradle-wrapper.properties",
@@ -2183,14 +2253,947 @@
       "totalLines": 58,
       "hasStructuralAnalysis": false
     },
-    "settings.gradle.kts": {
-      "filePath": "settings.gradle.kts",
-      "contentHash": "3d8b529bf58e4aa87e85fc165742d2b84069e10ed5e96debc0b5ec913814b288",
+    "render-crengine/build.gradle.kts": {
+      "filePath": "render-crengine/build.gradle.kts",
+      "contentHash": "3b571a6fefb4242b4d5e8a5c88482f56277a4801fab71ea4b04e7d0a19efa90f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 25,
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/native/build-crengine.sh": {
+      "filePath": "render-crengine/native/build-crengine.sh",
+      "contentHash": "0b30c2794a1587326887ad141fcb03fbd566e927b6f7dbab78385904085e6081",
+      "functions": [
+        {
+          "name": "die",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "fetch_source",
+          "params": [],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 58
+        },
+        {
+          "name": "build_and_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "strip_debug",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 159,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/build.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/build.sh",
+      "contentHash": "26a201e76ae1f21d269f232b13273783b87305b5befec8452f56cbdb195349e9",
+      "functions": [
+        {
+          "name": "die",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "_get_tar_args",
+          "params": [],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "_var_value_is_true",
+          "params": [],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "domake",
+          "params": [],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "domake_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "strip_files",
+          "params": [],
+          "exported": false,
+          "lineCount": 76
+        },
+        {
+          "name": "deploy_package",
+          "params": [],
+          "exported": false,
+          "lineCount": 274
+        },
+        {
+          "name": "clean_package",
+          "params": [],
+          "exported": false,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 597,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/make.conf": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/make.conf",
+      "contentHash": "2b3941237da7a485e0aa589236904730f29ced6a1177b9c959bc3790f2758de7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/make.conf.sample": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/make.conf.sample",
+      "contentHash": "3ca3ac1bfcc6cb0db4a13f12762a89a7fcc455f9bc6a53aac20c11f417f08aa6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/rebuild-all.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/rebuild-all.sh",
+      "contentHash": "7657c79dbdc0441f29339290490ea71f5b851b0369e7a99f5a8058f70094ca9e",
+      "functions": [
+        {
+          "name": "die",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/freetype-stage0.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/freetype-stage0.meta.sh",
+      "contentHash": "807e6fd2111e5ce78abead11f837c80a5955a3e530ba5a022430f8e5a56324bf",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 61,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/freetype.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/freetype.meta.sh",
+      "contentHash": "d9a55a2c51b837f020c38b0abafd76f60748cf6bd264d666e7b04f1624bf730e",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 61,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/fribidi.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/fribidi.meta.sh",
+      "contentHash": "22255416e2b201ac68571238bb01d54005415b546db89436cc8dbb2238724c67",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/harfbuzz.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/harfbuzz.meta.sh",
+      "contentHash": "103bf1eb91aaae6d6e50d3e2e10d4b269ef57de552b89ae95c5cb030363074b8",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 29
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 80,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libjpeg-turbo.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libjpeg-turbo.meta.sh",
+      "contentHash": "6d1829bdacd811e9c3b8d17ae2b86d515fc81b20da14eb69f129d41b38276a5c",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 18
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 46,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libpng.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libpng.meta.sh",
+      "contentHash": "95214377a065882abacf433a10e04db3f0e0d7906078601bc733e8c62e5b2403",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libunibreak.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libunibreak.meta.sh",
+      "contentHash": "8fa8bbdc10db4eccbd5d4f8c105712f3172c8b27ff2f910d7e10d0c606e5c8b5",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libwebp.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/libwebp.meta.sh",
+      "contentHash": "c303f066f625e61a085c01aafdb0fe5a0fe81ba47907c932b7c66a013c733588",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/patches/fribidi/01-dont-check-native-c.patch": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/patches/fribidi/01-dont-check-native-c.patch",
+      "contentHash": "a997b915d34f23e858f7ddd0e50161e103c080add3ee915b48c6b62afd241d59",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/patches/libwebp/01-cmake-config-path.patch": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/patches/libwebp/01-cmake-config-path.patch",
+      "contentHash": "e576bdb243102ede94f8b699d23b3741ed932ab9a68020236112e6bdef3a6579",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/patches/utf8proc/01-cmp0057.patch": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/patches/utf8proc/01-cmp0057.patch",
+      "contentHash": "e75ccd9399532a881918d90cb1ef6ebb5e1172e654eaf72e641e0ce2def4f53b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/utf8proc.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/utf8proc.meta.sh",
+      "contentHash": "c4f176279319fc1c993d1c8f4fe64ccb976029598a00e5732cdb51dc1af67250",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/zlib.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/zlib.meta.sh",
+      "contentHash": "63e4d23824ea86f4d9b02e96b956324cffcc9b43198d63a5a1e8db74ea89ac46",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/native/thirdparty/thirdparty-bldtool/repo/zstd.meta.sh": {
+      "filePath": "render-crengine/native/thirdparty/thirdparty-bldtool/repo/zstd.meta.sh",
+      "contentHash": "39c7ec29ced523925aa7321e48d8298c66e9c57fdde445700b619969c3180544",
+      "functions": [
+        {
+          "name": "src_configure",
+          "params": [],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "src_compile",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "src_install",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/src/androidTest/assets/hyph/hyph-de-1996.pattern": {
+      "filePath": "render-crengine/src/androidTest/assets/hyph/hyph-de-1996.pattern",
+      "contentHash": "176ea5de4f0aa741e59177a09a99f782d64bbe362a04c8043ec9154198d0851d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35130,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/androidTest/assets/hyph/hyph-en-us.pattern": {
+      "filePath": "render-crengine/src/androidTest/assets/hyph/hyph-en-us.pattern",
+      "contentHash": "29688be2e27884e7904c48cd7e6b54ee460d63fcf9c61a0eab02463ead1b5afc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5019,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/androidTest/assets/sample.epub": {
+      "filePath": "render-crengine/src/androidTest/assets/sample.epub",
+      "contentHash": "16d610aa07eb812a24c635561f2f6ddec0ec212dd06c592f23ee7220c86b580a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/androidTest/kotlin/com/komgareader/render/crengine/CrengineRenderInstrumentedTest.kt": {
+      "filePath": "render-crengine/src/androidTest/kotlin/com/komgareader/render/crengine/CrengineRenderInstrumentedTest.kt",
+      "contentHash": "ec97c5c0a896345ac8a43334da2d3c902f560e8f4b721241548a70f5b2562581",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 308,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/main/AndroidManifest.xml": {
+      "filePath": "render-crengine/src/main/AndroidManifest.xml",
+      "contentHash": "daa0fb1f32ba7ea85a07ef6302ab3d58c3407d7fd2aa03ec132cb9e38e8d9849",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/main/cpp/cr3_bridge.cpp": {
+      "filePath": "render-crengine/src/main/cpp/cr3_bridge.cpp",
+      "contentHash": "cde0faccf2f27ccc2d4655667b5ce02d082d4b5c2dd4100083d82417b510123c",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "jni.h",
+          "specifiers": [
+            "jni.h"
+          ]
+        },
+        {
+          "source": "android/log.h",
+          "specifiers": [
+            "android/log.h"
+          ]
+        },
+        {
+          "source": "lvdocview.h",
+          "specifiers": [
+            "lvdocview.h"
+          ]
+        },
+        {
+          "source": "lvstreamutils.h",
+          "specifiers": [
+            "lvstreamutils.h"
+          ]
+        },
+        {
+          "source": "lvfntman.h",
+          "specifiers": [
+            "lvfntman.h"
+          ]
+        },
+        {
+          "source": "lvstring32collection.h",
+          "specifiers": [
+            "lvstring32collection.h"
+          ]
+        },
+        {
+          "source": "crhyphman.h",
+          "specifiers": [
+            "crhyphman.h"
+          ]
+        },
+        {
+          "source": "crlog.h",
+          "specifiers": [
+            "crlog.h"
+          ]
+        },
+        {
+          "source": "crprops.h",
+          "specifiers": [
+            "crprops.h"
+          ]
+        },
+        {
+          "source": "lvtocitem.h",
+          "specifiers": [
+            "lvtocitem.h"
+          ]
+        },
+        {
+          "source": "ldomdocument.h",
+          "specifiers": [
+            "ldomdocument.h"
+          ]
+        },
+        {
+          "source": "ldomxpointer.h",
+          "specifiers": [
+            "ldomxpointer.h"
+          ]
+        },
+        {
+          "source": "ldomxrange.h",
+          "specifiers": [
+            "ldomxrange.h"
+          ]
+        },
+        {
+          "source": "ldomword.h",
+          "specifiers": [
+            "ldomword.h"
+          ]
+        },
+        {
+          "source": "lvarray.h",
+          "specifiers": [
+            "lvarray.h"
+          ]
+        },
+        {
+          "source": "vector",
+          "specifiers": [
+            "vector"
+          ]
+        },
+        {
+          "source": "jnigraphicslib.h",
+          "specifiers": [
+            "jnigraphicslib.h"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 399,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/src/main/cpp/jnigraphicslib.cpp": {
+      "filePath": "render-crengine/src/main/cpp/jnigraphicslib.cpp",
+      "contentHash": "7f3ac409172674c7143f52f82b825132dc63f8d8f1a46505b09b2a2e9756da81",
+      "functions": [
+        {
+          "name": "unlock",
+          "params": [
+            "env",
+            "jbitmap",
+            "buf"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "load",
+          "params": [
+            "libName"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "unload",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "JNIGraphicsLib",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "~JNIGraphicsLib",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getInfo",
+          "params": [
+            "env",
+            "jbitmap",
+            "info"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 43
+        },
+        {
+          "name": "reallocArray",
+          "params": [
+            "env",
+            "len"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "freeArray",
+          "params": [
+            "env"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "unlock",
+          "params": [
+            "env",
+            "jbitmap",
+            "buf"
+          ],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "JNIGraphicsReplacement",
+          "params": [],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "~JNIGraphicsReplacement",
+          "params": [],
+          "exported": true,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "JNIGraphicsLib",
+          "methods": [
+            "(*AndroidBitmap_getInfo)",
+            "(*AndroidBitmap_lockPixels)",
+            "(*AndroidBitmap_unlockPixels)",
+            "unlock",
+            "load",
+            "unload",
+            "JNIGraphicsLib",
+            "~JNIGraphicsLib"
+          ],
+          "properties": [
+            "_lib"
+          ],
+          "exported": true,
+          "lineCount": 85
+        },
+        {
+          "name": "JNIGraphicsReplacement",
+          "methods": [
+            "getInfo",
+            "reallocArray",
+            "freeArray",
+            "unlock",
+            "JNIGraphicsReplacement",
+            "~JNIGraphicsReplacement"
+          ],
+          "properties": [
+            "_array"
+          ],
+          "exported": true,
+          "lineCount": 125
+        }
+      ],
+      "imports": [
+        {
+          "source": "jnigraphicslib.h",
+          "specifiers": [
+            "jnigraphicslib.h"
+          ]
+        },
+        {
+          "source": "lvcolordrawbufex.h",
+          "specifiers": [
+            "lvcolordrawbufex.h"
+          ]
+        },
+        {
+          "source": "crlog.h",
+          "specifiers": [
+            "crlog.h"
+          ]
+        },
+        {
+          "source": "dlfcn.h",
+          "specifiers": [
+            "dlfcn.h"
+          ]
+        }
+      ],
+      "exports": [
+        "unlock",
+        "load",
+        "unload",
+        "JNIGraphicsLib",
+        "~JNIGraphicsLib",
+        "JNIGraphicsLib",
+        "getInfo",
+        "reallocArray",
+        "freeArray",
+        "unlock",
+        "JNIGraphicsReplacement",
+        "~JNIGraphicsReplacement",
+        "JNIGraphicsReplacement"
+      ],
+      "totalLines": 261,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/src/main/cpp/jnigraphicslib.h": {
+      "filePath": "render-crengine/src/main/cpp/jnigraphicslib.h",
+      "contentHash": "a07e163a7e73d13578d797d165ff12178fc069b7f56d3b3d2dcb61f6bd6efa88",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/src/main/cpp/lvcolordrawbufex.cpp": {
+      "filePath": "render-crengine/src/main/cpp/lvcolordrawbufex.cpp",
+      "contentHash": "84214b8d44a386549fd2420988c188e757aaa112580cf51a517ff96e75668695",
+      "functions": [
+        {
+          "name": "convert",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lvcolordrawbufex.h",
+          "specifiers": [
+            "lvcolordrawbufex.h"
+          ]
+        }
+      ],
+      "exports": [
+        "convert"
+      ],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/src/main/cpp/lvcolordrawbufex.h": {
+      "filePath": "render-crengine/src/main/cpp/lvcolordrawbufex.h",
+      "contentHash": "b195daee2a0cd8da176011cd5d5c358fb83e968686637cdd6f5b23c8055472ce",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "render-crengine/src/main/kotlin/com/komgareader/render/crengine/CrengineDocument.kt": {
+      "filePath": "render-crengine/src/main/kotlin/com/komgareader/render/crengine/CrengineDocument.kt",
+      "contentHash": "e54599aa37615276838bc18814126f404067d97c9411dea3070b950f3a30ce0f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 138,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/main/kotlin/com/komgareader/render/crengine/CrengineDocumentFactory.kt": {
+      "filePath": "render-crengine/src/main/kotlin/com/komgareader/render/crengine/CrengineDocumentFactory.kt",
+      "contentHash": "14c5ad3272c9edd51584b01b9967a3fa900bb34d73c430ae3b6251e6fe2ac5f2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 84,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/main/kotlin/com/komgareader/render/crengine/CrengineNative.kt": {
+      "filePath": "render-crengine/src/main/kotlin/com/komgareader/render/crengine/CrengineNative.kt",
+      "contentHash": "6965d147126624365c57ff05316f3af9d6cd5b7576491925f679cd7bdb8c8598",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 84,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/main/kotlin/com/komgareader/render/crengine/ReflowCss.kt": {
+      "filePath": "render-crengine/src/main/kotlin/com/komgareader/render/crengine/ReflowCss.kt",
+      "contentHash": "42db573723f08062e55909aa3361702485e536ac94ff2263bab0e4a96578eb73",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 107,
+      "hasStructuralAnalysis": false
+    },
+    "render-crengine/src/test/kotlin/com/komgareader/render/crengine/ReflowCssTest.kt": {
+      "filePath": "render-crengine/src/test/kotlin/com/komgareader/render/crengine/ReflowCssTest.kt",
+      "contentHash": "d16f86821338bbde5223ceed2d601e1f214e121f7251dc2f2fdd3d3341db36f1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 120,
+      "hasStructuralAnalysis": false
+    },
+    "settings.gradle.kts": {
+      "filePath": "settings.gradle.kts",
+      "contentHash": "538e37e390bbb25464447e77522e1e4fe2835c1c3429409a2c2f9cfdccd9ca2e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
       "hasStructuralAnalysis": false
     },
     "source-komga/build.gradle.kts": {
@@ -2225,12 +3228,12 @@
     },
     "source-komga/src/main/kotlin/com/komgareader/source/komga/KomgaApi.kt": {
       "filePath": "source-komga/src/main/kotlin/com/komgareader/source/komga/KomgaApi.kt",
-      "contentHash": "33dd8d2609b6839bfb0326508c1ae687ebaa525b4bfb82f7d6a9b9ee411aa0ce",
+      "contentHash": "edbf85378bff460c63d88890036a29563c0dd9bbf09a31a268555c66e96149fc",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 67,
+      "totalLines": 75,
       "hasStructuralAnalysis": false
     },
     "source-komga/src/main/kotlin/com/komgareader/source/komga/KomgaFormat.kt": {
@@ -2255,12 +3258,12 @@
     },
     "source-komga/src/main/kotlin/com/komgareader/source/komga/KomgaSource.kt": {
       "filePath": "source-komga/src/main/kotlin/com/komgareader/source/komga/KomgaSource.kt",
-      "contentHash": "503b34894e2642b83a17d52eb4e0457032e95cd7f299fdc8cd6fc2c39bfeb152",
+      "contentHash": "9d826a4ada3c2873d627f7c649b86a9176911e8e6111124721a62eab361b191b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 170,
+      "totalLines": 165,
       "hasStructuralAnalysis": false
     },
     "source-komga/src/main/kotlin/com/komgareader/source/komga/dto/KomgaDtos.kt": {
@@ -2335,12 +3338,12 @@
     },
     "source-komga/src/test/kotlin/com/komgareader/source/komga/KomgaSourceTest.kt": {
       "filePath": "source-komga/src/test/kotlin/com/komgareader/source/komga/KomgaSourceTest.kt",
-      "contentHash": "5b6327cb1738e9e9d2379fc39167f0849e8e277d33030a9d811f9cd81c77de89",
+      "contentHash": "bde98f570251660a5abc665dcd7d5462fd2a4f30133b77733035634e08eae825",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 137,
+      "totalLines": 145,
       "hasStructuralAnalysis": false
     },
     "source-opds/build.gradle.kts": {
@@ -2355,12 +3358,12 @@
     },
     "source-opds/src/main/kotlin/com/komgareader/source/opds/OpdsFeedParser.kt": {
       "filePath": "source-opds/src/main/kotlin/com/komgareader/source/opds/OpdsFeedParser.kt",
-      "contentHash": "2d145806f61fdf7e3fbce7d3a4ff1d3aa2c53d993fe1775b604a158a5b5a258b",
+      "contentHash": "70edc1aec2c8ad2689a1e0433dbdd2ac2973fc13dfae80e6d6a3b0c153b24250",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 63,
+      "totalLines": 73,
       "hasStructuralAnalysis": false
     },
     "source-opds/src/main/kotlin/com/komgareader/source/opds/OpdsFormat.kt": {
@@ -2385,12 +3388,12 @@
     },
     "source-opds/src/main/kotlin/com/komgareader/source/opds/OpdsSource.kt": {
       "filePath": "source-opds/src/main/kotlin/com/komgareader/source/opds/OpdsSource.kt",
-      "contentHash": "e463ec5813d816af3d65adb47a6911dccdb117c787f4dbb04c2d8ea2536eb318",
+      "contentHash": "50e21658f01f55332442f6b976f4a95f8f3f6ab341719bd61425dd8a79dbb8d0",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 132,
+      "totalLines": 161,
       "hasStructuralAnalysis": false
     },
     "source-opds/src/test/kotlin/com/komgareader/source/opds/OpdsE2ETest.kt": {
@@ -2433,6 +3436,16 @@
       "totalLines": 108,
       "hasStructuralAnalysis": false
     },
+    "tools/crengine/scan-license.sh": {
+      "filePath": "tools/crengine/scan-license.sh",
+      "contentHash": "c7b89ad315d521544e396ba365ad906aa339f5fd200fdddf7f616c0241dd30ca",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
     "tools/e2e/app_smoke.sh": {
       "filePath": "tools/e2e/app_smoke.sh",
       "contentHash": "4b05879e9e036f74e9b5d3d395fa782c7383c887c47ac057876ee381d0d9e8f6",
@@ -2441,16 +3454,6 @@
       "imports": [],
       "exports": [],
       "totalLines": 28,
-      "hasStructuralAnalysis": true
-    },
-    "tools/icons/README.md": {
-      "filePath": "tools/icons/README.md",
-      "contentHash": "aa47fabd0b15693eac293dfc95501e7453aa8f6e441eea71bfa82f7e92ef6e11",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 38,
       "hasStructuralAnalysis": true
     },
     "tools/icons/generate.mjs": {
@@ -2499,14 +3502,14 @@
     },
     "tools/icons/icon-set.mjs": {
       "filePath": "tools/icons/icon-set.mjs",
-      "contentHash": "3b7218347d7ed2d244ab76e8ff29b6968165106019ce19e099ef0650dc697293",
+      "contentHash": "0cc432860c4c0b8b6f242e7580032afabeb66c44ae031d8cb5dd9c786d6d619d",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [
         "ICONS"
       ],
-      "totalLines": 40,
+      "totalLines": 43,
       "hasStructuralAnalysis": true
     },
     "tools/icons/lib/svg-to-pathdata.mjs": {

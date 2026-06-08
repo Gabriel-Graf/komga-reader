@@ -16,6 +16,9 @@
 .claude/
 guided-view/realpages/
 tools/icons/node_modules/
+# Compiled crengine-ng install prefix (cross-compiled headers/static-libs/cmake/
+# man-pages/hyphenation data) — generated build output, not project source.
+render-crengine/native/prefix/
 
 # --- Detected directories (uncomment to exclude) ---
 

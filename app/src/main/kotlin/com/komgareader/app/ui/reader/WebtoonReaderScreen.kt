@@ -30,6 +30,8 @@ import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
+import com.komgareader.domain.eink.RefreshMode
+import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.eink.onyx.OnyxRefresher
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +61,7 @@ fun WebtoonReaderScreen(
     displayMode: DisplayMode,
     frameSteps: Flow<Int>,
     chrome: ReaderChromeState,
+    refreshScheduler: RefreshScheduler,
     onBack: () -> Unit,
     onPageVisible: (Int) -> Unit,
     onToggleMode: () -> Unit,
@@ -85,7 +88,10 @@ fun WebtoonReaderScreen(
         val delta = direction * viewport * (1f - FRAME_OVERLAP)
         if (eink) {
             listState.scrollBy(delta)
-            refresher?.fullRefreshNow(rootView)
+            // Frame-Sprung = bewusster Bildwechsel → forceFull über den geteilten Scheduler.
+            if (refreshScheduler.onContentChange(forceFull = true) == RefreshMode.FULL) {
+                refresher?.fullRefreshNow(rootView)
+            }
         } else {
             listState.animateScrollBy(delta)
         }
@@ -100,13 +106,11 @@ fun WebtoonReaderScreen(
     // periodischer GC-Refresh gegen Ghosting (E-Ink refresht ohnehin pro Frame).
     LaunchedEffect(listState.firstVisibleItemIndex) {
         onPageVisible(listState.firstVisibleItemIndex)
+        // Smartphone: periodischer GC-Refresh über denselben event-gezählten Scheduler.
         if (!eink && refresher != null &&
-            triggerGhostClearIfNeeded(listState.firstVisibleItemIndex, refresher)
+            refreshScheduler.onContentChange() == RefreshMode.FULL
         ) {
-            refresher.fullRefreshIfNeeded(
-                view = rootView,
-                pagesSinceLastRefresh = OnyxRefresher.GHOST_CLEAR_INTERVAL,
-            )
+            refresher.fullRefreshNow(rootView)
         }
     }
 

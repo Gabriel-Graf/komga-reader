@@ -9,6 +9,7 @@ import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
@@ -100,6 +101,13 @@ class ReaderViewModel @Inject constructor(
      */
     private val _frameStep = MutableSharedFlow<Int>(extraBufferCapacity = 8)
     val frameStep: SharedFlow<Int> = _frameStep.asSharedFlow()
+
+    /**
+     * Geräteunabhängige Refresh-Entscheidung (PARTIAL beim Blättern, FULL-Promotion gegen
+     * Ghosting) — eine Instanz pro Reader-Sitzung, von Paged + Webtoon geteilt. Die Ausführung
+     * macht der `OnyxRefresher` (gerätenah); hier steckt nur die getestete Entscheidungslogik.
+     */
+    val refreshScheduler = RefreshScheduler()
 
     // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
     private var document: Document? = null

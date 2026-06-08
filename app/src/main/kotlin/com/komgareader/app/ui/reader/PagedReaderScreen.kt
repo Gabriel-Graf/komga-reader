@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
+import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.eink.onyx.OnyxRefresher
 
 @Composable
@@ -43,15 +44,12 @@ fun PagedReaderScreen(
         }
     }
 
-    // Fortschritt pushen wenn Seite gesettled + periodischen GC-Refresh auslösen
+    // Fortschritt pushen wenn Seite gesettled + Refresh-Entscheidung über den geteilten Scheduler
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onPageSettled(pagerState.currentPage)
-        // Alle N Seitenumbrüche: GC-Full-Refresh gegen Ghosting (nur Boox)
-        if (refresher != null && triggerGhostClearIfNeeded(pagerState.currentPage, refresher)) {
-            refresher.fullRefreshIfNeeded(
-                view = rootView,
-                pagesSinceLastRefresh = OnyxRefresher.GHOST_CLEAR_INTERVAL,
-            )
+        // Event-gezählte FULL-Promotion gegen Ghosting (nicht Index-Modulo); nur Boox refresht.
+        if (refresher != null && viewModel.refreshScheduler.onContentChange() == RefreshMode.FULL) {
+            refresher.fullRefreshNow(rootView)
         }
     }
 

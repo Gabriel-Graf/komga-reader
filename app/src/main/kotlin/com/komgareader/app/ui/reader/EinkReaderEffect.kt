@@ -25,20 +25,5 @@ fun EinkReaderEffect(refresher: OnyxRefresher) {
     }
 }
 
-/**
- * Bestimmt, ob ein GC-Full-Refresh fällig ist, und löst ihn aus.
- * Wird bei jedem Seitenumbruch im Reader aufgerufen.
- *
- * @param pageIndex       aktueller 0-basierter Seitenindex
- * @param refresher       [OnyxRefresher]-Singleton
- * @param ghostInterval   alle N Seiten wird ein GC-Refresh ausgelöst
- */
-fun triggerGhostClearIfNeeded(
-    pageIndex: Int,
-    refresher: OnyxRefresher,
-    ghostInterval: Int = OnyxRefresher.GHOST_CLEAR_INTERVAL,
-): Boolean {
-    // pageIndex 0 nicht zählen (initialer Aufruf)
-    if (pageIndex == 0) return false
-    return (pageIndex % ghostInterval) == 0
-}
+// Die frühere index-modulo `triggerGhostClearIfNeeded` ist durch den geräteunabhängigen,
+// event-gezählten `RefreshScheduler` (domain/eink) ersetzt — siehe ReaderViewModel.refreshScheduler.

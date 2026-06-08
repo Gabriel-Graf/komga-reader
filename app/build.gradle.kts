@@ -63,6 +63,7 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.room.runtime)
     androidTestImplementation(libs.room.ktx)
+    androidTestImplementation(libs.okhttp.mockwebserver)
 }
 
 tasks.withType<Test> { useJUnitPlatform() }

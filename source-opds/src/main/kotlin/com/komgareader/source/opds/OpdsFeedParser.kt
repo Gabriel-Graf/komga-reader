@@ -9,6 +9,11 @@ private const val REL_THUMBNAIL = "http://opds-spec.org/image/thumbnail"
 private const val REL_IMAGE = "http://opds-spec.org/image"
 private const val REL_ACQUISITION = "http://opds-spec.org/acquisition"
 
+/** Setzt ein Parser-Feature tolerant — vom jeweiligen Parser nicht unterstützte Features werden ignoriert. */
+private fun DocumentBuilderFactory.trySetFeature(name: String, value: Boolean) {
+    runCatching { setFeature(name, value) }
+}
+
 /**
  * Parst einen OPDS-Atom-Feed (XML-String) und liefert die enthaltenen Einträge.
  * Verwendet namespace-aware DOM-Parsing (JVM built-in).
@@ -17,15 +22,20 @@ class OpdsFeedParser {
 
     fun parse(xml: String): List<OpdsEntry> {
         // XXE-Härtung: OPDS-Feeds kommen von fremden Servern → DTDs und externe
-        // Entitäten komplett deaktivieren (verhindert Datei-Leak/SSRF).
+        // Entitäten deaktivieren (verhindert Datei-Leak/SSRF). Die Feature-Namen sind
+        // parser-abhängig: Androids Harmony-Parser kennt z. B. `disallow-doctype-decl`
+        // NICHT und wirft sonst — deshalb jedes Feature einzeln und tolerant setzen.
+        // Die für XXE entscheidenden External-Entity-Features greifen auf beiden Plattformen;
+        // `isExpandEntityReferences = false` ist der plattformunabhängige Riegel.
         val factory = DocumentBuilderFactory.newInstance().apply {
             isNamespaceAware = true
-            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-            setFeature("http://xml.org/sax/features/external-general-entities", false)
-            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-            isXIncludeAware = false
-            isExpandEntityReferences = false
+            trySetFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            trySetFeature("http://xml.org/sax/features/external-general-entities", false)
+            trySetFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            trySetFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+            // Auch diese Setter wirft Androids Parser z. T. (UnsupportedOperationException) — tolerant.
+            runCatching { isXIncludeAware = false }
+            runCatching { isExpandEntityReferences = false }
         }
         val doc = factory.newDocumentBuilder().parse(xml.byteInputStream())
         val entryNodes: NodeList = doc.getElementsByTagNameNS(ATOM_NS, "entry")

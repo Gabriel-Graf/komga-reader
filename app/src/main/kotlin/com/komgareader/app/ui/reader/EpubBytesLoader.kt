@@ -1,12 +1,11 @@
 package com.komgareader.app.ui.reader
 
-import com.komgareader.app.data.KomgaSourceProvider
-import com.komgareader.data.download.DownloadManager
+import com.komgareader.app.data.ActiveSource
+import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.repository.DownloadRepository
-import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.source.SyncingSource
 import com.komgareader.domain.usecase.NovelProgressMapper
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -15,12 +14,14 @@ import javax.inject.Inject
  * paginierte Reader: zuerst der lokale Download (offline-first), sonst der Stream
  * von der aktiven Quelle. Zentralisiert das Byte-Holen, damit der Novel-Reader
  * keinen eigenen Abrufpfad erfindet (siehe `source-extensibility`).
+ *
+ * Quellen-agnostisch über [ActiveSource]: kein Wissen über Komga, funktioniert für
+ * jede [com.komgareader.domain.source.BrowsableSource] (OPDS, Plugin, …).
  */
 class EpubBytesLoader @Inject constructor(
-    private val servers: ServerRepository,
-    private val sourceProvider: KomgaSourceProvider,
+    private val active: ActiveSource,
     private val downloadRepository: DownloadRepository,
-    private val downloadManager: DownloadManager,
+    private val localBookBytes: LocalBookBytes,
     private val novelProgressMapper: NovelProgressMapper,
 ) {
 
@@ -29,17 +30,18 @@ class EpubBytesLoader @Inject constructor(
      * oder `null` wenn nicht verbunden.
      */
     suspend fun activeSourceId(): Long? = withContext(Dispatchers.IO) {
-        sourceProvider.from(servers.config.first())?.id
+        active.current()?.id
     }
 
     /**
-     * Pusht den groben Leseanteil [fraction] als Prozent zu Komga — über **denselben**
-     * `pushProgress`-Pfad wie die anderen Reader (kein paralleler Sync-Weg). Best-effort:
-     * scheitert der Push (offline), bleibt der lokale `novel_progress`-Eintrag `dirty`.
-     * Gibt `true` zurück, wenn der Push gelang (Aufrufer darf dann `markSynced`).
+     * Pusht den groben Leseanteil [fraction] als Prozent zur aktiven Quelle — über
+     * **denselben** `pushProgress`-Pfad wie die anderen Reader (kein paralleler Sync-Weg).
+     * Best-effort: scheitert der Push (offline) oder kann die Quelle keinen Fortschritt
+     * syncen, bleibt der lokale `novel_progress`-Eintrag `dirty`. Gibt `true` zurück, wenn
+     * der Push gelang (Aufrufer darf dann `markSynced`).
      */
     suspend fun pushNovelFraction(bookId: String, fraction: Float): Boolean = withContext(Dispatchers.IO) {
-        val source = sourceProvider.from(servers.config.first()) ?: return@withContext false
+        val source = active.current() as? SyncingSource ?: return@withContext false
         runCatching {
             source.pushProgress(bookId, novelProgressMapper.toReadProgress(fraction))
         }.isSuccess
@@ -49,12 +51,11 @@ class EpubBytesLoader @Inject constructor(
     suspend fun load(bookId: String, forceStream: Boolean): ByteArray = withContext(Dispatchers.IO) {
         if (!forceStream) {
             downloadRepository.get(bookId)?.let { local ->
-                return@withContext downloadManager.bytesOf(local)
+                return@withContext localBookBytes.bytesOf(local)
             }
         }
-        val source = sourceProvider.from(servers.config.first())
+        active.current()?.downloadFile(bookId)
             ?: error("Kein Server verbunden.")
-        source.downloadFile(bookId)
     }
 
     /**
@@ -64,7 +65,7 @@ class EpubBytesLoader @Inject constructor(
      */
     suspend fun startProgressFraction(bookId: String): Float = withContext(Dispatchers.IO) {
         runCatching {
-            val source = sourceProvider.from(servers.config.first()) ?: return@runCatching 0f
+            val source = active.current() as? SyncingSource ?: return@runCatching 0f
             val progress = source.pullProgress(bookId) ?: return@runCatching 0f
             if (progress.totalPages <= 1) 0f
             else ((progress.page - 1).toFloat() / (progress.totalPages - 1)).coerceIn(0f, 1f)

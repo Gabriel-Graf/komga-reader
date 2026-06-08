@@ -16,12 +16,22 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Liest die Bytes eines lokal heruntergeladenen Buchs. Schmale, Android-freie Abstraktion
+ * (DIP), damit Konsumenten wie [com.komgareader.app.ui.reader.EpubBytesLoader] den lokalen
+ * Lesepfad nutzen und unit-testen können, ohne den Android-gebundenen [DownloadManager]
+ * konstruieren zu müssen. [DownloadManager] ist die einzige produktive Implementierung.
+ */
+interface LocalBookBytes {
+    fun bytesOf(book: DownloadedBook): ByteArray
+}
+
 @Singleton
 class DownloadManager @Inject constructor(
     @ApplicationContext private val ctx: Context,
     private val downloads: DownloadRepository,
     private val settings: SettingsRepository,
-) {
+) : LocalBookBytes {
     private val resolver: ContentResolver get() = ctx.contentResolver
 
     /**
@@ -99,7 +109,7 @@ class DownloadManager @Inject constructor(
     }
 
     /** Alias für ReaderViewModel-Kompatibilität. */
-    fun bytesOf(d: DownloadedBook): ByteArray = readBytes(d.localPath)
+    override fun bytesOf(book: DownloadedBook): ByteArray = readBytes(book.localPath)
 
     suspend fun delete(bookRemoteId: String) = withContext(Dispatchers.IO) {
         downloads.get(bookRemoteId)?.let { deleteFile(it.localPath) }

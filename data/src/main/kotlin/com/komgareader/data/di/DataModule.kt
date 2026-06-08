@@ -15,6 +15,8 @@ import com.komgareader.data.db.MIGRATION_9_10
 import com.komgareader.data.db.MIGRATION_10_11
 import com.komgareader.data.db.MIGRATION_11_12
 import com.komgareader.data.db.SEED_CALLBACK
+import com.komgareader.data.download.DownloadManager
+import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.data.repository.RoomColorProfileRepository
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomNovelProgressRepository
@@ -73,6 +75,10 @@ object DataModule {
     @Provides @Singleton
     fun downloadRepository(db: AppDatabase): DownloadRepository =
         RoomDownloadRepository(db.downloadDao())
+
+    /** Schmales Lese-Interface für Stellen, die nur lokale Buch-Bytes brauchen (DIP). */
+    @Provides @Singleton
+    fun localBookBytes(manager: DownloadManager): LocalBookBytes = manager
 
     @Provides @Singleton
     fun shelfRepository(db: AppDatabase): ShelfRepository =

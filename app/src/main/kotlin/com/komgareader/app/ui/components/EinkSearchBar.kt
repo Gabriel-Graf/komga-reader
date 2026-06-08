@@ -43,6 +43,7 @@ fun EinkSearchBar(
     modifier: Modifier = Modifier,
     clearLabel: String? = null,
     onClear: (() -> Unit)? = null,
+    actionIcon: androidx.compose.ui.graphics.vector.ImageVector = AppIcons.Search,
     leading: @Composable (RowScope.() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(20.dp)
@@ -91,7 +92,7 @@ fun EinkSearchBar(
                 }
                 IconButton(onClick = onSubmit, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        AppIcons.Search,
+                        actionIcon,
                         contentDescription = actionLabel,
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,

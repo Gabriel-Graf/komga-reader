@@ -34,6 +34,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.observe(KEY_NOVEL_TEXT_ALIGN).map { it ?: "JUSTIFY" }
     override val novelHyphenationLang: Flow<String> =
         dao.observe(KEY_NOVEL_HYPHENATION).map { it ?: "" }
+    override val novelFontWeight: Flow<Int> =
+        dao.observe(KEY_NOVEL_FONT_WEIGHT).map { it?.toIntOrNull() ?: 400 }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -59,6 +61,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_NOVEL_TEXT_ALIGN, align))
     override suspend fun setNovelHyphenationLang(lang: String) =
         dao.put(SettingEntity(KEY_NOVEL_HYPHENATION, lang))
+    override suspend fun setNovelFontWeight(value: Int) =
+        dao.put(SettingEntity(KEY_NOVEL_FONT_WEIGHT, value.toString()))
 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
@@ -78,5 +82,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_NOVEL_FONT_FAMILY = "novel_font_family"
         const val KEY_NOVEL_TEXT_ALIGN = "novel_text_align"
         const val KEY_NOVEL_HYPHENATION = "novel_hyphenation_lang"
+        const val KEY_NOVEL_FONT_WEIGHT = "novel_font_weight"
     }
 }

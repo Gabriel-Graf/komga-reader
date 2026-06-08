@@ -2,18 +2,13 @@ package com.komgareader.app.ui.reader
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +52,8 @@ fun NovelReaderScreen(
     val chapters by novelVm.chapters.collectAsState()
     val currentChapterTitle by novelVm.currentChapterTitle.collectAsState()
     val progressPercent by novelVm.progressPercent.collectAsState()
+    val bookTitle by novelVm.bookTitle.collectAsState()
+    val bookAuthor by novelVm.bookAuthor.collectAsState()
     val rootView = LocalView.current
     val strings = LocalStrings.current
     var typoPanelOpen by remember { mutableStateOf(false) }
@@ -81,6 +78,7 @@ fun NovelReaderScreen(
             onFontFamily = novelVm::setFontFamily,
             onTextAlign = novelVm::setTextAlign,
             onHyphenation = novelVm::setHyphenation,
+            onFontWeight = novelVm::setFontWeight,
             onDismiss = { typoPanelOpen = false },
         )
         tocPanelOpen -> NovelTocPanel(
@@ -89,8 +87,10 @@ fun NovelReaderScreen(
             onDismiss = { tocPanelOpen = false },
         )
         searchPanelOpen -> NovelSearchPanel(
+            pageCount = state.pageCount,
             onSearch = novelVm::search,
             onHitSelected = novelVm::goToAnchor,
+            onGoToPage = novelVm::navigateTo,
             onGoToProgress = novelVm::goToProgress,
             onDismiss = { searchPanelOpen = false },
         )
@@ -126,8 +126,11 @@ fun NovelReaderScreen(
                 )
             }
         },
-        footer = {
-            NovelStatusFooter(
+        // Dauerhafter, eigener Page-Header (Autor·Titel | Uhr) + Page-Footer (Kapitel | Seite·%) —
+        // ersetzt den abgeschalteten crengine-Streifen. Beide aus der geteilten ReaderInfoBar (DRY).
+        persistentBars = {
+            NovelPageHeader(author = bookAuthor, title = bookTitle)
+            NovelPageFooter(
                 progressPercent = progressPercent,
                 currentPage = state.currentPage,
                 pageCount = state.pageCount,
@@ -188,51 +191,38 @@ fun NovelReaderScreen(
 }
 
 /**
- * Status-Fuß des Roman-Readers: Fortschritt in %, Seite X / N und der Titel des
- * aktuellen Kapitels (sofern vorhanden). Flach, ohne Schatten — eine schmale,
- * halbtransparente Leiste am unteren Rand. Alle Texte lokalisiert ([LocalStrings]).
- *
- * [BoxScope]-Erweiterung: die Leiste richtet sich nur am unteren Rand des Scaffolds
- * aus (`align(BottomCenter)`) — **kein** `fillMaxSize`-Box, der sonst über den ganzen
- * Reader läge und die Tap-Zonen-Gesten schlucken würde.
+ * Dauerhafter **Page-Header** oben (ersetzt den crengine-Streifen): links Autor·Titel,
+ * rechts die laufende Uhrzeit. Aus der geteilten [ReaderInfoBar] (DRY mit dem Footer),
+ * Hairline-Trennlinie nach unten zur Seite.
  */
 @Composable
-private fun BoxScope.NovelStatusFooter(
+private fun BoxScope.NovelPageHeader(author: String, title: String) {
+    val left = listOf(author, title).filter { it.isNotBlank() }.joinToString(" · ")
+    ReaderInfoBar(
+        align = Alignment.TopCenter,
+        dividerOnTop = false,
+        start = { ReaderInfoText(left) },
+        end = { ReaderInfoText(rememberClockText()) },
+    )
+}
+
+/**
+ * Dauerhafter **Page-Footer** unten: links das aktuelle Kapitel, rechts Seite X / N · %.
+ * Aus derselben geteilten [ReaderInfoBar] (DRY mit dem Header), Hairline-Trennlinie nach
+ * oben zur Seite. Alle Texte lokalisiert ([LocalStrings]).
+ */
+@Composable
+private fun BoxScope.NovelPageFooter(
     progressPercent: Int,
     currentPage: Int,
     pageCount: Int,
     chapterTitle: String?,
 ) {
-    val strings = LocalStrings.current
-    val pageLabel = "${strings.novelPageOfCount} ${currentPage + 1} / ${pageCount.coerceAtLeast(1)}"
-    Row(
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .background(readerOverlayScrim(Color.LightGray, 0.85f))
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = "$progressPercent %",
-            color = Color.Black,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Text(
-            text = pageLabel,
-            color = Color.Black,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        if (!chapterTitle.isNullOrBlank()) {
-            Text(
-                text = chapterTitle,
-                color = Color.Black,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-        }
-    }
+    val pageLabel = "${currentPage + 1} / ${pageCount.coerceAtLeast(1)} · $progressPercent %"
+    ReaderInfoBar(
+        align = Alignment.BottomCenter,
+        dividerOnTop = true,
+        start = { ReaderInfoText(chapterTitle.orEmpty()) },
+        end = { ReaderInfoText(pageLabel) },
+    )
 }

@@ -64,6 +64,10 @@ interface ReflowableDocument : Document {
     fun seekToProgress(fraction: Float)
     /** Sucht [query] im Volltext und liefert die Treffer in Lesereihenfolge. */
     fun search(query: String): List<SearchHit>
+    /** Werktitel aus den Dokument-Metadaten ("" falls unbekannt) — für den Page-Header. */
+    fun title(): String = ""
+    /** Autor(en) aus den Dokument-Metadaten ("" falls unbekannt) — für den Page-Header. */
+    fun authors(): String = ""
 }
 
 /**

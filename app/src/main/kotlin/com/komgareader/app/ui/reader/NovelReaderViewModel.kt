@@ -87,15 +87,20 @@ class NovelReaderViewModel @Inject constructor(
         settings.novelLineHeight,
         settings.novelMarginPreset,
         settings.novelFontFamily,
-        combine(settings.novelTextAlign, settings.novelHyphenationLang) { align, hyph -> align to hyph },
-    ) { fontSizeEm, lineHeight, marginPreset, fontFamily, alignHyph ->
+        combine(
+            settings.novelTextAlign,
+            settings.novelHyphenationLang,
+            settings.novelFontWeight,
+        ) { align, hyph, weight -> Triple(align, hyph, weight) },
+    ) { fontSizeEm, lineHeight, marginPreset, fontFamily, alignHyphWeight ->
         NovelSettings(
             fontSizeEm = fontSizeEm,
             lineHeight = lineHeight,
             marginPreset = marginPreset,
             fontFamily = fontFamily,
-            textAlign = alignHyph.first,
-            hyphenationLang = alignHyph.second,
+            textAlign = alignHyphWeight.first,
+            hyphenationLang = alignHyphWeight.second,
+            fontWeight = alignHyphWeight.third,
         ).toReflowConfig()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ReflowConfig.DEFAULT)
 
@@ -123,6 +128,12 @@ class NovelReaderViewModel @Inject constructor(
 
     /** Titel des Kapitels, in dem die aktuelle Seite liegt (oder `null`, falls keins). */
     val currentChapterTitle: StateFlow<String?> = _currentChapterTitle.asStateFlow()
+
+    /** Werktitel + Autor aus den EPUB-Metadaten — für den eigenen Page-Header (links). */
+    private val _bookTitle = MutableStateFlow("")
+    val bookTitle: StateFlow<String> = _bookTitle.asStateFlow()
+    private val _bookAuthor = MutableStateFlow("")
+    val bookAuthor: StateFlow<String> = _bookAuthor.asStateFlow()
 
     /** Leseanteil 0–100 % der aktuellen Seite — für den Status-Fuß. */
     val progressPercent: StateFlow<Int> = _uiState
@@ -198,6 +209,9 @@ class NovelReaderViewModel @Inject constructor(
                     val (count, startPage) = withContext(Dispatchers.IO) {
                         doc.pageCount() to doc.currentPage()
                     }
+                    // EPUB-Metadaten einmalig für den Page-Header lesen (layout-unabhängig).
+                    _bookTitle.value = withContext(Dispatchers.IO) { doc.title() }
+                    _bookAuthor.value = withContext(Dispatchers.IO) { doc.authors() }
                     _uiState.value = _uiState.value.copy(
                         loading = false,
                         pageCount = count,
@@ -313,6 +327,7 @@ class NovelReaderViewModel @Inject constructor(
     fun setFontFamily(family: String) = viewModelScope.launch { settings.setNovelFontFamily(family) }.let {}
     fun setTextAlign(align: String) = viewModelScope.launch { settings.setNovelTextAlign(align) }.let {}
     fun setHyphenation(lang: String) = viewModelScope.launch { settings.setNovelHyphenationLang(lang) }.let {}
+    fun setFontWeight(value: Int) = viewModelScope.launch { settings.setNovelFontWeight(value) }.let {}
 
     /**
      * Rendert die reflowte Seite [index] (gecacht) in eine Bitmap. Der Cache-Treffer

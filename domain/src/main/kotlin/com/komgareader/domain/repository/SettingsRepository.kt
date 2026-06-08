@@ -20,6 +20,7 @@ interface SettingsRepository {
     val novelFontFamily: Flow<String>         // Registrierter Familienname (gebündelt, z.B. "DejaVu Sans")
     val novelTextAlign: Flow<String>          // "LEFT" | "JUSTIFY"
     val novelHyphenationLang: Flow<String>    // "" = aus, sonst Sprachcode ("de"/"en")
+    val novelFontWeight: Flow<Int>            // Grund-Schriftstärke (400 = normal, höher = dicker)
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -34,4 +35,5 @@ interface SettingsRepository {
     suspend fun setNovelFontFamily(family: String)
     suspend fun setNovelTextAlign(align: String)
     suspend fun setNovelHyphenationLang(lang: String)
+    suspend fun setNovelFontWeight(value: Int)
 }

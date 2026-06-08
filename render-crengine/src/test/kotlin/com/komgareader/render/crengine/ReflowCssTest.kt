@@ -116,4 +116,25 @@ class ReflowCssTest {
         val css = ReflowCss.toUserCss(ReflowConfig(textAlign = TextAlign.LEFT))
         assertTrue(css.contains("text-align: left"), "war: $css")
     }
+
+    @Test
+    fun fontWeight_wird_auf_die_font_base_weight_property_abgebildet() {
+        val props = ReflowCss.toProperties(ReflowConfig(fontWeight = 600))
+        assertEquals("600", props["font.face.base.weight"])
+    }
+
+    @Test
+    fun fontWeight_normal_400_ist_die_default_basisstaerke() {
+        val props = ReflowCss.toProperties(ReflowConfig(fontWeight = 400))
+        assertEquals("400", props["font.face.base.weight"])
+    }
+
+    @Test
+    fun kapitel_beginnen_per_docfragment_pagebreak_auf_neuer_seite() {
+        // Kapitel sollen oben auf einer neuen Seite starten. crengine bricht zuverlässig am
+        // EPUB-Datei-Anfang (DocFragment) um — markup-unabhängig, anders als ein h-Tag-Selektor.
+        val css = ReflowCss.toUserCss(ReflowConfig())
+        assertTrue(css.contains("DocFragment"), "DocFragment-Selektor fehlt: $css")
+        assertTrue(css.contains("page-break-before: always"), "war: $css")
+    }
 }

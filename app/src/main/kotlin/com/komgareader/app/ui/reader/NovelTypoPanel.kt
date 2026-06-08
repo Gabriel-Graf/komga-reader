@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,8 +16,9 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkOutlinedButton
-import com.komgareader.app.ui.components.SectionHeader
+import com.komgareader.app.ui.components.PanelSectionHeader
 import com.komgareader.app.ui.components.StepperRow
+import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.render.Hyphenation
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
@@ -23,14 +26,15 @@ import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.TextAlign
 
 /**
- * Roman-Typografie-Panel im Onyx-Look ([EinkInfoDialog] — ein Modal über dem
- * Reader, Hardware-Back/X schließt). Jede Änderung schreibt in die globalen
- * Settings; der [NovelReaderViewModel] schichtet das Dokument **live** um und
- * hält dabei die Leseposition (Anker). Daher kein Bestätigen/Abbrechen — die
- * Wirkung ist sofort sichtbar.
+ * Roman-Typografie-Panel im Onyx-Look ([EinkInfoDialog]). Jede Änderung schreibt in die
+ * globalen Settings; der [NovelReaderViewModel] schichtet das Dokument **live** um und
+ * hält die Leseposition (Anker) — daher kein Bestätigen/Abbrechen.
  *
- * **Keine Animation:** reine Sofort-State-Wechsel (Steppers, Häkchen-Auswahl),
- * konform zu `animation-gating` (E-Ink). Alle Texte über [LocalStrings] (DE+EN).
+ * Gegliedert in Sektionen mit **prominentem** [PanelSectionHeader] (größer/stärker als die
+ * Setting-Zeilen) und Hairline-[PanelDivider] dazwischen; enges Spacing. Steppers tragen
+ * ihr Label selbst — kein redundanter Kopf darüber.
+ *
+ * **Keine Animation:** reine Sofort-State-Wechsel (`animation-gating`). Texte über [LocalStrings].
  */
 @Composable
 fun NovelTypoPanel(
@@ -41,6 +45,7 @@ fun NovelTypoPanel(
     onFontFamily: (String) -> Unit,
     onTextAlign: (String) -> Unit,
     onHyphenation: (String) -> Unit,
+    onFontWeight: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val strings = LocalStrings.current
@@ -49,24 +54,35 @@ fun NovelTypoPanel(
         title = strings.novelTypography,
         onDismiss = onDismiss,
         closeLabel = strings.close,
+        contentSpacing = 4.dp,
     ) {
-        // Schriftgröße: 0.7–2.5 em in 0.1-Schritten.
+        // Schrift: Größe + Zeilenabstand (Steppers tragen ihr Label selbst).
         StepperRow(
             label = strings.novelFontSize,
             valueText = "${(config.fontSizeEm * 100).toInt()} %",
             onDecrement = { onFontSizeEm((config.fontSizeEm - FONT_STEP).coerceAtLeast(FONT_MIN)) },
             onIncrement = { onFontSizeEm((config.fontSizeEm + FONT_STEP).coerceAtMost(FONT_MAX)) },
         )
-
-        // Zeilenabstand: 0.8–2.0 in 0.1-Schritten.
         StepperRow(
             label = strings.novelLineHeight,
             valueText = "${(config.lineHeight * 100).toInt()} %",
             onDecrement = { onLineHeight((config.lineHeight - LINE_STEP).coerceAtLeast(LINE_MIN)) },
             onIncrement = { onLineHeight((config.lineHeight + LINE_STEP).coerceAtMost(LINE_MAX)) },
         )
+        // Schriftstärke: dickere Glyphen (E-Ink-Lesbarkeit), in Stufen.
+        StepperRow(
+            label = strings.novelFontWeight,
+            valueText = "+${(config.fontWeight - NovelSettings.FONT_WEIGHT_MIN) / NovelSettings.FONT_WEIGHT_STEP}",
+            onDecrement = {
+                onFontWeight((config.fontWeight - NovelSettings.FONT_WEIGHT_STEP).coerceAtLeast(NovelSettings.FONT_WEIGHT_MIN))
+            },
+            onIncrement = {
+                onFontWeight((config.fontWeight + NovelSettings.FONT_WEIGHT_STEP).coerceAtMost(NovelSettings.FONT_WEIGHT_MAX))
+            },
+        )
 
-        SectionHeader(strings.novelMargin)
+        PanelDivider()
+        PanelSectionHeader(strings.novelMargin)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val current = currentMarginPreset(config)
             MarginChip(strings.novelMarginNarrow, NovelSettings.MARGIN_NARROW, current, onMargin)
@@ -74,47 +90,64 @@ fun NovelTypoPanel(
             MarginChip(strings.novelMarginWide, NovelSettings.MARGIN_WIDE, current, onMargin)
         }
 
-        SectionHeader(strings.novelTextAlign)
+        PanelDivider()
+        PanelSectionHeader(strings.novelTextAlign)
         ChoiceRow(
             label = strings.novelAlignLeft,
             selected = config.textAlign == TextAlign.LEFT,
+            dense = true,
             onSelect = { onTextAlign("LEFT") },
         )
         ChoiceRow(
             label = strings.novelAlignJustify,
             selected = config.textAlign == TextAlign.JUSTIFY,
+            dense = true,
             onSelect = { onTextAlign("JUSTIFY") },
         )
 
-        SectionHeader(strings.novelHyphenation)
+        PanelDivider()
+        PanelSectionHeader(strings.novelHyphenation)
         ChoiceRow(
             label = strings.novelHyphenationOff,
             selected = config.hyphenation == Hyphenation.Off,
+            dense = true,
             onSelect = { onHyphenation("") },
         )
         ChoiceRow(
             label = strings.novelHyphenationDe,
             selected = config.hyphenation == Hyphenation.Language("de"),
+            dense = true,
             onSelect = { onHyphenation("de") },
         )
         ChoiceRow(
             label = strings.novelHyphenationEn,
             selected = config.hyphenation == Hyphenation.Language("en"),
+            dense = true,
             onSelect = { onHyphenation("en") },
         )
 
-        // Schriftart: alle gebündelten Lese-Schriften aus der zentralen Registry
-        // ([NovelFonts]). Persistiert wird der registrierte Familienname; die Anzeige
-        // nutzt das Label verbatim (Schriftnamen werden nicht übersetzt).
-        SectionHeader(strings.novelFontFamily)
+        PanelDivider()
+        PanelSectionHeader(strings.novelFontFamily)
+        // Schriftart: alle gebündelten Lese-Schriften aus der zentralen Registry ([NovelFonts]).
         NovelFonts.ALL.forEach { font ->
             ChoiceRow(
                 label = font.label,
                 selected = config.fontFamily == font.family,
+                dense = true,
                 onSelect = { onFontFamily(font.family) },
             )
         }
     }
+}
+
+/** Hairline-Trennlinie zwischen Panel-Sektionen (eink-ui: ≥1.5dp, outlineVariant). */
+@Composable
+internal fun PanelDivider() {
+    HorizontalDivider(
+        thickness = EinkTokens.hairline,
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(vertical = 6.dp),
+    )
 }
 
 private fun currentMarginPreset(config: ReflowConfig): String = when (config.margin) {

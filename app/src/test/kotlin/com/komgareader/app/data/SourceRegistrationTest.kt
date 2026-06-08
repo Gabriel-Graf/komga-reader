@@ -7,6 +7,7 @@ import com.komgareader.domain.source.SourceId
 import com.komgareader.domain.source.SourceManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -39,6 +40,23 @@ class SourceRegistrationTest {
 
         assertEquals(SourceId.of("Feed", SourceKind.OPDS, "http://o/opds"), id)
         assertTrue(sources.get(id!!) is BrowsableSource)
+    }
+
+    @Test
+    fun `wiederholtes activate mit gleicher config registriert NICHT neu (kein Churn)`() {
+        // Schutz gegen die Race: current() ruft activate() bei jedem Aufruf. Solange die Config
+        // unverändert ist, darf die Quelle NICHT ab- und neu registriert werden — sonst gibt es
+        // ein Fenster, in dem der Coil-Fetcher sources.get(id) == null sieht.
+        val sources = SourceManager()
+        val registration = SourceRegistration(sources, KomgaSourceProvider())
+        val config = ServerConfig(name = "Heim", baseUrl = "http://h", apiKey = "k")
+
+        val id1 = registration.activate(config)!!
+        val firstInstance = sources.get(id1)
+        val id2 = registration.activate(config)!!
+
+        assertEquals(id1, id2)
+        assertSame(firstInstance, sources.get(id2)) // dieselbe Instanz → nicht neu registriert
     }
 
     @Test

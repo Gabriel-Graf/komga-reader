@@ -31,6 +31,7 @@ import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.guidedview.PanelGeometry
 
@@ -92,7 +93,10 @@ fun ComicReaderScreen(
     // GC-Full-Refresh gegen Ghosting, analog zum Webtoon-Frame-Sprung.
     // Null-safe: No-Op auf Nicht-Boox-Geräten.
     LaunchedEffect(state.position, state.zoomed) {
-        refresher?.fullRefreshNow(rootView)
+        // Panel-/Zoom-Wechsel = bewusster Bildwechsel → forceFull über den geteilten Scheduler (Viewer-Naht).
+        if (comicVm.refreshScheduler.onContentChange(forceFull = true) == RefreshMode.FULL) {
+            refresher?.fullRefreshNow(rootView)
+        }
     }
 
     ReaderScaffold(

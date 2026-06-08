@@ -53,7 +53,7 @@ class ReaderViewModel @Inject constructor(
     private val localBookBytes: LocalBookBytes,
     private val documentFactory: DocumentFactory,
     private val settings: SettingsRepository,
-) : ViewModel(), ReaderChromeState {
+) : ViewModel(), Viewer {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
     private val format: BookFormat = runCatching {
@@ -107,7 +107,7 @@ class ReaderViewModel @Inject constructor(
      * Ghosting) — eine Instanz pro Reader-Sitzung, von Paged + Webtoon geteilt. Die Ausführung
      * macht der `OnyxRefresher` (gerätenah); hier steckt nur die getestete Entscheidungslogik.
      */
-    val refreshScheduler = RefreshScheduler()
+    override val refreshScheduler = RefreshScheduler()
 
     // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
     private var document: Document? = null

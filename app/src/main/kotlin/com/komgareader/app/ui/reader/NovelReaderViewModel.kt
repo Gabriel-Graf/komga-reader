@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.render.Chapter
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
@@ -56,7 +57,7 @@ data class NovelUiState(
  * (lokaler Download oder Stream) — kein eigener Abrufweg.
  *
  * Eigenes ViewModel (analog [ComicReaderViewModel]), das den geteilten
- * [ReaderChromeState]-Vertrag erfüllt und das [ReaderScaffold] speist. Die
+ * [Viewer]-Vertrag erfüllt und das [ReaderScaffold] speist. Die
  * Hardware-Tasten laufen über den [HardwareButtonBus] (vor/zurück blättern),
  * exakt wie in den anderen Readern.
  */
@@ -69,7 +70,7 @@ class NovelReaderViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val novelProgress: NovelProgressRepository,
     @ApplicationScope private val appScope: CoroutineScope,
-) : ViewModel(), ReaderChromeState {
+) : ViewModel(), Viewer {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
     private val forceStream: Boolean = savedStateHandle.get<Boolean>("stream") ?: false
@@ -103,6 +104,9 @@ class NovelReaderViewModel @Inject constructor(
     override val chromeVisible: StateFlow<Boolean> = _uiState
         .map { it.chromeVisible }
         .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.chromeVisible)
+
+    /** Geteilte Refresh-Entscheidung (Viewer-Naht) — Re-Layout/Seitenwechsel = forceFull. */
+    override val refreshScheduler = RefreshScheduler()
 
     /**
      * Inhaltsverzeichnis des geöffneten Romans (flach, tiefenmarkiert). Wird einmal

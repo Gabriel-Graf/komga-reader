@@ -57,18 +57,24 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities` (hasEink/canColor/
   canInvert) — siehe Big-Picture-Doku zur Geräteklassen-Frage.
-- **E-Ink-Refresh (Ist):** Die partial→full-Promotion gegen Ghosting liegt in **`OnyxRefresher`**
-  (`eink-onyx`, `enterFastMode`/`fullRefreshIfNeeded`/`GHOST_CLEAR_INTERVAL`) + `EinkReaderEffect`
-  und `triggerGhostClearIfNeeded` (`app/ui/reader`). Es gibt **keinen** geräteunabhängigen
-  `RefreshScheduler` (das ist Soll, nicht Ist).
-- **Reader (Ist):** Es gibt **kein** `Viewer`-Interface. Reader sind Compose-`@Composable`-Screens
-  (`PagedReaderScreen`, `WebtoonReaderScreen`, `ComicReaderScreen`, `EpubReaderScreen`), dispatcht
-  per `when(ViewerMode)` in `ReaderRoute.kt`.
-- **Soll (geplant, noch nicht gebaut):** ein gemeinsames `Viewer`/`ReaderScaffold` +
-  `ReaderChromeState` (Vereinheitlichung **vor** dem 4./5. Reader, Regel
-  `shared-structure-before-variants.md`) und ein geräteunabhängiger, unit-testbarer
-  `RefreshScheduler` (Modus-Präzedenz + Region-Merge). Wer das baut, ersetzt den Ist-Stand
-  *hinter* der Naht — und zieht **diese Regel im selben Commit** auf den neuen Ist-Stand nach.
+- **E-Ink-Refresh (Ist, 2026-06-08):** Die Refresh-**Entscheidung** (PARTIAL beim Blättern,
+  FULL-Promotion gegen Ghosting / bei bewusstem Bildwechsel) liegt jetzt im geräteunabhängigen,
+  pur-getesteten **`RefreshScheduler`** (`domain/eink`, Event-Zählung statt Index-Modulo +
+  `mergeRegions`). Die **Ausführung** macht weiter `OnyxRefresher` (`eink-onyx`, gerätenah) +
+  `EinkReaderEffect`. Eine Scheduler-Instanz pro Reader-Sitzung, von allen Readern über den
+  `Viewer`-Vertrag geteilt. (`triggerGhostClearIfNeeded` ist entfernt.)
+- **Reader / Viewer-Naht (Ist, 2026-06-08):** Es gibt den **`Viewer`**-Vertrag
+  (`app/ui/reader/Viewer.kt`) — eine **Compose-Zustands**-Naht (chromeVisible-`StateFlow`,
+  `toggleChrome`/`navigateTo`/`onPageSettled`, `refreshScheduler`), **nicht** das alte OO-`bind/
+  onButton/teardown` (Compose verwaltet den Lifecycle deklarativ). Alle Reader-VMs
+  (`ReaderViewModel`, `ComicReaderViewModel`, `NovelReaderViewModel`) implementieren ihn; das
+  geteilte `ReaderScaffold` arbeitet dagegen. Reader bleiben eigene `@Composable`-Screens
+  (`PagedReaderScreen`/`WebtoonReaderScreen`/`ComicReaderScreen`/`NovelReaderScreen`), dispatcht
+  per `when(ViewerMode)`/`when(ReaderContent)` in `ReaderRoute.kt` — ein 5. Reader/UI-Plugin
+  implementiert **`Viewer`** statt einer Parallel-Linie.
+- **Noch Soll:** Der **God-VM-Split** (paged/webtoon/rendered stecken zusammen in `ReaderViewModel`,
+  Comic/Novel haben eigene VMs) ist noch nicht aufgelöst — ein separater Refactor *auf* der
+  `Viewer`-Naht. Wer ihn macht, zieht diese Regel im selben Commit nach.
 
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 

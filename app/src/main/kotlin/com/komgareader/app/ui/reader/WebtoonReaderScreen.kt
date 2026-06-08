@@ -60,7 +60,7 @@ fun WebtoonReaderScreen(
     initialPage: Int,
     displayMode: DisplayMode,
     frameSteps: Flow<Int>,
-    chrome: ReaderChromeState,
+    chrome: Viewer,
     refreshScheduler: RefreshScheduler,
     onBack: () -> Unit,
     onPageVisible: (Int) -> Unit,

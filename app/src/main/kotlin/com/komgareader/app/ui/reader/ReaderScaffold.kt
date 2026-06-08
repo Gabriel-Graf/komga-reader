@@ -38,7 +38,7 @@ private const val START_HINT_MILLIS = 1500L
  */
 @Composable
 fun ReaderScaffold(
-    chrome: ReaderChromeState,
+    chrome: Viewer,
     title: String,
     onBack: () -> Unit,
     onPrev: () -> Unit,

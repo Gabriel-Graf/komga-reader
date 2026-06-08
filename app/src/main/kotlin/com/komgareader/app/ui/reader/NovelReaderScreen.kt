@@ -34,6 +34,7 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.eink.onyx.OnyxRefresher
 
 /**
@@ -68,7 +69,10 @@ fun NovelReaderScreen(
     // pageCount -> ebenfalls als Full-Refresh-Auslöser einbeziehen.
     LaunchedEffect(state.currentPage, state.pageCount) {
         novelVm.onPageSettled(state.currentPage)
-        refresher?.fullRefreshNow(rootView)
+        // Seitenwechsel/Re-Layout = bewusster Bildwechsel → forceFull über den geteilten Scheduler (Viewer-Naht).
+        if (novelVm.refreshScheduler.onContentChange(forceFull = true) == RefreshMode.FULL) {
+            refresher?.fullRefreshNow(rootView)
+        }
     }
 
     // Max. ein Dialog gleichzeitig über dem Reader (E-Ink-Designsprache): exklusive Verzweigung.

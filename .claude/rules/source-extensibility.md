@@ -12,7 +12,7 @@ Schritte, **in dieser Reihenfolge**:
 
 1. **Domain-Modell erweitern** (`domain/model/*.kt`): Feld mit sinnvollem Default hinzufügen
    (`val summary: String? = null`). Generischer, quellen-neutraler Name — kein Komga-Jargon.
-2. **Interface erweitern, falls nötig** (`domain/source/MediaSource.kt`): braucht es einen neuen
+2. **Interface erweitern, falls nötig** (`source-api/…/source/MediaSource.kt`): braucht es einen neuen
    Abruf (z. B. `seriesDetail(remoteId): Series?`)? Dann ins `BrowsableSource`-Interface, mit
    nullbarem/leerem Rückgabe-Vertrag für Quellen, die es nicht liefern können.
 3. **Jede** Quelle implementiert: Komga (echtes Mapping), OPDS (so viel der Feed hergibt, sonst `null`).

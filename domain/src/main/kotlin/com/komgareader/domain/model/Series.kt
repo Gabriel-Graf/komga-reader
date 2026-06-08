@@ -5,7 +5,7 @@ package com.komgareader.domain.model
  * vorgegebenen Typ pro Serie zu überschreiben.
  *
  * [summary], [status] und [genres] sind generische, quellen-agnostische
- * Metadaten (Naht A): jede [com.komgareader.domain.source.MediaSource] füllt sie,
+ * Metadaten (Naht A): jede `MediaSource` (Modul `source-api`) füllt sie,
  * soweit das Backend sie liefert — sonst bleiben sie leer/`null`.
  */
 data class Series(

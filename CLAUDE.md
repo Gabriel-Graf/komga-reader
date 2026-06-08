@@ -32,7 +32,8 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 
 | Modul | Inhalt | Darf NICHT abhängen von |
 |---|---|---|
-| `domain` | Modelle, UseCases, Repo-/Source-**Interfaces** | Android, Netz, irgendeiner Quelle |
+| `domain` | Modelle, UseCases, Repo-/Render-/Eink-**Interfaces** | Android, Netz, irgendeiner Quelle, `source-api` |
+| `source-api` | Naht-A-Quellen-Vertrag (`MediaSource` & Co., `SourceManager`, `SourceId`) — Kandidat fürs Plugin-`compileOnly`, **noch nicht eingefroren** | Android, Netz, UI; hängt nur an `domain` |
 | `source-komga` · `source-opds` | konkrete `MediaSource`-Impls | UI, anderen Quellen |
 | `render-core` | `Document`/`DocumentFactory` + MuPDF-JNI (Naht B) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx-SDK, HW-gated) | UI, Quellen |

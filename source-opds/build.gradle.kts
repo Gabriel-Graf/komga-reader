@@ -3,6 +3,7 @@ plugins {
 }
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":source-api"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.okhttp)
 

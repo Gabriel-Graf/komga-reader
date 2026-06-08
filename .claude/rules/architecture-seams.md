@@ -26,7 +26,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 > es explizit dabei. Vor dem Bauen den Ist-Stand per `grep` verifizieren, nicht der
 > Vokabel der Doku vertrauen.
 
-## Naht A — Quellen (`domain/source/MediaSource.kt`)
+## Naht A — Quellen (`source-api/…/source/MediaSource.kt`)
 
 - Jede Backend-Verbindung implementiert `MediaSource` (+ `BrowsableSource` zum Lesen,
   `SyncingSource` für Fortschritts-Sync). Stabile, deterministische `id` (Hash aus name/typ/config).

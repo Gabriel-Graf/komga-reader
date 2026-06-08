@@ -15,28 +15,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
-import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkSearchBar
-import com.komgareader.app.ui.components.SectionHeader
-import com.komgareader.app.ui.components.StepperRow
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.domain.render.SearchHit
 import kotlinx.coroutines.launch
 
+/** Ziel des „Springe zu"-Feldes: eine 1-basierte interne Seite oder ein Prozentwert. */
+internal sealed interface GoTarget {
+    data class Page(val page: Int) : GoTarget
+    data class Percent(val percent: Int) : GoTarget
+}
+
 /**
- * Roman-Volltextsuche + „Gehe zu %" im Onyx-Look ([EinkInfoDialog] — ein Modal
- * über dem Reader, Hardware-Back/X schließt). Gepufferte Eingabe über die
- * [EinkSearchBar] (kein nacktes Material-Feld); Bestätigen führt [onSearch] in
- * einem Coroutine-Scope aus (off-main-thread im VM). Ein Tap auf einen Treffer
- * springt zu dessen Anker und schließt das Panel.
+ * Parst die „Springe zu"-Eingabe: endet sie auf `%`, ist es ein Prozentwert (0–100),
+ * sonst eine **interne** Seitenzahl (1..[pageCount], geclamped). Ungültig → `null`.
+ * Reine Funktion (unit-testbar).
+ */
+internal fun parseGoTo(input: String, pageCount: Int): GoTarget? {
+    val text = input.trim()
+    if (text.isEmpty()) return null
+    if (text.endsWith("%")) {
+        val value = text.dropLast(1).trim().toIntOrNull() ?: return null
+        return GoTarget.Percent(value.coerceIn(0, 100))
+    }
+    val page = text.toIntOrNull() ?: return null
+    return GoTarget.Page(page.coerceIn(1, pageCount.coerceAtLeast(1)))
+}
+
+/**
+ * Roman-Volltextsuche + „Springe zu" ([EinkInfoDialog]). **Suchleiste ganz oben**;
+ * darunter ein kompaktes Feld, in das man eine **interne Seitenzahl oder einen Prozentwert**
+ * tippt (springt auf die formatierten Reflow-Seiten, nicht die Komga-Rohseiten). Kein
+ * „Suchbegriff eingeben"-Hinweis und kein überdimensionierter Button — beide Eingaben sind
+ * gleich große Pillen mit kompaktem Bestätigen-Icon.
  *
- * Der diskrete „Gehe zu %"-Stepper (kein Slider — ruckelt auf E-Ink) springt an
- * die relative Position. **Keine Animation** (`animation-gating`); alle Texte über
- * [LocalStrings] (DE+EN).
+ * **Keine Animation** (`animation-gating`); Texte über [LocalStrings] (DE+EN).
  */
 @Composable
 fun NovelSearchPanel(
+    pageCount: Int,
     onSearch: suspend (String) -> List<SearchHit>,
     onHitSelected: (String) -> Unit,
+    onGoToPage: (Int) -> Unit,
     onGoToProgress: (Float) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -45,36 +65,32 @@ fun NovelSearchPanel(
 
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchHit>?>(null) }
-    var percent by remember { mutableStateOf(0) }
+    var goTo by remember { mutableStateOf("") }
+
+    fun jump() {
+        when (val target = parseGoTo(goTo, pageCount)) {
+            is GoTarget.Page -> {
+                onGoToPage(target.page - 1)
+                onDismiss()
+            }
+            is GoTarget.Percent -> {
+                onGoToProgress(target.percent / 100f)
+                onDismiss()
+            }
+            null -> Unit
+        }
+    }
 
     EinkInfoDialog(
         title = strings.novelSearch,
         onDismiss = onDismiss,
         closeLabel = strings.close,
+        contentSpacing = 8.dp,
     ) {
-        // Gehe-zu-%: diskreter Stepper in 5-%-Schritten.
-        SectionHeader(strings.novelGoToPercent)
-        StepperRow(
-            label = strings.novelGoToPercent,
-            valueText = "$percent %",
-            onDecrement = { percent = (percent - PERCENT_STEP).coerceAtLeast(0) },
-            onIncrement = { percent = (percent + PERCENT_STEP).coerceAtMost(100) },
-        )
-        EinkOutlinedButton(
-            onClick = {
-                onGoToProgress(percent / 100f)
-                onDismiss()
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(strings.novelGoToPercent) }
-
-        SectionHeader(strings.novelSearch)
         EinkSearchBar(
             query = query,
             onQueryChange = { query = it },
-            onSubmit = {
-                scope.launch { results = onSearch(query) }
-            },
+            onSubmit = { scope.launch { results = onSearch(query) } },
             placeholder = strings.novelSearchPlaceholder,
             actionLabel = strings.novelSearch,
             modifier = Modifier.fillMaxWidth(),
@@ -83,6 +99,15 @@ fun NovelSearchPanel(
                 query = ""
                 results = null
             },
+        )
+        EinkSearchBar(
+            query = goTo,
+            onQueryChange = { goTo = it },
+            onSubmit = { jump() },
+            placeholder = strings.novelGoToPlaceholder,
+            actionLabel = strings.novelGoToAction,
+            actionIcon = AppIcons.Forward,
+            modifier = Modifier.fillMaxWidth(),
         )
 
         SearchResults(
@@ -102,11 +127,8 @@ private fun SearchResults(
 ) {
     val strings = LocalStrings.current
     when {
-        results == null -> Text(
-            strings.novelSearchEmpty,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Vor der ersten Suche: nichts anzeigen (kein „Suchbegriff eingeben"-Fülltext).
+        results == null -> Unit
         results.isEmpty() -> Text(
             strings.novelSearchNoResults,
             style = MaterialTheme.typography.bodyMedium,
@@ -124,5 +146,3 @@ private fun SearchResults(
         }
     }
 }
-
-private const val PERCENT_STEP = 5

@@ -64,6 +64,12 @@ object CrengineNative {
     /** Serialized TOC: title<US>xpointer<US>level<RS>... ("" if none). */
     external fun nativeChapters(handle: Long): String
 
+    /** EPUB-Werktitel aus den Dokument-Metadaten ("" falls unbekannt). */
+    external fun nativeTitle(handle: Long): String
+
+    /** EPUB-Autor(en) aus den Dokument-Metadaten ("" falls unbekannt). */
+    external fun nativeAuthors(handle: Long): String
+
     /** Stable xpointer of the current page top ("" if unavailable). */
     external fun nativeCurrentAnchor(handle: Long): String
 

@@ -16,6 +16,7 @@ data class NovelSettings(
     val fontFamily: String = NovelFonts.DEFAULT,
     val textAlign: String = "JUSTIFY",
     val hyphenationLang: String = "",
+    val fontWeight: Int = FONT_WEIGHT_DEFAULT,
 ) {
     /** Reiner Mapper: persistierte Primitive → [ReflowConfig] (engine-neutral). */
     fun toReflowConfig(): ReflowConfig = ReflowConfig(
@@ -27,12 +28,19 @@ data class NovelSettings(
         hyphenation = hyphenationLang.ifBlank { null }
             ?.let { Hyphenation.Language(it) }
             ?: Hyphenation.Off,
+        fontWeight = fontWeight.coerceIn(FONT_WEIGHT_MIN, FONT_WEIGHT_MAX),
     )
 
     companion object {
         const val MARGIN_NARROW = "NARROW"
         const val MARGIN_NORMAL = "NORMAL"
         const val MARGIN_WIDE = "WIDE"
+
+        /** Schrift-Grundstärke (crengine `font.face.base.weight`): 400 = normal, höher = dicker. */
+        const val FONT_WEIGHT_DEFAULT = 400
+        const val FONT_WEIGHT_MIN = 400
+        const val FONT_WEIGHT_MAX = 900
+        const val FONT_WEIGHT_STEP = 100
 
         /**
          * Preset-String → konkrete [Margins]; unbekannt fällt auf NORMAL zurück.
@@ -44,9 +52,9 @@ data class NovelSettings(
          * 12/25/50 sind gelistet und erhalten die Abstufung NARROW < NORMAL < WIDE.
          */
         fun marginFor(preset: String): Margins = when (preset) {
-            MARGIN_NARROW -> Margins(12, 12, 12, 12)
-            MARGIN_WIDE -> Margins(50, 50, 50, 50)
-            else -> Margins(25, 25, 25, 25)
+            MARGIN_NARROW -> Margins(20, 20, 20, 20)
+            MARGIN_WIDE -> Margins(100, 100, 100, 100)
+            else -> Margins(50, 50, 50, 50)
         }
     }
 }

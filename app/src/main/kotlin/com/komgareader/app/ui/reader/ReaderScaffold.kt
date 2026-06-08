@@ -48,6 +48,7 @@ fun ReaderScaffold(
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
     tapModifier: Modifier? = null,
     footer: (@Composable BoxScope.() -> Unit)? = null,
+    persistentBars: (@Composable BoxScope.() -> Unit)? = null,
     showTapZoneHints: Boolean = tapModifier == null,
     content: @Composable () -> Unit,
 ) {
@@ -78,6 +79,10 @@ fun ReaderScaffold(
                 }
             }
         Box(taps)
+
+        // Dauerhafte Info-Leisten (Roman-Page-Header/-Footer): immer sichtbar, liegen unter
+        // dem toggle­baren Chrome — die Menüleiste überdeckt bei Bedarf den Page-Header oben.
+        persistentBars?.invoke(this)
 
         // Tap-Zonen-Hints (Hintergrund + Pfeil + Letzte/Nächste Seite) nur bei sichtbarem
         // Chrome und nur für Reader mit den Standard-Drittel-Zonen (echte Seiten-Navigation).

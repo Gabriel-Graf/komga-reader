@@ -27,6 +27,8 @@ data class ReflowConfig(
     val fontFamily: String = "Literata",
     val textAlign: TextAlign = TextAlign.JUSTIFY,
     val hyphenation: Hyphenation = Hyphenation.Off,
+    /** Grundstärke der Schrift (crengine `font.face.base.weight`): 400 = normal, höher = dicker. */
+    val fontWeight: Int = 400,
 ) {
     companion object { val DEFAULT = ReflowConfig() }
 }

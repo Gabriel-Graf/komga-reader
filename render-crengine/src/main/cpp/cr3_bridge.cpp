@@ -157,6 +157,10 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeOpen(
         delete view;
         return 0;
     }
+    // Den engine-eigenen Seiten-Header (Titel/Autor links, Seite/Uhr rechts) abschalten:
+    // Der Reader rendert stattdessen einen eigenen, E-Ink-konformen Compose-Page-Header/-Footer
+    // über die Seite. PGHDR_NONE = 0 -> getPageHeaderHeight() = 0, die volle Seitenfläche bleibt Inhalt.
+    view->setPageHeaderInfo(0);
     LOGI("Document loaded");
     return reinterpret_cast<jlong>(view);
 }
@@ -287,6 +291,26 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeChapters(
             stack.push_back(item->getChild(i));
     }
     return env->NewStringUTF(UnicodeToUtf8(out).c_str());
+}
+
+/* EPUB-Metadaten für den eigenen Page-Header: Werktitel ("" falls unbekannt). */
+JNIEXPORT jstring JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeTitle(
+        JNIEnv* env, jobject /*thiz*/, jlong handle) {
+    auto* view = reinterpret_cast<LVDocView*>(handle);
+    if (view == nullptr)
+        return env->NewStringUTF("");
+    return env->NewStringUTF(UnicodeToUtf8(view->getTitle()).c_str());
+}
+
+/* EPUB-Metadaten für den eigenen Page-Header: Autor(en) ("" falls unbekannt). */
+JNIEXPORT jstring JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeAuthors(
+        JNIEnv* env, jobject /*thiz*/, jlong handle) {
+    auto* view = reinterpret_cast<LVDocView*>(handle);
+    if (view == nullptr)
+        return env->NewStringUTF("");
+    return env->NewStringUTF(UnicodeToUtf8(view->getAuthors()).c_str());
 }
 
 /* Stable xpointer of the top of the current page ("" if unavailable). */

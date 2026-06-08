@@ -170,6 +170,7 @@ interface Strings {
     val novelTypography: String
     val novelFontSize: String
     val novelLineHeight: String
+    val novelFontWeight: String
     val novelMargin: String
     val novelMarginNarrow: String
     val novelMarginNormal: String
@@ -194,6 +195,10 @@ interface Strings {
     val novelSearchEmpty: String
     val novelSearchNoResults: String
     val novelGoToPercent: String
+    /** Platzhalter im „Springe zu"-Feld: akzeptiert eine Seitenzahl oder einen Prozentwert. */
+    val novelGoToPlaceholder: String
+    /** Beschriftung des Springen-Buttons (Barrierefreiheit). */
+    val novelGoToAction: String
 }
 
 object StringsDe : Strings {
@@ -370,6 +375,7 @@ object StringsDe : Strings {
     override val novelTypography = "Typografie"
     override val novelFontSize = "Schriftgröße"
     override val novelLineHeight = "Zeilenabstand"
+    override val novelFontWeight = "Schriftstärke"
     override val novelMargin = "Seitenränder"
     override val novelMarginNarrow = "Schmal"
     override val novelMarginNormal = "Normal"
@@ -391,6 +397,8 @@ object StringsDe : Strings {
     override val novelSearchEmpty = "Suchbegriff eingeben und bestätigen."
     override val novelSearchNoResults = "Keine Treffer gefunden."
     override val novelGoToPercent = "Gehe zu (%)"
+    override val novelGoToPlaceholder = "Seite oder %"
+    override val novelGoToAction = "Springen"
 }
 
 object StringsEn : Strings {
@@ -567,6 +575,7 @@ object StringsEn : Strings {
     override val novelTypography = "Typography"
     override val novelFontSize = "Font size"
     override val novelLineHeight = "Line spacing"
+    override val novelFontWeight = "Font weight"
     override val novelMargin = "Margins"
     override val novelMarginNarrow = "Narrow"
     override val novelMarginNormal = "Normal"
@@ -588,6 +597,8 @@ object StringsEn : Strings {
     override val novelSearchEmpty = "Enter a search term and confirm."
     override val novelSearchNoResults = "No matches found."
     override val novelGoToPercent = "Go to (%)"
+    override val novelGoToPlaceholder = "Page or %"
+    override val novelGoToAction = "Go"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

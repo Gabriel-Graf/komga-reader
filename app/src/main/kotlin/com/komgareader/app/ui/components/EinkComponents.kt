@@ -101,6 +101,22 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
+ * Prominenter Sektions-Kopf für **Reader-Panels** (Typo/TOC/Suche): `titleMedium` in
+ * `onSurface` — bewusst **größer und stärker** als die Setting-Zeilen darunter
+ * (`bodyLarge`), damit die Hierarchie stimmt (Anti-Pattern: Titel kleiner als Inhalt).
+ * Kein gedämpftes Grau wie [SectionHeader] — der Panel-Kopf trägt die Gliederung.
+ */
+@Composable
+fun PanelSectionHeader(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier,
+    )
+}
+
+/**
  * Auswahlzeile mit Häkchen rechts statt RadioButton-Kreis (ruhiger auf E-Ink).
  * Für Theme-/Sprach-/Modus-Auswahl. [query] markiert Suchtreffer im Label.
  */
@@ -111,13 +127,14 @@ fun ChoiceRow(
     modifier: Modifier = Modifier,
     trailing: @Composable (() -> Unit)? = null,
     query: String = "",
+    dense: Boolean = false,
     onSelect: () -> Unit,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .selectable(selected = selected, onClick = onSelect)
-            .padding(vertical = 14.dp),
+            .padding(vertical = if (dense) 8.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HighlightText(

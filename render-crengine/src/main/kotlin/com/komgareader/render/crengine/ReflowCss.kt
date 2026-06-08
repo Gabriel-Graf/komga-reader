@@ -26,6 +26,10 @@ object ReflowCss {
     private const val PROP_PAGE_MARGIN_LEFT = "crengine.page.margin.left"
     private const val PROP_PAGE_MARGIN_RIGHT = "crengine.page.margin.right"
     private const val PROP_FONT_FACE = "font.face.default"
+    // Grund-Schriftstärke aller Glyphen (lvdocviewprops.h:36, ersetzt das alte
+    // PROP_FONT_WEIGHT_EMBOLDEN). 400 = normal, höher = synthetisch dicker — auf E-Ink
+    // gut lesbar. Wird über die Roman-Typografie ([ReflowConfig.fontWeight]) gesteuert.
+    private const val PROP_FONT_BASE_WEIGHT = "font.face.base.weight"
     // PROP_HYPHENATION_DICT (lvdocviewprops.h:82). Trotz des Namens "directory" ist dies
     // der Property, der das AKTIVE Trennwörterbuch WÄHLT: lvdocview.cpp reicht seinen Wert
     // an HyphDictionaryList::activate(id) — der id ist "@none", "@algorithm" oder der
@@ -67,6 +71,7 @@ object ReflowCss {
         props[PROP_PAGE_MARGIN_LEFT] = cfg.margin.left.toString()
         props[PROP_PAGE_MARGIN_RIGHT] = cfg.margin.right.toString()
         props[PROP_FONT_FACE] = cfg.fontFamily
+        props[PROP_FONT_BASE_WEIGHT] = cfg.fontWeight.toString()
         applyHyphenation(props, cfg.hyphenation)
         return props
     }
@@ -81,7 +86,13 @@ object ReflowCss {
             TextAlign.JUSTIFY -> "justify"
             TextAlign.LEFT -> "left"
         }
-        return "body { text-align: $align }\n"
+        // Kapitel beginnen oben auf einer neuen Seite (die vorige läuft einfach aus). crengine
+        // wrappt jede EPUB-Datei (Spine-Item — i.d.R. genau ein Kapitel) in ein internes
+        // `DocFragment`-Element; ein page-break davor greift damit **markup-unabhängig** an den
+        // Kapitelgrenzen — anders als ein h1/h2/h3-Selektor, der bei vielen Büchern nicht passt
+        // (Titel ist kein h-Tag). Bewährter Ansatz (KOReader „render chapters on new page").
+        val chapterBreaks = "DocFragment { page-break-before: always; }\n"
+        return "body { text-align: $align }\n$chapterBreaks"
     }
 
     private fun interlineSpacePercent(lineHeight: Float): Int =

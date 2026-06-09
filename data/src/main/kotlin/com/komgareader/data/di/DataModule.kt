@@ -19,6 +19,7 @@ import com.komgareader.data.db.MIGRATION_13_14
 import com.komgareader.data.db.SEED_CALLBACK
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.data.download.LocalBookBytes
+import com.komgareader.data.repository.RoomCollectionRepository
 import com.komgareader.data.repository.RoomColorProfileRepository
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomNovelProgressRepository
@@ -35,6 +36,7 @@ import com.komgareader.domain.repository.ReadProgressRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ShelfRepository
 import dagger.Module
@@ -108,4 +110,8 @@ object DataModule {
             activePointer = settings.activeColorProfileId,
             setActivePointer = { settings.setActiveColorProfileId(it) },
         )
+
+    @Provides @Singleton
+    fun collectionRepository(db: AppDatabase): CollectionRepository =
+        RoomCollectionRepository(db.collectionDao())
 }

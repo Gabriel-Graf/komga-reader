@@ -42,6 +42,16 @@ data class NovelSettings(
         const val FONT_WEIGHT_MAX = 900
         const val FONT_WEIGHT_STEP = 100
 
+        /** Schriftgröße (em): Minimum, Maximum, Schrittweite — SSOT für Reader-Panel + Settings. */
+        const val FONT_SIZE_MIN = 0.7f
+        const val FONT_SIZE_MAX = 2.5f
+        const val FONT_SIZE_STEP = 0.1f
+
+        /** Zeilenabstand (em-Multiplikator): Minimum, Maximum, Schrittweite. */
+        const val LINE_HEIGHT_MIN = 0.8f
+        const val LINE_HEIGHT_MAX = 2.0f
+        const val LINE_HEIGHT_STEP = 0.1f
+
         /**
          * Preset-String → konkrete [Margins]; unbekannt fällt auf NORMAL zurück.
          *

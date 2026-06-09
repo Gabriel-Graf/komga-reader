@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -424,4 +425,52 @@ fun StepperRow(
             Icon(AppIcons.Plus, contentDescription = "+", modifier = Modifier.size(22.dp))
         }
     }
+}
+
+/**
+ * Kompakte ±-Regelzeile (≈40 dp) für Settings-Gruppen — enger als [StepperRow]
+ * (das 48-dp-IconButtons nutzt). Label links, Wert mittig (als formatierter String),
+ * − / + als kleines antippbares Icon (36 dp Touch-Bereich). Wird in Farbfilter-Settings
+ * **und** in der Roman-Typografie-Sektion der Reader-Settings genutzt.
+ */
+@Composable
+fun CompactStepperRow(
+    label: String,
+    valueText: String,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        CompactIconButton(AppIcons.Minus, "−", onDecrement)
+        Text(
+            valueText,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.width(52.dp),
+            textAlign = TextAlign.Center,
+        )
+        CompactIconButton(AppIcons.Plus, "+", onIncrement)
+    }
+}
+
+/**
+ * Antippbares Icon mit kleinem Touch-Bereich (36 dp) statt des 48-dp-IconButton — für
+ * enge Zeilen wie [CompactStepperRow]. Intern in diesem Paket und von
+ * [ColorFilterSettingsContent] genutzt.
+ */
+@Composable
+fun CompactIconButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    Icon(
+        icon,
+        contentDescription = contentDescription,
+        modifier = Modifier
+            .size(36.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(6.dp),
+        tint = MaterialTheme.colorScheme.onSurface,
+    )
 }

@@ -37,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +51,8 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.components.CompactIconButton
+import com.komgareader.app.ui.components.CompactStepperRow
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
@@ -131,7 +132,7 @@ fun ColorFilterSettingsContent(
             ) {
                 Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
                     if (canGoBack) {
-                        CompactIcon(AppIcons.Back, s.colorFilterPrevImage) {
+                        CompactIconButton(AppIcons.Back, s.colorFilterPrevImage) {
                             viewModel.previousPreview()
                         }
                     }
@@ -148,7 +149,7 @@ fun ColorFilterSettingsContent(
                         .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
                 )
                 Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
-                    CompactIcon(AppIcons.Forward, s.colorFilterNextImage) {
+                    CompactIconButton(AppIcons.Forward, s.colorFilterNextImage) {
                         viewModel.nextPreview()
                     }
                 }
@@ -178,7 +179,7 @@ fun ColorFilterSettingsContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(active.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        CompactIcon(AppIcons.Info, active.name) { infoProfile = active }
+                        CompactIconButton(AppIcons.Info, active.name) { infoProfile = active }
                         Icon(
                             if (profilesExpanded) AppIcons.ChevronUp else AppIcons.ChevronDown,
                             contentDescription = null,
@@ -429,51 +430,13 @@ private fun ProfileRow(
         }
         Spacer(Modifier.width(4.dp))
         if (editable) {
-            CompactIcon(AppIcons.Settings, name, onEdit)
+            CompactIconButton(AppIcons.Settings, name, onEdit)
             Spacer(Modifier.width(4.dp))
         }
-        CompactIcon(AppIcons.Info, name, onInfo)
+        CompactIconButton(AppIcons.Info, name, onInfo)
     }
 }
 
-/** Kompakte ±-Regel-Zeile (≈40 dp) — enger als das geteilte StepperRow (das 48-dp-IconButtons nutzt). */
-@Composable
-private fun CompactStepperRow(
-    label: String,
-    valueText: String,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        CompactIcon(AppIcons.Minus, "−", onDecrement)
-        Text(
-            valueText,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.width(52.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-        CompactIcon(AppIcons.Plus, "+", onIncrement)
-    }
-}
-
-/** Antippbares Icon mit kleinem Touch-Bereich (36 dp) statt des 48-dp-IconButton — für enge Zeilen. */
-@Composable
-private fun CompactIcon(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
-    Icon(
-        icon,
-        contentDescription = contentDescription,
-        modifier = Modifier
-            .size(36.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick)
-            .padding(6.dp),
-        tint = MaterialTheme.colorScheme.onSurface,
-    )
-}
 
 @Composable
 private fun InfoValueRow(label: String, value: String) {
@@ -500,7 +463,7 @@ private fun DitherSelectorRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge)
-        CompactIcon(AppIcons.Info, label, onInfo)
+        CompactIconButton(AppIcons.Info, label, onInfo)
         Spacer(Modifier.weight(1f))
         val modes = listOf(
             DitherMode.NONE to labels.first,

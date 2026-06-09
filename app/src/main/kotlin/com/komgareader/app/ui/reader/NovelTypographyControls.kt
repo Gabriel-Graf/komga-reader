@@ -24,17 +24,15 @@ import com.komgareader.domain.render.NovelSettings
 
 /**
  * Die 7 Roman-Typografie-Einstellungen (Schriftgröße, Zeilenabstand, Schriftstärke,
- * Seitenränder, Ausrichtung, Silbentrennung, Schriftart) als **stateless** Komponente —
- * reine UI (Werte rein, Callbacks raus), ohne Bezug auf ein ViewModel oder einen
- * Dialog-Rahmen. Single Source of Truth für die Steuerung dieser Settings; genutzt im
- * In-Reader-Panel ([NovelTypoPanel]) **und** in den Haupt-Settings (Reader-Sektion).
- * Beide Mount-Punkte schreiben über ihr jeweiliges ViewModel in denselben
- * `SettingsRepository` — eine Quelle, konsistente Werte (DRY).
+ * Seitenränder, Ausrichtung, Silbentrennung, Schriftart) als **stateless** Reader-Panel-
+ * Komponente — reine UI (Werte rein, Callbacks raus), ohne Bezug auf ein ViewModel oder
+ * einen Dialog-Rahmen. Genutzt im In-Reader-Panel ([NovelTypoPanel]).
  *
- * Arbeitet bewusst mit den **persistierten Primitiven** (Preset-/Code-Strings), nicht mit
- * der bereits gemappten `ReflowConfig`, damit beide Aufrufer dieselben Werte reichen
- * können. Steppers tragen ihr Label selbst; Sektionen mit prominentem [PanelSectionHeader]
- * und Hairline-Trenner. **Keine Animation:** reine Sofort-State-Wechsel (`animation-gating`).
+ * Arbeitet mit den **persistierten Primitiven** (Preset-/Code-Strings); Ranges und Presets
+ * aus [NovelSettings] (SSOT — geteilt mit der Settings-Screen-Darstellung
+ * `NovelTypographySettings`). Steppers tragen ihr Label selbst; Sektionen mit prominentem
+ * [PanelSectionHeader] und Hairline-Trenner. **Keine Animation:** reine Sofort-State-Wechsel
+ * (`animation-gating`).
  */
 @Composable
 fun NovelTypographyControls(
@@ -61,14 +59,14 @@ fun NovelTypographyControls(
         StepperRow(
             label = strings.novelFontSize,
             valueText = "${(fontSizeEm * 100).toInt()} %",
-            onDecrement = { onFontSize((fontSizeEm - FONT_STEP).coerceAtLeast(FONT_MIN)) },
-            onIncrement = { onFontSize((fontSizeEm + FONT_STEP).coerceAtMost(FONT_MAX)) },
+            onDecrement = { onFontSize((fontSizeEm - NovelSettings.FONT_SIZE_STEP).coerceAtLeast(NovelSettings.FONT_SIZE_MIN)) },
+            onIncrement = { onFontSize((fontSizeEm + NovelSettings.FONT_SIZE_STEP).coerceAtMost(NovelSettings.FONT_SIZE_MAX)) },
         )
         StepperRow(
             label = strings.novelLineHeight,
             valueText = "${(lineHeight * 100).toInt()} %",
-            onDecrement = { onLineHeight((lineHeight - LINE_STEP).coerceAtLeast(LINE_MIN)) },
-            onIncrement = { onLineHeight((lineHeight + LINE_STEP).coerceAtMost(LINE_MAX)) },
+            onDecrement = { onLineHeight((lineHeight - NovelSettings.LINE_HEIGHT_STEP).coerceAtLeast(NovelSettings.LINE_HEIGHT_MIN)) },
+            onIncrement = { onLineHeight((lineHeight + NovelSettings.LINE_HEIGHT_STEP).coerceAtMost(NovelSettings.LINE_HEIGHT_MAX)) },
         )
         // Schriftstärke: dickere Glyphen (E-Ink-Lesbarkeit), in Stufen.
         StepperRow(
@@ -170,9 +168,3 @@ private fun RowScope.MarginChip(
     }
 }
 
-private const val FONT_MIN = 0.7f
-private const val FONT_MAX = 2.5f
-private const val FONT_STEP = 0.1f
-private const val LINE_MIN = 0.8f
-private const val LINE_MAX = 2.0f
-private const val LINE_STEP = 0.1f

@@ -92,7 +92,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 - **God-VM-Split (Ist, 2026-06-09 — teilweise aufgelöst):** Die webtoon-spezifische *Lade-Logik*
   ist aus `ReaderViewModel` heraus extrahiert: der nahtlose, kapitelübergreifende Strip (Index↔
   Kapitel/Seite, flache Seiten-Liste, globaler Start) entsteht jetzt im **pur-getesteten**
-  `buildWebtoonStrip` (`source-api/.../source/WebtoonStripPlanner.kt`, `WebtoonStripPlan`).
+  `buildWebtoonStrip` (`app/ui/reader/WebtoonStripPlanner.kt`, `WebtoonStripPlan`).
   `ReaderViewModel.loadWebtoonStrip` hält nur noch das I/O (`seriesIdOf`/`books`/`pullProgress`)
   + das `SourceImage`-Mapping und delegiert die Planung. paged/webtoon/rendered **bleiben** in
   `ReaderViewModel`, weil der **In-Screen-Toggle `toggleViewerMode` (paged⟷webtoon, comic⟷webtoon)**

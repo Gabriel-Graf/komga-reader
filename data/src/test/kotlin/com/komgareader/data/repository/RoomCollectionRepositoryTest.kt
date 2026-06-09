@@ -85,4 +85,28 @@ class RoomCollectionRepositoryTest {
         assertEquals(true, linksMap.getValue(1L).dirty)
         assertEquals(true, linksMap.getValue(2L).dirty)
     }
+
+    @Test
+    fun `delete räumt Members und SyncLinks mit — keine Orphans`() = runTest {
+        val dao = FakeCollectionDao()
+        val repo = RoomCollectionRepository(dao)
+
+        val id = repo.create("Orphan-Test", CollectionKind.SERIES)
+        repo.setMembers(id, listOf(CollectionMember(1, "a", "A"), CollectionMember(2, "b", "B")))
+
+        // Vor dem Löschen: Collection + Members + Links vorhanden
+        assertEquals(1, repo.collections.first().size)
+        assertEquals(2, repo.syncLinks(id).first().size)
+
+        repo.delete(id)
+
+        // Collection weg
+        assertTrue(repo.collections.first().isEmpty(), "collections soll leer sein nach delete")
+        // get() liefert null
+        assertEquals(null, repo.get(id), "get(id) soll null liefern nach delete")
+        // Keine verwaisten SyncLinks
+        assertTrue(repo.syncLinks(id).first().isEmpty(), "syncLinks soll leer sein — keine Orphans")
+        // Keine verwaisten Members im DAO
+        assertTrue(dao.members.value.none { it.collectionId == id }, "dao.members soll keine Orphan-Rows enthalten")
+    }
 }

@@ -39,8 +39,11 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
     override suspend fun rename(collectionId: Long, name: String) =
         dao.renameCollection(collectionId, name)
 
-    override suspend fun delete(collectionId: Long) =
+    override suspend fun delete(collectionId: Long) {
+        dao.clearLinks(collectionId)
+        dao.clearMembers(collectionId)
         dao.deleteCollection(collectionId)
+    }
 
     override suspend fun setMembers(collectionId: Long, members: List<CollectionMember>) {
         dao.replaceMembers(

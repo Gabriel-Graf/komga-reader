@@ -73,6 +73,7 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
             s.settingsEinkRefresh, s.deviceManagedRefresh, s.deviceManagedRefreshHelper,
             s.novelTypography, s.novelTextHeading, s.novelFontSize, s.novelLineHeight, s.novelFontWeight,
             s.novelMargin, s.novelTextAlign, s.novelHyphenation, s.novelFontFamily,
+            s.readerPanelOverlay,
         ),
         content = { q -> ReaderSettingsContent(viewModel, q) },
     ),

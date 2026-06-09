@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
     implementation(project(":source-api"))
+    implementation(project(":plugin-api"))
     implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
     implementation(project(":source-opds"))

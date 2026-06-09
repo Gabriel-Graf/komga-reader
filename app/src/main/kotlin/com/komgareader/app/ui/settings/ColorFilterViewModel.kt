@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.coil.SourceCover
+import com.komgareader.data.plugin.ColorPresetImporter
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.source.SourceFilter
+import com.komgareader.plugin.ColorPresetSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -119,9 +121,9 @@ class ColorFilterViewModel @Inject constructor(
 
     fun cancelEdit() { _edit.value = null }
 
-    fun updateSaturation(delta: Float) = mutate { it.copy(saturation = clamp(it.saturation + delta, 0.5f, 2f)) }
-    fun updateContrast(delta: Float) = mutate { it.copy(contrast = clamp(it.contrast + delta, 0.5f, 2f)) }
-    fun updateBrightness(delta: Float) = mutate { it.copy(brightness = clamp(it.brightness + delta, -0.5f, 0.5f)) }
+    fun updateSaturation(delta: Float) = mutate { it.copy(saturation = clamp(it.saturation + delta, ColorProfile.SATURATION_MIN, ColorProfile.SATURATION_MAX)) }
+    fun updateContrast(delta: Float) = mutate { it.copy(contrast = clamp(it.contrast + delta, ColorProfile.CONTRAST_MIN, ColorProfile.CONTRAST_MAX)) }
+    fun updateBrightness(delta: Float) = mutate { it.copy(brightness = clamp(it.brightness + delta, ColorProfile.BRIGHTNESS_MIN, ColorProfile.BRIGHTNESS_MAX)) }
     fun updateBlackPoint(delta: Float) = mutate { it.copy(blackPoint = clamp(it.blackPoint + delta, 0f, 0.4f)) }
     fun updateWhitePoint(delta: Float) = mutate { it.copy(whitePoint = clamp(it.whitePoint + delta, 0.6f, 1f)) }
     fun updateGamma(delta: Float) = mutate { it.copy(gamma = clamp(it.gamma + delta, 0.4f, 2.5f)) }
@@ -156,6 +158,37 @@ class ColorFilterViewModel @Inject constructor(
     fun delete(id: Long) = viewModelScope.launch {
         colorProfiles.delete(id)
         if (_edit.value?.baseProfileId == id) _edit.value = null
+    }
+
+    /** Fehlermeldung nach einem fehlgeschlagenen Preset-Import (null = kein Fehler sichtbar). */
+    private val _importError = MutableStateFlow<String?>(null)
+    val importError: StateFlow<String?> = _importError
+
+    fun dismissImportError() { _importError.value = null }
+
+    /**
+     * Importiert ein Color-Preset aus JSON-Text. Das JSON muss die Felder
+     * `abiVersion`, `name`, `saturation`, `contrast`, `brightness` enthalten.
+     * Fehlerhafte oder inkompatible Specs setzen [importError].
+     */
+    fun importPresetJson(json: String) = viewModelScope.launch {
+        val spec = runCatching {
+            val obj = org.json.JSONObject(json)
+            ColorPresetSpec(
+                abiVersion = obj.getInt("abiVersion"),
+                name = obj.getString("name"),
+                saturation = obj.getDouble("saturation").toFloat(),
+                contrast = obj.getDouble("contrast").toFloat(),
+                brightness = obj.getDouble("brightness").toFloat(),
+            )
+        }.getOrNull()
+        val profile = spec?.let { ColorPresetImporter.toProfileOrNull(it) }
+        if (profile == null) {
+            _importError.value = "import_error"
+            return@launch
+        }
+        val id = colorProfiles.upsert(profile)
+        colorProfiles.setActive(id)
     }
 
     private fun mutate(f: (EditState) -> EditState) { _edit.value = _edit.value?.let(f) }

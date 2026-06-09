@@ -48,5 +48,13 @@ data class ColorProfile(
     companion object {
         /** Fallback, wenn kein aktives Profil existiert: kein Filter. */
         val OFF = ColorProfile(id = 1L, name = "Aus", saturation = 1f, contrast = 1f, brightness = 0f, builtIn = true)
+
+        // Wertebereiche — SSOT für Importer und ViewModel-Clamps.
+        const val SATURATION_MIN = 0.5f
+        const val SATURATION_MAX = 2.0f
+        const val CONTRAST_MIN = 0.5f
+        const val CONTRAST_MAX = 2.0f
+        const val BRIGHTNESS_MIN = -0.5f
+        const val BRIGHTNESS_MAX = 0.5f
     }
 }

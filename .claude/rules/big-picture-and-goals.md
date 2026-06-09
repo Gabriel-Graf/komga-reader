@@ -93,9 +93,12 @@ herleitet (und divergiert). Modell: Mihon/Tachiyomi.
    = der Inhalts-Namespace pro Quelle. Jeder DB-Satz trägt `sourceId` → uninstall fällt sauber auf
    `StubSource` zurück, kein Schema-Change.
 5. **Die drei Typen sind unterschiedlich schwer:**
-   - **(c) Color-Presets — am einfachsten, ZUERST:** kein Code, **deklarative Daten** (JSON mit
-     `ColorProfile`-Zahlen, auf Wertebereiche geclampt) → `color_profiles`-Tabelle, `builtIn=false`,
-     origin-getaggt (löschbar). Null Classloader-/ABI-Risiko → idealer Proof des Lade-Wegs.
+   - **(c) Color-Presets — gebaut, In-App-Import; APK-Lader weiter Soll (2026-06-09):**
+     `plugin-api`-Modul mit `ColorPresetSpec` + `PluginAbi`; `ColorPresetImporter` in `data`
+     clampt auf `ColorProfile`-Konstanten; In-App-Import via `ActivityResultContracts.OpenDocument`
+     (JSON → `ColorPresetSpec` → DB, `builtIn=false`, löschbar). Lade-Weg bewiesen ohne
+     Classloader. APK-basierter Plugin-Lader (PackageManager-Entdeckung, `createPackageContext`)
+     ist noch **Soll**.
    - **(a) Quellen — machbar, der designte Pfad:** `SourcePlugin` liefert `BrowsableSource`-Impls →
      `SourceManager.register()`. Setzt aber `source-agnostic-integration.md` **vollständig** voraus:
      solange der Reader Komga-URLs lädt, kann keine Plugin-Quelle Seiten liefern.

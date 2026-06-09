@@ -2,8 +2,10 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.ColorProfileDao
 import com.komgareader.data.db.ColorProfileEntity
+import com.komgareader.data.plugin.ColorPresetImporter
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
+import com.komgareader.plugin.ColorPresetSpec
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** In-Memory-Fake des DAO — testet die Mapping-/Fallback-Logik ohne echtes Room. */
 private class FakeColorProfileDao : ColorProfileDao {
@@ -99,5 +102,20 @@ class RoomColorProfileRepositoryTest {
             r.upsert(ColorProfile(id = 1, name = "x", saturation = 1f, contrast = 1f, brightness = 0f, builtIn = true))
             kotlin.test.fail("erwartete IllegalArgumentException")
         } catch (_: IllegalArgumentException) { /* erwartet */ }
+    }
+
+    @Test
+    fun `importiertes Preset landet in der DB und ist löschbar`() = runTest {
+        val dao = FakeColorProfileDao()
+        val r = repo(dao, FakeActivePointer())
+        val spec = ColorPresetSpec(abiVersion = 1, name = "Kaleido Warm", saturation = 1.3f, contrast = 1.1f, brightness = 0.0f)
+        val profile = ColorPresetImporter.toProfileOrNull(spec)!!
+        val id = r.upsert(profile)
+        assertTrue(id > 0, "Upsert muss eine gültige ID zurückgeben")
+        val all = r.observeAll().first()
+        assertTrue(all.any { it.id == id && it.name == "Kaleido Warm" && !it.builtIn })
+        r.delete(id)
+        val afterDelete = r.observeAll().first()
+        assertTrue(afterDelete.none { it.id == id }, "Preset muss nach delete verschwunden sein")
     }
 }

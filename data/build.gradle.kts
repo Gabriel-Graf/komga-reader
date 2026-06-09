@@ -16,6 +16,7 @@ android {
 }
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":plugin-api"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

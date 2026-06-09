@@ -105,6 +105,10 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
+            // Strukturell eigener Header (StatusCluster + Suchzeile + Filter-Chips + Aktionen) —
+            // passt nicht in HeaderSlot v1 (title, onBack?, actions). Bewusst außerhalb des Slots.
+            // Für Pack-Autoren: Tauschen des Headers über LocalResolvedSlots betrifft HomeScreen NICHT.
+            // Ein künftiger HomeHeaderSlot (breitere Signatur) ist die Erweiterung wenn der Slot-Vertrag wächst.
             TopAppBar(
                 // Volle Breite: Status links, Suche echt mittig (feste Breite), Aktion rechts.
                 title = {

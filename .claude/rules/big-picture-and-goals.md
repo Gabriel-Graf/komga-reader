@@ -179,7 +179,11 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > verhaltensgleich an `StandardTopAppBar` durch (kein visueller Unterschied fürs Default-Pack). Bewegung/
 > Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) — ein Slot
 > liefert nur Inhalt/Struktur. Swap-Beweis: `HeaderSlotPreview.kt` (`@Preview` mit zentriertem Alternativ-Header,
-> nur Debug/Preview, **keine** Nutzer-Einstellung).
+> nur Debug/Preview, **keine** Nutzer-Einstellung). **Ausnahme `HomeScreen`:** dessen Header
+> (StatusCluster + Suchzeile + Filter-Chips + Aktionen) passt strukturell nicht in `HeaderSlot v1`
+> (`title, onBack?, actions`) — er bleibt direkter `TopAppBar`-Aufruf und ist für Pack-Autoren
+> **nicht** über `LocalResolvedSlots` swappable; ein künftiger `HomeHeaderSlot` mit breiterer Signatur
+> deckt ihn ab, sobald der Slot-Vertrag wächst.
 > **Noch Soll/Richtung (existiert NICHT):** die **weiteren fünf Slots** (overlay/tiles/nav/settings/dialog —
 > `UiSlotPack` trägt heute nur `header`), ein eigenes **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht
 > eingefroren) und der **externe Pack-Lader** (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur

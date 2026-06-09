@@ -3,6 +3,8 @@ package com.komgareader.app.ui.slots
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -10,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 
 /**
@@ -24,9 +27,17 @@ import com.komgareader.app.ui.theme.KomgaReaderTheme
  */
 @OptIn(ExperimentalMaterial3Api::class)
 private val CenteredHeaderPack = UiSlotPack(
-    header = { title, _, actions ->
+    // Zentrierter Titel als Alternativ-Struktur (Swap-Beweis). Verhaltensgleich zum Default-Pack:
+    // onBack und actions werden vollständig übergeben — nur der Titel-Alignment ändert sich.
+    // Bewegung/Akzent bleiben host-erzwungen (LocalDisplayBehavior/LocalEinkMode), nicht hier.
+    header = { title, onBack, actions ->
         TopAppBar(
             title = { Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+            navigationIcon = {
+                if (onBack != null) {
+                    IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = null) }
+                }
+            },
             actions = actions,
         )
     },

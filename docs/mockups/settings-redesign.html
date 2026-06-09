@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --ink:#000; --paper:#fff;
+    --hair:#777;          /* outlineVariant */
+    --strong:#000;        /* outline */
+    --muted:#555;         /* onSurfaceVariant */
+    --accent:#445A86;     /* Kaleido AccentMuted — echtes Zielgerät Go Color 7 */
+    --r:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Noto Sans","DejaVu Sans",Helvetica,Arial,sans-serif;background:#d8d8d8;color:var(--ink);padding:32px}
+  h1.board{font-size:22px;font-weight:800;margin:26px 0 12px}
+  .tag{display:inline-block;font-size:12px;font-weight:700;border:1.5px solid var(--ink);border-radius:6px;padding:2px 8px;margin-bottom:12px}
+  .legend{font-size:13px;color:#222;margin:0 0 10px;max-width:1000px;line-height:1.55}
+
+  /* accent legend */
+  .accents{display:flex;gap:14px;margin:10px 0 6px;flex-wrap:wrap}
+  .sw{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--hair);border-radius:8px;padding:8px 12px;font-size:13px}
+  .chip{width:22px;height:22px;border-radius:5px;border:1.5px solid #0003}
+  b.ok{color:#1a6b2e} b.no{color:#a00}
+
+  /* device */
+  .device{background:var(--paper);border:2px solid #000;border-radius:14px;overflow:hidden;width:1000px}
+  .topbar{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1.5px solid var(--hair)}
+  .search{flex:1;border:1.5px solid var(--ink);border-radius:999px;padding:8px 16px;font-size:14px;color:var(--muted)}
+  .md{display:flex;min-height:540px}
+  .side{width:178px;border-right:1.5px solid var(--hair);padding:6px 0}
+  .side .item{display:flex;align-items:center;gap:10px;padding:13px 12px;font-size:14px}
+  .side .bar{width:3px;height:22px;border-radius:2px;background:transparent}
+  .side .item.active .bar{background:var(--accent)}     /* aktiv = Akzent (Kaleido) */
+  .side .item.active{font-weight:800}
+  .side svg{width:22px;height:22px}
+  .content{flex:1;padding:18px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+
+  /* primitives — echter Stand */
+  .scope{font-size:18px;font-weight:800;padding-bottom:6px;border-bottom:1.5px solid var(--hair)}
+  .sec{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:2px}
+  .cap{font-size:12px;font-weight:700;color:var(--muted);margin:6px 0 2px}
+  .indent{padding-left:6px;display:flex;flex-direction:column;gap:2px}
+  .row{display:flex;align-items:center;gap:12px;padding:9px 0}
+  .row .lbl{flex:1;font-size:15px}
+  .row .sub{font-size:12px;color:var(--muted);margin-top:1px}
+  .val{color:var(--muted);font-size:15px}
+  .chev{color:var(--muted);font-weight:700}
+  .seg{display:flex;gap:4px;flex:1.4}
+  .seg div{flex:1;height:34px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1.5px solid #000;border-radius:6px}
+  .seg div.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepbtn{width:36px;height:36px;border:1.5px solid #000;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700}
+  .stepval{width:56px;text-align:center;font-size:15px}
+  .toggle{width:46px;height:26px;border-radius:999px;background:var(--accent);position:relative}
+  .toggle i{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff}
+  .check{width:22px;height:22px}
+  .servertile{display:flex;align-items:center;gap:10px;border:1.5px solid #000;border-radius:var(--r);padding:8px 6px 8px 12px}
+  .servertile .nm{flex:1}
+  .servertile .nm .t{font-size:15px}
+  .servertile .nm .u{font-size:12px;color:var(--muted)}
+  .ibtn{width:34px;height:34px;display:flex;align-items:center;justify-content:center}
+  .btn{display:inline-block;border:1.5px solid var(--accent);border-radius:8px;padding:9px 18px;font-size:14px;font-weight:700;background:var(--accent);color:#fff}
+  .btn.out{background:#fff;color:var(--accent)}
+
+  /* delta marker */
+  .delta{display:flex;gap:24px;flex-wrap:wrap;margin-top:10px}
+  .card{width:480px;background:#fff;border:1.5px solid var(--hair);border-radius:12px;padding:16px}
+  .card h3{font-size:14px;font-weight:800;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:5px}
+  .mark{font-size:12px;color:#a00;font-weight:700;margin-top:8px}
+  .good{font-size:12px;color:#1a6b2e;font-weight:700;margin-top:8px}
+  svg{stroke:#000;fill:none;stroke-width:2.2}
+</style>
+</head>
+<body>
+
+<div class="tag">VISUAL COMPANION v2 · Settings nach Merge feat/source-agnostic-integration</div>
+<p class="legend"><b>Stand korrigiert:</b> der Content ist nach dem Merge bereits stark strukturiert (SettingsGroup-Karten, Reader-Scope-Hierarchie, Segment-Selektoren, Picker-Modale, Server-Liste). Akzent ist <u>nicht</u> monochrom — er folgt der Geräteklasse:</p>
+<div class="accents">
+  <div class="sw"><span class="chip" style="background:#000"></span> mono E-Ink — <b>Schwarz</b> (kein Akzent)</div>
+  <div class="sw"><span class="chip" style="background:#445A86"></span> Kaleido / Go Color 7 — <b>#445A86</b> gedämpft</div>
+  <div class="sw"><span class="chip" style="background:#3A5BC7"></span> LCD / Tablet — <b>#3A5BC7</b> vivid Indigo</div>
+</div>
+<p class="legend">Board unten in <b>Kaleido-Akzent</b> gerendert (reales Zielgerät). Aktive Zustände (Sidebar-Balken, gewähltes Segment, Toggle, Primär-Button) tragen den Akzent — auf mono würden dieselben Stellen Schwarz, auf Tablet Vivid.</p>
+
+<!-- BOARD: ECHTER STAND, KALEIDO -->
+<h1 class="board">Ist-Stand (Sektion „Reader") — bereits strukturiert</h1>
+<div class="device">
+  <div class="topbar"><div class="search">Einstellungen durchsuchen&nbsp;&nbsp;🔍</div></div>
+  <div class="md">
+    <div class="side">
+      <div class="item"><span class="bar"></span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/></svg>Verbindung</div>
+      <div class="item"><span class="bar"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" fill="#000"/></svg>Darstellung</div>
+      <div class="item"><span class="bar"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>Farbfilter</div>
+      <div class="item active"><span class="bar"></span><svg viewBox="0 0 24 24"><path d="M3 5h7a2 2 0 012 2v12a2 2 0 00-2-2H3z"/><path d="M21 5h-7a2 2 0 00-2 2v12a2 2 0 012-2h7z"/></svg>Reader</div>
+      <div class="item"><span class="bar"></span><svg viewBox="0 0 24 24"><path d="M12 3v10m0 0l-4-4m4 4l4-4"/><path d="M5 17a2 2 0 002 2h10a2 2 0 002-2"/></svg>Downloads</div>
+      <div class="item"><span class="bar"></span><svg viewBox="0 0 24 24"><path d="M4 5h8M8 3v2M6 13c2 0 5-2 5-8"/></svg>Sprache</div>
+      <div class="item"><span class="bar"></span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/></svg>Über</div>
+    </div>
+    <div class="content">
+      <div>
+        <div class="scope">Allgemein</div>
+        <div class="indent">
+          <div class="row"><div class="lbl">Anzeige-Modus</div><span class="val">E-Ink</span><span class="chev">›</span></div>
+          <div class="row"><div class="lbl">Refresh dem Gerät überlassen<div class="sub">Onyx steuert den E-Ink-Refresh selbst</div></div><div class="toggle"><i></i></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="scope">Roman-Reader</div>
+        <div class="indent">
+          <div class="cap">SCHRIFT</div>
+          <div class="row"><div class="lbl">Schriftgröße</div><div class="stepper"><div class="stepbtn">−</div><div class="stepval">100 %</div><div class="stepbtn">+</div></div></div>
+          <div class="row"><div class="lbl">Zeilenabstand</div><div class="stepper"><div class="stepbtn">−</div><div class="stepval">100 %</div><div class="stepbtn">+</div></div></div>
+          <div class="row"><div class="lbl">Schriftstärke</div><div class="stepper"><div class="stepbtn">−</div><div class="stepval">+0</div><div class="stepbtn">+</div></div></div>
+          <div class="row"><div class="lbl">Ränder</div><div class="seg"><div>Schmal</div><div>Normal</div><div class="on">Breit</div></div></div>
+          <div class="row"><div class="lbl">Ausrichtung</div><div class="seg"><div>Links</div><div class="on">Blocksatz</div></div></div>
+          <div class="row"><div class="lbl">Silbentrennung</div><div class="seg"><div class="on">Aus</div><div>DE</div><div>EN</div></div></div>
+          <div class="row"><div class="lbl">Schriftart</div><span class="val">DejaVu Sans</span><span class="chev">›</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="scope">Webtoon</div>
+        <div class="indent"><div class="row"><div class="lbl">Seiten-Überlappung</div><div class="stepper"><div class="stepbtn">−</div><div class="stepval">10 %</div><div class="stepbtn">+</div></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VERBLEIBENDE DELTAS -->
+<h1 class="board">Verbleibende Feinschliff-Punkte (echte Deltas)</h1>
+<div class="delta">
+
+  <div class="card">
+    <h3>① Connection-Modal · Quelltyp</h3>
+    <div class="cap">JETZT — zwei rohe Buttons</div>
+    <div style="display:flex;gap:8px;margin:6px 0"><span class="btn">Komga</span><span class="btn out">OPDS</span></div>
+    <div class="cap" style="margin-top:12px">VORSCHLAG — SegmentedChoiceRow (App-Standard)</div>
+    <div class="row"><div class="lbl">Quelltyp</div><div class="seg"><div class="on">Komga</div><div>OPDS</div></div></div>
+    <div class="mark">↯ Überall sonst sind Auswahlen Segment-Selektoren — hier inkonsistent.</div>
+  </div>
+
+  <div class="card">
+    <h3>② ChoiceRow · Auswahl-Häkchen</h3>
+    <div class="cap">JETZT — Häkchen immer Schwarz (onSurface)</div>
+    <div class="row" style="border-bottom:1px solid #eee"><div class="lbl">Hell</div><svg class="check" viewBox="0 0 24 24" stroke="#000" stroke-width="2.5"><path d="M5 12l5 5L20 6"/></svg></div>
+    <div class="cap" style="margin-top:12px">VORSCHLAG — Häkchen in Akzent (wie Sidebar-Balken & Segmente)</div>
+    <div class="row"><div class="lbl">Hell</div><svg class="check" viewBox="0 0 24 24" stroke="#445A86" stroke-width="2.5"><path d="M5 12l5 5L20 6"/></svg></div>
+    <div class="mark">↯ Sidebar-Balken + Segment nutzen accent, das Häkchen nicht → Auswahl-Signal uneinheitlich. Auf mono bleibt es schwarz (Token regelt's).</div>
+  </div>
+
+  <div class="card">
+    <h3>③ „Über" · spärlich</h3>
+    <div class="cap">JETZT</div>
+    <div class="sec">KOMGA READER</div>
+    <div class="row"><div class="lbl">Optimiert für Onyx Boox Go Color 7 Gen2</div></div>
+    <div class="row"><div class="lbl">Version: 0.1.0</div></div>
+    <div class="cap" style="margin-top:12px">VORSCHLAG — Info-Zeilen + Lizenz/Quelle</div>
+    <div class="row" style="border-bottom:1px solid #eee"><div class="lbl">Version</div><span class="val">0.1.0</span></div>
+    <div class="row" style="border-bottom:1px solid #eee"><div class="lbl">Gerät</div><span class="val">Go Color 7 Gen2</span></div>
+    <div class="row" style="border-bottom:1px solid #eee"><div class="lbl">Lizenz</div><span class="val">AGPL-3.0</span></div>
+    <div class="row"><div class="lbl">Quellcode</div><span class="val">github.com/… ›</span></div>
+  </div>
+
+  <div class="card">
+    <h3>✓ Bereits gut (nicht anfassen)</h3>
+    <div class="good">✓ SettingsGroup-Karten + Helper überall</div>
+    <div class="good">✓ Reader-Scope-Hierarchie (Allgemein/Roman/Webtoon/Comic)</div>
+    <div class="good">✓ Segment-Selektoren, Picker-Modale, Stepper</div>
+    <div class="good">✓ Server-Liste mit Add/Edit-Modal, quellen-agnostisch</div>
+    <div class="good">✓ Akzent korrekt je Geräteklasse (Sidebar-Balken, Segmente)</div>
+  </div>
+
+</div>
+
+</body>
+</html>

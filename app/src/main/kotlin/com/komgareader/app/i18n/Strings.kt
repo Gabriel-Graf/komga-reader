@@ -108,6 +108,14 @@ interface Strings {
     val settingsAbout: String
     val aboutDevice: String
     val versionLabel: String
+    val aboutLicense: String
+    val aboutSourceCode: String
+    val aboutSourceCodeUrl: String
+    // Bibliothek: Laden/Download (Snackbar + Fehler-Retry)
+    val retry: String
+    val downloadComplete: String
+    fun downloadingChapters(count: Int): String
+    fun downloadFailed(message: String): String
     // Suche
     val searchMediaHint: String
     val searchSettingsHint: String
@@ -326,6 +334,13 @@ object StringsDe : Strings {
     override val settingsAbout = "Über"
     override val aboutDevice = "Optimiert für Onyx Boox Go Color 7 Gen2"
     override val versionLabel = "Version"
+    override val aboutLicense = "Lizenz"
+    override val aboutSourceCode = "Quellcode"
+    override val aboutSourceCodeUrl = "github.com/komga-reader"
+    override val retry = "Wiederholen"
+    override val downloadComplete = "Serie heruntergeladen."
+    override fun downloadingChapters(count: Int) = "Lade $count Kapitel…"
+    override fun downloadFailed(message: String) = "Fehler: $message"
     // Suche
     override val searchMediaHint = "Bibliothek durchsuchen"
     override val searchSettingsHint = "Einstellungen durchsuchen"
@@ -544,6 +559,13 @@ object StringsEn : Strings {
     override val settingsAbout = "About"
     override val aboutDevice = "Optimised for Onyx Boox Go Color 7 Gen2"
     override val versionLabel = "Version"
+    override val aboutLicense = "License"
+    override val aboutSourceCode = "Source code"
+    override val aboutSourceCodeUrl = "github.com/komga-reader"
+    override val retry = "Retry"
+    override val downloadComplete = "Series downloaded."
+    override fun downloadingChapters(count: Int) = "Downloading $count chapters…"
+    override fun downloadFailed(message: String) = "Error: $message"
     // Search
     override val searchMediaHint = "Search library"
     override val searchSettingsHint = "Search settings"

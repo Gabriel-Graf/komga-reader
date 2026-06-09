@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -24,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.SeriesTile
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Series
@@ -40,16 +44,17 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
+    val s = LocalStrings.current
     val state by viewModel.state.collectAsState()
     val localSeriesIds by viewModel.localSeriesIds.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(s) {
         viewModel.events.collect { event ->
             val message = when (event) {
-                is LibraryEvent.DownloadStarted -> "Lade ${event.count} Kapitel…"
-                is LibraryEvent.DownloadComplete -> "Serie heruntergeladen."
-                is LibraryEvent.DownloadError -> "Fehler: ${event.message}"
+                is LibraryEvent.DownloadStarted -> s.downloadingChapters(event.count)
+                is LibraryEvent.DownloadComplete -> s.downloadComplete
+                is LibraryEvent.DownloadError -> s.downloadFailed(event.message)
             }
             snackbarHostState.showSnackbar(message)
         }
@@ -99,11 +104,19 @@ private fun BrowseTab(
         }
         is LibraryUiState.Error -> {
             Box(modifier, contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(current.message, textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
-                    Button(onClick = onRefresh) {
-                        Text("Wiederholen")
-                    }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(32.dp),
+                ) {
+                    Icon(
+                        AppIcons.Library,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(current.message, textAlign = TextAlign.Center)
+                    EinkOutlinedButton(onClick = onRefresh) { Text(s.retry) }
                 }
             }
         }

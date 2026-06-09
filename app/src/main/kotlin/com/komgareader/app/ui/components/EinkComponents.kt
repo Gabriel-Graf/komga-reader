@@ -302,7 +302,9 @@ fun ChoiceRow(
                     AppIcons.Check,
                     contentDescription = null,
                     modifier = Modifier.size(22.dp),
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    // Auswahl-Signal in der Geräteklassen-Akzentfarbe — wie Sidebar-Balken & Segmente.
+                    // mono = Schwarz (accent = onSurface), Kaleido/LCD = gedämpfte/volle Farbe.
+                    tint = LocalDesignTokens.current.accent,
                 )
             }
         }

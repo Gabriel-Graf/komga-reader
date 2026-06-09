@@ -7,8 +7,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -25,8 +23,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,20 +40,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.request.ImageRequest
+import com.komgareader.app.ui.components.ChoiceRow
+import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkModal
+import com.komgareader.app.ui.components.TileTitleBand
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.repository.ServerConfig
@@ -108,10 +106,10 @@ fun GroupsScreen(
     } else {
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
-            modifier = modifier.fillMaxSize().padding(horizontal = 8.dp),
+            modifier = modifier.fillMaxSize().padding(horizontal = EinkTokens.tileGap),
             contentPadding = PaddingValues(top = 4.dp, bottom = LocalContentBottomInset.current + 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+            verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
         ) {
             items(state.shelves, key = { it.id }) { shelf ->
                 GroupTile(
@@ -183,18 +181,7 @@ private fun GroupTile(
             onDelete = onDelete,
         )
 
-        Text(
-            shelf.name,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .background(Color.Black.copy(alpha = 0.7f))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        )
+        TileTitleBand(shelf.name, Modifier.align(Alignment.BottomStart))
     }
 }
 
@@ -207,7 +194,7 @@ private fun TypeChip(label: String, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.onSurface,
         modifier = modifier
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp),
     )
 }
@@ -298,7 +285,6 @@ private fun CoverSlot(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LibraryEditDialog(
     existing: Shelf?,
@@ -340,7 +326,7 @@ private fun LibraryEditDialog(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(s.selectLibraries, style = MaterialTheme.typography.labelMedium)
+        FieldCaption(s.selectLibraries)
         if (containers.isEmpty()) {
             Text(
                 text = serverName ?: s.noServerHint,
@@ -352,33 +338,32 @@ private fun LibraryEditDialog(
                 },
             )
         } else {
+            // Mehrfachauswahl als ChoiceRow-Liste (Häkchen = gewählt) — kein nacktes Material-Checkbox.
             Column(Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
                 containers.forEach { container ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Checkbox(
-                            checked = container.id in selected,
-                            onCheckedChange = { on ->
-                                if (on) selected.add(container.id) else selected.remove(container.id)
-                            },
-                        )
-                        Text(container.name)
-                    }
+                    ChoiceRow(
+                        label = container.name,
+                        selected = container.id in selected,
+                        dense = true,
+                        onSelect = {
+                            if (container.id in selected) selected.remove(container.id)
+                            else selected.add(container.id)
+                        },
+                    )
                 }
             }
         }
         Spacer(Modifier.height(4.dp))
-        Text(s.fallbackType, style = MaterialTheme.typography.labelMedium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            typeOptions.forEach { (type, label) ->
-                FilterChip(
-                    selected = selectedType == type,
-                    onClick = { selectedType = type },
-                    label = { Text(label) },
-                )
-            }
+        // Fallback-Typ: Einfachauswahl als ChoiceRow-Liste — fünf Optionen wären als Segmente
+        // auf E-Ink zu eng; vertikal ist konsistent mit der Bibliotheks-Liste darüber.
+        FieldCaption(s.fallbackType)
+        typeOptions.forEach { (type, label) ->
+            ChoiceRow(
+                label = label,
+                selected = selectedType == type,
+                dense = true,
+                onSelect = { selectedType = type },
+            )
         }
     }
 }

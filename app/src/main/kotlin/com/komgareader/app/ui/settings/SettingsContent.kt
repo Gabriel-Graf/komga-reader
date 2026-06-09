@@ -174,20 +174,17 @@ private fun ConnectionModal(
         dismissLabel = s.cancel,
         confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
-        // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
-        Column {
-            FieldCaption(s.serverSectionKind)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val select: (SourceKind) -> Unit = { kindInput = it }
-                if (kindInput == SourceKind.KOMGA) {
-                    Button(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
-                    EinkOutlinedButton(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
-                } else {
-                    EinkOutlinedButton(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
-                    Button(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
-                }
-            }
-        }
+        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor (App-Standard,
+        // wie alle anderen Auswahlen). Markennamen — kein i18n-Key nötig.
+        SegmentedChoiceRow(
+            label = s.serverSectionKind,
+            options = listOf(
+                SegmentOption(SourceKind.KOMGA.name, "Komga"),
+                SegmentOption(SourceKind.OPDS.name, "OPDS"),
+            ),
+            selectedKey = kindInput.name,
+            onSelect = { kindInput = SourceKind.valueOf(it) },
+        )
 
         // Server-Identität: Name + URL gehören zusammen.
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -626,13 +623,29 @@ fun AboutContent(query: String) {
     val s = LocalStrings.current
     SettingsGroup(s.appName, query) {
         HighlightText(
-            s.aboutDevice, query, MaterialTheme.typography.bodyMedium,
+            s.aboutDevice, query, MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        Row(Modifier.fillMaxWidth()) {
-            Text("${s.versionLabel}: ", style = MaterialTheme.typography.bodyMedium)
-            HighlightText(BuildConfig.VERSION_NAME, query, MaterialTheme.typography.bodyMedium)
-        }
+        AboutRow(s.versionLabel, BuildConfig.VERSION_NAME, query)
+        AboutRow(s.aboutLicense, "AGPL-3.0-or-later", query)
+        AboutRow(s.aboutSourceCode, s.aboutSourceCodeUrl, query)
+    }
+}
+
+/** Label-/Wert-Zeile im „Über"-Abschnitt: Label links (gedämpft), Wert rechts (suchbar). */
+@Composable
+private fun AboutRow(label: String, value: String, query: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        HighlightText(value, query, MaterialTheme.typography.bodyMedium)
     }
 }

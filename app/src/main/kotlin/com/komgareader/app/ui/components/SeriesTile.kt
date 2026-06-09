@@ -25,7 +25,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.ui.icons.AppIcons
@@ -87,17 +86,29 @@ fun SeriesTile(
             )
         }
 
-        Text(
-            series.title,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .background(Color.Black.copy(alpha = 0.7f))
-                .padding(2.dp),
-            color = Color.White,
-            fontSize = 10.sp,
-        )
+        TileTitleBand(series.title, Modifier.align(Alignment.BottomStart))
     }
+}
+
+/** Scrim hinter dem Titelband — dunkel genug, dass weißer Text auf jedem Cover lesbar bleibt. */
+private val TileScrim = Color.Black.copy(alpha = 0.7f)
+
+/**
+ * Geteiltes Titelband am unteren Rand einer Cover-Kachel (Serie **und** Gruppe): dunkler Scrim,
+ * weißer Text, eine Stelle für den Look — kein 2× hartes `Color.Black`/`10.sp` über die Grids
+ * verstreut (Konsistenz + ein künftiges UI-Pack tauscht genau hier).
+ */
+@Composable
+fun TileTitleBand(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        style = MaterialTheme.typography.labelSmall,
+        color = Color.White,
+        modifier = modifier
+            .fillMaxWidth()
+            .background(TileScrim)
+            .padding(horizontal = 6.dp, vertical = 3.dp),
+    )
 }

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{--ink:#000;--hair:#777;--muted:#555;--accent:#445A86;--r:8px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Noto Sans","DejaVu Sans",Helvetica,Arial,sans-serif;background:#d8d8d8;color:#000;padding:32px}
+  .tag{display:inline-block;font-size:12px;font-weight:700;border:1.5px solid #000;border-radius:6px;padding:2px 8px;margin-bottom:12px}
+  h1{font-size:21px;font-weight:800;margin:26px 0 12px}
+  .legend{font-size:13px;color:#222;max-width:1000px;line-height:1.55;margin-bottom:6px}
+  .delta{display:flex;gap:24px;flex-wrap:wrap}
+  .card{width:480px;background:#fff;border:1.5px solid var(--hair);border-radius:12px;padding:16px}
+  .card h3{font-size:14px;font-weight:800;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:5px}
+  .cap{font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 4px}
+  .mark{font-size:12px;color:#a00;font-weight:700;margin-top:8px}
+  .good{font-size:12px;color:#1a6b2e;font-weight:700;margin-top:6px}
+  .row{display:flex;align-items:center;gap:12px;padding:9px 0}
+  .row .lbl{flex:1;font-size:15px}
+  /* stock material look (jetzt) */
+  .mcheck{width:18px;height:18px;border:2px solid #777;border-radius:3px}
+  .mcheck.on{background:#3A5BC7;border-color:#3A5BC7;position:relative}
+  .mcheck.on::after{content:"✓";color:#fff;font-size:13px;position:absolute;top:-3px;left:1px}
+  .mchip{display:inline-block;border:1px solid #999;border-radius:8px;padding:6px 14px;font-size:13px;margin:0 6px 6px 0;background:#eee}
+  .mchip.on{background:#dde1ff;border-color:#3A5BC7}
+  .mbtn{display:inline-block;background:#3A5BC7;color:#fff;border-radius:18px;padding:8px 20px;font-size:14px;border:none}
+  /* eink look (vorschlag) */
+  .check{width:22px;height:22px}
+  .crow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1.5px solid #e2e2e2}
+  .crow:last-child{border-bottom:none}
+  .seg{display:flex;gap:4px;flex-wrap:wrap}
+  .seg div{height:32px;display:flex;align-items:center;padding:0 12px;font-size:12px;border:1.5px solid #000;border-radius:6px}
+  .seg div.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .obtn{display:inline-block;border:1.5px solid var(--accent);color:var(--accent);background:#fff;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:700}
+  .empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px;text-align:center}
+  svg{stroke:#000;fill:none;stroke-width:2.2}
+  .tchip{display:inline-block;border:1.5px solid #000;border-radius:6px;padding:2px 6px;font-size:11px;background:#fff}
+</style>
+</head>
+<body>
+
+<div class="tag">VISUAL COMPANION · Tabs (Stöbern · Bibliotheken · Plugins) — Akzent = Kaleido #445A86</div>
+<p class="legend">Die Cover-Grids selbst sind ok (cover-dominiert, Hairline-Rahmen). Die Verstöße sitzen in <b>Dialogen, Empty-/Error-States und gemischten Linienstärken</b> — hier zieht der Companion gerade.</p>
+
+<h1>① Bibliotheken · „Bibliothek bearbeiten"-Dialog</h1>
+<div class="delta">
+  <div class="card">
+    <h3>JETZT — nackte Material-Controls</h3>
+    <div class="cap">Bibliotheken wählen</div>
+    <div class="row"><div class="mcheck on"></div><div class="lbl">Manga-Regal</div></div>
+    <div class="row"><div class="mcheck"></div><div class="lbl">Comics</div></div>
+    <div class="row"><div class="mcheck"></div><div class="lbl">Romane</div></div>
+    <div class="cap">Fallback-Typ</div>
+    <div><span class="mchip on">Auto</span><span class="mchip">Manga</span><span class="mchip">Comic</span><span class="mchip">Roman</span><span class="mchip">Webtoon</span></div>
+    <div class="mark">↯ Material-Checkbox + FilterChip (Ripple, Material-Indigo, runde Pillen) — bricht den E-Ink-Look. Anti-Pattern „nie nackte Material-Controls".</div>
+  </div>
+  <div class="card">
+    <h3>VORSCHLAG — App-eigene Bausteine</h3>
+    <div class="cap">Bibliotheken wählen</div>
+    <div class="crow"><div class="lbl">Manga-Regal</div><svg class="check" viewBox="0 0 24 24" stroke="#445A86" stroke-width="2.5"><path d="M5 12l5 5L20 6"/></svg></div>
+    <div class="crow"><div class="lbl">Comics</div><span style="width:22px"></span></div>
+    <div class="crow"><div class="lbl">Romane</div><span style="width:22px"></span></div>
+    <div class="cap">Fallback-Typ</div>
+    <div class="seg"><div class="on">Auto</div><div>Manga</div><div>Comic</div><div>Roman</div><div>Webtoon</div></div>
+    <div class="good">✓ ChoiceRow-Häkchen (Akzent) + SegmentedChoiceRow — wie überall sonst, flach, E-Ink-konform.</div>
+  </div>
+</div>
+
+<h1>② Stöbern · Empty- / Error-State</h1>
+<div class="delta">
+  <div class="card">
+    <h3>JETZT — bloßer Text + Material-Button</h3>
+    <div class="empty">
+      <div style="color:#555">Fehler beim Laden</div>
+      <span class="mbtn">Wiederholen</span>
+    </div>
+    <div class="mark">↯ Hartkodierter String „Wiederholen" (kein i18n), nackter Material-Button (gefüllte Pille, Ripple). Snackbars ebenso hartkodiert (LibraryScreen.kt:51-53).</div>
+  </div>
+  <div class="card">
+    <h3>VORSCHLAG — Empty-State-Muster</h3>
+    <div class="empty">
+      <svg width="56" height="56" viewBox="0 0 24 24" stroke="#777"><path d="M4 5h7a2 2 0 012 2v12a2 2 0 00-2-2H4z"/><path d="M20 5h-7a2 2 0 00-2 2v12a2 2 0 012-2h7z"/></svg>
+      <div style="color:#555">Konnte die Bibliothek nicht laden.</div>
+      <span class="obtn">Wiederholen</span>
+    </div>
+    <div class="good">✓ Line-Art-Icon + lokalisierter Text + EinkOutlinedButton. i18n-Keys (DE+EN) für Snackbar + Button.</div>
+  </div>
+</div>
+
+<h1>③ Linienstärken & Raster vereinheitlichen</h1>
+<div class="delta">
+  <div class="card">
+    <h3>JETZT</h3>
+    <div class="row"><div class="lbl">TypeChip-Rahmen</div><span class="tchip" style="border-width:1px">1.0 dp</span></div>
+    <div class="row"><div class="lbl">Library-Grid-Gutter</div><span style="color:#555">4 dp</span></div>
+    <div class="row"><div class="lbl">Groups-Grid-Gutter</div><span style="color:#555">8 dp</span></div>
+    <div class="mark">↯ Gemischte Linienstärken (1.0 vs 1.5 dp) + zwei verschiedene Raster-Gutter zwischen den zwei Cover-Grids.</div>
+  </div>
+  <div class="card">
+    <h3>VORSCHLAG</h3>
+    <div class="row"><div class="lbl">TypeChip-Rahmen</div><span class="tchip">1.5 dp · EinkTokens.hairline</span></div>
+    <div class="row"><div class="lbl">Beide Grids</div><span style="color:#555">EinkTokens.tileGap (8 dp)</span></div>
+    <div class="good">✓ Eine Linienstärke app-weit (hairline). Ein gemeinsamer Tile-Gap-Token für beide Cover-Grids.</div>
+    <div class="good">✓ Tile-Titelband (Series + Group) teilt eine Konstante statt 2× hartem Color.Black/0.7 + 10sp.</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -49,7 +49,13 @@ import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.HighlightText
+import com.komgareader.app.ui.components.PickerModal
+import com.komgareader.app.ui.components.PickerRow
+import com.komgareader.app.ui.components.ScopeHeader
+import com.komgareader.app.ui.components.SegmentOption
+import com.komgareader.app.ui.components.SegmentedChoiceRow
 import com.komgareader.app.ui.components.SettingsGroup
+import com.komgareader.app.ui.components.SettingsGroupIndent
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.SwitchRow
 import com.komgareader.app.ui.icons.AppIcons
@@ -356,53 +362,184 @@ fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
     }
 }
 
+/**
+ * Reader-Einstellungen als **scope-gruppierte Hierarchie**: dominante [ScopeHeader]
+ * gliedern nach Lese-Kontext (Allgemein · Roman-Reader · Webtoon · Comic) statt nach
+ * neun gleichrangigen Flach-Gruppen. Jeder Scope rendert seine Zeilen über die geteilten,
+ * wiederverwendbaren Settings-Bausteine — kein Inline-Sonderwidget.
+ */
 @Composable
 fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+        GeneralScope(viewModel, query)
+        NovelScope(viewModel, query)
+        WebtoonScope(viewModel, query)
+        ComicScope(viewModel, query)
+    }
+}
+
+/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal) und der E-Ink-Refresh-Schalter. */
+@Composable
+private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val displayModeStr by viewModel.displayMode.collectAsState()
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
-    val overlap by viewModel.webtoonOverlapPercent.collectAsState()
-    val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
 
-    // Roman-Typografie: native Settings-Darstellung (CompactStepperRow + ChoiceRow), gleiche
-    // Wertebereiche/Presets/Schriften wie das In-Reader-Panel — beide aus NovelSettings (SSOT).
-    val novelFontSizeEm by viewModel.novelFontSizeEm.collectAsState()
-    val novelLineHeight by viewModel.novelLineHeight.collectAsState()
-    val novelFontWeight by viewModel.novelFontWeight.collectAsState()
-    val novelMarginPreset by viewModel.novelMarginPreset.collectAsState()
-    val novelTextAlign by viewModel.novelTextAlign.collectAsState()
-    val novelHyphenationLang by viewModel.novelHyphenationLang.collectAsState()
-    val novelFontFamily by viewModel.novelFontFamily.collectAsState()
+    // Genau EIN Modal gleichzeitig (E-Ink-Invariante): null = zu.
+    var showDisplayPicker by remember { mutableStateOf(false) }
+    val displayLabel: (DisplayMode) -> String = { dm ->
+        when (dm) {
+            DisplayMode.EINK -> s.displayEink
+            DisplayMode.SMARTPHONE -> s.displaySmartphone
+        }
+    }
 
-    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        NovelTypographySettings(
-            fontSizeEm = novelFontSizeEm,
-            onFontSize = viewModel::setNovelFontSizeEm,
-            lineHeight = novelLineHeight,
-            onLineHeight = viewModel::setNovelLineHeight,
-            fontWeight = novelFontWeight,
-            onFontWeight = viewModel::setNovelFontWeight,
-            marginPreset = novelMarginPreset,
-            onMargin = viewModel::setNovelMarginPreset,
-            textAlign = novelTextAlign,
-            onTextAlign = viewModel::setNovelTextAlign,
-            hyphenationLang = novelHyphenationLang,
-            onHyphenation = viewModel::setNovelHyphenationLang,
-            fontFamily = novelFontFamily,
-            onFontFamily = viewModel::setNovelFontFamily,
-            query = query,
-        )
-        SettingsGroup(s.settingsEinkRefresh, query) {
+    Column {
+        ScopeHeader(s.settingsScopeGeneral)
+        Column(Modifier.padding(start = SettingsGroupIndent)) {
+            // Anzeige-Modus über Wert+Chevron → Picker-Modal (mockup-treu; konsistent mit Schriftart).
+            PickerRow(
+                label = s.settingsDisplayMode,
+                value = displayLabel(displayMode),
+                onClick = { showDisplayPicker = true },
+                query = query,
+            )
             SwitchRow(
-                label = s.deviceManagedRefresh,
+                label = s.settingsEinkRefresh,
                 helper = s.deviceManagedRefreshHelper,
                 checked = deviceManagedRefresh,
                 onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
                 query = query,
             )
         }
-        SettingsGroup(s.settingsWebtoon, query, helper = s.webtoonOverlapHelper) {
+    }
+
+    if (showDisplayPicker) {
+        PickerModal(
+            title = s.settingsDisplayMode,
+            options = DisplayMode.entries,
+            selectedKey = displayMode.name,
+            keyOf = { it.name },
+            labelOf = displayLabel,
+            onSelect = { viewModel.setDisplayMode(it) },
+            onDismiss = { showDisplayPicker = false },
+            closeLabel = s.close,
+        )
+    }
+}
+
+/**
+ * Scope „Roman-Reader": die Roman-Typografie im nativen Settings-Stil. Stepper für Schrift,
+ * Segment-Selektoren für Ränder/Ausrichtung/Silbentrennung, Wert+Picker-Modal für die
+ * (lange) Schriftart-Liste. Gleiche Ranges/Presets/Fonts wie das In-Reader-Panel
+ * ([NovelTypographyControls]) — alle aus [NovelSettings]/[NovelFonts] (SSOT). Das In-Reader-
+ * Panel bleibt unberührt.
+ */
+@Composable
+private fun NovelScope(viewModel: SettingsViewModel, query: String) {
+    val s = LocalStrings.current
+    val fontSizeEm by viewModel.novelFontSizeEm.collectAsState()
+    val lineHeight by viewModel.novelLineHeight.collectAsState()
+    val fontWeight by viewModel.novelFontWeight.collectAsState()
+    val marginPreset by viewModel.novelMarginPreset.collectAsState()
+    val textAlign by viewModel.novelTextAlign.collectAsState()
+    val hyphenationLang by viewModel.novelHyphenationLang.collectAsState()
+    val fontFamily by viewModel.novelFontFamily.collectAsState()
+
+    // Genau EIN Modal gleichzeitig (E-Ink-Invariante).
+    var showFontPicker by remember { mutableStateOf(false) }
+
+    Column {
+        ScopeHeader(s.settingsScopeNovel)
+        Column(Modifier.padding(start = SettingsGroupIndent)) {
+            // Schrift: Größe, Zeilenabstand, Gewicht — identisches Format zum In-Reader-Panel.
+            FieldCaption(s.novelTextHeading)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                CompactStepperRow(
+                    label = s.novelFontSize,
+                    valueText = "${(fontSizeEm * 100).toInt()} %",
+                    onDecrement = { viewModel.setNovelFontSizeEm((fontSizeEm - NovelSettings.FONT_SIZE_STEP).coerceAtLeast(NovelSettings.FONT_SIZE_MIN)) },
+                    onIncrement = { viewModel.setNovelFontSizeEm((fontSizeEm + NovelSettings.FONT_SIZE_STEP).coerceAtMost(NovelSettings.FONT_SIZE_MAX)) },
+                )
+                CompactStepperRow(
+                    label = s.novelLineHeight,
+                    valueText = "${(lineHeight * 100).toInt()} %",
+                    onDecrement = { viewModel.setNovelLineHeight((lineHeight - NovelSettings.LINE_HEIGHT_STEP).coerceAtLeast(NovelSettings.LINE_HEIGHT_MIN)) },
+                    onIncrement = { viewModel.setNovelLineHeight((lineHeight + NovelSettings.LINE_HEIGHT_STEP).coerceAtMost(NovelSettings.LINE_HEIGHT_MAX)) },
+                )
+                CompactStepperRow(
+                    label = s.novelFontWeight,
+                    valueText = "+${(fontWeight - NovelSettings.FONT_WEIGHT_MIN) / NovelSettings.FONT_WEIGHT_STEP}",
+                    onDecrement = { viewModel.setNovelFontWeight((fontWeight - NovelSettings.FONT_WEIGHT_STEP).coerceAtLeast(NovelSettings.FONT_WEIGHT_MIN)) },
+                    onIncrement = { viewModel.setNovelFontWeight((fontWeight + NovelSettings.FONT_WEIGHT_STEP).coerceAtMost(NovelSettings.FONT_WEIGHT_MAX)) },
+                )
+            }
+            // Ränder/Ausrichtung/Silbentrennung als Inline-Segment-Selektoren.
+            SegmentedChoiceRow(
+                label = s.novelMargin,
+                options = listOf(
+                    SegmentOption(NovelSettings.MARGIN_NARROW, s.novelMarginNarrow),
+                    SegmentOption(NovelSettings.MARGIN_NORMAL, s.novelMarginNormal),
+                    SegmentOption(NovelSettings.MARGIN_WIDE, s.novelMarginWide),
+                ),
+                selectedKey = marginPreset,
+                onSelect = { viewModel.setNovelMarginPreset(it) },
+                query = query,
+            )
+            SegmentedChoiceRow(
+                label = s.novelTextAlign,
+                options = listOf(
+                    SegmentOption("LEFT", s.novelAlignLeft),
+                    SegmentOption("JUSTIFY", s.novelAlignJustify),
+                ),
+                selectedKey = textAlign,
+                onSelect = { viewModel.setNovelTextAlign(it) },
+                query = query,
+            )
+            SegmentedChoiceRow(
+                label = s.novelHyphenation,
+                options = listOf(
+                    SegmentOption("", s.novelHyphenationOff),
+                    SegmentOption("de", s.novelHyphenationDe),
+                    SegmentOption("en", s.novelHyphenationEn),
+                ),
+                selectedKey = hyphenationLang,
+                onSelect = { viewModel.setNovelHyphenationLang(it) },
+                query = query,
+            )
+            // Schriftart: lange Liste → Wert+Chevron → Picker-Modal.
+            PickerRow(
+                label = s.novelFontFamily,
+                value = NovelFonts.byFamily(fontFamily).label,
+                onClick = { showFontPicker = true },
+                query = query,
+            )
+        }
+    }
+
+    if (showFontPicker) {
+        PickerModal(
+            title = s.novelFontFamily,
+            options = NovelFonts.ALL,
+            selectedKey = fontFamily,
+            keyOf = { it.family },
+            labelOf = { it.label },
+            onSelect = { viewModel.setNovelFontFamily(it) },
+            onDismiss = { showFontPicker = false },
+            closeLabel = s.close,
+        )
+    }
+}
+
+/** Scope „Webtoon": die Streifen-Überlappung. */
+@Composable
+private fun WebtoonScope(viewModel: SettingsViewModel, query: String) {
+    val s = LocalStrings.current
+    val overlap by viewModel.webtoonOverlapPercent.collectAsState()
+    Column {
+        ScopeHeader(s.settingsScopeWebtoon)
+        Column(Modifier.padding(start = SettingsGroupIndent)) {
             StepperRow(
                 label = s.webtoonOverlap,
                 value = overlap,
@@ -413,18 +550,17 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
                 display = { "$it %" },
             )
         }
-        SettingsGroup(s.settingsDisplayMode, query, helper = s.displayModeHelper) {
-            DisplayMode.entries.forEach { dm ->
-                val label = when (dm) {
-                    DisplayMode.EINK -> s.displayEink
-                    DisplayMode.SMARTPHONE -> s.displaySmartphone
-                }
-                ChoiceRow(label, selected = dm == displayMode, query = query, dense = true) {
-                    viewModel.setDisplayMode(dm.name)
-                }
-            }
-        }
-        SettingsGroup(s.settingsGuidedDebug, query) {
+    }
+}
+
+/** Scope „Comic (Guided)": Panel-Rahmen einblenden. */
+@Composable
+private fun ComicScope(viewModel: SettingsViewModel, query: String) {
+    val s = LocalStrings.current
+    val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
+    Column {
+        ScopeHeader(s.settingsScopeComic)
+        Column(Modifier.padding(start = SettingsGroupIndent)) {
             SwitchRow(
                 label = s.readerPanelOverlay,
                 checked = panelOverlay,
@@ -481,105 +617,6 @@ fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
             ChoiceRow(label, selected = lang.code == languageStr, query = query, dense = true) {
                 viewModel.setLanguage(lang.code)
             }
-        }
-    }
-}
-
-/**
- * Roman-Typografie im nativen Settings-Stil: [CompactStepperRow] für Stepper-Werte,
- * [ChoiceRow] mit Query-Highlight für Auswahl-Optionen, [SettingsGroup] für Gruppierung —
- * genau wie die anderen Gruppen in [ReaderSettingsContent]. Dieselben Ranges/Presets/Fonts
- * wie das In-Reader-Panel ([NovelTypographyControls]) — alle aus [NovelSettings] (SSOT).
- * Persistenz über denselben [SettingsRepository] (via [SettingsViewModel]).
- */
-@Composable
-private fun NovelTypographySettings(
-    fontSizeEm: Float,
-    onFontSize: (Float) -> Unit,
-    lineHeight: Float,
-    onLineHeight: (Float) -> Unit,
-    fontWeight: Int,
-    onFontWeight: (Int) -> Unit,
-    marginPreset: String,
-    onMargin: (String) -> Unit,
-    textAlign: String,
-    onTextAlign: (String) -> Unit,
-    hyphenationLang: String,
-    onHyphenation: (String) -> Unit,
-    fontFamily: String,
-    onFontFamily: (String) -> Unit,
-    query: String,
-) {
-    val s = LocalStrings.current
-
-    // Schrift: Größe, Zeilenabstand, Gewicht als CompactStepperRow (identisches Format zum Panel).
-    SettingsGroup(s.novelTypography, query) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            CompactStepperRow(
-                label = s.novelFontSize,
-                valueText = "${(fontSizeEm * 100).toInt()} %",
-                onDecrement = { onFontSize((fontSizeEm - NovelSettings.FONT_SIZE_STEP).coerceAtLeast(NovelSettings.FONT_SIZE_MIN)) },
-                onIncrement = { onFontSize((fontSizeEm + NovelSettings.FONT_SIZE_STEP).coerceAtMost(NovelSettings.FONT_SIZE_MAX)) },
-            )
-            CompactStepperRow(
-                label = s.novelLineHeight,
-                valueText = "${(lineHeight * 100).toInt()} %",
-                onDecrement = { onLineHeight((lineHeight - NovelSettings.LINE_HEIGHT_STEP).coerceAtLeast(NovelSettings.LINE_HEIGHT_MIN)) },
-                onIncrement = { onLineHeight((lineHeight + NovelSettings.LINE_HEIGHT_STEP).coerceAtMost(NovelSettings.LINE_HEIGHT_MAX)) },
-            )
-            CompactStepperRow(
-                label = s.novelFontWeight,
-                valueText = "+${(fontWeight - NovelSettings.FONT_WEIGHT_MIN) / NovelSettings.FONT_WEIGHT_STEP}",
-                onDecrement = { onFontWeight((fontWeight - NovelSettings.FONT_WEIGHT_STEP).coerceAtLeast(NovelSettings.FONT_WEIGHT_MIN)) },
-                onIncrement = { onFontWeight((fontWeight + NovelSettings.FONT_WEIGHT_STEP).coerceAtMost(NovelSettings.FONT_WEIGHT_MAX)) },
-            )
-        }
-    }
-
-    // Seitenränder: drei Presets als ChoiceRow mit Query-Highlight.
-    SettingsGroup(s.novelMargin, query) {
-        ChoiceRow(s.novelMarginNarrow, selected = marginPreset == NovelSettings.MARGIN_NARROW, query = query, dense = true) {
-            onMargin(NovelSettings.MARGIN_NARROW)
-        }
-        ChoiceRow(s.novelMarginNormal, selected = marginPreset == NovelSettings.MARGIN_NORMAL, query = query, dense = true) {
-            onMargin(NovelSettings.MARGIN_NORMAL)
-        }
-        ChoiceRow(s.novelMarginWide, selected = marginPreset == NovelSettings.MARGIN_WIDE, query = query, dense = true) {
-            onMargin(NovelSettings.MARGIN_WIDE)
-        }
-    }
-
-    // Ausrichtung + Silbentrennung als ChoiceRows.
-    SettingsGroup(s.novelTextAlign, query) {
-        ChoiceRow(s.novelAlignLeft, selected = textAlign == "LEFT", query = query, dense = true) {
-            onTextAlign("LEFT")
-        }
-        ChoiceRow(s.novelAlignJustify, selected = textAlign == "JUSTIFY", query = query, dense = true) {
-            onTextAlign("JUSTIFY")
-        }
-    }
-    SettingsGroup(s.novelHyphenation, query) {
-        ChoiceRow(s.novelHyphenationOff, selected = hyphenationLang.isBlank(), query = query, dense = true) {
-            onHyphenation("")
-        }
-        ChoiceRow(s.novelHyphenationDe, selected = hyphenationLang == "de", query = query, dense = true) {
-            onHyphenation("de")
-        }
-        ChoiceRow(s.novelHyphenationEn, selected = hyphenationLang == "en", query = query, dense = true) {
-            onHyphenation("en")
-        }
-    }
-
-    // Schriftart: alle gebündelten Lese-Schriften aus der zentralen Registry.
-    SettingsGroup(s.novelFontFamily, query) {
-        NovelFonts.ALL.forEach { font ->
-            ChoiceRow(
-                label = font.label,
-                selected = fontFamily == font.family,
-                query = query,
-                dense = true,
-                onSelect = { onFontFamily(font.family) },
-            )
         }
     }
 }

@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.app.ui.theme.LocalDesignTokens
 
 /** Ein Tab der Bottom-Menubar. */
 data class BottomNavItem(
@@ -79,11 +80,10 @@ private fun NavCell(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val tint = if (selected) {
-        MaterialTheme.colorScheme.onSurface
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    // Aktiv-Akzent kommt aus den Skin-Tokens: mono = Schwarz/Weiß (wie bisher), Kaleido/LCD = Akzentfarbe.
+    // Die Mechanik (Balken, kein Material-Indikator, keine Animation) bleibt über alle Klassen gleich.
+    val accent = LocalDesignTokens.current.accent
+    val tint = if (selected) accent else MaterialTheme.colorScheme.onSurfaceVariant
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
@@ -99,7 +99,7 @@ private fun NavCell(
                 .then(
                     if (selected) {
                         Modifier.background(
-                            MaterialTheme.colorScheme.onSurface,
+                            accent,
                             RoundedCornerShape(2.dp),
                         )
                     } else {

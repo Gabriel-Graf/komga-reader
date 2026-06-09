@@ -160,9 +160,18 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 - Style **über Theme-Token** ziehen (`Theme.kt`), nie hartkodierte Farben/Maße — ein Theme-Pack
   ersetzt dann Token, nicht Call-Sites.
 
-> **docs-match-code:** Dies ist **Soll/Richtung**, kein Ist. Es gibt **heute keine** UI-Slot-Naht,
-> kein `ui-api`-Modul, keinen Pack-Lader. Wer hier baut, führt den Ist-Stand in dieser Sektion und in
-> `architecture-seams.md` im selben Commit nach und behauptet keinen Typ als real, den `grep` nicht findet.
+> **docs-match-code (Stand 2026-06-09, Branch `feat/ui-platform-skins`):** Die **Theme-Pack-Naht ist
+> gebaut** — `UiPack` (`app/ui/theme/UiPack.kt`) ist der In-Tree-Vertrag „voller Look einer
+> Geräteklasse" (ColorScheme hell+dunkel · `DesignTokens` · Shapes · Typo); drei Built-ins
+> `MonoEinkPack`/`KaleidoPack`/`LcdPack`, ausgewählt über `packFor(behavior)` bzw. die `UiPackRegistry`,
+> angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware** (LCD volles
+> Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das „Theme zuerst"-Stück.
+> **Noch Soll/Richtung (existiert NICHT):** die **Layout-Slot-Naht** (adressierbare, einzeln
+> ersetzbare Chrome-Regionen — `UiPack` trägt heute **keine** `@Composable`-Slots), ein eigenes
+> **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
+> (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
+> weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet
+> keinen Typ als real, den `grep` nicht findet.
 
 ## docs-match-code
 

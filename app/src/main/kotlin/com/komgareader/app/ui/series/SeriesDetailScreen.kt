@@ -41,7 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import com.komgareader.app.ui.components.StandardTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -108,20 +108,11 @@ fun SeriesDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    val title = when (val c = state) {
-                        is SeriesDetailUiState.Content -> c.seriesTitle
-                        else -> "Serie"
-                    }
-                    Text(title)
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(AppIcons.Back, contentDescription = "Zurück")
-                    }
-                },
-            )
+            val title = when (val c = state) {
+                is SeriesDetailUiState.Content -> c.seriesTitle
+                else -> "Serie"
+            }
+            StandardTopAppBar(title = title, onBack = onBack)
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
@@ -237,6 +228,9 @@ private fun SeriesDetailContent(
         ?: currentBook?.summary?.takeIf { it.isNotBlank() }
     // Wenn ein Kapitel per Info-Icon gewählt ist, ersetzt seine Beschreibung die Hero-Karte.
     var infoBook by remember(books) { mutableStateOf<Book?>(null) }
+    // „Selektiert" = das Kapitel, das gerade im Hero steht: das per Info gewählte, sonst das
+    // aktuelle (Continue-)Kapitel. Daran hängt der Auswahl-Rahmen der Kachel.
+    val heroBook = infoBook ?: currentBook
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
@@ -315,7 +309,7 @@ private fun SeriesDetailContent(
                 ChapterTile(
                     book = book,
                     serverConfig = serverConfig,
-                    isSelected = book.remoteId == currentBook?.remoteId,
+                    isSelected = book.remoteId == heroBook?.remoteId,
                     showBookmark = book.remoteId == bookmarkBookId,
                     isLocal = book.remoteId in localIds,
                     isDownloading = book.remoteId in downloadingIds,
@@ -338,7 +332,7 @@ private fun SeriesDetailContent(
                 Column {
                     ChapterRow(
                         book = book,
-                        isSelected = book.remoteId == currentBook?.remoteId,
+                        isSelected = book.remoteId == heroBook?.remoteId,
                         showBookmark = book.remoteId == bookmarkBookId,
                         isLocal = book.remoteId in localIds,
                         isDownloading = book.remoteId in downloadingIds,
@@ -647,7 +641,6 @@ private fun ChaptersSectionHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -877,10 +870,6 @@ private fun ChapterRow(
                     },
                 )
             }
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.surfaceVariant
-                else MaterialTheme.colorScheme.surface,
-            )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -888,6 +877,7 @@ private fun ChapterRow(
             Text(
                 book.title,
                 style = MaterialTheme.typography.bodyMedium,
+                // Auswahl im Listen-Modus weiter über fettes Label (kein grauer Hintergrund mehr).
                 fontWeight = if (isSelected) FontWeight.Bold else null,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -996,10 +986,6 @@ private fun ChapterTile(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.surfaceVariant
-                else MaterialTheme.colorScheme.surface,
-            )
             .onGloballyPositioned { tilePos = it.positionInWindow() }
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -1013,7 +999,21 @@ private fun ChapterTile(
                     },
                 )
             }
-            .padding(4.dp),
+            .padding(4.dp)
+            // Auswahl ohne graue Füllung: dicker schwarzer Rahmen um die ganze Kachel
+            // (Cover + Titel darunter), innerhalb der Kachel-Marge.
+            .then(
+                if (isSelected) {
+                    Modifier.border(
+                        2.5.dp,
+                        MaterialTheme.colorScheme.outline,
+                        RoundedCornerShape(EinkTokens.tileRadius),
+                    )
+                } else {
+                    Modifier
+                },
+            )
+            .padding(if (isSelected) 6.dp else 0.dp),
     ) {
         Box(
             Modifier

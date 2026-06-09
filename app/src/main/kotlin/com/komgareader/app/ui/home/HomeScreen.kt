@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -30,7 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +41,7 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.localizedContentType
 import com.komgareader.app.ui.components.BottomNavItem
 import com.komgareader.app.ui.components.EinkBottomBar
+import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.StatusCluster
 import com.komgareader.app.ui.components.TypeFilterMenu
@@ -182,7 +186,34 @@ fun HomeScreen(
                 },
             )
         },
-        bottomBar = {
+    ) { inner ->
+        // Die Menubar liegt als Overlay ÜBER dem Inhalt (nicht im Scaffold-bottomBar-Slot, der den
+        // Inhalt um die volle Bar-Höhe einrückt). So füllt der Inhalt bis zur Unterkante und scheint
+        // hinter den transparenten Rändern der schwebenden Bar durch. Die gemessene Bar-Höhe wird als
+        // unterer Freiraum bereitgestellt, damit Scroller ihre letzten Items über der Bar frei halten.
+        var barHeightPx by remember { mutableIntStateOf(0) }
+        val barInset = with(LocalDensity.current) { barHeightPx.toDp() }
+        Box(Modifier.fillMaxSize().padding(inner)) {
+            CompositionLocalProvider(LocalContentBottomInset provides barInset) {
+                Box(Modifier.fillMaxSize()) {
+                    when (selected) {
+                        TAB_LIBRARY -> LibraryScreen(
+                            query = submitted,
+                            typeFilter = typeFilter.value,
+                            downloadedOnly = downloadedOnly,
+                            onOpenSeries = onOpenSeries,
+                            viewModel = libraryVm,
+                        )
+                        TAB_GROUPS -> GroupsScreen(
+                            onOpenGroup = onOpenGroup,
+                            showCreateDialog = showCreateGroup,
+                            onDismissCreate = { showCreateGroup = false },
+                        )
+                        TAB_PLUGINS -> PluginsScreen()
+                        else -> SettingsScreen(query = if (onSettingsTab) query else submitted)
+                    }
+                }
+            }
             EinkBottomBar(
                 items = items,
                 selectedIndex = selected,
@@ -195,26 +226,10 @@ fun HomeScreen(
                     filterMenuOpen = false
                     showCreateGroup = false
                 },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .onSizeChanged { barHeightPx = it.height },
             )
-        },
-    ) { inner ->
-        Box(Modifier.fillMaxSize().padding(inner)) {
-            when (selected) {
-                TAB_LIBRARY -> LibraryScreen(
-                    query = submitted,
-                    typeFilter = typeFilter.value,
-                    downloadedOnly = downloadedOnly,
-                    onOpenSeries = onOpenSeries,
-                    viewModel = libraryVm,
-                )
-                TAB_GROUPS -> GroupsScreen(
-                    onOpenGroup = onOpenGroup,
-                    showCreateDialog = showCreateGroup,
-                    onDismissCreate = { showCreateGroup = false },
-                )
-                TAB_PLUGINS -> PluginsScreen()
-                else -> SettingsScreen(query = if (onSettingsTab) query else submitted)
-            }
         }
     }
 }

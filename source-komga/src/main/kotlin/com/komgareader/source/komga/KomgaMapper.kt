@@ -6,8 +6,11 @@ import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.ReadingDirection
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.source.PageRef
+import com.komgareader.domain.source.RemoteCollection
 import com.komgareader.source.komga.dto.BookDto
+import com.komgareader.source.komga.dto.CollectionDto
 import com.komgareader.source.komga.dto.PageDto
+import com.komgareader.source.komga.dto.ReadListDto
 import com.komgareader.source.komga.dto.SeriesDto
 
 /** Lokale DB-ID, die erst beim Persistieren vergeben wird. */
@@ -96,4 +99,10 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
             updatedAt = updatedAt,
         )
     }
+
+    fun toRemoteCollection(dto: CollectionDto) =
+        RemoteCollection(dto.id, dto.name, dto.seriesIds)
+
+    fun toRemoteCollection(dto: ReadListDto) =
+        RemoteCollection(dto.id, dto.name, dto.bookIds)
 }

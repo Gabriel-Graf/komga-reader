@@ -2,6 +2,7 @@ package com.komgareader.app.data
 
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.source.BrowsableSource
+import com.komgareader.domain.source.CollectionSyncSource
 import com.komgareader.domain.source.SourceManager
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -38,6 +39,12 @@ open class ActiveSource @Inject constructor(
 
     /** Übergangs-API: die erste aktive Quelle (oder null). Neue Consumer nutzen [all]/[get]. */
     open suspend fun current(): BrowsableSource? = all().firstOrNull()
+
+    /** Quelle als Schreib-Capability, oder null wenn sie keine Collections schreiben kann. */
+    open suspend fun collectionSource(sourceId: Long): CollectionSyncSource? {
+        syncAll()
+        return sources.get(sourceId) as? CollectionSyncSource
+    }
 
     private suspend fun syncAll(): Set<Long> = registration.sync(servers.configs.first())
 }

@@ -10,8 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class,
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
         NovelProgressEntity::class,
+        CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,6 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun readProgressDao(): ReadProgressDao
     abstract fun colorProfileDao(): ColorProfileDao
     abstract fun novelProgressDao(): NovelProgressDao
+    abstract fun collectionDao(): CollectionDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -258,6 +260,43 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
 val MIGRATION_12_13 = object : Migration(12, 13) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `server` ADD COLUMN `kind` TEXT NOT NULL DEFAULT 'KOMGA'")
+    }
+}
+
+/** v13 → v14: Collections (Nutzer-kuratierte Werk-Listen) + Mitglieder + Sync-Links. */
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `collections` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `kind` TEXT NOT NULL
+            )""",
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `collection_members` (
+                `rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `collectionId` INTEGER NOT NULL,
+                `sourceId` INTEGER NOT NULL,
+                `remoteId` TEXT NOT NULL,
+                `title` TEXT NOT NULL,
+                `position` INTEGER NOT NULL
+            )""",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_collection_members_collectionId` ON `collection_members` (`collectionId`)",
+        )
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `collection_sync_links` (
+                `collectionId` INTEGER NOT NULL,
+                `sourceId` INTEGER NOT NULL,
+                `remoteCollectionId` TEXT,
+                `status` TEXT NOT NULL,
+                `dirty` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                PRIMARY KEY(`collectionId`, `sourceId`)
+            )""",
+        )
     }
 }
 

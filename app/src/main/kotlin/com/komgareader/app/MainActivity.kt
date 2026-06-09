@@ -26,6 +26,7 @@ import com.komgareader.app.ui.components.LocalColorProfile
 import com.komgareader.app.ui.components.LocalDisplayBehavior
 import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.app.ui.components.LocalImageFilter
+import com.komgareader.app.ui.components.LocalOnHome
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
@@ -117,6 +118,15 @@ class MainActivity : ComponentActivity() {
             ) {
                 KomgaReaderTheme(themeMode = themeMode) {
                     val nav = rememberNavController()
+                    // „Zur Bibliothek" app-weit verfügbar (Home-Button im Detail-Header u. a.):
+                    // räumt bis zur Graph-Wurzel ab, sodass Home wieder oben liegt statt sich zu stapeln.
+                    val onHome: () -> Unit = {
+                        nav.navigate("home") {
+                            popUpTo(nav.graph.startDestinationId) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                    CompositionLocalProvider(LocalOnHome provides onHome) {
                     NavHost(navController = nav, startDestination = "home") {
                         composable("home") {
                             HomeScreen(
@@ -228,6 +238,7 @@ class MainActivity : ComponentActivity() {
                         composable("settings") {
                             SettingsRoute(onBack = { nav.popBackStack() })
                         }
+                    }
                     }
                 }
             }

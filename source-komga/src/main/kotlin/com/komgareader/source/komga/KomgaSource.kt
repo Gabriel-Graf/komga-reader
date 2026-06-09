@@ -2,17 +2,24 @@ package com.komgareader.source.komga
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.komgareader.domain.model.Book
+import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.BrowsableSource
+import com.komgareader.domain.source.CollectionSyncSource
 import com.komgareader.domain.source.ContainerSource
 import com.komgareader.domain.source.PageRef
 import com.komgareader.domain.source.PagedResult
+import com.komgareader.domain.source.RemoteCollection
 import com.komgareader.domain.source.SourceContainer
 import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.source.SourceId
 import com.komgareader.domain.source.SyncingSource
+import com.komgareader.source.komga.dto.CollectionCreationDto
+import com.komgareader.source.komga.dto.CollectionUpdateDto
+import com.komgareader.source.komga.dto.ReadListCreationDto
+import com.komgareader.source.komga.dto.ReadListUpdateDto
 import com.komgareader.source.komga.dto.ReadProgressUpdateDto
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -31,7 +38,7 @@ class KomgaSource internal constructor(
     override val name: String,
     private val api: KomgaApi,
     private val mapper: KomgaMapper,
-) : BrowsableSource, SyncingSource, ContainerSource {
+) : BrowsableSource, SyncingSource, ContainerSource, CollectionSyncSource {
 
     override val kind: SourceKind = SourceKind.KOMGA
 
@@ -117,12 +124,44 @@ class KomgaSource internal constructor(
             api.deleteProgress(bookRemoteId)
         }
     }
+
+    override suspend fun canWriteCollections(): Boolean =
+        runCatching { api.getMe().roles.contains("ADMIN") }.getOrDefault(false)
+
+    override suspend fun listCollections(kind: CollectionKind): List<RemoteCollection> = when (kind) {
+        CollectionKind.SERIES -> api.listCollections().content.map(mapper::toRemoteCollection)
+        CollectionKind.BOOK -> api.listReadLists().content.map(mapper::toRemoteCollection)
+    }
+
+    override suspend fun createCollection(kind: CollectionKind, name: String, memberRemoteIds: List<String>): RemoteCollection =
+        when (kind) {
+            CollectionKind.SERIES ->
+                mapper.toRemoteCollection(api.createCollection(CollectionCreationDto(name = name, seriesIds = memberRemoteIds)))
+            CollectionKind.BOOK ->
+                mapper.toRemoteCollection(api.createReadList(ReadListCreationDto(name = name, bookIds = memberRemoteIds)))
+        }
+
+    override suspend fun updateCollection(kind: CollectionKind, remoteId: String, name: String, memberRemoteIds: List<String>) {
+        when (kind) {
+            CollectionKind.SERIES -> api.updateCollection(remoteId, CollectionUpdateDto(name = name, seriesIds = memberRemoteIds))
+            CollectionKind.BOOK -> api.updateReadList(remoteId, ReadListUpdateDto(name = name, bookIds = memberRemoteIds))
+        }
+    }
+
+    override suspend fun deleteCollection(kind: CollectionKind, remoteId: String) {
+        when (kind) {
+            CollectionKind.SERIES -> api.deleteCollection(remoteId)
+            CollectionKind.BOOK -> api.deleteReadList(remoteId)
+        }
+    }
 }
 
 /** Baut eine [KomgaSource] aus Verbindungsdaten zusammen. */
 object KomgaSourceFactory {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // encodeDefaults: Default-Werte (z. B. `ordered = true`) MÜSSEN im Request-Body landen —
+    // Komga verlangt `ordered` beim Anlegen von Collections/Read-Lists (sonst 400).
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     /**
      * Erstellt eine [KomgaSource].

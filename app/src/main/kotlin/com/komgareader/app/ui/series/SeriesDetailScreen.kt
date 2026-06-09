@@ -41,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import com.komgareader.app.ui.components.LocalOnHome
 import com.komgareader.app.ui.slots.LocalResolvedSlots
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +65,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.collections.AddToCollectionSheet
+import com.komgareader.domain.model.CollectionKind
+import com.komgareader.domain.model.CollectionMember
 import com.komgareader.app.ui.components.AnchoredMenuPopup
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.FilteredAsyncImage
@@ -95,6 +99,7 @@ fun SeriesDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var typeMenuOpen by remember { mutableStateOf(false) }
     var burgerAnchor by remember { mutableStateOf(IntOffset.Zero) }
+    var showAddToCollection by remember { mutableStateOf(false) }
 
     // Fehler-Events als Snackbar anzeigen
     LaunchedEffect(Unit) {
@@ -112,7 +117,20 @@ fun SeriesDetailScreen(
                 is SeriesDetailUiState.Content -> c.seriesTitle
                 else -> "Serie"
             }
-            LocalResolvedSlots.current.header(title, onBack) {}
+            // Header über die Slot-Naht (austauschbar durch UI-Packs); Actions im Trailing-Lambda
+            // (RowScope): Collections-Bookmark + „Zur Bibliothek" (springt über LocalOnHome bis zur
+            // Graph-Wurzel, von jedem Detail-Screen aus). Zurück-Navigation trägt onBack.
+            LocalResolvedSlots.current.header(title, onBack) {
+                if (state is SeriesDetailUiState.Content) {
+                    IconButton(onClick = { showAddToCollection = true }) {
+                        Icon(AppIcons.Bookmark, contentDescription = s.addToCollection)
+                    }
+                }
+                val onHome = LocalOnHome.current
+                IconButton(onClick = onHome) {
+                    Icon(AppIcons.Home, contentDescription = s.readerHome)
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
@@ -182,6 +200,16 @@ fun SeriesDetailScreen(
             onDismiss = { typeMenuOpen = false },
         )
     }
+
+    // Serie zu einer (Serien-)Collection hinzufügen — sourceId der Serie aus ihren Büchern.
+    val seriesSourceId = content?.books?.firstOrNull()?.sourceId
+    if (showAddToCollection && content != null && seriesSourceId != null) {
+        AddToCollectionSheet(
+            kind = CollectionKind.SERIES,
+            member = CollectionMember(seriesSourceId, content.seriesRemoteId, content.seriesTitle),
+            onDismiss = { showAddToCollection = false },
+        )
+    }
 }
 
 @Composable
@@ -228,6 +256,8 @@ private fun SeriesDetailContent(
         ?: currentBook?.summary?.takeIf { it.isNotBlank() }
     // Wenn ein Kapitel per Info-Icon gewählt ist, ersetzt seine Beschreibung die Hero-Karte.
     var infoBook by remember(books) { mutableStateOf<Book?>(null) }
+    // Kapitel, das per Long-Press „Zu Collection hinzufügen" gewählt wurde (öffnet das Sheet, kind=BOOK).
+    var bookForCollection by remember(books) { mutableStateOf<Book?>(null) }
     // „Selektiert" = das Kapitel, das gerade im Hero steht: das per Info gewählte, sonst das
     // aktuelle (Continue-)Kapitel. Daran hängt der Auswahl-Rahmen der Kachel.
     val heroBook = infoBook ?: currentBook
@@ -324,6 +354,7 @@ private fun SeriesDetailContent(
                     onDownload = { onDownload(book) },
                     onRemoveDownload = { onRemoveDownload(book.remoteId) },
                     onSetRead = { read -> onSetRead(book, read) },
+                    onAddToCollection = { bookForCollection = book },
                     onShowInfo = { infoBook = book },
                 )
             }
@@ -346,12 +377,22 @@ private fun SeriesDetailContent(
                         onDownload = { onDownload(book) },
                         onRemoveDownload = { onRemoveDownload(book.remoteId) },
                         onSetRead = { read -> onSetRead(book, read) },
+                        onAddToCollection = { bookForCollection = book },
                         onShowInfo = { infoBook = book },
                     )
                     HorizontalDivider(thickness = EinkTokens.hairline)
                 }
             }
         }
+    }
+
+    // Einzelnes Kapitel zu einer Buch-Collection (Read-List) hinzufügen — über Long-Press.
+    bookForCollection?.let { book ->
+        AddToCollectionSheet(
+            kind = CollectionKind.BOOK,
+            member = CollectionMember(book.sourceId, book.remoteId, book.title),
+            onDismiss = { bookForCollection = null },
+        )
     }
 }
 
@@ -849,6 +890,7 @@ private fun ChapterRow(
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
+    onAddToCollection: () -> Unit,
     onShowInfo: () -> Unit,
 ) {
     val s = LocalStrings.current
@@ -951,6 +993,7 @@ private fun ChapterRow(
             items = listOf(
                 s.markRead to { onSetRead(true) },
                 s.markUnread to { onSetRead(false) },
+                s.addToCollection to onAddToCollection,
             ),
         )
     }
@@ -974,6 +1017,7 @@ private fun ChapterTile(
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
+    onAddToCollection: () -> Unit,
     onShowInfo: () -> Unit,
 ) {
     val s = LocalStrings.current
@@ -1125,6 +1169,7 @@ private fun ChapterTile(
             items = listOf(
                 s.markRead to { onSetRead(true) },
                 s.markUnread to { onSetRead(false) },
+                s.addToCollection to onAddToCollection,
             ),
         )
     }

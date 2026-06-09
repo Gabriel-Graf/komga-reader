@@ -126,6 +126,22 @@ interface Strings {
     val filterTypePlaceholder: String
     val filterDownloaded: String
     val filterDownloadedEmpty: String
+    // Collections
+    val collections: String
+    val collectionsEmpty: String
+    val newCollection: String
+    val collectionName: String
+    val collectionKindSeries: String
+    val collectionKindBook: String
+    val addToCollection: String
+    val removeFromCollection: String
+    val collectionSyncNow: String
+    val collectionLocalOnly: String
+    val collectionSyncInfoTitle: String
+    val collectionSyncUnsupported: String
+    val collectionSyncForbidden: String
+    val deleteCollection: String
+    val deleteCollectionServerToo: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -360,6 +376,22 @@ object StringsDe : Strings {
         "Keine heruntergeladenen Werke.\n\n" +
             "Lade ein Werk herunter (langes Tippen auf ein Cover oder in den Serien-Details " +
             "über „Alle herunterladen“), dann erscheint es hier — auch offline."
+    // Collections
+    override val collections = "Collections"
+    override val collectionsEmpty = "Noch keine Collections. Sammle Werke in einer eigenen Liste."
+    override val newCollection = "Neue Collection"
+    override val collectionName = "Name"
+    override val collectionKindSeries = "Serien"
+    override val collectionKindBook = "Bücher"
+    override val addToCollection = "Zu Collection hinzufügen"
+    override val removeFromCollection = "Aus Collection entfernen"
+    override val collectionSyncNow = "Jetzt synchronisieren"
+    override val collectionLocalOnly = "Nur lokal"
+    override val collectionSyncInfoTitle = "Sync-Status"
+    override val collectionSyncUnsupported = "Die hinterlegte Quelle unterstützt keinen Sync — diese Werke bleiben nur lokal, kein Abgleich zwischen Geräten."
+    override val collectionSyncForbidden = "Dein Konto darf am Server keine Collections anlegen (nur Admins) — diese Werke bleiben nur lokal."
+    override val deleteCollection = "Collection löschen"
+    override val deleteCollectionServerToo = "Auch auf dem Server löschen"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -585,6 +617,22 @@ object StringsEn : Strings {
         "No downloaded works.\n\n" +
             "Download a work (long-press a cover or use \"Download all\" in the series " +
             "details), then it shows up here — even offline."
+    // Collections
+    override val collections = "Collections"
+    override val collectionsEmpty = "No collections yet. Gather works into your own list."
+    override val newCollection = "New collection"
+    override val collectionName = "Name"
+    override val collectionKindSeries = "Series"
+    override val collectionKindBook = "Books"
+    override val addToCollection = "Add to collection"
+    override val removeFromCollection = "Remove from collection"
+    override val collectionSyncNow = "Sync now"
+    override val collectionLocalOnly = "Local only"
+    override val collectionSyncInfoTitle = "Sync status"
+    override val collectionSyncUnsupported = "The configured source does not support syncing — these works stay local only, no cross-device sync."
+    override val collectionSyncForbidden = "Your account cannot create collections on the server (admins only) — these works stay local only."
+    override val deleteCollection = "Delete collection"
+    override val deleteCollectionServerToo = "Also delete on server"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

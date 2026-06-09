@@ -1,9 +1,16 @@
 package com.komgareader.source.komga
 
 import com.komgareader.source.komga.dto.BookDto
+import com.komgareader.source.komga.dto.CollectionCreationDto
+import com.komgareader.source.komga.dto.CollectionDto
+import com.komgareader.source.komga.dto.CollectionUpdateDto
 import com.komgareader.source.komga.dto.KomgaPage
+import com.komgareader.source.komga.dto.KomgaUserDto
 import com.komgareader.source.komga.dto.LibraryDto
 import com.komgareader.source.komga.dto.PageDto
+import com.komgareader.source.komga.dto.ReadListCreationDto
+import com.komgareader.source.komga.dto.ReadListDto
+import com.komgareader.source.komga.dto.ReadListUpdateDto
 import com.komgareader.source.komga.dto.ReadProgressUpdateDto
 import com.komgareader.source.komga.dto.SeriesDto
 import okhttp3.ResponseBody
@@ -11,6 +18,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.Streaming
@@ -71,4 +79,36 @@ interface KomgaApi {
 
     @DELETE("books/{id}/read-progress")
     suspend fun deleteProgress(@Path("id") bookId: String)
+
+    // Absoluter Pfad: users/me liegt in Komga unter v2 (nicht v1, baseUrl endet auf /api/v1/).
+    @GET("/api/v2/users/me")
+    suspend fun getMe(): KomgaUserDto
+
+    @GET("collections")
+    suspend fun listCollections(
+        @Query("unpaged") unpaged: Boolean = true,
+    ): KomgaPage<CollectionDto>
+
+    @POST("collections")
+    suspend fun createCollection(@Body body: CollectionCreationDto): CollectionDto
+
+    @PATCH("collections/{id}")
+    suspend fun updateCollection(@Path("id") id: String, @Body body: CollectionUpdateDto)
+
+    @DELETE("collections/{id}")
+    suspend fun deleteCollection(@Path("id") id: String)
+
+    @GET("readlists")
+    suspend fun listReadLists(
+        @Query("unpaged") unpaged: Boolean = true,
+    ): KomgaPage<ReadListDto>
+
+    @POST("readlists")
+    suspend fun createReadList(@Body body: ReadListCreationDto): ReadListDto
+
+    @PATCH("readlists/{id}")
+    suspend fun updateReadList(@Path("id") id: String, @Body body: ReadListUpdateDto)
+
+    @DELETE("readlists/{id}")
+    suspend fun deleteReadList(@Path("id") id: String)
 }

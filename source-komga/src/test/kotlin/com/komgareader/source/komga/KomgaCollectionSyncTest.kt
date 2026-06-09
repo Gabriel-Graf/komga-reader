@@ -44,6 +44,8 @@ class KomgaCollectionSyncTest {
         assertTrue(body.contains("\"seriesIds\""), "Body enthält kein seriesIds: $body")
         assertTrue(body.contains("\"a\""), "Body enthält nicht a: $body")
         assertTrue(body.contains("\"b\""), "Body enthält nicht b: $body")
+        // Komga verlangt `ordered` (Default true) — Json muss encodeDefaults setzen, sonst 400.
+        assertTrue(body.contains("\"ordered\":true"), "Body enthält kein ordered: $body")
 
         assertEquals("col1", result.remoteId)
         assertEquals("X", result.name)

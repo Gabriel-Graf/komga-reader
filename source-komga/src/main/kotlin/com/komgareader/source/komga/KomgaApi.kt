@@ -80,7 +80,8 @@ interface KomgaApi {
     @DELETE("books/{id}/read-progress")
     suspend fun deleteProgress(@Path("id") bookId: String)
 
-    @GET("users/me")
+    // Absoluter Pfad: users/me liegt in Komga unter v2 (nicht v1, baseUrl endet auf /api/v1/).
+    @GET("/api/v2/users/me")
     suspend fun getMe(): KomgaUserDto
 
     @GET("collections")

@@ -159,7 +159,9 @@ class KomgaSource internal constructor(
 /** Baut eine [KomgaSource] aus Verbindungsdaten zusammen. */
 object KomgaSourceFactory {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // encodeDefaults: Default-Werte (z. B. `ordered = true`) MÜSSEN im Request-Body landen —
+    // Komga verlangt `ordered` beim Anlegen von Collections/Read-Lists (sonst 400).
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     /**
      * Erstellt eine [KomgaSource].

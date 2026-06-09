@@ -31,6 +31,9 @@ interface Strings {
     val connectedServers: String
     val addServer: String
     val removeServer: String
+    val serverSectionKind: String
+    val serverSectionServer: String
+    val serverSectionAuth: String
     // Detail-Screen
     val chapters: String
     val chapterViewSwitchToGrid: String
@@ -236,6 +239,9 @@ object StringsDe : Strings {
     override val notConnected = "Nicht verbunden"
     override val connectedServers = "Verbundene Server"
     override val addServer = "Server hinzufügen"
+    override val serverSectionKind = "Quellenart"
+    override val serverSectionServer = "Server"
+    override val serverSectionAuth = "Anmeldung"
     override val removeServer = "Entfernen"
     // Detail-Screen
     override val chapters = "Kapitel"
@@ -444,6 +450,9 @@ object StringsEn : Strings {
     override val connectedServers = "Connected servers"
     override val addServer = "Add server"
     override val removeServer = "Remove"
+    override val serverSectionKind = "Source type"
+    override val serverSectionServer = "Server"
+    override val serverSectionAuth = "Sign-in"
     // Detail-Screen
     override val chapters = "Chapters"
     override val chapterViewSwitchToGrid = "Grid view"

@@ -55,7 +55,7 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
-import com.komgareader.app.ui.components.SectionHeader
+import com.komgareader.app.ui.components.SettingsGroup
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.LocalDesignTokens
@@ -159,8 +159,7 @@ fun ColorFilterSettingsContent(
     // Profil-Selektor + Editor — kann lang werden, deshalb der scrollbare Teil.
     val controls: @Composable () -> Unit = {
         // Profil-Selektor (zwischen Vorschau und Editor): aufklappbares Dropdown + Anlegen-Button rechts.
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            SectionHeader(s.colorFilterProfiles)
+        SettingsGroup(s.colorFilterProfiles, query) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -250,35 +249,41 @@ fun ColorFilterSettingsContent(
         // Editor (Adjust) — erscheint nur beim Anlegen oder über das Zahnrad. Eng gestellt.
         edit?.takeIf { !it.builtIn }?.let { e ->
             val isNewDraft = e.baseProfileId == 0L
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SectionHeader(s.colorFilterAdjust)
-                CompactStepperRow(s.colorFilterSaturation, format(e.saturation),
-                    { viewModel.updateSaturation(-STEP) }, { viewModel.updateSaturation(STEP) })
-                CompactStepperRow(s.colorFilterContrast, format(e.contrast),
-                    { viewModel.updateContrast(-STEP) }, { viewModel.updateContrast(STEP) })
-                CompactStepperRow(s.colorFilterBrightness, format(e.brightness),
-                    { viewModel.updateBrightness(-STEP) }, { viewModel.updateBrightness(STEP) })
-                SectionHeader(s.colorFilterAdvanced)
-                CompactStepperRow(s.colorFilterBlackPoint, format(e.blackPoint),
-                    { viewModel.updateBlackPoint(-STEP) }, { viewModel.updateBlackPoint(STEP) })
-                CompactStepperRow(s.colorFilterWhitePoint, format(e.whitePoint),
-                    { viewModel.updateWhitePoint(-STEP) }, { viewModel.updateWhitePoint(STEP) })
-                CompactStepperRow(s.colorFilterGamma, format(e.gamma),
-                    { viewModel.updateGamma(-STEP) }, { viewModel.updateGamma(STEP) })
-                CompactStepperRow(s.colorFilterSharpen, format(e.sharpenAmount),
-                    { viewModel.updateSharpen(-0.1f) }, { viewModel.updateSharpen(0.1f) })
-                CompactStepperRow(s.colorFilterSharpenRadius, e.sharpenRadius.toString(),
-                    { viewModel.updateSharpenRadius(-1) }, { viewModel.updateSharpenRadius(1) })
-                DitherSelectorRow(
-                    selected = e.ditherMode,
-                    labels = Triple(s.colorFilterDitherNone, s.colorFilterDitherFloyd, s.colorFilterDitherOrdered),
-                    label = s.colorFilterDither,
-                    onInfo = { showDitherInfo = true },
-                    onSelect = { viewModel.setDitherMode(it) },
-                )
-                if (e.ditherMode != DitherMode.NONE) {
-                    CompactStepperRow(s.colorFilterDitherLevels, e.ditherLevels.toString(),
-                        { viewModel.updateDitherLevels(-2) }, { viewModel.updateDitherLevels(2) })
+            Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+                SettingsGroup(s.colorFilterAdjust, query) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        CompactStepperRow(s.colorFilterSaturation, format(e.saturation),
+                            { viewModel.updateSaturation(-STEP) }, { viewModel.updateSaturation(STEP) })
+                        CompactStepperRow(s.colorFilterContrast, format(e.contrast),
+                            { viewModel.updateContrast(-STEP) }, { viewModel.updateContrast(STEP) })
+                        CompactStepperRow(s.colorFilterBrightness, format(e.brightness),
+                            { viewModel.updateBrightness(-STEP) }, { viewModel.updateBrightness(STEP) })
+                    }
+                }
+                SettingsGroup(s.colorFilterAdvanced, query) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        CompactStepperRow(s.colorFilterBlackPoint, format(e.blackPoint),
+                            { viewModel.updateBlackPoint(-STEP) }, { viewModel.updateBlackPoint(STEP) })
+                        CompactStepperRow(s.colorFilterWhitePoint, format(e.whitePoint),
+                            { viewModel.updateWhitePoint(-STEP) }, { viewModel.updateWhitePoint(STEP) })
+                        CompactStepperRow(s.colorFilterGamma, format(e.gamma),
+                            { viewModel.updateGamma(-STEP) }, { viewModel.updateGamma(STEP) })
+                        CompactStepperRow(s.colorFilterSharpen, format(e.sharpenAmount),
+                            { viewModel.updateSharpen(-0.1f) }, { viewModel.updateSharpen(0.1f) })
+                        CompactStepperRow(s.colorFilterSharpenRadius, e.sharpenRadius.toString(),
+                            { viewModel.updateSharpenRadius(-1) }, { viewModel.updateSharpenRadius(1) })
+                        DitherSelectorRow(
+                            selected = e.ditherMode,
+                            labels = Triple(s.colorFilterDitherNone, s.colorFilterDitherFloyd, s.colorFilterDitherOrdered),
+                            label = s.colorFilterDither,
+                            onInfo = { showDitherInfo = true },
+                            onSelect = { viewModel.setDitherMode(it) },
+                        )
+                        if (e.ditherMode != DitherMode.NONE) {
+                            CompactStepperRow(s.colorFilterDitherLevels, e.ditherLevels.toString(),
+                                { viewModel.updateDitherLevels(-2) }, { viewModel.updateDitherLevels(2) })
+                        }
+                    }
                 }
                 Text(
                     s.colorFilterReaderOnlyHint,

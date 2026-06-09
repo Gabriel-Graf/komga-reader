@@ -64,9 +64,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.collections.AddToCollectionSheet
+import com.komgareader.domain.model.CollectionKind
+import com.komgareader.domain.model.CollectionMember
 import com.komgareader.app.ui.components.AnchoredMenuPopup
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.FilteredAsyncImage
+import com.komgareader.app.ui.components.LocalOnHome
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
@@ -95,6 +99,7 @@ fun SeriesDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var typeMenuOpen by remember { mutableStateOf(false) }
     var burgerAnchor by remember { mutableStateOf(IntOffset.Zero) }
+    var showAddToCollection by remember { mutableStateOf(false) }
 
     // Fehler-Events als Snackbar anzeigen
     LaunchedEffect(Unit) {
@@ -112,7 +117,21 @@ fun SeriesDetailScreen(
                 is SeriesDetailUiState.Content -> c.seriesTitle
                 else -> "Serie"
             }
-            StandardTopAppBar(title = title, onBack = onBack)
+            StandardTopAppBar(
+                title = title,
+                onBack = onBack,
+                actions = {
+                    if (state is SeriesDetailUiState.Content) {
+                        IconButton(onClick = { showAddToCollection = true }) {
+                            Icon(AppIcons.Bookmark, contentDescription = s.addToCollection)
+                        }
+                    }
+                    val onHome = LocalOnHome.current
+                    IconButton(onClick = onHome) {
+                        Icon(AppIcons.Home, contentDescription = s.navHome)
+                    }
+                },
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
@@ -180,6 +199,16 @@ fun SeriesDetailScreen(
                 typeMenuOpen = false
             },
             onDismiss = { typeMenuOpen = false },
+        )
+    }
+
+    // Serie zu einer (Serien-)Collection hinzufügen — sourceId der Serie aus ihren Büchern.
+    val seriesSourceId = content?.books?.firstOrNull()?.sourceId
+    if (showAddToCollection && content != null && seriesSourceId != null) {
+        AddToCollectionSheet(
+            kind = CollectionKind.SERIES,
+            member = CollectionMember(seriesSourceId, content.seriesRemoteId, content.seriesTitle),
+            onDismiss = { showAddToCollection = false },
         )
     }
 }

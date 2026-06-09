@@ -22,6 +22,7 @@ class CollectionSyncManagerTest {
         override val id: Long,
         private val canWrite: Boolean,
         val existing: MutableList<RemoteCollection> = mutableListOf(),
+        private val failOnCreate: Boolean = false,
     ) : CollectionSyncSource {
         override val name = "fake$id"
         override val kind = SourceKind.KOMGA
@@ -31,6 +32,7 @@ class CollectionSyncManagerTest {
         override suspend fun canWriteCollections() = canWrite
         override suspend fun listCollections(kind: CollectionKind) = existing.toList()
         override suspend fun createCollection(kind: CollectionKind, name: String, memberRemoteIds: List<String>): RemoteCollection {
+            if (failOnCreate) throw RuntimeException("boom")
             lastCreate = name to memberRemoteIds
             val rc = RemoteCollection("remote-$name-$id", name, memberRemoteIds)
             existing += rc
@@ -105,5 +107,34 @@ class CollectionSyncManagerTest {
         val mgr = CollectionSyncManager(repo, resolver = { null })  // z.B. OPDS
         mgr.push(UserCollection(10, "X", CollectionKind.SERIES, listOf(CollectionMember(5, "o", "O"))))
         assertEquals(SyncStatus.UNSUPPORTED, repo.links.getValue(5).status)
+    }
+
+    @Test
+    fun `push isolates exception — failing source gets FORBIDDEN, other source still syncs`() = runBlocking {
+        val s1 = FakeSource(1, canWrite = true, failOnCreate = true)
+        val s2 = FakeSource(2, canWrite = true)
+        val repo = FakeCollectionRepo()
+        val mgr = CollectionSyncManager(repo, resolver = { id -> mapOf(1L to s1, 2L to s2)[id] })
+        val col = UserCollection(
+            id = 10, name = "Mix", kind = CollectionKind.SERIES,
+            members = listOf(CollectionMember(1, "a", "A"), CollectionMember(2, "b", "B")),
+        )
+        mgr.push(col)
+        assertEquals(SyncStatus.FORBIDDEN, repo.links.getValue(1).status)
+        assertEquals(true, repo.links.getValue(1).dirty)
+        assertEquals(SyncStatus.SYNCED, repo.links.getValue(2).status)
+        assertEquals(false, repo.links.getValue(2).dirty)
+    }
+
+    @Test
+    fun `push adopt stores remoteId of the adopted remote collection`() = runBlocking {
+        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"))))
+        val repo = FakeCollectionRepo()
+        val mgr = CollectionSyncManager(repo, resolver = { s1 })
+        val col = UserCollection(10, "Mix", CollectionKind.SERIES, listOf(CollectionMember(1, "a", "A")))
+        mgr.push(col)
+        assertEquals("pre1", repo.links.getValue(1).remoteCollectionId)
+        assertEquals(SyncStatus.SYNCED, repo.links.getValue(1).status)
+        assertEquals(false, repo.links.getValue(1).dirty)
     }
 }

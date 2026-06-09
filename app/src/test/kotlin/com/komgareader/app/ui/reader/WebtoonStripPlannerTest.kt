@@ -1,8 +1,9 @@
-package com.komgareader.domain.source
+package com.komgareader.app.ui.reader
 
 import com.komgareader.domain.reader.WebtoonChapter
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import com.komgareader.domain.source.PageRef
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
 /**
  * Pinnt die **pure** Webtoon-Strip-Planung: aus den Kapiteln (remoteId + Seitenzahl), dem
@@ -68,6 +69,6 @@ class WebtoonStripPlannerTest {
             localStartPage = 0,
         )
         assertEquals(0, plan.initialGlobalIndex)
-        assertEquals(emptyList(), plan.pages)
+        assertEquals(emptyList<PageRef>(), plan.pages)
     }
 }

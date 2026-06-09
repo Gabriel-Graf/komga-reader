@@ -1,7 +1,9 @@
-package com.komgareader.domain.source
+package com.komgareader.app.ui.reader
 
 import com.komgareader.domain.reader.WebtoonChapter
 import com.komgareader.domain.reader.WebtoonStrip
+import com.komgareader.domain.source.PageRef
+import com.komgareader.domain.source.buildPageRefs
 
 /**
  * Pures Ergebnis der Webtoon-Strip-Planung: der kapitelübergreifende [strip] (Index ↔ Kapitel/Seite),

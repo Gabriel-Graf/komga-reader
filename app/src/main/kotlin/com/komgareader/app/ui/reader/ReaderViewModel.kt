@@ -20,7 +20,6 @@ import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SyncingSource
-import com.komgareader.domain.source.buildWebtoonStrip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -133,7 +132,7 @@ class ReaderViewModel @Inject constructor(
      * separates `WebtoonReaderViewModel` müsste diesen geteilten Zustand entweder duplizieren
      * (zweiter Scheduler — verboten), die Position beim Toggle verlieren oder den Inhalt neu laden
      * (Lade-Sturm + Verhaltensänderung). Die genuin webtoon-spezifische *Lade-Logik* ist stattdessen
-     * in den puren [com.komgareader.domain.source.buildWebtoonStrip] ausgelagert und einzeln getestet.
+     * in den puren [buildWebtoonStrip] ausgelagert und einzeln getestet.
      */
     fun toggleViewerMode() {
         viewerMode.value = if (viewerMode.value == ViewerMode.WEBTOON) pagedFamilyMode else ViewerMode.WEBTOON

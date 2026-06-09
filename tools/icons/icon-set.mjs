@@ -20,6 +20,7 @@ export const ICONS = {
   "gallery-vertical": "GalleryVertical",
   "grid-2x2": "Grid2x2",
   "hard-drive-download": "HardDriveDownload",
+  "house": "House",
   "info": "Info",
   "languages": "Languages",
   "layout-dashboard": "LayoutDashboard",

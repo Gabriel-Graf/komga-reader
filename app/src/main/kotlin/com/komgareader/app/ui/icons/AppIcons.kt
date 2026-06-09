@@ -21,6 +21,7 @@ object AppIcons {
     val ChevronRight: ImageVector get() = LucideIcons.ChevronRight
     val ChevronDown: ImageVector get() = LucideIcons.ChevronDown
     val ChevronUp: ImageVector get() = LucideIcons.ChevronUp
+    val Home: ImageVector get() = LucideIcons.House
     val Search: ImageVector get() = LucideIcons.Search
     val Refresh: ImageVector get() = LucideIcons.RefreshCw
     val Edit: ImageVector get() = LucideIcons.SquarePen

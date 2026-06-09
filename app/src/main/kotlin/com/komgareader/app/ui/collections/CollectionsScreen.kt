@@ -20,9 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,7 +35,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkInfoDialog
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.icons.AppIcons
@@ -124,10 +128,42 @@ fun CollectionsScreen(
         }
     }
 
-    // Platzhalter für Modal aus Task 16 — noch kein Inhalt, aber der Zustand existiert.
+    // Create-Collection-Modal (Task 16): Name + Kind wählen → viewModel.create().
+    // key(showCreate) sorgt dafür, dass name/kind bei jedem Öffnen auf die Defaults zurückfallen.
     if (showCreate) {
-        // Modal wird in Task 16 hier eingehängt.
-        showCreate = false
+        key(showCreate) {
+            var name by remember { mutableStateOf("") }
+            var kind by remember { mutableStateOf(CollectionKind.SERIES) }
+            EinkModal(
+                title = s.newCollection,
+                onDismiss = { showCreate = false },
+                confirmLabel = s.create,
+                onConfirm = {
+                    viewModel.create(name.trim(), kind)
+                    showCreate = false
+                },
+                dismissLabel = s.cancel,
+                confirmEnabled = name.isNotBlank(),
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(s.collectionName) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ChoiceRow(
+                    label = s.collectionKindSeries,
+                    selected = kind == CollectionKind.SERIES,
+                    onSelect = { kind = CollectionKind.SERIES },
+                )
+                ChoiceRow(
+                    label = s.collectionKindBook,
+                    selected = kind == CollectionKind.BOOK,
+                    onSelect = { kind = CollectionKind.BOOK },
+                )
+            }
+        }
     }
 }
 

@@ -257,6 +257,8 @@ private fun SeriesDetailContent(
         ?: currentBook?.summary?.takeIf { it.isNotBlank() }
     // Wenn ein Kapitel per Info-Icon gewählt ist, ersetzt seine Beschreibung die Hero-Karte.
     var infoBook by remember(books) { mutableStateOf<Book?>(null) }
+    // Kapitel, das per Long-Press „Zu Collection hinzufügen" gewählt wurde (öffnet das Sheet, kind=BOOK).
+    var bookForCollection by remember(books) { mutableStateOf<Book?>(null) }
     // „Selektiert" = das Kapitel, das gerade im Hero steht: das per Info gewählte, sonst das
     // aktuelle (Continue-)Kapitel. Daran hängt der Auswahl-Rahmen der Kachel.
     val heroBook = infoBook ?: currentBook
@@ -353,6 +355,7 @@ private fun SeriesDetailContent(
                     onDownload = { onDownload(book) },
                     onRemoveDownload = { onRemoveDownload(book.remoteId) },
                     onSetRead = { read -> onSetRead(book, read) },
+                    onAddToCollection = { bookForCollection = book },
                     onShowInfo = { infoBook = book },
                 )
             }
@@ -375,12 +378,22 @@ private fun SeriesDetailContent(
                         onDownload = { onDownload(book) },
                         onRemoveDownload = { onRemoveDownload(book.remoteId) },
                         onSetRead = { read -> onSetRead(book, read) },
+                        onAddToCollection = { bookForCollection = book },
                         onShowInfo = { infoBook = book },
                     )
                     HorizontalDivider(thickness = EinkTokens.hairline)
                 }
             }
         }
+    }
+
+    // Einzelnes Kapitel zu einer Buch-Collection (Read-List) hinzufügen — über Long-Press.
+    bookForCollection?.let { book ->
+        AddToCollectionSheet(
+            kind = CollectionKind.BOOK,
+            member = CollectionMember(book.sourceId, book.remoteId, book.title),
+            onDismiss = { bookForCollection = null },
+        )
     }
 }
 
@@ -878,6 +891,7 @@ private fun ChapterRow(
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
+    onAddToCollection: () -> Unit,
     onShowInfo: () -> Unit,
 ) {
     val s = LocalStrings.current
@@ -980,6 +994,7 @@ private fun ChapterRow(
             items = listOf(
                 s.markRead to { onSetRead(true) },
                 s.markUnread to { onSetRead(false) },
+                s.addToCollection to onAddToCollection,
             ),
         )
     }
@@ -1003,6 +1018,7 @@ private fun ChapterTile(
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
     onSetRead: (Boolean) -> Unit,
+    onAddToCollection: () -> Unit,
     onShowInfo: () -> Unit,
 ) {
     val s = LocalStrings.current
@@ -1154,6 +1170,7 @@ private fun ChapterTile(
             items = listOf(
                 s.markRead to { onSetRead(true) },
                 s.markUnread to { onSetRead(false) },
+                s.addToCollection to onAddToCollection,
             ),
         )
     }

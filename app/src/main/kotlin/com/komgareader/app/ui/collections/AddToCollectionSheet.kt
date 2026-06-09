@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
-import com.komgareader.app.ui.components.EinkModal
+import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
@@ -27,8 +27,8 @@ import com.komgareader.domain.model.CollectionMember
  *
  * Zeigt alle Collections des passenden [kind] als auswählbare Zeilen; ein Tipp toggelt
  * die Zugehörigkeit sofort (add/remove ohne separaten Bestätigen-Button). Am Ende
- * eine Inline-Neuanlage: Feld + „Erstellen". Der Modal lässt sich über „Schließen"
- * (oder Back) verlassen.
+ * eine Inline-Neuanlage: Feld + „Erstellen". Der Modal lässt sich über das X oben rechts
+ * (oder Back) verlassen — kein separater Bestätigen/Abbrechen-Knopf.
  *
  * Wird über [hiltViewModel] mit dem Activity-weiten [CollectionsViewModel] verbunden;
  * die Screens, die dieses Sheet öffnen, müssen es nur rendern — kein eigenes VM nötig.
@@ -47,13 +47,12 @@ fun AddToCollectionSheet(
     var showNewField by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
 
-    EinkModal(
+    // Read-only-Rahmen mit nur einem X (kein Bestätigen/Abbrechen-Paar) — add/remove passiert
+    // inline beim Antippen einer Zeile, ein zweiter „Schließen"-Button wäre redundant.
+    EinkInfoDialog(
         title = s.addToCollection,
         onDismiss = onDismiss,
-        confirmLabel = s.close,
-        onConfirm = onDismiss,
-        dismissLabel = s.cancel,
-        confirmEnabled = true,
+        closeLabel = s.close,
     ) {
         // Liste bestehender Collections dieses Typs
         if (filtered.isEmpty()) {

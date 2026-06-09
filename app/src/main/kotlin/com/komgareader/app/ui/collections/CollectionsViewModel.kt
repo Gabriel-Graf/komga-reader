@@ -66,8 +66,11 @@ class CollectionsViewModel @Inject constructor(
         repo.get(id)?.let { sync.push(it) }
     }
 
+    // Nutzer-initiiertes „jetzt synchronisieren" = lokalen Stand hochschieben (Status → SYNCED).
+    // Kein anschließendes refresh — dessen setMembers würde die Links sofort wieder DIRTY markieren
+    // und das Badge fälschlich auf „nur lokal" zurücksetzen. (Server-Pull ist eine eigene Aktion.)
     fun syncNow(id: Long) = viewModelScope.launch {
-        repo.get(id)?.let { sync.push(it); sync.refresh(it) }
+        repo.get(id)?.let { sync.push(it) }
     }
 
     /** Alle Sync-Links einer Collection, als Flow — für den Erklär-Dialog. */

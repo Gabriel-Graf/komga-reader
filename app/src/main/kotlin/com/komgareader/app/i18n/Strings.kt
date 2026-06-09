@@ -178,6 +178,12 @@ interface Strings {
     val settingsEinkRefresh: String
     val deviceManagedRefresh: String
     val deviceManagedRefreshHelper: String
+    // Reader-Settings: Scope-Köpfe (scope-gruppierte Hierarchie)
+    val settingsScopeGeneral: String
+    val settingsScopeNovel: String
+    val settingsScopeWebtoon: String
+    val settingsScopeComic: String
+    val novelTextHeading: String
     // Roman-Typografie-Panel
     val novelTypography: String
     val novelFontSize: String
@@ -397,6 +403,11 @@ object StringsDe : Strings {
     override val deviceManagedRefreshHelper =
         "Das Gerät (Onyx) steuert das Ghosting-Clear selbst — die App erzwingt keinen Voll-Refresh. " +
             "Schnelles Blättern bleibt aktiv. Aus = die App steuert (Voll-Refresh alle paar Seiten)."
+    override val settingsScopeGeneral = "Allgemein"
+    override val settingsScopeNovel = "Roman-Reader"
+    override val settingsScopeWebtoon = "Webtoon"
+    override val settingsScopeComic = "Comic (Guided)"
+    override val novelTextHeading = "Schrift"
     override val novelTypography = "Typografie"
     override val novelFontSize = "Schriftgröße"
     override val novelLineHeight = "Zeilenabstand"
@@ -610,6 +621,11 @@ object StringsEn : Strings {
     override val deviceManagedRefreshHelper =
         "The device (Onyx) handles ghosting clears itself — the app forces no full refresh. " +
             "Fast paging stays on. Off = the app manages it (full refresh every few pages)."
+    override val settingsScopeGeneral = "General"
+    override val settingsScopeNovel = "Novel reader"
+    override val settingsScopeWebtoon = "Webtoon"
+    override val settingsScopeComic = "Comic (guided)"
+    override val novelTextHeading = "Text"
     override val novelTypography = "Typography"
     override val novelFontSize = "Font size"
     override val novelLineHeight = "Line spacing"

@@ -115,12 +115,17 @@ private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, 
             modifier = Modifier.width(sizing.sidebarWidth).fillMaxHeight(),
         )
         // Trennung Sidebar ⇄ Content: nur eine (etwas dickere) vertikale Linie, keine Box um die Tabs.
+        // Äußerer Slot: Höhe inklusive Freiraum. Innerer Box: zeichnet die Linie nur bis zur Bar.
+        // (background() zeichnet auf die gemessene Größe — padding() muss außen stehen, damit die
+        // sichtbare Farbe im verbleibenden Innen-Slot landet, nicht auf der vollen fillMaxHeight-Höhe.)
         Box(
             Modifier
                 .width(2.dp)
                 .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.outline),
-        )
+                .padding(bottom = LocalContentBottomInset.current),
+        ) {
+            Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.outline))
+        }
         Box(
             Modifier
                 .weight(1f)

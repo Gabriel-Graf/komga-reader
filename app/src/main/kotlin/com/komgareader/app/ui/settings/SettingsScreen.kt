@@ -1,6 +1,10 @@
 package com.komgareader.app.ui.settings
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.komgareader.app.ui.components.LocalContentBottomInset
+import com.komgareader.app.ui.components.LocalEinkMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -231,7 +236,12 @@ private fun SettingsAccordion(visible: List<SettingsSection>, query: String, siz
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                AnimatedVisibility(visible = expanded) {
+                val eink = LocalEinkMode.current
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = if (eink) EnterTransition.None else expandVertically(expandFrom = Alignment.Top),
+                    exit = if (eink) ExitTransition.None else shrinkVertically(shrinkTowards = Alignment.Top),
+                ) {
                     Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
                         section.content(query)
                     }

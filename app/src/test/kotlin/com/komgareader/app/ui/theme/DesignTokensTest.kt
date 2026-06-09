@@ -37,6 +37,10 @@ class DesignTokensTest {
         assertEquals(AccentMuted, designTokensFor(kaleido, dark = true).accent)
         assertEquals(false, k.usesShadows)
         assertEquals(0.dp, k.cardElevation)
+        // Kaleido setzt onAccent = Color.White für hell UND dunkel — der gedämpfte Akzent
+        // hat auf beiden Hintergründen ausreichend Kontrast; mono/LCD invertieren diesen Wert.
+        assertEquals(Color.White, k.onAccent)
+        assertEquals(Color.White, designTokensFor(kaleido, dark = true).onAccent)
     }
 
     @Test

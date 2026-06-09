@@ -43,6 +43,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setDeviceManagedRefresh(value) }.let {}
     fun setWebtoonOverlap(percent: Int) =
         viewModelScope.launch { settings.setWebtoonOverlapPercent(percent) }.let {}
+    /**
+     * Legt eine Verbindung an ([id] == 0) oder aktualisiert sie in-place ([id] != 0 = Bearbeiten).
+     * [save] ist ein Upsert über die Rowid — der Bearbeiten-Pfad reicht einfach die bestehende [id] durch.
+     */
     fun saveServer(
         name: String,
         baseUrl: String,
@@ -50,6 +54,7 @@ class SettingsViewModel @Inject constructor(
         username: String,
         password: String,
         kind: SourceKind = SourceKind.KOMGA,
+        id: Long = 0,
     ) = viewModelScope.launch {
         servers.save(
             ServerConfig(
@@ -60,6 +65,7 @@ class SettingsViewModel @Inject constructor(
                 username = username.trimToNull(),
                 password = password.trimToNull(),
                 kind = kind,
+                id = id,
             )
         )
     }.let {}

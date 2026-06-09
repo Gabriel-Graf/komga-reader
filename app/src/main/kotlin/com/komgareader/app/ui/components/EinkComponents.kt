@@ -121,6 +121,10 @@ val SettingsGroupIndent = 4.dp
  * erklärender Helper → leicht eingerückter Inhalt. **Das** gemeinsame Konzept aller Settings-Tabs
  * (Verbindung, Reader, Farbfilter …) — gleiche Hierarchie, gleicher Abstand, damit die Seite wie
  * ein Konzept und nicht wie lose Zeilen wirkt. [query] markiert Suchtreffer im Helper.
+ *
+ * [trailing] hängt eine Aktion rechts in dieselbe Kopfzeile (z. B. ein „+"-Button) — ein
+ * adressierbarer Slot statt eines kopierten Sonder-Headers (Richtung modulare UI). Default null =
+ * unveränderter Kopf für alle bestehenden Aufrufer.
  */
 @Composable
 fun SettingsGroup(
@@ -128,10 +132,21 @@ fun SettingsGroup(
     query: String,
     modifier: Modifier = Modifier,
     helper: String? = null,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Column(modifier.fillMaxWidth()) {
-        SectionHeader(title)
+        if (trailing == null) {
+            SectionHeader(title)
+        } else {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SectionHeader(title, Modifier.weight(1f))
+                trailing()
+            }
+        }
         if (helper != null) {
             HighlightText(
                 helper, query, MaterialTheme.typography.bodySmall,

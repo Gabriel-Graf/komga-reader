@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -43,132 +45,184 @@ import com.komgareader.app.BuildConfig
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.components.SettingsGroup
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.SwitchRow
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.SourceKind
+import com.komgareader.domain.repository.ServerConfig
 
 /** Schrittweite und Grenzen der Webtoon-Überlappung (in Prozent). */
 private const val OVERLAP_STEP = 5
 private const val OVERLAP_MIN = 0
 private const val OVERLAP_MAX = 50
 
-@OptIn(ExperimentalComposeUiApi::class)
+/**
+ * Modus des Verbindungs-Modals: ADD (leere Felder) oder EDIT einer bestehenden [ServerConfig].
+ * Genau ein Modal gleichzeitig (E-Ink-Regel) → ein einziger nullbarer State steuert beides.
+ */
+private sealed interface ConnectionModal {
+    data object Add : ConnectionModal
+    data class Edit(val config: ServerConfig) : ConnectionModal
+}
+
 @Composable
 fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val servers by viewModel.serverList.collectAsState()
 
-    var nameInput by remember { mutableStateOf("") }
-    var urlInput by remember { mutableStateOf("") }
-    var apiKeyInput by remember { mutableStateOf("") }
-    var usernameInput by remember { mutableStateOf("") }
-    var passwordInput by remember { mutableStateOf("") }
-    var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
+    // Genau EIN Modal gleichzeitig: null = zu, sonst Add oder Edit (E-Ink-Invariante).
+    var modal by remember { mutableStateOf<ConnectionModal?>(null) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        // Verbundene Server (mehrere gleichzeitig, gemischt) — jeder einzeln entfernbar.
-        SettingsGroup(s.connectedServers, query) {
-            if (servers.isEmpty()) {
-                HighlightText(s.notConnected, query, MaterialTheme.typography.bodyLarge)
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    servers.forEach { cfg ->
-                        ServerRow(
-                            config = cfg,
-                            query = query,
-                            removeLabel = s.removeServer,
-                            onRemove = { viewModel.removeServer(cfg.id) },
-                        )
-                    }
+    // Verbundene Server (mehrere gleichzeitig, gemischt) — „+" im Kopf öffnet das Modal,
+    // jede Zeile trägt Zahnrad (Bearbeiten) + Papierkorb (Entfernen).
+    SettingsGroup(
+        s.connectedServers,
+        query,
+        trailing = {
+            IconButton(onClick = { modal = ConnectionModal.Add }) {
+                Icon(
+                    AppIcons.Plus,
+                    contentDescription = s.addServer,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        },
+    ) {
+        if (servers.isEmpty()) {
+            HighlightText(
+                s.noServersHint, query, MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                servers.forEach { cfg ->
+                    ServerRow(
+                        config = cfg,
+                        query = query,
+                        editLabel = s.editServer,
+                        removeLabel = s.removeServer,
+                        onEdit = { modal = ConnectionModal.Edit(cfg) },
+                        onRemove = { viewModel.removeServer(cfg.id) },
+                    )
+                }
+            }
+        }
+    }
+
+    modal?.let { mode ->
+        ConnectionModal(
+            mode = mode,
+            onDismiss = { modal = null },
+            onSave = { name, url, apiKey, username, password, kind, id ->
+                viewModel.saveServer(name, url, apiKey, username, password, kind, id)
+                modal = null
+            },
+        )
+    }
+}
+
+/**
+ * Verbindungs-Modal für ADD **und** EDIT (eine Composable, kein Duplikat). Hält alle
+ * Verbindungseingaben: Quellenart, Name/URL, dann Anmeldung (Benutzer → Passwort → API-Schlüssel,
+ * alle optional). Quellen-agnostisch: nur [SourceKind]/[ServerConfig], nie ein Komga-Typ.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun ConnectionModal(
+    mode: ConnectionModal,
+    onDismiss: () -> Unit,
+    onSave: (
+        name: String, url: String, apiKey: String,
+        username: String, password: String, kind: SourceKind, id: Long,
+    ) -> Unit,
+) {
+    val s = LocalStrings.current
+    val existing = (mode as? ConnectionModal.Edit)?.config
+    val id = existing?.id ?: 0L
+
+    var nameInput by remember { mutableStateOf(existing?.name.orEmpty()) }
+    var urlInput by remember { mutableStateOf(existing?.baseUrl.orEmpty()) }
+    var apiKeyInput by remember { mutableStateOf(existing?.apiKey.orEmpty()) }
+    var usernameInput by remember { mutableStateOf(existing?.username.orEmpty()) }
+    var passwordInput by remember { mutableStateOf(existing?.password.orEmpty()) }
+    var kindInput by remember { mutableStateOf(existing?.kind ?: SourceKind.KOMGA) }
+
+    EinkModal(
+        title = if (existing == null) s.addServer else s.editServer,
+        onDismiss = onDismiss,
+        confirmLabel = s.save,
+        onConfirm = {
+            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, id)
+        },
+        dismissLabel = s.cancel,
+        confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
+    ) {
+        // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
+        Column {
+            FieldCaption(s.serverSectionKind)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val select: (SourceKind) -> Unit = { kindInput = it }
+                if (kindInput == SourceKind.KOMGA) {
+                    Button(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
+                    EinkOutlinedButton(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
+                } else {
+                    EinkOutlinedButton(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
+                    Button(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
                 }
             }
         }
 
-        HorizontalDivider(thickness = EinkTokens.hairline, color = MaterialTheme.colorScheme.outlineVariant)
+        // Server-Identität: Name + URL gehören zusammen.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FieldCaption(s.serverSectionServer)
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = { nameInput = it },
+                label = { Text(s.serverDisplayName) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = urlInput,
+                onValueChange = { urlInput = it },
+                label = { Text(s.serverUrl) },
+                placeholder = { Text(s.serverUrlHint) },
+                supportingText = { Text(s.serverUrlHelper) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            )
+        }
 
-        SettingsGroup(s.addServer, query) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
-                Column {
-                    FieldCaption(s.serverSectionKind)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val select: (SourceKind) -> Unit = { kindInput = it }
-                        if (kindInput == SourceKind.KOMGA) {
-                            Button(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
-                            EinkOutlinedButton(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
-                        } else {
-                            EinkOutlinedButton(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
-                            Button(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
-                        }
-                    }
-                }
-
-                // Server-Identität: Name + URL gehören zusammen.
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FieldCaption(s.serverSectionServer)
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        label = { Text(s.serverDisplayName) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                    OutlinedTextField(
-                        value = urlInput,
-                        onValueChange = { urlInput = it },
-                        label = { Text(s.serverUrl) },
-                        placeholder = { Text(s.serverUrlHint) },
-                        supportingText = { Text(s.serverUrlHelper) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    )
-                }
-
-                // Anmeldung: API-Schlüssel ODER Zugangsdaten — als ein Cluster.
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FieldCaption(s.serverSectionAuth)
-                    OutlinedTextField(
-                        value = apiKeyInput,
-                        onValueChange = { apiKeyInput = it },
-                        label = { Text(s.serverApiKeyOptional) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    )
-                    Text(
-                        text = s.orSeparator,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                    )
-                    CredentialsFields(
-                        username = usernameInput,
-                        password = passwordInput,
-                        onUsername = { usernameInput = it },
-                        onPassword = { passwordInput = it },
-                        usernameLabel = s.serverUsername,
-                        passwordLabel = s.serverPassword,
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        viewModel.saveServer(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput)
-                        nameInput = ""; urlInput = ""; apiKeyInput = ""; usernameInput = ""; passwordInput = ""
-                        kindInput = SourceKind.KOMGA
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(s.connect) }
-            }
+        // Anmeldung (alle optional): Benutzer → Passwort → API-Schlüssel, schlicht gestapelt.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FieldCaption(s.serverSectionAuth)
+            CredentialsFields(
+                username = usernameInput,
+                password = passwordInput,
+                onUsername = { usernameInput = it },
+                onPassword = { passwordInput = it },
+                usernameLabel = s.serverUsername,
+                passwordLabel = s.serverPassword,
+            )
+            OutlinedTextField(
+                value = apiKeyInput,
+                onValueChange = { apiKeyInput = it },
+                label = { Text(s.serverApiKeyOptional) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
         }
     }
 }
@@ -231,21 +285,24 @@ private fun CredentialsFields(
 }
 
 /**
- * Eine Zeile der Server-Liste: Name + Quellenart + URL links, „Entfernen" rechts.
- * Flach mit 1.5px-Border (E-Ink-Designsprache), kein Schatten.
+ * Eine Zeile der Server-Liste: Name + Quellenart + URL links, rechts zwei neutrale Icon-Aktionen
+ * — Zahnrad (Bearbeiten) links vom Papierkorb (Entfernen). Flach mit 1.5px-Border
+ * (E-Ink-Designsprache), kein Schatten. Aktions-Icons neutral (`onSurface`), kein Akzent.
  */
 @Composable
 private fun ServerRow(
-    config: com.komgareader.domain.repository.ServerConfig,
+    config: ServerConfig,
     query: String,
+    editLabel: String,
     removeLabel: String,
+    onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -253,7 +310,22 @@ private fun ServerRow(
             HighlightText(config.baseUrl, query, MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.width(8.dp))
-        EinkOutlinedButton(onClick = onRemove) { Text(removeLabel) }
+        IconButton(onClick = onEdit) {
+            Icon(
+                AppIcons.Settings,
+                contentDescription = editLabel,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        IconButton(onClick = onRemove) {
+            Icon(
+                AppIcons.Delete,
+                contentDescription = removeLabel,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 

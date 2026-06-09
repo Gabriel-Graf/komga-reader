@@ -30,6 +30,8 @@ interface Strings {
     val notConnected: String
     val connectedServers: String
     val addServer: String
+    val editServer: String
+    val noServersHint: String
     val removeServer: String
     val serverSectionKind: String
     val serverSectionServer: String
@@ -239,6 +241,8 @@ object StringsDe : Strings {
     override val notConnected = "Nicht verbunden"
     override val connectedServers = "Verbundene Server"
     override val addServer = "Server hinzufügen"
+    override val editServer = "Verbindung bearbeiten"
+    override val noServersHint = "Noch keine Server verbunden. Tippe auf ＋ oben rechts, um einen hinzuzufügen."
     override val serverSectionKind = "Quellenart"
     override val serverSectionServer = "Server"
     override val serverSectionAuth = "Anmeldung"
@@ -449,6 +453,8 @@ object StringsEn : Strings {
     override val notConnected = "Not connected"
     override val connectedServers = "Connected servers"
     override val addServer = "Add server"
+    override val editServer = "Edit connection"
+    override val noServersHint = "No servers yet. Tap ＋ at the top right to add one."
     override val removeServer = "Remove"
     override val serverSectionKind = "Source type"
     override val serverSectionServer = "Server"

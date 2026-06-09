@@ -21,7 +21,6 @@ interface Strings {
     val serverUrlHint: String
     val serverUrlHelper: String
     val serverApiKeyOptional: String
-    val orSeparator: String
     val serverUsername: String
     val serverPassword: String
     val connect: String
@@ -232,7 +231,6 @@ object StringsDe : Strings {
     override val serverUrlHint = "https://komga.example.org"
     override val serverUrlHelper = "/api/v1/ wird automatisch ergänzt"
     override val serverApiKeyOptional = "API-Schlüssel (optional)"
-    override val orSeparator = "— oder —"
     override val serverUsername = "Benutzername"
     override val serverPassword = "Passwort"
     override val connect = "Verbinden"
@@ -444,7 +442,6 @@ object StringsEn : Strings {
     override val serverUrlHint = "https://komga.example.org"
     override val serverUrlHelper = "/api/v1/ is appended automatically"
     override val serverApiKeyOptional = "API Key (optional)"
-    override val orSeparator = "— or —"
     override val serverUsername = "Username"
     override val serverPassword = "Password"
     override val connect = "Connect"

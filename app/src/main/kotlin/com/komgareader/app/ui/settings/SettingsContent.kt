@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -241,7 +240,7 @@ private fun CredentialsFields(
     val autofill = LocalAutofill.current
     val autofillTree = LocalAutofillTree.current
 
-    val usernameNode = remember {
+    val usernameNode = remember(onUsername) {
         AutofillNode(autofillTypes = listOf(AutofillType.Username), onFill = onUsername)
     }
     autofillTree += usernameNode
@@ -261,7 +260,7 @@ private fun CredentialsFields(
         singleLine = true,
     )
 
-    val passwordNode = remember {
+    val passwordNode = remember(onPassword) {
         AutofillNode(autofillTypes = listOf(AutofillType.Password), onFill = onPassword)
     }
     autofillTree += passwordNode
@@ -301,12 +300,17 @@ private fun ServerRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
             .padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val kindLabel = when (config.kind) {
+            SourceKind.KOMGA -> "Komga"
+            SourceKind.OPDS -> "OPDS"
+            else -> config.kind.name
+        }
         Column(Modifier.weight(1f)) {
-            HighlightText("${config.name}  ·  ${config.kind.name}", query, MaterialTheme.typography.bodyLarge)
+            HighlightText("${config.name}  ·  $kindLabel", query, MaterialTheme.typography.bodyLarge)
             HighlightText(config.baseUrl, query, MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.width(8.dp))

@@ -98,9 +98,12 @@ fun ColorFilterSettingsContent(
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        runCatching {
+        // Lesefehler (Exception oder null-Stream) werden als null durchgereicht — das ViewModel
+        // behandelt null als Fehler und zeigt denselben Import-Fehler-Dialog wie ein Parse-Fehler.
+        val json = runCatching {
             ctx.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-        }.getOrNull()?.let { viewModel.importPresetJson(it) }
+        }.getOrNull()
+        viewModel.importPresetJson(json)
     }
 
     // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
@@ -365,7 +368,7 @@ fun ColorFilterSettingsContent(
     }
 
     // Fehlermeldung bei inkompatiblem oder fehlerhaftem Preset-Import.
-    if (importError != null) {
+    if (importError) {
         EinkInfoDialog(title = s.colorFilterImportPreset, onDismiss = { viewModel.dismissImportError() }, closeLabel = s.close) {
             Text(s.colorFilterImportError, style = MaterialTheme.typography.bodyMedium)
         }

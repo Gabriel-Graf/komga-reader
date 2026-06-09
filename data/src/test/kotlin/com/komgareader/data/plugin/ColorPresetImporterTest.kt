@@ -42,4 +42,28 @@ class ColorPresetImporterTest {
         assertEquals(1.15f, profile.contrast, 0.0001f)
         assertEquals(0.05f, profile.brightness, 0.0001f)
     }
+
+    @Test
+    fun nan_saturation_is_rejected() {
+        val spec = ColorPresetSpec(abiVersion = 1, name = "NaN-Test", saturation = Float.NaN, contrast = 1f, brightness = 1f)
+        assertNull(ColorPresetImporter.toProfileOrNull(spec))
+    }
+
+    @Test
+    fun infinity_contrast_is_rejected() {
+        val spec = ColorPresetSpec(abiVersion = 1, name = "Inf-Test", saturation = 1f, contrast = Float.POSITIVE_INFINITY, brightness = 1f)
+        assertNull(ColorPresetImporter.toProfileOrNull(spec))
+    }
+
+    @Test
+    fun blank_name_is_rejected() {
+        val spec = ColorPresetSpec(abiVersion = 1, name = "   ", saturation = 1f, contrast = 1f, brightness = 1f)
+        assertNull(ColorPresetImporter.toProfileOrNull(spec))
+    }
+
+    @Test
+    fun empty_name_is_rejected() {
+        val spec = ColorPresetSpec(abiVersion = 1, name = "", saturation = 1f, contrast = 1f, brightness = 1f)
+        assertNull(ColorPresetImporter.toProfileOrNull(spec))
+    }
 }

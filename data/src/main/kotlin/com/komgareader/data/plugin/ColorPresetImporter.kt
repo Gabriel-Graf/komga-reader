@@ -14,18 +14,24 @@ import com.komgareader.plugin.PluginAbi
 object ColorPresetImporter {
 
     /**
-     * Gibt null zurück, wenn [spec.abiVersion] außerhalb [PluginAbi.MIN_SUPPORTED]..[PluginAbi.VERSION].
+     * Gibt null zurück, wenn:
+     * - [spec.abiVersion] außerhalb [PluginAbi.MIN_SUPPORTED]..[PluginAbi.VERSION],
+     * - [spec.name] leer oder nur Whitespace,
+     * - ein numerischer Wert nicht endlich ist (NaN oder Infinity — [Float.coerceIn] lässt
+     *   NaN unverändert, was korrupte Einträge in der DB erzeugen würde).
      * Sonst: geclampt auf die ColorProfile-Wertebereiche, builtIn = false.
      */
     fun toProfileOrNull(spec: ColorPresetSpec): ColorProfile? {
         if (spec.abiVersion < PluginAbi.MIN_SUPPORTED || spec.abiVersion > PluginAbi.VERSION) return null
+        if (spec.name.isBlank()) return null
+        if (!spec.saturation.isFinite() || !spec.contrast.isFinite() || !spec.brightness.isFinite()) return null
         return toProfile(spec)
     }
 
     /**
      * Erzeugt ein [ColorProfile] aus [spec] mit geclamten Werten, builtIn = false, id = 0
-     * (Room vergibt die echte id beim Upsert). Setzt keine ABI-Prüfung voraus — [toProfileOrNull]
-     * verwenden, wenn die ABI-Kompatibilität noch unbekannt ist.
+     * (Room vergibt die echte id beim Upsert). Setzt kompatible ABI, nicht-leeren Namen und
+     * endliche Werte voraus — [toProfileOrNull] verwenden, wenn diese noch nicht geprüft sind.
      */
     fun toProfile(spec: ColorPresetSpec): ColorProfile = ColorProfile(
         id = 0L,

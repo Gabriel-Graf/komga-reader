@@ -160,18 +160,20 @@ class ColorFilterViewModel @Inject constructor(
         if (_edit.value?.baseProfileId == id) _edit.value = null
     }
 
-    /** Fehlermeldung nach einem fehlgeschlagenen Preset-Import (null = kein Fehler sichtbar). */
-    private val _importError = MutableStateFlow<String?>(null)
-    val importError: StateFlow<String?> = _importError
+    /** Zeigt einen Fehler-Dialog nach einem fehlgeschlagenen Preset-Import. */
+    private val _importError = MutableStateFlow(false)
+    val importError: StateFlow<Boolean> = _importError
 
-    fun dismissImportError() { _importError.value = null }
+    fun dismissImportError() { _importError.value = false }
 
     /**
-     * Importiert ein Color-Preset aus JSON-Text. Das JSON muss die Felder
-     * `abiVersion`, `name`, `saturation`, `contrast`, `brightness` enthalten.
-     * Fehlerhafte oder inkompatible Specs setzen [importError].
+     * Importiert ein Color-Preset aus dem gelesenen JSON-Text (null = Datei konnte nicht gelesen
+     * werden). Das JSON muss die Felder `abiVersion`, `name`, `saturation`, `contrast`,
+     * `brightness` enthalten. Fehlerhafte, nicht-endliche oder inkompatible Specs sowie
+     * ein null-Argument (Lesefehler) setzen [importError].
      */
-    fun importPresetJson(json: String) = viewModelScope.launch {
+    fun importPresetJson(json: String?) = viewModelScope.launch {
+        if (json == null) { _importError.value = true; return@launch }
         val spec = runCatching {
             val obj = org.json.JSONObject(json)
             ColorPresetSpec(
@@ -184,7 +186,7 @@ class ColorFilterViewModel @Inject constructor(
         }.getOrNull()
         val profile = spec?.let { ColorPresetImporter.toProfileOrNull(it) }
         if (profile == null) {
-            _importError.value = "import_error"
+            _importError.value = true
             return@launch
         }
         val id = colorProfiles.upsert(profile)

@@ -458,8 +458,8 @@ fun CompactStepperRow(
 
 /**
  * Antippbares Icon mit kleinem Touch-Bereich (36 dp) statt des 48-dp-IconButton — für
- * enge Zeilen wie [CompactStepperRow]. Intern in diesem Paket und von
- * [ColorFilterSettingsContent] genutzt.
+ * enge Zeilen wie [CompactStepperRow]. Geteilter Baustein: genutzt von [CompactStepperRow]
+ * sowie den Settings-Inhalten (Farbfilter, Roman-Typografie).
  */
 @Composable
 fun CompactIconButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {

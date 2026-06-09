@@ -71,6 +71,18 @@ class CollectionSyncManager(
         return collection.copy(members = merged)
     }
 
+    /** Löscht die Server-Collections in allen sync-fähigen Quellen (best-effort). */
+    suspend fun deleteEverywhere(collection: UserCollection) {
+        for (sourceId in collection.members.map { it.sourceId }.toSet()) {
+            val source = resolver(sourceId) ?: continue
+            if (!source.canWriteCollections()) continue
+            runCatching {
+                source.listCollections(collection.kind).firstOrNull { it.name == collection.name }
+                    ?.let { source.deleteCollection(collection.kind, it.remoteId) }
+            }
+        }
+    }
+
     private suspend fun writeLink(collectionId: Long, sourceId: Long, remoteId: String?, status: SyncStatus, dirty: Boolean) {
         repo.updateSyncLink(CollectionSyncLink(collectionId, sourceId, remoteId, status, dirty))
     }

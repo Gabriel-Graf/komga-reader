@@ -182,7 +182,10 @@ class MainActivity : ComponentActivity() {
                                 // sodass die Bibliothek wieder oben liegt statt sich zu stapeln.
                                 onHome = {
                                     nav.navigate("home") {
-                                        popUpTo("home") { inclusive = false }
+                                        // Auf die Graph-Wurzel räumen statt auf den String "home":
+                                        // robust, falls der Reader je ohne home darunter erreicht wird
+                                        // (Deep-Link/Notification) — popUpTo("home") wäre dann ein No-Op.
+                                        popUpTo(nav.graph.startDestinationId) { inclusive = false }
                                         launchSingleTop = true
                                     }
                                 },
@@ -208,7 +211,10 @@ class MainActivity : ComponentActivity() {
                                 // sodass die Bibliothek wieder oben liegt statt sich zu stapeln.
                                 onHome = {
                                     nav.navigate("home") {
-                                        popUpTo("home") { inclusive = false }
+                                        // Auf die Graph-Wurzel räumen statt auf den String "home":
+                                        // robust, falls der Reader je ohne home darunter erreicht wird
+                                        // (Deep-Link/Notification) — popUpTo("home") wäre dann ein No-Op.
+                                        popUpTo(nav.graph.startDestinationId) { inclusive = false }
                                         launchSingleTop = true
                                     }
                                 },

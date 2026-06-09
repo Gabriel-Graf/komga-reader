@@ -53,7 +53,10 @@ fun readerOverlayScrim(base: Color, transparentAlpha: Float): Color =
 
 /**
  * Toggle­bare Reader-Menüleiste, die **über** dem Inhalt schwebt (kein Reflow). Nur
- * sichtbar, wenn [visible]. Zurück-Button links; rechts optionale [actions].
+ * sichtbar, wenn [visible]. Zurück-Button links; rechts die **geteilten** Shortcuts
+ * [onHome] (Bibliothek) und [onSettings] (Einstellungen), danach die reader-spezifischen
+ * [actions]. Die geteilten Buttons leben hier an genau **einer** Stelle
+ * (`shared-structure-before-variants`) — kein Reader baut sie selbst.
  *
  * Hintergrund über [readerOverlayScrim]: E-Ink deckend schwarz, Smartphone halbtransparent.
  */
@@ -62,9 +65,12 @@ fun BoxScope.ReaderChromeOverlay(
     visible: Boolean,
     title: String,
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     if (!visible) return
+    val strings = LocalStrings.current
     Row(
         modifier = Modifier
             .align(Alignment.TopCenter)
@@ -83,6 +89,24 @@ fun BoxScope.ReaderChromeOverlay(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
         )
+        // Geteilte Shortcuts: Home links, Einstellungen rechts daneben — dann die
+        // reader-spezifischen Aktionen (Modus-Toggle, Typografie, …).
+        IconButton(onClick = onHome) {
+            Icon(
+                AppIcons.Home,
+                contentDescription = strings.readerHome,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        IconButton(onClick = onSettings) {
+            Icon(
+                AppIcons.Settings,
+                contentDescription = strings.readerSettings,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp),
+            )
+        }
         actions()
     }
 }

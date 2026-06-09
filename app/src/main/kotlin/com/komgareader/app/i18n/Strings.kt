@@ -127,6 +127,8 @@ interface Strings {
     val readerTapHint: String
     val readerPrevPage: String
     val readerNextPage: String
+    val readerHome: String
+    val readerSettings: String
     // Guided-View (Debug)
     val settingsGuidedDebug: String
     val readerPanelOverlay: String
@@ -343,6 +345,8 @@ object StringsDe : Strings {
     override val readerTapHint = "Tippe mittig für die Menüleiste"
     override val readerPrevPage = "Letzte Seite"
     override val readerNextPage = "Nächste Seite"
+    override val readerHome = "Zur Bibliothek"
+    override val readerSettings = "Einstellungen"
     // Guided-View (Debug)
     override val settingsGuidedDebug = "Guided-View (Debug)"
     override val readerPanelOverlay = "Erkannte Panel-Rahmen einblenden"
@@ -554,6 +558,8 @@ object StringsEn : Strings {
     override val readerTapHint = "Tap the center for the menu bar"
     override val readerPrevPage = "Previous page"
     override val readerNextPage = "Next page"
+    override val readerHome = "To library"
+    override val readerSettings = "Settings"
     // Guided view (debug)
     override val settingsGuidedDebug = "Guided view (debug)"
     override val readerPanelOverlay = "Show detected panel borders"

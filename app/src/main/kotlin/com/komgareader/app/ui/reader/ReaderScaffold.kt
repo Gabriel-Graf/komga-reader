@@ -41,6 +41,8 @@ fun ReaderScaffold(
     chrome: Viewer,
     title: String,
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
@@ -94,6 +96,8 @@ fun ReaderScaffold(
             visible = chromeVisible,
             title = title,
             onBack = onBack,
+            onHome = onHome,
+            onSettings = onSettings,
             actions = actions,
         )
 

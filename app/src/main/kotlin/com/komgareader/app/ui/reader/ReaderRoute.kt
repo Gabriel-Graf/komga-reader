@@ -26,6 +26,8 @@ import com.komgareader.eink.onyx.OnyxRefresher
 @Composable
 fun ReaderRoute(
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     viewModel: ReaderViewModel = hiltViewModel(),
     einkHolder: ReaderEinkHolder = hiltViewModel(),
 ) {
@@ -59,6 +61,8 @@ fun ReaderRoute(
         is ReaderContent.Novel -> {
             NovelReaderScreen(
                 onBack = onBack,
+                onHome = onHome,
+                onSettings = onSettings,
                 refresher = refresher,
             )
         }
@@ -67,6 +71,8 @@ fun ReaderRoute(
                 pageCount = c.pageCount,
                 initialPage = c.initialPage,
                 onBack = onBack,
+                onHome = onHome,
+                onSettings = onSettings,
                 viewModel = viewModel,
             )
         }
@@ -76,6 +82,8 @@ fun ReaderRoute(
                     pages = c.pages,
                     initialPage = c.initialPage,
                     onBack = onBack,
+                    onHome = onHome,
+                    onSettings = onSettings,
                     onToggleMode = viewModel::toggleViewerMode,
                     viewModel = viewModel,
                     refresher = refresher,
@@ -88,6 +96,8 @@ fun ReaderRoute(
                     chrome = viewModel,
                     refreshScheduler = viewModel.refreshScheduler,
                     onBack = onBack,
+                    onHome = onHome,
+                    onSettings = onSettings,
                     onPageVisible = viewModel::onPageSettled,
                     onToggleMode = viewModel::toggleViewerMode,
                     refresher = refresher,
@@ -96,6 +106,8 @@ fun ReaderRoute(
                     pages = c.pages,
                     initialPage = c.initialPage,
                     onBack = onBack,
+                    onHome = onHome,
+                    onSettings = onSettings,
                     onToggleMode = viewModel::toggleViewerMode,
                     refresher = refresher,
                 )
@@ -107,6 +119,8 @@ fun ReaderRoute(
                     pages = c.pages,
                     initialPage = c.initialPage,
                     onBack = onBack,
+                    onHome = onHome,
+                    onSettings = onSettings,
                     onToggleMode = viewModel::toggleViewerMode,
                     viewModel = viewModel,
                     refresher = refresher,
@@ -119,6 +133,8 @@ fun ReaderRoute(
                     chrome = viewModel,
                     refreshScheduler = viewModel.refreshScheduler,
                     onBack = onBack,
+                    onHome = onHome,
+                    onSettings = onSettings,
                     onPageVisible = viewModel::onPageSettled,
                     onToggleMode = viewModel::toggleViewerMode,
                     refresher = refresher,
@@ -127,6 +143,8 @@ fun ReaderRoute(
                     pages = c.pages,
                     initialPage = c.initialPage,
                     onBack = onBack,
+                    onHome = onHome,
+                    onSettings = onSettings,
                     onToggleMode = viewModel::toggleViewerMode,
                     refresher = refresher,
                 )

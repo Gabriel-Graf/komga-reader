@@ -31,6 +31,7 @@ import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
+import com.komgareader.app.ui.settings.SettingsRoute
 import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
@@ -175,7 +176,20 @@ class MainActivity : ComponentActivity() {
                                 navArgument("stream") { type = NavType.BoolType; defaultValue = false },
                             ),
                         ) {
-                            ReaderRoute(onBack = { nav.popBackStack() })
+                            ReaderRoute(
+                                onBack = { nav.popBackStack() },
+                                // Zur Bibliothek: den Reader-Stack bis 'home' (inklusiv-false) abräumen,
+                                // sodass die Bibliothek wieder oben liegt statt sich zu stapeln.
+                                onHome = {
+                                    nav.navigate("home") {
+                                        popUpTo("home") { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                },
+                                // Einstellungen: ÜBER dem aktuellen Reader pushen — der Back-Stack hält
+                                // den Reader darunter, sodass SettingsRoute.onBack genau dorthin zurückführt.
+                                onSettings = { nav.navigate("settings") },
+                            )
                         }
                         composable(
                             route = "reader/{bookId}/{sourceId}/{pageCount}/{format}/{stream}/{viewerMode}",
@@ -188,7 +202,25 @@ class MainActivity : ComponentActivity() {
                                 navArgument("viewerMode") { type = NavType.StringType; defaultValue = "PAGED" },
                             ),
                         ) {
-                            ReaderRoute(onBack = { nav.popBackStack() })
+                            ReaderRoute(
+                                onBack = { nav.popBackStack() },
+                                // Zur Bibliothek: den Reader-Stack bis 'home' (inklusiv-false) abräumen,
+                                // sodass die Bibliothek wieder oben liegt statt sich zu stapeln.
+                                onHome = {
+                                    nav.navigate("home") {
+                                        popUpTo("home") { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                },
+                                // Einstellungen: ÜBER dem aktuellen Reader pushen — der Back-Stack hält
+                                // den Reader darunter, sodass SettingsRoute.onBack genau dorthin zurückführt.
+                                onSettings = { nav.navigate("settings") },
+                            )
+                        }
+                        // Settings als volle Seite über dem Reader (DRY: derselbe SettingsScreen wie der
+                        // Bibliotheks-Tab). Über den Reader gepusht → Zurück landet im selben Reader.
+                        composable("settings") {
+                            SettingsRoute(onBack = { nav.popBackStack() })
                         }
                     }
                 }

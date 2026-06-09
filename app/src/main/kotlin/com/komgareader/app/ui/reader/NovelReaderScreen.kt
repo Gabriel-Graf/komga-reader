@@ -46,6 +46,8 @@ import com.komgareader.eink.onyx.OnyxRefresher
 @Composable
 fun NovelReaderScreen(
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     novelVm: NovelReaderViewModel = hiltViewModel(),
     refresher: OnyxRefresher? = null,
 ) {
@@ -109,6 +111,8 @@ fun NovelReaderScreen(
         chrome = novelVm,
         title = "${state.currentPage + 1} / ${state.pageCount.coerceAtLeast(1)}",
         onBack = onBack,
+        onHome = onHome,
+        onSettings = onSettings,
         onPrev = novelVm::prevPage,
         onNext = novelVm::nextPage,
         background = Color.White,

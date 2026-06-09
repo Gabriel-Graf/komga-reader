@@ -55,6 +55,8 @@ fun ComicReaderScreen(
     pages: List<SourceImage>,
     initialPage: Int,
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     onToggleMode: () -> Unit = {},
     comicVm: ComicReaderViewModel = hiltViewModel(),
     refresher: OnyxRefresher? = null,
@@ -103,6 +105,8 @@ fun ComicReaderScreen(
         chrome = comicVm,
         title = "${state.position.page + 1} / $pageCount",
         onBack = onBack,
+        onHome = onHome,
+        onSettings = onSettings,
         // Navigation läuft hier komplett über die bespoke Tap-Zonen / das ViewModel.
         onPrev = {},
         onNext = {},

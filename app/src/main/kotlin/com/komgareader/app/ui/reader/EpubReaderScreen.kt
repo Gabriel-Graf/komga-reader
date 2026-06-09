@@ -23,6 +23,8 @@ fun EpubReaderScreen(
     pageCount: Int,
     initialPage: Int,
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     viewModel: ReaderViewModel = hiltViewModel(),
 ) {
     val requestedPage by viewModel.requestedPage.collectAsState()
@@ -45,6 +47,8 @@ fun EpubReaderScreen(
         chrome = viewModel,
         title = "${pagerState.currentPage + 1} / $pageCount",
         onBack = onBack,
+        onHome = onHome,
+        onSettings = onSettings,
         onPrev = { viewModel.navigateTo((pagerState.currentPage - 1).coerceAtLeast(0)) },
         onNext = { viewModel.navigateTo((pagerState.currentPage + 1).coerceAtMost(pageCount - 1)) },
         background = Color.White,

@@ -63,6 +63,8 @@ fun WebtoonReaderScreen(
     chrome: Viewer,
     refreshScheduler: RefreshScheduler,
     onBack: () -> Unit,
+    onHome: () -> Unit,
+    onSettings: () -> Unit,
     onPageVisible: (Int) -> Unit,
     onToggleMode: () -> Unit,
     refresher: OnyxRefresher? = null,
@@ -118,6 +120,8 @@ fun WebtoonReaderScreen(
         chrome = chrome,
         title = "${listState.firstVisibleItemIndex + 1} / $pageCount",
         onBack = onBack,
+        onHome = onHome,
+        onSettings = onSettings,
         // Tap-Navigation läuft hier über jumpFrame (siehe tapModifier), nicht über Seiten.
         onPrev = {},
         onNext = {},

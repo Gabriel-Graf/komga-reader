@@ -2,6 +2,7 @@ package com.komgareader.app.ui.settings
 
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
+import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
@@ -135,8 +136,8 @@ private class StubSettingsRepository : SettingsRepository {
     override val novelFontSizeEm: Flow<Float> = flowOf(1.0f)
     override val novelLineHeight: Flow<Float> = flowOf(1.0f)
     override val novelMarginPreset: Flow<String> = flowOf("NORMAL")
-    override val novelFontFamily: Flow<String> = flowOf("")
-    override val novelTextAlign: Flow<String> = flowOf("LEFT")
+    override val novelFontFamily: Flow<String> = flowOf(NovelFonts.DEFAULT)
+    override val novelTextAlign: Flow<String> = flowOf("JUSTIFY")
     override val novelHyphenationLang: Flow<String> = flowOf("")
     override val novelFontWeight: Flow<Int> = flowOf(400)
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)

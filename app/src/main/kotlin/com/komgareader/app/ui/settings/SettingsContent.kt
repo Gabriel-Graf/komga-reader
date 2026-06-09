@@ -52,6 +52,7 @@ import com.komgareader.app.ui.components.SettingsGroup
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.SwitchRow
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.reader.NovelTypographyControls
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
@@ -362,7 +363,35 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
 
+    // Roman-Typografie: dieselbe stateless Komponente wie das In-Reader-Panel, gegen dieselbe
+    // SettingsRepository-Quelle verdrahtet (DRY, eine Wahrheit).
+    val novelFontSizeEm by viewModel.novelFontSizeEm.collectAsState()
+    val novelLineHeight by viewModel.novelLineHeight.collectAsState()
+    val novelFontWeight by viewModel.novelFontWeight.collectAsState()
+    val novelMarginPreset by viewModel.novelMarginPreset.collectAsState()
+    val novelTextAlign by viewModel.novelTextAlign.collectAsState()
+    val novelHyphenationLang by viewModel.novelHyphenationLang.collectAsState()
+    val novelFontFamily by viewModel.novelFontFamily.collectAsState()
+
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+        SettingsGroup(s.novelTypography, query) {
+            NovelTypographyControls(
+                fontSizeEm = novelFontSizeEm,
+                onFontSize = viewModel::setNovelFontSizeEm,
+                lineHeight = novelLineHeight,
+                onLineHeight = viewModel::setNovelLineHeight,
+                fontWeight = novelFontWeight,
+                onFontWeight = viewModel::setNovelFontWeight,
+                marginPreset = novelMarginPreset,
+                onMargin = viewModel::setNovelMarginPreset,
+                textAlign = novelTextAlign,
+                onTextAlign = viewModel::setNovelTextAlign,
+                hyphenationLang = novelHyphenationLang,
+                onHyphenation = viewModel::setNovelHyphenationLang,
+                fontFamily = novelFontFamily,
+                onFontFamily = viewModel::setNovelFontFamily,
+            )
+        }
         SettingsGroup(s.settingsEinkRefresh, query) {
             SwitchRow(
                 label = s.deviceManagedRefresh,

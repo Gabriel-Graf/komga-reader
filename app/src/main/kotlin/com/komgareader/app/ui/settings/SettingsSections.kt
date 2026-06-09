@@ -69,6 +69,8 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
             s.settingsReader, s.settingsWebtoon, s.webtoonOverlap, s.webtoonOverlapHelper,
             s.settingsDisplayMode, s.displayModeHelper, s.displayEink, s.displaySmartphone,
             s.settingsEinkRefresh, s.deviceManagedRefresh, s.deviceManagedRefreshHelper,
+            s.novelTypography, s.novelFontSize, s.novelLineHeight, s.novelFontWeight,
+            s.novelMargin, s.novelTextAlign, s.novelHyphenation, s.novelFontFamily,
         ),
         content = { q -> ReaderSettingsContent(viewModel, q) },
     ),

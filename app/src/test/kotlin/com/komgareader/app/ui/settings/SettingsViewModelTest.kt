@@ -33,6 +33,9 @@ class SettingsViewModelTest {
     private fun viewModel(servers: ServerRepository): SettingsViewModel =
         SettingsViewModel(StubSettingsRepository(), servers, StubColorProfileRepository())
 
+    private fun viewModel(settings: SettingsRepository): SettingsViewModel =
+        SettingsViewModel(settings, CapturingServerRepository(), StubColorProfileRepository())
+
     @Test
     fun `saveServer mit id 0 speichert eine neue Verbindung mit id 0`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
@@ -59,6 +62,60 @@ class SettingsViewModelTest {
             vm.saveServer("Heim", "http://h", "", "", "", SourceKind.KOMGA, id = 7L)
 
             assertEquals(7L, repo.saved?.id)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `Novel-Setter delegieren an das SettingsRepository`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repo = CapturingSettingsRepository()
+            val vm = viewModel(repo)
+
+            vm.setNovelFontSizeEm(1.4f)
+            vm.setNovelLineHeight(1.3f)
+            vm.setNovelFontWeight(600)
+            vm.setNovelMarginPreset("WIDE")
+            vm.setNovelTextAlign("LEFT")
+            vm.setNovelHyphenationLang("de")
+            vm.setNovelFontFamily("Literata")
+
+            assertEquals(1.4f, repo.novelFontSizeEmValue)
+            assertEquals(1.3f, repo.novelLineHeightValue)
+            assertEquals(600, repo.novelFontWeightValue)
+            assertEquals("WIDE", repo.novelMarginPresetValue)
+            assertEquals("LEFT", repo.novelTextAlignValue)
+            assertEquals("de", repo.novelHyphenationLangValue)
+            assertEquals("Literata", repo.novelFontFamilyValue)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `Novel-Werte spiegeln die Flows des SettingsRepository`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val repo = CapturingSettingsRepository(
+                fontSizeEm = 1.6f,
+                lineHeight = 1.2f,
+                marginPreset = "NARROW",
+                fontFamily = "Bitter",
+                textAlign = "LEFT",
+                hyphenationLang = "en",
+                fontWeight = 700,
+            )
+            val vm = viewModel(repo)
+
+            assertEquals(1.6f, vm.novelFontSizeEm.value)
+            assertEquals(1.2f, vm.novelLineHeight.value)
+            assertEquals("NARROW", vm.novelMarginPreset.value)
+            assertEquals("Bitter", vm.novelFontFamily.value)
+            assertEquals("LEFT", vm.novelTextAlign.value)
+            assertEquals("en", vm.novelHyphenationLang.value)
+            assertEquals(700, vm.novelFontWeight.value)
         } finally {
             Dispatchers.resetMain()
         }
@@ -98,6 +155,61 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setNovelTextAlign(align: String) {}
     override suspend fun setNovelHyphenationLang(lang: String) {}
     override suspend fun setNovelFontWeight(value: Int) {}
+    override suspend fun setDeviceManagedRefresh(value: Boolean) {}
+}
+
+/**
+ * Fängt die Novel-Setter ein und liefert konfigurierbare Novel-Flow-Werte — prüft, dass das VM
+ * die 7 Settings spiegelt und seine Setter sauber durchreicht. Restliche Flows = Defaults.
+ */
+private class CapturingSettingsRepository(
+    fontSizeEm: Float = 1.0f,
+    lineHeight: Float = 1.0f,
+    marginPreset: String = "NORMAL",
+    fontFamily: String = "",
+    textAlign: String = "LEFT",
+    hyphenationLang: String = "",
+    fontWeight: Int = 400,
+) : SettingsRepository {
+    var novelFontSizeEmValue: Float? = null
+    var novelLineHeightValue: Float? = null
+    var novelMarginPresetValue: String? = null
+    var novelFontFamilyValue: String? = null
+    var novelTextAlignValue: String? = null
+    var novelHyphenationLangValue: String? = null
+    var novelFontWeightValue: Int? = null
+
+    override val themeMode: Flow<String> = flowOf("SYSTEM")
+    override val language: Flow<String> = flowOf("de")
+    override val displayMode: Flow<String> = flowOf("EINK")
+    override val downloadDir: Flow<String?> = flowOf(null)
+    override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
+    override val activeColorProfileId: Flow<Long?> = flowOf(null)
+    override val webtoonOverlapPercent: Flow<Int> = flowOf(25)
+    override val chapterViewMode: Flow<String> = flowOf("LIST")
+    override val novelFontSizeEm: Flow<Float> = flowOf(fontSizeEm)
+    override val novelLineHeight: Flow<Float> = flowOf(lineHeight)
+    override val novelMarginPreset: Flow<String> = flowOf(marginPreset)
+    override val novelFontFamily: Flow<String> = flowOf(fontFamily)
+    override val novelTextAlign: Flow<String> = flowOf(textAlign)
+    override val novelHyphenationLang: Flow<String> = flowOf(hyphenationLang)
+    override val novelFontWeight: Flow<Int> = flowOf(fontWeight)
+    override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
+    override suspend fun setThemeMode(value: String) {}
+    override suspend fun setLanguage(value: String) {}
+    override suspend fun setDisplayMode(value: String) {}
+    override suspend fun setDownloadDir(uri: String?) {}
+    override suspend fun setGuidedPanelOverlay(value: Boolean) {}
+    override suspend fun setActiveColorProfileId(id: Long) {}
+    override suspend fun setWebtoonOverlapPercent(percent: Int) {}
+    override suspend fun setChapterViewMode(mode: String) {}
+    override suspend fun setNovelFontSizeEm(value: Float) { novelFontSizeEmValue = value }
+    override suspend fun setNovelLineHeight(value: Float) { novelLineHeightValue = value }
+    override suspend fun setNovelMarginPreset(preset: String) { novelMarginPresetValue = preset }
+    override suspend fun setNovelFontFamily(family: String) { novelFontFamilyValue = family }
+    override suspend fun setNovelTextAlign(align: String) { novelTextAlignValue = align }
+    override suspend fun setNovelHyphenationLang(lang: String) { novelHyphenationLangValue = lang }
+    override suspend fun setNovelFontWeight(value: Int) { novelFontWeightValue = value }
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
 }
 

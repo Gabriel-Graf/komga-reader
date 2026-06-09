@@ -29,6 +29,15 @@ class SettingsViewModel @Inject constructor(
     val deviceManagedRefresh = settings.deviceManagedRefresh.stateIn(viewModelScope, SharingStarted.Eagerly, true)
     val webtoonOverlapPercent =
         settings.webtoonOverlapPercent.stateIn(viewModelScope, SharingStarted.Eagerly, 25)
+    // Roman-Typografie (global). Gespiegelt aus demselben SettingsRepository wie das In-Reader-Panel
+    // — eine Quelle, beide Mount-Punkte schreiben hierher (DRY). Defaults = SettingsRepository-Defaults.
+    val novelFontSizeEm = settings.novelFontSizeEm.stateIn(viewModelScope, SharingStarted.Eagerly, 1.0f)
+    val novelLineHeight = settings.novelLineHeight.stateIn(viewModelScope, SharingStarted.Eagerly, 1.0f)
+    val novelMarginPreset = settings.novelMarginPreset.stateIn(viewModelScope, SharingStarted.Eagerly, "NORMAL")
+    val novelFontFamily = settings.novelFontFamily.stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    val novelTextAlign = settings.novelTextAlign.stateIn(viewModelScope, SharingStarted.Eagerly, "JUSTIFY")
+    val novelHyphenationLang = settings.novelHyphenationLang.stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    val novelFontWeight = settings.novelFontWeight.stateIn(viewModelScope, SharingStarted.Eagerly, 400)
     /** Alle konfigurierten Server (mehrere gleichzeitig, gemischte Quellenarten). */
     val serverList = servers.configs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeColorProfile = colorProfiles.observeActive()
@@ -43,6 +52,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setDeviceManagedRefresh(value) }.let {}
     fun setWebtoonOverlap(percent: Int) =
         viewModelScope.launch { settings.setWebtoonOverlapPercent(percent) }.let {}
+    fun setNovelFontSizeEm(value: Float) = viewModelScope.launch { settings.setNovelFontSizeEm(value) }.let {}
+    fun setNovelLineHeight(value: Float) = viewModelScope.launch { settings.setNovelLineHeight(value) }.let {}
+    fun setNovelFontWeight(value: Int) = viewModelScope.launch { settings.setNovelFontWeight(value) }.let {}
+    fun setNovelMarginPreset(preset: String) = viewModelScope.launch { settings.setNovelMarginPreset(preset) }.let {}
+    fun setNovelTextAlign(align: String) = viewModelScope.launch { settings.setNovelTextAlign(align) }.let {}
+    fun setNovelHyphenationLang(lang: String) = viewModelScope.launch { settings.setNovelHyphenationLang(lang) }.let {}
+    fun setNovelFontFamily(family: String) = viewModelScope.launch { settings.setNovelFontFamily(family) }.let {}
     /**
      * Legt eine Verbindung an ([id] == 0) oder aktualisiert sie in-place ([id] != 0 = Bearbeiten).
      * [save] ist ein Upsert über die Rowid — der Bearbeiten-Pfad reicht einfach die bestehende [id] durch.

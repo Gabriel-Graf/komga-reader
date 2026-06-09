@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.komgareader.app.ui.components.LocalContentBottomInset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -106,6 +108,13 @@ private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, 
             onSelect = { selectedId = it },
             modifier = Modifier.width(sizing.sidebarWidth).fillMaxHeight(),
         )
+        // Trennung Sidebar ⇄ Content: nur eine (etwas dickere) vertikale Linie, keine Box um die Tabs.
+        Box(
+            Modifier
+                .width(2.dp)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.outline),
+        )
         Box(
             Modifier
                 .weight(1f)
@@ -113,7 +122,9 @@ private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, 
                 // Sektionen, die ihr eigenes Scrollen verwalten (z. B. Farbfilter mit gepinntem
                 // Cover), bekommen eine gebundene Höhe statt des Host-Scrolls.
                 .then(if (selected.scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                .padding(sizing.contentPadding),
+                .padding(sizing.contentPadding)
+                // Freiraum für die überlagernde Bottom-Menubar, damit die letzte Zeile frei steht.
+                .padding(bottom = LocalContentBottomInset.current),
         ) {
             selected.content(query)
         }
@@ -130,9 +141,7 @@ private fun SettingsSidebar(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant)
-            .verticalScroll(rememberScrollState()),
+        modifier.verticalScroll(rememberScrollState()),
     ) {
         visible.forEach { section ->
             val active = section.id == selectedId
@@ -180,6 +189,7 @@ private fun SettingsAccordion(visible: List<SettingsSection>, query: String, siz
     LazyColumn(
         Modifier.fillMaxSize().padding(EinkTokens.screenPadding),
         verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+        contentPadding = PaddingValues(bottom = LocalContentBottomInset.current),
     ) {
         items(visible, key = { it.id }) { section ->
             val expanded = searching || section.id == openId

@@ -36,9 +36,12 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.localizedContentType
+import com.komgareader.app.ui.collections.CollectionDetailScreen
+import com.komgareader.app.ui.collections.CollectionsScreen
 import com.komgareader.app.ui.components.BottomNavItem
 import com.komgareader.app.ui.components.EinkBottomBar
 import com.komgareader.app.ui.components.LocalContentBottomInset
@@ -54,9 +57,10 @@ import com.komgareader.app.ui.settings.SettingsScreen
 import com.komgareader.domain.model.ContentType
 
 private const val TAB_LIBRARY = 0
-private const val TAB_GROUPS = 1
-private const val TAB_PLUGINS = 2
-private const val TAB_SETTINGS = 3
+private const val TAB_COLLECTIONS = 1
+private const val TAB_GROUPS = 2
+private const val TAB_PLUGINS = 3
+private const val TAB_SETTINGS = 4
 
 /**
  * App-Gerüst mit Onyx-Bottom-Menubar und persistenter Suchzeile in der TopBar.
@@ -88,6 +92,7 @@ fun HomeScreen(
     val items = remember(s) {
         listOf(
             BottomNavItem(AppIcons.Library, s.tabBrowse),
+            BottomNavItem(AppIcons.Bookmark, s.collections),
             BottomNavItem(AppIcons.Groups, s.tabGroups),
             BottomNavItem(AppIcons.Plugins, s.navPlugins),
             BottomNavItem(AppIcons.Settings, s.settingsTitle),
@@ -204,6 +209,20 @@ fun HomeScreen(
                             onOpenSeries = onOpenSeries,
                             viewModel = libraryVm,
                         )
+                        TAB_COLLECTIONS -> {
+                            // Liste ⇄ Detail als interner Tab-Zustand (kein eigener NavHost-Eintrag nötig).
+                            var openCollectionId by rememberSaveable { mutableStateOf<Long?>(null) }
+                            val openId = openCollectionId
+                            if (openId == null) {
+                                CollectionsScreen(onOpenCollection = { openCollectionId = it })
+                            } else {
+                                BackHandler { openCollectionId = null }
+                                CollectionDetailScreen(
+                                    collectionId = openId,
+                                    onBack = { openCollectionId = null },
+                                )
+                            }
+                        }
                         TAB_GROUPS -> GroupsScreen(
                             onOpenGroup = onOpenGroup,
                             showCreateDialog = showCreateGroup,

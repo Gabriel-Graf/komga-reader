@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,9 +44,11 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkOutlinedButton
+import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.HighlightText
-import com.komgareader.app.ui.components.SectionHeader
+import com.komgareader.app.ui.components.SettingsGroup
 import com.komgareader.app.ui.components.StepperRow
+import com.komgareader.app.ui.components.SwitchRow
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
@@ -73,124 +74,160 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         // Verbundene Server (mehrere gleichzeitig, gemischt) — jeder einzeln entfernbar.
-        SectionHeader(s.connectedServers)
-        if (servers.isEmpty()) {
-            HighlightText(s.notConnected, query, MaterialTheme.typography.bodyLarge)
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                servers.forEach { cfg ->
-                    ServerRow(
-                        config = cfg,
-                        query = query,
-                        removeLabel = s.removeServer,
-                        onRemove = { viewModel.removeServer(cfg.id) },
-                    )
+        SettingsGroup(s.connectedServers, query) {
+            if (servers.isEmpty()) {
+                HighlightText(s.notConnected, query, MaterialTheme.typography.bodyLarge)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    servers.forEach { cfg ->
+                        ServerRow(
+                            config = cfg,
+                            query = query,
+                            removeLabel = s.removeServer,
+                            onRemove = { viewModel.removeServer(cfg.id) },
+                        )
+                    }
                 }
             }
         }
 
-        HorizontalDivider()
-        SectionHeader(s.addServer)
+        HorizontalDivider(thickness = EinkTokens.hairline, color = MaterialTheme.colorScheme.outlineVariant)
 
-        // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val select: (SourceKind) -> Unit = { kindInput = it }
-            if (kindInput == SourceKind.KOMGA) {
-                Button(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
-                EinkOutlinedButton(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
-            } else {
-                EinkOutlinedButton(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
-                Button(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
+        SettingsGroup(s.addServer, query) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Quellenart: Komga (REST) oder OPDS (Feed). Markennamen — kein i18n-Key nötig.
+                Column {
+                    FieldCaption(s.serverSectionKind)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val select: (SourceKind) -> Unit = { kindInput = it }
+                        if (kindInput == SourceKind.KOMGA) {
+                            Button(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
+                            EinkOutlinedButton(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
+                        } else {
+                            EinkOutlinedButton(onClick = { select(SourceKind.KOMGA) }) { Text("Komga") }
+                            Button(onClick = { select(SourceKind.OPDS) }) { Text("OPDS") }
+                        }
+                    }
+                }
+
+                // Server-Identität: Name + URL gehören zusammen.
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FieldCaption(s.serverSectionServer)
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text(s.serverDisplayName) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = urlInput,
+                        onValueChange = { urlInput = it },
+                        label = { Text(s.serverUrl) },
+                        placeholder = { Text(s.serverUrlHint) },
+                        supportingText = { Text(s.serverUrlHelper) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    )
+                }
+
+                // Anmeldung: API-Schlüssel ODER Zugangsdaten — als ein Cluster.
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FieldCaption(s.serverSectionAuth)
+                    OutlinedTextField(
+                        value = apiKeyInput,
+                        onValueChange = { apiKeyInput = it },
+                        label = { Text(s.serverApiKeyOptional) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    )
+                    Text(
+                        text = s.orSeparator,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    )
+                    CredentialsFields(
+                        username = usernameInput,
+                        password = passwordInput,
+                        onUsername = { usernameInput = it },
+                        onPassword = { passwordInput = it },
+                        usernameLabel = s.serverUsername,
+                        passwordLabel = s.serverPassword,
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        viewModel.saveServer(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput)
+                        nameInput = ""; urlInput = ""; apiKeyInput = ""; usernameInput = ""; passwordInput = ""
+                        kindInput = SourceKind.KOMGA
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(s.connect) }
             }
         }
-
-        OutlinedTextField(
-            value = nameInput,
-            onValueChange = { nameInput = it },
-            label = { Text(s.serverDisplayName) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-        OutlinedTextField(
-            value = urlInput,
-            onValueChange = { urlInput = it },
-            label = { Text(s.serverUrl) },
-            placeholder = { Text(s.serverUrlHint) },
-            supportingText = { Text(s.serverUrlHelper) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        )
-        OutlinedTextField(
-            value = apiKeyInput,
-            onValueChange = { apiKeyInput = it },
-            label = { Text(s.serverApiKeyOptional) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        )
-
-        HorizontalDivider()
-        Text(
-            text = s.orSeparator,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-        HorizontalDivider()
-
-        val autofill = LocalAutofill.current
-        val autofillTree = LocalAutofillTree.current
-
-        val usernameNode = remember {
-            AutofillNode(autofillTypes = listOf(AutofillType.Username), onFill = { usernameInput = it })
-        }
-        autofillTree += usernameNode
-        OutlinedTextField(
-            value = usernameInput,
-            onValueChange = { usernameInput = it },
-            label = { Text(s.serverUsername) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { usernameNode.boundingBox = it.boundsInWindow() }
-                .onFocusChanged { focus ->
-                    autofill?.run {
-                        if (focus.isFocused) requestAutofillForNode(usernameNode)
-                        else cancelAutofillForNode(usernameNode)
-                    }
-                },
-            singleLine = true,
-        )
-
-        val passwordNode = remember {
-            AutofillNode(autofillTypes = listOf(AutofillType.Password), onFill = { passwordInput = it })
-        }
-        autofillTree += passwordNode
-        OutlinedTextField(
-            value = passwordInput,
-            onValueChange = { passwordInput = it },
-            label = { Text(s.serverPassword) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { passwordNode.boundingBox = it.boundsInWindow() }
-                .onFocusChanged { focus ->
-                    autofill?.run {
-                        if (focus.isFocused) requestAutofillForNode(passwordNode)
-                        else cancelAutofillForNode(passwordNode)
-                    }
-                },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        )
-        Row {
-            Button(onClick = {
-                viewModel.saveServer(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput)
-                nameInput = ""; urlInput = ""; apiKeyInput = ""; usernameInput = ""; passwordInput = ""
-                kindInput = SourceKind.KOMGA
-            }) { Text(s.connect) }
-        }
     }
+}
+
+/** Benutzername-/Passwort-Felder samt Autofill-Verdrahtung — als ein Block. */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun CredentialsFields(
+    username: String,
+    password: String,
+    onUsername: (String) -> Unit,
+    onPassword: (String) -> Unit,
+    usernameLabel: String,
+    passwordLabel: String,
+) {
+    val autofill = LocalAutofill.current
+    val autofillTree = LocalAutofillTree.current
+
+    val usernameNode = remember {
+        AutofillNode(autofillTypes = listOf(AutofillType.Username), onFill = onUsername)
+    }
+    autofillTree += usernameNode
+    OutlinedTextField(
+        value = username,
+        onValueChange = onUsername,
+        label = { Text(usernameLabel) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { usernameNode.boundingBox = it.boundsInWindow() }
+            .onFocusChanged { focus ->
+                autofill?.run {
+                    if (focus.isFocused) requestAutofillForNode(usernameNode)
+                    else cancelAutofillForNode(usernameNode)
+                }
+            },
+        singleLine = true,
+    )
+
+    val passwordNode = remember {
+        AutofillNode(autofillTypes = listOf(AutofillType.Password), onFill = onPassword)
+    }
+    autofillTree += passwordNode
+    OutlinedTextField(
+        value = password,
+        onValueChange = onPassword,
+        label = { Text(passwordLabel) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { passwordNode.boundingBox = it.boundsInWindow() }
+            .onFocusChanged { focus ->
+                autofill?.run {
+                    if (focus.isFocused) requestAutofillForNode(passwordNode)
+                    else cancelAutofillForNode(passwordNode)
+                }
+            },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+    )
 }
 
 /**
@@ -226,15 +263,16 @@ fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
     val themeModeStr by viewModel.themeMode.collectAsState()
     val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
 
-    Column {
-        SectionHeader(s.settingsTheme)
+    SettingsGroup(s.settingsTheme, query) {
         ThemeMode.entries.forEach { mode ->
             val label = when (mode) {
                 ThemeMode.LIGHT -> s.themeLight
                 ThemeMode.DARK -> s.themeDark
                 ThemeMode.SYSTEM -> s.themeSystem
             }
-            ChoiceRow(label, selected = mode == themeMode, query = query) { viewModel.setTheme(mode.name) }
+            ChoiceRow(label, selected = mode == themeMode, query = query, dense = true) {
+                viewModel.setTheme(mode.name)
+            }
         }
     }
 }
@@ -249,34 +287,16 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        Column {
-            SectionHeader(s.settingsEinkRefresh)
-            HighlightText(
-                s.deviceManagedRefreshHelper, query, MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 4.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        SettingsGroup(s.settingsEinkRefresh, query) {
+            SwitchRow(
+                label = s.deviceManagedRefresh,
+                helper = s.deviceManagedRefreshHelper,
+                checked = deviceManagedRefresh,
+                onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
+                query = query,
             )
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HighlightText(
-                    s.deviceManagedRefresh, query, MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(
-                    checked = deviceManagedRefresh,
-                    onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
-                )
-            }
         }
-        Column {
-            SectionHeader(s.settingsWebtoon)
-            HighlightText(
-                s.webtoonOverlapHelper, query, MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 4.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        SettingsGroup(s.settingsWebtoon, query, helper = s.webtoonOverlapHelper) {
             StepperRow(
                 label = s.webtoonOverlap,
                 value = overlap,
@@ -287,33 +307,24 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
                 display = { "$it %" },
             )
         }
-        Column {
-            SectionHeader(s.settingsDisplayMode)
-            HighlightText(
-                s.displayModeHelper, query, MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(bottom = 4.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        SettingsGroup(s.settingsDisplayMode, query, helper = s.displayModeHelper) {
             DisplayMode.entries.forEach { dm ->
                 val label = when (dm) {
                     DisplayMode.EINK -> s.displayEink
                     DisplayMode.SMARTPHONE -> s.displaySmartphone
                 }
-                ChoiceRow(label, selected = dm == displayMode, query = query) { viewModel.setDisplayMode(dm.name) }
+                ChoiceRow(label, selected = dm == displayMode, query = query, dense = true) {
+                    viewModel.setDisplayMode(dm.name)
+                }
             }
         }
-        Column {
-            SectionHeader(s.settingsGuidedDebug)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HighlightText(
-                    s.readerPanelOverlay, query, MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(checked = panelOverlay, onCheckedChange = { viewModel.setGuidedPanelOverlay(it) })
-            }
+        SettingsGroup(s.settingsGuidedDebug, query) {
+            SwitchRow(
+                label = s.readerPanelOverlay,
+                checked = panelOverlay,
+                onCheckedChange = { viewModel.setGuidedPanelOverlay(it) },
+                query = query,
+            )
         }
     }
 }
@@ -336,16 +347,11 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
         }
     }
 
-    Column {
-        SectionHeader(s.downloadFolder)
-        val folderLabel = downloadDir?.let { dir ->
-            runCatching { Uri.parse(dir).lastPathSegment ?: dir }.getOrElse { dir }
-        } ?: s.defaultFolder
-        HighlightText(
-            folderLabel, query, MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(bottom = 12.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    val folderLabel = downloadDir?.let { dir ->
+        runCatching { Uri.parse(dir).lastPathSegment ?: dir }.getOrElse { dir }
+    } ?: s.defaultFolder
+
+    SettingsGroup(s.downloadFolder, query, helper = folderLabel) {
         Row {
             Button(onClick = { folderPicker.launch(null) }) { Text(s.chooseFolder) }
             if (downloadDir != null) {
@@ -358,14 +364,17 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
 
 @Composable
 fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
+    val s = LocalStrings.current
     val languageStr by viewModel.language.collectAsState()
-    Column {
+    SettingsGroup(s.settingsLanguage, query) {
         Language.entries.forEach { lang ->
             val label = when (lang) {
                 Language.DE -> "Deutsch"
                 Language.EN -> "English"
             }
-            ChoiceRow(label, selected = lang.code == languageStr, query = query) { viewModel.setLanguage(lang.code) }
+            ChoiceRow(label, selected = lang.code == languageStr, query = query, dense = true) {
+                viewModel.setLanguage(lang.code)
+            }
         }
     }
 }
@@ -373,14 +382,12 @@ fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
 @Composable
 fun AboutContent(query: String) {
     val s = LocalStrings.current
-    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        Column {
-            HighlightText(s.appName, query, MaterialTheme.typography.titleLarge)
-            HighlightText(
-                s.aboutDevice, query, MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    SettingsGroup(s.appName, query) {
+        HighlightText(
+            s.aboutDevice, query, MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
         Row(Modifier.fillMaxWidth()) {
             Text("${s.versionLabel}: ", style = MaterialTheme.typography.bodyMedium)
             HighlightText(BuildConfig.VERSION_NAME, query, MaterialTheme.typography.bodyMedium)

@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,8 +29,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 
@@ -88,15 +92,142 @@ fun SettingsTile(
     }
 }
 
-/** Kleiner Sektions-Kopf über einer Gruppe von Zeilen/Tiles. */
+/**
+ * Sektions-Kopf über einer Gruppe von Settings-Zeilen. **Dominant** (titleMedium, 18sp, Bold,
+ * onSurface) — bewusst **größer und stärker** als die Zeilen-Labels darunter (bodyLarge, 16sp),
+ * damit die Hierarchie stimmt. Anti-Pattern (vorher real): Kopf kleiner/blasser als der Inhalt —
+ * dann wirkt der Screen wie lose Buttons statt geordnete Information.
+ */
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(bottom = 4.dp),
+        style = MaterialTheme.typography.titleMedium.copy(
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+        ),
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier.padding(bottom = 8.dp),
     )
+}
+
+/** Einrückung des Gruppen-Inhalts unter den [SectionHeader] — macht den Kopf zum Anker. */
+val SettingsGroupIndent = 4.dp
+
+/**
+ * Wiederkehrendes Gerüst einer Settings-Gruppe: dominanter [SectionHeader] → optionaler
+ * erklärender Helper → leicht eingerückter Inhalt. **Das** gemeinsame Konzept aller Settings-Tabs
+ * (Verbindung, Reader, Farbfilter …) — gleiche Hierarchie, gleicher Abstand, damit die Seite wie
+ * ein Konzept und nicht wie lose Zeilen wirkt. [query] markiert Suchtreffer im Helper.
+ */
+@Composable
+fun SettingsGroup(
+    title: String,
+    query: String,
+    modifier: Modifier = Modifier,
+    helper: String? = null,
+    content: @Composable () -> Unit,
+) {
+    Column(modifier.fillMaxWidth()) {
+        SectionHeader(title)
+        if (helper != null) {
+            HighlightText(
+                helper, query, MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+        }
+        Column(Modifier.padding(start = SettingsGroupIndent)) { content() }
+    }
+}
+
+/**
+ * Leise Unter-Beschriftung über einem Feld-Cluster (z. B. „Server", „Anmeldung") — eine Stufe
+ * **unter** [SectionHeader]: klein, gedämpft (labelMedium, onSurfaceVariant). Bündelt
+ * zusammengehörige Eingabefelder optisch, ohne mit dem Sektions-Kopf zu konkurrieren.
+ */
+@Composable
+fun FieldCaption(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.padding(bottom = 2.dp),
+    )
+}
+
+/**
+ * Einheitliche Settings-Zeile: Label (+ optionaler Helper darunter) links, ein [trailing]-Control
+ * rechts. **Das** kohärente Grundraster aller Einstellungen — Switch/Stepper/Wert hängen alle hier
+ * dran, damit jede Zeile gleich ausgerichtet und gleich kompakt ist. [query] markiert Suchtreffer.
+ */
+@Composable
+fun SettingsRow(
+    label: String,
+    modifier: Modifier = Modifier,
+    helper: String? = null,
+    query: String = "",
+    trailing: @Composable () -> Unit,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            HighlightText(label, query, MaterialTheme.typography.bodyLarge)
+            if (helper != null) {
+                HighlightText(
+                    helper, query, MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        trailing()
+    }
+}
+
+/** Settings-Zeile mit An/Aus-Schalter rechts — kapselt die zuvor inline gebauten Switch-Zeilen. */
+@Composable
+fun SwitchRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    helper: String? = null,
+    query: String = "",
+) {
+    SettingsRow(label, modifier, helper, query) {
+        EinkToggle(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/**
+ * Flacher E-Ink-Toggle: 1.5px-Rahmen statt Schatten, maximaler Kontrast, **keine Bewegung**
+ * (der Knopf springt sofort — auf E-Ink animiert nichts). Ersetzt den Material-`Switch`:
+ * AN = schwarze Pille, weißer Knopf rechts; AUS = leere Pille, schwarzer Knopf links.
+ */
+@Composable
+fun EinkToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val border = if (enabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant
+    val track = if (checked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface
+    val knob = if (checked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier = modifier
+            .size(width = 48.dp, height = 28.dp)
+            .border(EinkTokens.hairline, border, RoundedCornerShape(14.dp))
+            .background(track, RoundedCornerShape(14.dp))
+            .clickable(enabled = enabled) { onCheckedChange(!checked) }
+            .padding(3.dp),
+        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Box(Modifier.size(20.dp).background(if (enabled) knob else border, CircleShape))
+    }
 }
 
 /**

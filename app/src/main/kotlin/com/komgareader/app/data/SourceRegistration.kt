@@ -22,7 +22,12 @@ class SourceRegistration @Inject constructor(
     private var activeIds: Set<Long> = emptySet()
 
     private fun build(config: ServerConfig): BrowsableSource? = when (config.kind) {
-        SourceKind.OPDS -> OpdsSourceFactory.create(config.name, config.baseUrl)
+        SourceKind.OPDS -> OpdsSourceFactory.create(
+            name = config.name,
+            catalogUrl = config.baseUrl,
+            username = config.username,
+            password = config.password,
+        )
         else -> komgaProvider.from(config)
     }
 

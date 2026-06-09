@@ -52,8 +52,12 @@ aktive" Quelle auf, sondern **die des konkreten Werks** über `ActiveSource.get(
 (`series/{seriesId}/{sourceId}`, `reader/{bookId}/{sourceId}/…`) — Callbacks tragen `series.sourceId`/
 `book.sourceId`. **Lackmustest verschärft:** funktioniert das Feature, wenn **zwei** Quellen
 gleichzeitig aktiv sind und das Werk zur **zweiten** gehört? `current()` als Werk-Resolver = Bug.
-Settings verwaltet eine Server-Liste (Hinzufügen/Einzel-Entfernen). Offen: OPDS als end-to-end
-*verifizierte* zweite Live-Quelle — der Canary aus Phase 7.
+Settings verwaltet eine Server-Liste (Hinzufügen/Einzel-Entfernen). **Ist (2026-06-09): OPDS als
+zweite Live-Quelle live gemischt verifiziert** — Komga-REST + OPDS gleichzeitig registriert,
+`ActiveSource.all()` liefert beide, OPDS-Werk über `downloadFile` geladen (OPDS hat kein
+`openPage`, liest über den Download-Pfad). Basic-Auth für OPDS wird über `OpdsSourceFactory`
+und `SourceRegistration` aus `ServerConfig.username`/`.password` durchgereicht.
+Test: `app/src/androidTest/.../MixedSourcesLiveTest.kt`.
 
 ```kotlin
 // Ist (verdrahtet): ActiveSource resolvt die aktive Quelle agnostisch als BrowsableSource.

@@ -10,6 +10,7 @@ import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.source.SourceId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Credentials
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -19,6 +20,9 @@ import okhttp3.Request
  * OPDS-Katalog als [BrowsableSource]. Liest einen Atom-Feed via OkHttp und bildet
  * Einträge auf [Series] und [Book] ab. Lesen erfolgt über [downloadFile] + MuPDF;
  * seitenweises Streaming wird nicht unterstützt.
+ *
+ * Authentifizierung: optional Basic-Auth über [username]/[password].
+ * OPDS-Server (u. a. Komga) akzeptieren keinen `X-API-Key`-Header am OPDS-Endpunkt.
  */
 class OpdsSource internal constructor(
     override val id: Long,
@@ -26,6 +30,8 @@ class OpdsSource internal constructor(
     private val catalogUrl: String,
     private val client: OkHttpClient,
     private val parser: OpdsFeedParser = OpdsFeedParser(),
+    private val username: String? = null,
+    private val password: String? = null,
 ) : BrowsableSource {
 
     override val kind: SourceKind = SourceKind.OPDS
@@ -82,7 +88,7 @@ class OpdsSource internal constructor(
         val absoluteUrl = baseUrl.resolve(href)
             ?: error("Ungültiger Acquisition-Href: $href")
         return withContext(Dispatchers.IO) {
-            val request = Request.Builder().url(absoluteUrl).build()
+            val request = buildRequest(absoluteUrl.toString())
             client.newCall(request).execute().use { response ->
                 check(response.isSuccessful) {
                     "Download fehlgeschlagen: HTTP ${response.code} für $absoluteUrl"
@@ -102,7 +108,7 @@ class OpdsSource internal constructor(
         val href = entries.firstOrNull { it.id == remoteId }?.coverHref ?: return ByteArray(0)
         val absoluteUrl = baseUrl.resolve(href) ?: return ByteArray(0)
         return withContext(Dispatchers.IO) {
-            val request = Request.Builder().url(absoluteUrl).build()
+            val request = buildRequest(absoluteUrl.toString())
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) ByteArray(0) else response.body?.bytes() ?: ByteArray(0)
             }
@@ -117,12 +123,21 @@ class OpdsSource internal constructor(
     override suspend fun seriesIdOf(bookRemoteId: String): String = bookRemoteId
 
     private suspend fun fetchFeed(url: String): List<OpdsEntry> = withContext(Dispatchers.IO) {
-        val request = Request.Builder().url(url).build()
+        val request = buildRequest(url)
         val xml = client.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "Feed-Abruf fehlgeschlagen: HTTP ${response.code} für $url" }
             response.body!!.string()
         }
         parser.parse(xml)
+    }
+
+    /** Baut einen [Request] mit optionalem Basic-Auth-Header. */
+    private fun buildRequest(url: String): Request {
+        val builder = Request.Builder().url(url)
+        if (!username.isNullOrEmpty() && !password.isNullOrEmpty()) {
+            builder.header("Authorization", Credentials.basic(username, password))
+        }
+        return builder.build()
     }
 
     private fun OpdsEntry.toSeries(): Series = Series(
@@ -144,10 +159,20 @@ class OpdsSource internal constructor(
     )
 }
 
-/** Baut eine [OpdsSource] aus Name und Katalog-URL zusammen. */
+/** Baut eine [OpdsSource] aus Name, Katalog-URL und optionalen Credentials zusammen. */
 object OpdsSourceFactory {
 
-    fun create(name: String, catalogUrl: String): OpdsSource {
+    /**
+     * Erstellt eine [OpdsSource]. Optionale Basic-Auth-Credentials ([username]/[password])
+     * werden für alle Requests (Feed-Abruf, Download, Cover) als `Authorization`-Header gesetzt.
+     * Komga OPDS akzeptiert keinen `X-API-Key`-Header — Basic-Auth ist der korrekte Weg.
+     */
+    fun create(
+        name: String,
+        catalogUrl: String,
+        username: String? = null,
+        password: String? = null,
+    ): OpdsSource {
         val client = OkHttpClient.Builder().build()
         val id = SourceId.of(name, SourceKind.OPDS, catalogUrl)
         return OpdsSource(
@@ -155,6 +180,8 @@ object OpdsSourceFactory {
             name = name,
             catalogUrl = catalogUrl,
             client = client,
+            username = username,
+            password = password,
         )
     }
 }

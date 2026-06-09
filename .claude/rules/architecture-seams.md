@@ -50,9 +50,11 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   lösen **pro Werk** über `get(item.sourceId)` auf statt „die erste/aktive" (`LibraryViewModel`
   aggregiert über `all()`; `SeriesDetail`/`Reader`/`Novel`/`GroupBrowse`/`Groups` via `get`).
   Settings verwaltet eine **Server-Liste** (Hinzufügen + Einzel-Entfernen). Emulator-verifiziert.
-  **Offen:** OPDS als end-to-end *verifizierte* zweite Live-Quelle (Registrierung/Typwahl-UI
-  existiert; gemischter Betrieb mit Komga noch nicht am Gerät bewiesen) — Phase-7-Canary.
-  Details/Integrationsregel: `source-agnostic-integration.md`.
+  **Ist (2026-06-09): OPDS als zweite Live-Quelle live gemischt verifiziert.** Komga-REST + OPDS
+  gleichzeitig registriert, `ActiveSource.all()` liefert beide, OPDS-Werk via `downloadFile`
+  geladen — bewiesen durch `MixedSourcesLiveTest` auf dem Emulator. `OpdsSource` trägt jetzt
+  Basic-Auth-Credentials (Komga OPDS akzeptiert keinen `X-API-Key`-Header). Details/Integrationsregel:
+  `source-agnostic-integration.md`.
 
 ## Naht B — Render & E-Ink (`render-core`, `eink-onyx`)
 

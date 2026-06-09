@@ -137,4 +137,14 @@ class CollectionSyncManagerTest {
         assertEquals(SyncStatus.SYNCED, repo.links.getValue(1).status)
         assertEquals(false, repo.links.getValue(1).dirty)
     }
+
+    @Test fun `refresh merges server subsets back into canonical list`() = runBlocking {
+        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("r1", "Mix", listOf("a", "d"))))
+        val repo = FakeCollectionRepo()
+        val mgr = CollectionSyncManager(repo, resolver = { s1 })
+        val col = UserCollection(10, "Mix", CollectionKind.SERIES,
+            listOf(CollectionMember(1, "a", "A"), CollectionMember(1, "b", "B")))  // b lokal, weg auf Server; d neu auf Server
+        val merged = mgr.refresh(col)
+        assertEquals(listOf("a", "d"), merged.members.map { it.remoteId })  // b entfernt, d angehängt
+    }
 }

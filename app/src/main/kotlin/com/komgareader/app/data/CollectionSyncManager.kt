@@ -6,6 +6,7 @@ import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.CollectionSyncLink
 import com.komgareader.domain.source.CollectionSyncSource
 import com.komgareader.domain.usecase.groupBySource
+import com.komgareader.domain.usecase.mergeSubsets
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -51,6 +52,23 @@ class CollectionSyncManager(
                 onFailure = { writeLink(collection.id, sourceId, null, SyncStatus.FORBIDDEN, dirty = true) },
             )
         }
+    }
+
+    /** Lädt pro sync-fähiger Quelle das Subset, merged in die kanonische Liste, persistiert. */
+    suspend fun refresh(collection: UserCollection): UserCollection {
+        val perSourceRemote = mutableMapOf<Long, List<String>>()
+        for (sourceId in collection.members.map { it.sourceId }.toSet()) {
+            val source = resolver(sourceId) ?: continue   // nicht sync-fähig → Mitglieder bleiben
+            val remote = runCatching {
+                source.listCollections(collection.kind).firstOrNull { it.name == collection.name }
+            }.getOrNull() ?: continue
+            perSourceRemote[sourceId] = remote.memberRemoteIds
+        }
+        val merged = mergeSubsets(collection.members, perSourceRemote) { sid, rid ->
+            collection.members.firstOrNull { it.sourceId == sid && it.remoteId == rid }?.title ?: rid
+        }
+        repo.setMembers(collection.id, merged)
+        return collection.copy(members = merged)
     }
 
     private suspend fun writeLink(collectionId: Long, sourceId: Long, remoteId: String?, status: SyncStatus, dirty: Boolean) {

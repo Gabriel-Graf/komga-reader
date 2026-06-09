@@ -14,14 +14,13 @@ import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.reader.WebtoonChapter
-import com.komgareader.domain.reader.WebtoonStrip
 import com.komgareader.domain.render.Document
 import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SyncingSource
-import com.komgareader.domain.source.buildPageRefs
+import com.komgareader.domain.source.buildWebtoonStrip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -125,6 +124,17 @@ class ReaderViewModel @Inject constructor(
     private val renderCache = mutableMapOf<Int, Bitmap>()
     private val renderMutex = Mutex()
 
+    /**
+     * Schaltet den **Anzeige**-Modus paged⟷webtoon (bzw. comic⟷webtoon) auf demselben bereits
+     * geladenen [ReaderContent] um — kein Neuladen, nur ein anderes Layout über dieselbe
+     * `pages`-Liste. Dieser Toggle bleibt **bewusst** in diesem VM (kein Zwei-VM-Split): beide
+     * Layouts teilen `_currentPage` (Scroll-/Seitenposition über den Wechsel hinweg), den **einen**
+     * [refreshScheduler] (Viewer-Naht: genau eine Instanz pro Sitzung) und [frameStep]. Ein
+     * separates `WebtoonReaderViewModel` müsste diesen geteilten Zustand entweder duplizieren
+     * (zweiter Scheduler — verboten), die Position beim Toggle verlieren oder den Inhalt neu laden
+     * (Lade-Sturm + Verhaltensänderung). Die genuin webtoon-spezifische *Lade-Logik* ist stattdessen
+     * in den puren [com.komgareader.domain.source.buildWebtoonStrip] ausgelagert und einzeln getestet.
+     */
     fun toggleViewerMode() {
         viewerMode.value = if (viewerMode.value == ViewerMode.WEBTOON) pagedFamilyMode else ViewerMode.WEBTOON
     }
@@ -201,24 +211,25 @@ class ReaderViewModel @Inject constructor(
     private suspend fun loadWebtoonStrip(source: BrowsableSource) {
         val seriesId = withContext(Dispatchers.IO) { source.seriesIdOf(bookId) }
         val books = withContext(Dispatchers.IO) { source.books(seriesId) }
-        val strip = WebtoonStrip(books.map { WebtoonChapter(it.remoteId, it.pageCount) })
-        val flat = books.flatMap { b ->
-            buildPageRefs(b.remoteId, b.pageCount).map { SourceImage(source.id, b.remoteId, it.pageNumber) }
-        }
-
-        val openedIdx = books.indexOfFirst { it.remoteId == bookId }.coerceAtLeast(0)
-        val openedPageCount = books.getOrNull(openedIdx)?.pageCount ?: 0
         val localStart = runCatching { (source as? SyncingSource)?.pullProgress(bookId) }
             .getOrNull()
-            ?.let { (it.page - 1).coerceIn(0, (openedPageCount - 1).coerceAtLeast(0)) }
+            ?.let { it.page - 1 }
             ?: 0
-        val initialGlobal = if (strip.totalPages == 0) 0 else strip.globalIndex(openedIdx, localStart)
 
-        _currentPage.value = initialGlobal
+        // Reine Strip-Planung (Index ↔ Kapitel/Seite, flache Seiten-Liste, globaler Start) —
+        // im pur-getesteten [buildWebtoonStrip]. Hier nur das I/O + das Mapping auf SourceImage.
+        val plan = buildWebtoonStrip(
+            chapters = books.map { WebtoonChapter(it.remoteId, it.pageCount) },
+            openedBookRemoteId = bookId,
+            localStartPage = localStart,
+        )
+        val flat = plan.pages.map { SourceImage(source.id, it.bookRemoteId, it.pageNumber) }
+
+        _currentPage.value = plan.initialGlobalIndex
         _content.value = ReaderContent.Webtoon(
             pages = flat,
-            initialPage = initialGlobal,
-            strip = strip,
+            initialPage = plan.initialGlobalIndex,
+            strip = plan.strip,
         )
     }
 

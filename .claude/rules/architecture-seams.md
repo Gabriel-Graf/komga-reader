@@ -89,9 +89,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`PagedReaderScreen`/`WebtoonReaderScreen`/`ComicReaderScreen`/`NovelReaderScreen`), dispatcht
   per `when(ViewerMode)`/`when(ReaderContent)` in `ReaderRoute.kt` — ein 5. Reader/UI-Plugin
   implementiert **`Viewer`** statt einer Parallel-Linie.
-- **Noch Soll:** Der **God-VM-Split** (paged/webtoon/rendered stecken zusammen in `ReaderViewModel`,
-  Comic/Novel haben eigene VMs) ist noch nicht aufgelöst — ein separater Refactor *auf* der
-  `Viewer`-Naht. Wer ihn macht, zieht diese Regel im selben Commit nach.
+- **God-VM-Split (Ist, 2026-06-09 — teilweise aufgelöst):** Die webtoon-spezifische *Lade-Logik*
+  ist aus `ReaderViewModel` heraus extrahiert: der nahtlose, kapitelübergreifende Strip (Index↔
+  Kapitel/Seite, flache Seiten-Liste, globaler Start) entsteht jetzt im **pur-getesteten**
+  `buildWebtoonStrip` (`source-api/.../source/WebtoonStripPlanner.kt`, `WebtoonStripPlan`).
+  `ReaderViewModel.loadWebtoonStrip` hält nur noch das I/O (`seriesIdOf`/`books`/`pullProgress`)
+  + das `SourceImage`-Mapping und delegiert die Planung. paged/webtoon/rendered **bleiben** in
+  `ReaderViewModel`, weil der **In-Screen-Toggle `toggleViewerMode` (paged⟷webtoon, comic⟷webtoon)**
+  beide Layouts auf **einem** geladenen `ReaderContent` rendert und dabei `_currentPage`, den
+  **einen** `RefreshScheduler` (Viewer-Naht: genau eine Instanz pro Sitzung) und `frameStep`
+  geteilt teilt. Ein voller Zwei-VM-Split würde diesen Toggle brechen (zweiter Scheduler verboten,
+  Scroll-/Seitenposition ginge verloren oder Inhalt müsste auf Toggle neu geladen werden = Lade-
+  Sturm + Verhaltensänderung). Der Toggle bleibt daher **bewusst** in `ReaderViewModel` —
+  dokumentiert direkt an `toggleViewerMode`. Die genuin webtoon-spezifische Logik ist trotzdem
+  raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 

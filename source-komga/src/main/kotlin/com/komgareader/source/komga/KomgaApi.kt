@@ -85,8 +85,7 @@ interface KomgaApi {
 
     @GET("collections")
     suspend fun listCollections(
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 500,
+        @Query("unpaged") unpaged: Boolean = true,
     ): KomgaPage<CollectionDto>
 
     @POST("collections")
@@ -100,8 +99,7 @@ interface KomgaApi {
 
     @GET("readlists")
     suspend fun listReadLists(
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 500,
+        @Query("unpaged") unpaged: Boolean = true,
     ): KomgaPage<ReadListDto>
 
     @POST("readlists")

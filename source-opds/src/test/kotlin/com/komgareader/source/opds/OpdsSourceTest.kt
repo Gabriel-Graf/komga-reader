@@ -9,6 +9,8 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class OpdsSourceTest {
@@ -103,5 +105,27 @@ class OpdsSourceTest {
     fun `pages liefert leere Liste`() = runTest {
         val refs = source().pages("urn:vs:1")
         assertEquals(0, refs.size)
+    }
+
+    @Test
+    fun `feed-Request trägt Authorization-Header wenn Credentials gesetzt`() = runTest {
+        server.enqueue(MockResponse().setBody(exampleFeed).addHeader("Content-Type", "application/atom+xml"))
+        val source = OpdsSourceFactory.create(
+            name = "Auth-Test",
+            catalogUrl = server.url("/opds/v1.2/catalog").toString(),
+            username = "user",
+            password = "secret",
+        )
+        source.browse(page = 0, filter = SourceFilter())
+        val authHeader = server.takeRequest().getHeader("Authorization")
+        assertNotNull(authHeader, "Authorization-Header fehlt bei gesetzten Credentials")
+        assertEquals(okhttp3.Credentials.basic("user", "secret"), authHeader)
+    }
+
+    @Test
+    fun `feed-Request ohne Credentials hat keinen Authorization-Header`() = runTest {
+        server.enqueue(MockResponse().setBody(exampleFeed).addHeader("Content-Type", "application/atom+xml"))
+        source().browse(page = 0, filter = SourceFilter())
+        assertNull(server.takeRequest().getHeader("Authorization"), "Authorization-Header darf ohne Credentials nicht gesetzt sein")
     }
 }

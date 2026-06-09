@@ -15,6 +15,7 @@ import com.komgareader.domain.source.SourceManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -70,8 +71,8 @@ class MixedSourcesLiveTest {
             name = "Komga-OPDS",
             // Direkt auf die Berserk-Serie zeigen → Eintrag hat Acquisition-Link
             baseUrl = "http://10.0.2.2:25600/opds/v1.2/series/0QKVPRDV0293Z",
-            username = "admin@test.local",
-            password = "testpass123",
+            username = "admin@test.local",   // bekannte Fixture-Credentials der lokalen Test-Komga (siehe local-test-komga)
+            password = "testpass123",          // projektweites Muster — alle Instrumented-Tests hardcoden diese Werte
             kind = SourceKind.OPDS,
         ))
 
@@ -83,8 +84,16 @@ class MixedSourcesLiveTest {
         assertTrue("Komga-REST muss in all() sein", all.any { it.kind == SourceKind.KOMGA })
         assertTrue("OPDS muss in all() sein", all.any { it.kind == SourceKind.OPDS })
 
-        // Aus der OPDS-Quelle browsen.
+        // IDs müssen unterschiedlich sein — sonst kein echter gemischter Betrieb möglich.
+        val komgaSource = all.first { it.kind == SourceKind.KOMGA }
         val opdsSource = all.first { it.kind == SourceKind.OPDS }
+        assertNotEquals(
+            "Quellen müssen unterschiedliche IDs haben — sonst kein echter gemischter Betrieb",
+            komgaSource.id,
+            opdsSource.id,
+        )
+
+        // Aus der OPDS-Quelle browsen.
         val browsePage = opdsSource.browse(0, com.komgareader.domain.source.SourceFilter())
         assertTrue(
             "OPDS-Katalog muss mindestens ein Werk enthalten, war: ${browsePage.items.size}",

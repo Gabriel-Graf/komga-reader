@@ -46,6 +46,7 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.app.ui.theme.LocalDesignTokens
 
 /** Größenklasse abhängig von der verfügbaren Breite — keine Magic-dp verstreut. */
 private data class SettingsSizing(
@@ -143,6 +144,7 @@ private fun SettingsSidebar(
     Column(
         modifier.verticalScroll(rememberScrollState()),
     ) {
+        val accent = LocalDesignTokens.current.accent
         visible.forEach { section ->
             val active = section.id == selectedId
             Row(
@@ -152,11 +154,11 @@ private fun SettingsSidebar(
                     .padding(horizontal = 12.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Aktiv: schwarzer Akzent-Balken links (E-Ink-Bottom-Bar-Sprache, vertikal).
+                // Aktiv: Akzent-Balken links (E-Ink: Schwarz, Kaleido/LCD: Akzentfarbe).
                 Box(
                     Modifier
                         .size(width = 3.dp, height = sizing.iconSize)
-                        .background(if (active) MaterialTheme.colorScheme.onSurface else Color.Transparent),
+                        .background(if (active) accent else Color.Transparent),
                 )
                 Spacer(Modifier.width(10.dp))
                 Icon(

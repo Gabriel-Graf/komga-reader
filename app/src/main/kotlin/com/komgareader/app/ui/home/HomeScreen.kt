@@ -51,6 +51,7 @@ import com.komgareader.app.ui.library.LibraryScreen
 import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
 import com.komgareader.app.ui.settings.SettingsScreen
+import com.komgareader.app.ui.theme.LocalDesignTokens
 import com.komgareader.domain.model.ContentType
 
 private const val TAB_LIBRARY = 0
@@ -234,13 +235,14 @@ fun HomeScreen(
     }
 }
 
-/** Kompakter E-Ink-Filter-Chip im Suchfeld: Label + ✕ zum Entfernen des Typs. */
+/** Kompakter Filter-Chip im Suchfeld: aktiv gesetzter Filter (Label + ✕ zum Entfernen). Akzentfarbe = aktiv. */
 @Composable
 private fun TypeFilterChip(label: String, onRemove: () -> Unit) {
+    val tokens = LocalDesignTokens.current
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.onSurface)
+            .background(tokens.accent)
             .clickable(onClick = onRemove)
             .padding(start = 8.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -248,12 +250,12 @@ private fun TypeFilterChip(label: String, onRemove: () -> Unit) {
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.surface,
+            color = tokens.onAccent,
         )
         Icon(
             AppIcons.Close,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.surface,
+            tint = tokens.onAccent,
             modifier = Modifier.size(14.dp),
         )
     }

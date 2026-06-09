@@ -56,6 +56,7 @@ import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.app.ui.theme.LocalDesignTokens
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
 
@@ -474,17 +475,18 @@ private fun DitherSelectorRow(
             DitherMode.FLOYD_STEINBERG to labels.second,
             DitherMode.ORDERED to labels.third,
         )
+        val tokens = LocalDesignTokens.current
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             modes.forEach { (mode, text) ->
                 val isActive = mode == selected
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    color = if (isActive) tokens.onAccent else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .then(
-                            if (isActive) Modifier.background(MaterialTheme.colorScheme.primary)
+                            if (isActive) Modifier.background(tokens.accent)
                             else Modifier.border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
                         )
                         .clickable { onSelect(mode) }

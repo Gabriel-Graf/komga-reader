@@ -27,6 +27,9 @@ class OnyxEinkController(
     private val appPackageName: String,
 ) : EinkController {
 
+    // canColor = true: korrekt für Onyx Boox Go Color 7 Gen2 (Kaleido-Schirm). Die EpdController-API
+    // v1.3.5 bietet keine Geräteklassen-Abfrage — hardcoded ist hier die sichere Wahl für das einzige
+    // unterstützte Onyx-Modell. Bei Erweiterung auf mono-Boox-Geräte via Build.MODEL differenzieren.
     override val capabilities = EinkCapabilities(
         hasEink = true,
         canColor = true,

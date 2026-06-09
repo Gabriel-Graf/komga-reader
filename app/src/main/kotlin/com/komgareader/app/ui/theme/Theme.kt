@@ -5,6 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import com.komgareader.app.ui.components.LocalDisplayBehavior
+import com.komgareader.app.ui.slots.LocalResolvedSlots
+import com.komgareader.app.ui.slots.UiSlotPack
+import com.komgareader.app.ui.slots.UiSlots
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
@@ -15,7 +18,11 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
  * host-erzwungen; das Pack liefert nur den Look. Default mono = reiner E-Ink-Look auf dem Zielgerät.
  */
 @Composable
-fun KomgaReaderTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
+fun KomgaReaderTheme(
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    slotPack: UiSlotPack = UiSlotPack(),
+    content: @Composable () -> Unit,
+) {
     val dark = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
@@ -30,6 +37,11 @@ fun KomgaReaderTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composab
         CompositionLocalProvider(
             LocalUiPack provides pack,
             LocalDesignTokens provides pack.designTokens(dark),
+            // Slot-Naht: das aktive Slot-Pack auflösen (fehlende Regionen → Default). Standard ist
+            // das mitgelieferte Pack; ein alternatives Pack ([slotPack]) ersetzt einzelne Regionen,
+            // ohne dass die Consumer (Call-Sites unten) sich ändern. Bewegung/Akzent bleiben über
+            // die obigen Locals **host-erzwungen** — ein Slot liefert nur Inhalt, nie die Policy.
+            LocalResolvedSlots provides UiSlots.resolve(slotPack),
             content = content,
         )
     }

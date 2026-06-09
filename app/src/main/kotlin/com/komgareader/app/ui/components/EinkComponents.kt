@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.app.ui.theme.EinkTokens
 
 /**
@@ -224,7 +225,7 @@ fun SubPageScaffold(
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { StandardTopAppBar(title = title, onBack = onBack) },
+        topBar = { LocalResolvedSlots.current.header(title, onBack) {} },
     ) { padding ->
         val base = Modifier
             .padding(padding)

@@ -104,6 +104,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   dokumentiert direkt an `toggleViewerMode`. Die genuin webtoon-spezifische Logik ist trotzdem
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
+- **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region gebaut):** Über den Reader-Engines wird das
+  *Chrome* (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-
+  Stück der modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut ist genau die erste
+  Region `header`** (`app/ui/slots/UiSlots.kt`): der In-Tree-Vertrag `HeaderSlot`
+  (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`), das optionale
+  `UiSlotPack(header)`, der **pure** Resolver `UiSlots.resolve` (fehlender Slot → `DefaultSlots`, nie
+  `null`, analog `StubSource`) und `LocalResolvedSlots` (im Host `KomgaReaderTheme` bereitgestellt,
+  spiegelt `LocalUiPack`). Die Header-Call-Sites (`SeriesDetailScreen`, `SubPageScaffold`) rendern jetzt
+  `LocalResolvedSlots.current.header(...)` statt `StandardTopAppBar` direkt; das `DefaultSlots`-Pack ist
+  verhaltensgleich. **E-Ink-Invarianten host-erzwungen:** ein Slot liefert nur Inhalt/Struktur, nie die
+  Bewegungs-/Akzent-Policy (die bleibt an `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
+  **Weiter Soll:** die anderen fünf Slots, die `ui-api`-Modul-Extraktion und der APK-Pack-Lader bleiben
+  Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
+
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 
 - `domain` hat **keine** Android-/Netz-/Quellen-Abhängigkeit. Pure Kotlin, pure Unit-Tests.

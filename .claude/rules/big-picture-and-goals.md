@@ -163,18 +163,28 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 - Style **über Theme-Token** ziehen (`Theme.kt`), nie hartkodierte Farben/Maße — ein Theme-Pack
   ersetzt dann Token, nicht Call-Sites.
 
-> **docs-match-code (Stand 2026-06-09, Branch `feat/ui-platform-skins`):** Die **Theme-Pack-Naht ist
-> gebaut** — `UiPack` (`app/ui/theme/UiPack.kt`) ist der In-Tree-Vertrag „voller Look einer
-> Geräteklasse" (ColorScheme hell+dunkel · `DesignTokens` · Shapes · Typo); drei Built-ins
-> `MonoEinkPack`/`KaleidoPack`/`LcdPack`, ausgewählt über `packFor(behavior)` bzw. die `UiPackRegistry`,
-> angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware** (LCD volles
-> Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das „Theme zuerst"-Stück.
-> **Noch Soll/Richtung (existiert NICHT):** die **Layout-Slot-Naht** (adressierbare, einzeln
-> ersetzbare Chrome-Regionen — `UiPack` trägt heute **keine** `@Composable`-Slots), ein eigenes
-> **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
-> (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
-> weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet
-> keinen Typ als real, den `grep` nicht findet.
+> **docs-match-code (Stand 2026-06-09, Branch `feat/ui-platform-skins` / `feat/source-agnostic-integration`):**
+> Die **Theme-Pack-Naht ist gebaut** — `UiPack` (`app/ui/theme/UiPack.kt`) ist der In-Tree-Vertrag
+> „voller Look einer Geräteklasse" (ColorScheme hell+dunkel · `DesignTokens` · Shapes · Typo); drei
+> Built-ins `MonoEinkPack`/`KaleidoPack`/`LcdPack`, ausgewählt über `packFor(behavior)` bzw. die
+> `UiPackRegistry`, angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware**
+> (LCD volles Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das
+> „Theme zuerst"-Stück.
+> **Die Layout-Slot-Naht ist angefangen — erste Region `header` gebaut:** `app/ui/slots/UiSlots.kt`
+> trägt den In-Tree-Vertrag `HeaderSlot` (typealias `@Composable (title, onBack?, actions) -> Unit`),
+> das optionale `UiSlotPack(header)`, den puren Resolver `UiSlots.resolve` (fehlender Slot → `DefaultSlots`,
+> nie `null`, analog `StubSource`) und `LocalResolvedSlots` (im Host `KomgaReaderTheme` bereitgestellt,
+> spiegelt `LocalUiPack`). Die Header-Call-Sites (`SeriesDetailScreen`, `SubPageScaffold`) rendern jetzt
+> `LocalResolvedSlots.current.header(...)` statt `StandardTopAppBar` direkt; das `DefaultSlots`-Pack reicht
+> verhaltensgleich an `StandardTopAppBar` durch (kein visueller Unterschied fürs Default-Pack). Bewegung/
+> Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) — ein Slot
+> liefert nur Inhalt/Struktur. Swap-Beweis: `HeaderSlotPreview.kt` (`@Preview` mit zentriertem Alternativ-Header,
+> nur Debug/Preview, **keine** Nutzer-Einstellung).
+> **Noch Soll/Richtung (existiert NICHT):** die **weiteren fünf Slots** (overlay/tiles/nav/settings/dialog —
+> `UiSlotPack` trägt heute nur `header`), ein eigenes **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht
+> eingefroren) und der **externe Pack-Lader** (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur
+> der In-Tree-Einhängepunkt). Wer hier weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im
+> selben Commit nach und behauptet keinen Typ als real, den `grep` nicht findet.
 
 ## docs-match-code
 

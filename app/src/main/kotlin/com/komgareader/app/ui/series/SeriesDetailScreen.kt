@@ -41,7 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import com.komgareader.app.ui.components.StandardTopAppBar
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -112,7 +112,7 @@ fun SeriesDetailScreen(
                 is SeriesDetailUiState.Content -> c.seriesTitle
                 else -> "Serie"
             }
-            StandardTopAppBar(title = title, onBack = onBack)
+            LocalResolvedSlots.current.header(title, onBack) {}
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->

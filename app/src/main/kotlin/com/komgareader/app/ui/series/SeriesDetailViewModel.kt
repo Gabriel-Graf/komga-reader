@@ -5,6 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.ui.common.ErrorKind
+import com.komgareader.app.ui.common.UiError
+import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.app.ui.reader.ViewerMode
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.Book
@@ -65,12 +68,12 @@ sealed interface SeriesDetailUiState {
         /** Leserichtung der Serie — für optimistische Viewer-Neuberechnung bei Typwechsel. */
         val readingDirection: ReadingDirection? = null,
     ) : SeriesDetailUiState
-    data class Error(val message: String) : SeriesDetailUiState
+    data class Error(val error: UiError) : SeriesDetailUiState
 }
 
 /** Einmalige Rückmeldung an die UI (Snackbar). */
 sealed interface SeriesDetailEvent {
-    data class DownloadError(val message: String) : SeriesDetailEvent
+    data class DownloadError(val error: UiError) : SeriesDetailEvent
     /** Serien-Download abgebrochen — genau eine Meldung, nicht pro Kapitel. */
     data object DownloadCancelled : SeriesDetailEvent
 }
@@ -170,7 +173,7 @@ class SeriesDetailViewModel @Inject constructor(
                                 readingDirection = seriesForResolve.readingDirection,
                             )
                         },
-                        { SeriesDetailUiState.Error(it.message ?: "Bücher konnten nicht geladen werden") },
+                        { SeriesDetailUiState.Error(uiErrorOf(it)) },
                     ))
             }
         }
@@ -277,10 +280,10 @@ class SeriesDetailViewModel @Inject constructor(
         if (downloadJob?.isActive == true) return
         downloadJob = viewModelScope.launch {
             val config = servers.config.first() ?: run {
-                _events.emit(SeriesDetailEvent.DownloadError("Kein Server verbunden")); return@launch
+                _events.emit(SeriesDetailEvent.DownloadError(UiError(ErrorKind.NO_CONNECTION, ""))); return@launch
             }
             val source = active.get(sourceId) ?: run {
-                _events.emit(SeriesDetailEvent.DownloadError("Quelle nicht verfügbar")); return@launch
+                _events.emit(SeriesDetailEvent.DownloadError(UiError(ErrorKind.UNKNOWN, "Quelle nicht verfügbar"))); return@launch
             }
             val total = books.size
             val pending = books.filter { it.remoteId !in localBookIds.value }
@@ -333,7 +336,7 @@ class SeriesDetailViewModel @Inject constructor(
                         // Abbruch nicht als Fehler melden — propagieren, damit das finally einmalig greift.
                         if (e is CancellationException) throw e
                         Log.e(TAG, "Download fehlgeschlagen: ${book.title}", e)
-                        _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Download fehlgeschlagen"))
+                        _events.emit(SeriesDetailEvent.DownloadError(uiErrorOf(e)))
                     }
                     _downloadingIds.update { it - book.remoteId }
                     _bookDownloadPercent.update { it - book.remoteId }
@@ -375,11 +378,11 @@ class SeriesDetailViewModel @Inject constructor(
     fun download(book: Book) {
         viewModelScope.launch {
             val config = servers.config.first() ?: run {
-                _events.emit(SeriesDetailEvent.DownloadError("Kein Server verbunden"))
+                _events.emit(SeriesDetailEvent.DownloadError(UiError(ErrorKind.NO_CONNECTION, "")))
                 return@launch
             }
             val source = active.get(sourceId) ?: run {
-                _events.emit(SeriesDetailEvent.DownloadError("Quelle nicht verfügbar"))
+                _events.emit(SeriesDetailEvent.DownloadError(UiError(ErrorKind.UNKNOWN, "Quelle nicht verfügbar")))
                 return@launch
             }
             _downloadingIds.update { it + book.remoteId }
@@ -415,7 +418,7 @@ class SeriesDetailViewModel @Inject constructor(
                 }
             }.onFailure { e ->
                 Log.e(TAG, "Download fehlgeschlagen: ${book.title}", e)
-                _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Download fehlgeschlagen"))
+                _events.emit(SeriesDetailEvent.DownloadError(uiErrorOf(e)))
             }
             _downloadingIds.update { it - book.remoteId }
             _bookDownloadPercent.update { it - book.remoteId }
@@ -435,7 +438,7 @@ class SeriesDetailViewModel @Inject constructor(
                 .onFailure { e ->
                     Log.e(TAG, "Read-Status setzen fehlgeschlagen: ${book.remoteId}", e)
                     _readOverrides.update { it - book.remoteId } // optimistisches Update zurücknehmen
-                    _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Aktion fehlgeschlagen"))
+                    _events.emit(SeriesDetailEvent.DownloadError(uiErrorOf(e)))
                 }
         }
     }
@@ -500,7 +503,7 @@ class SeriesDetailViewModel @Inject constructor(
                 downloadManager.delete(bookRemoteId)
             }.onFailure { e ->
                 Log.e(TAG, "Löschen fehlgeschlagen: $bookRemoteId", e)
-                _events.emit(SeriesDetailEvent.DownloadError(e.message ?: "Löschen fehlgeschlagen"))
+                _events.emit(SeriesDetailEvent.DownloadError(uiErrorOf(e)))
             }
         }
     }

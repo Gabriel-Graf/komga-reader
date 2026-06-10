@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.common.UiErrorText
+import com.komgareader.app.ui.common.snackbar
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.LocalContentBottomInset
@@ -54,7 +56,7 @@ fun LibraryScreen(
             val message = when (event) {
                 is LibraryEvent.DownloadStarted -> s.downloadingChapters(event.count)
                 is LibraryEvent.DownloadComplete -> s.downloadComplete
-                is LibraryEvent.DownloadError -> s.downloadFailed(event.message)
+                is LibraryEvent.DownloadError -> event.error.snackbar(s)
             }
             snackbarHostState.showSnackbar(message)
         }
@@ -115,7 +117,7 @@ private fun BrowseTab(
                         modifier = Modifier.size(56.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(current.message, textAlign = TextAlign.Center)
+                    UiErrorText(current.error)
                     EinkOutlinedButton(onClick = onRefresh) { Text(s.retry) }
                 }
             }

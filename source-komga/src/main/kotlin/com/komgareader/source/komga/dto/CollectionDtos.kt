@@ -8,6 +8,7 @@ data class CollectionDto(
     val name: String,
     val ordered: Boolean = false,
     val seriesIds: List<String> = emptyList(),
+    val lastModifiedDate: String = "",
 )
 
 @Serializable
@@ -31,6 +32,7 @@ data class ReadListDto(
     val summary: String = "",
     val ordered: Boolean = true,
     val bookIds: List<String> = emptyList(),
+    val lastModifiedDate: String = "",
 )
 
 @Serializable

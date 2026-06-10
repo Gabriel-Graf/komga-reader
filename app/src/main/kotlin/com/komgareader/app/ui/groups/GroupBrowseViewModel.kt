@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.localSeries
+import com.komgareader.app.ui.common.ErrorKind
+import com.komgareader.app.ui.common.UiError
+import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.repository.DownloadRepository
@@ -35,7 +38,7 @@ sealed interface GroupBrowseUiState {
         /** true = Server nicht erreichbar, nur lokal verfügbare Werke gezeigt. */
         val offline: Boolean = false,
     ) : GroupBrowseUiState
-    data class Error(val message: String) : GroupBrowseUiState
+    data class Error(val error: UiError) : GroupBrowseUiState
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,7 +68,7 @@ class GroupBrowseViewModel @Inject constructor(
             flow {
                 val shelf = shelves.firstOrNull { it.id == shelfId }
                 if (shelf == null) {
-                    emit(GroupBrowseUiState.Error("Bibliothek nicht gefunden"))
+                    emit(GroupBrowseUiState.Error(UiError(ErrorKind.NOT_FOUND, "")))
                     return@flow
                 }
                 emit(GroupBrowseUiState.Loading)
@@ -102,7 +105,7 @@ class GroupBrowseViewModel @Inject constructor(
                             GroupBrowseUiState.Content(shelf, local, config, offline = true)
                         } else {
                             val error = results.firstNotNullOfOrNull { it.exceptionOrNull() }
-                            GroupBrowseUiState.Error(error?.message ?: "Verbindung fehlgeschlagen")
+                            GroupBrowseUiState.Error(uiErrorOf(error))
                         }
                     },
                 )

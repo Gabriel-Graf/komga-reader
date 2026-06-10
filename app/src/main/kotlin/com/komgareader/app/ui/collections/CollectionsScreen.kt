@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -74,6 +75,7 @@ fun CollectionsScreen(
     viewModel: CollectionsViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
+    LaunchedEffect(Unit) { viewModel.syncOnceOnEnter() }
     val collections by viewModel.collections.collectAsState()
     val localOnly by viewModel.localOnly.collectAsState()
     val viewModeStr by viewModel.viewMode.collectAsState()
@@ -228,6 +230,23 @@ fun CollectionsScreen(
                     selected = serverToo,
                     onSelect = { serverToo = !serverToo },
                 )
+            }
+        }
+    }
+
+    // Am Server verschwundene Sammlungen: bestätigen, ob auch lokal gelöscht werden soll.
+    val vanished by viewModel.vanished.collectAsState()
+    if (vanished.isNotEmpty()) {
+        EinkModal(
+            title = s.collectionVanishedTitle,
+            onDismiss = { viewModel.dismissVanished() },
+            confirmLabel = s.collectionVanishedDeleteHere,
+            onConfirm = { viewModel.confirmVanishedDelete(vanished.map { it.collectionId }) },
+            dismissLabel = s.collectionVanishedKeepHere,
+        ) {
+            Text(s.collectionVanishedBody, style = MaterialTheme.typography.bodyMedium)
+            vanished.forEach { v ->
+                Text("• ${v.name}", style = MaterialTheme.typography.bodyLarge)
             }
         }
     }

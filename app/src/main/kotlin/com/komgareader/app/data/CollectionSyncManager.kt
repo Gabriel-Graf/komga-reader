@@ -1,12 +1,20 @@
 package com.komgareader.app.data
 
+import com.komgareader.domain.model.CollectionKind
+import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.SyncStatus
 import com.komgareader.domain.model.UserCollection
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.CollectionSyncLink
 import com.komgareader.domain.source.CollectionSyncSource
+import com.komgareader.domain.usecase.SyncPlan
+import com.komgareader.domain.usecase.VanishedCollection
 import com.komgareader.domain.usecase.groupBySource
 import com.komgareader.domain.usecase.mergeSubsets
+import com.komgareader.domain.usecase.planCollectionSync
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,9 +28,12 @@ import javax.inject.Singleton
 class CollectionSyncManager(
     private val repo: CollectionRepository,
     private val resolver: suspend (sourceId: Long) -> CollectionSyncSource?,
+    private val allSources: suspend () -> List<Pair<Long, CollectionSyncSource>>,
 ) {
     @Inject constructor(repo: CollectionRepository, active: ActiveSource) :
-        this(repo, { id -> active.collectionSource(id) })
+        this(repo, { id -> active.collectionSource(id) }, { active.allCollectionSources() })
+
+    private val syncMutex = Mutex()
 
     /** Pusht die kanonische Collection in alle betroffenen Quellen (best-effort, pro Quelle). */
     suspend fun push(collection: UserCollection) {
@@ -54,21 +65,73 @@ class CollectionSyncManager(
         }
     }
 
-    /** Lädt pro sync-fähiger Quelle das Subset, merged in die kanonische Liste, persistiert. */
-    suspend fun refresh(collection: UserCollection): UserCollection {
-        val perSourceRemote = mutableMapOf<Long, List<String>>()
-        for (sourceId in collection.members.map { it.sourceId }.toSet()) {
-            val source = resolver(sourceId) ?: continue   // nicht sync-fähig → Mitglieder bleiben
-            val remote = runCatching {
-                source.listCollections(collection.kind).firstOrNull { it.name == collection.name }
-            }.getOrNull() ?: continue
-            perSourceRemote[sourceId] = remote.memberRemoteIds
+    /**
+     * Voller bidirektionaler Sync (Start/Tab/Button): push + pull + Discovery + vanished.
+     * Gibt am Server verschwundene (früher synchrone) Sammlungen zurück — die UI bestätigt deren
+     * lokale Löschung. Discovery + Pull laufen stumm.
+     */
+    suspend fun fullSync(): List<VanishedCollection> = runSync(allowPush = true, collectVanished = true)
+
+    /**
+     * Server-Connect-Sync: NUR pullen (Discovery + Server-gewinnt-Overwrite). Pusht NICHT und
+     * meldet KEINE vanished — beim Verbinden eines Servers werden dessen Sammlungen lediglich
+     * in die App gezogen, lokale Sammlungen werden nie auf den (frisch verbundenen) Server gedrückt.
+     */
+    suspend fun pullOnlySync() {
+        runSync(allowPush = false, collectVanished = false)
+    }
+
+    private suspend fun runSync(allowPush: Boolean, collectVanished: Boolean): List<VanishedCollection> =
+        syncMutex.withLock {
+            val collections = repo.collections.first()
+            val links = collections.associate { it.id to repo.syncLinks(it.id).first() }
+            val srcs = allSources()
+
+            val vanished = mutableListOf<VanishedCollection>()
+            for (kind in CollectionKind.values()) {
+                val kindCollections = collections.filter { it.kind == kind }
+                val remotePerSource = srcs.associate { (id, src) ->
+                    id to runCatching { src.listCollections(kind) }.getOrDefault(emptyList())
+                }
+                val plan = planCollectionSync(
+                    local = kindCollections,
+                    links = links.filterKeys { id -> kindCollections.any { it.id == id } },
+                    remotePerSource = remotePerSource,
+                    kind = kind,
+                )
+                executePlan(plan, allowPush = allowPush)
+                if (collectVanished) vanished += plan.vanished
+            }
+            vanished.distinctBy { it.collectionId }
         }
-        val merged = mergeSubsets(collection.members, perSourceRemote) { sid, rid ->
-            collection.members.firstOrNull { it.sourceId == sid && it.remoteId == rid }?.title ?: rid
+
+    private suspend fun executePlan(plan: SyncPlan, allowPush: Boolean) {
+        // 1) Discovery: Server-Sammlung lokal anlegen.
+        for (d in plan.createLocal) {
+            val newId = repo.create(d.remote.name, d.kind)
+            val members = d.remote.memberRemoteIds.map { CollectionMember(d.sourceId, it, it) }
+            repo.setMembers(newId, members)   // markiert Link DIRTY/remoteId=null …
+            writeLink(newId, d.sourceId, d.remote.remoteId, SyncStatus.SYNCED, dirty = false, updatedAt = d.remote.updatedAt)
         }
-        repo.setMembers(collection.id, merged)
-        return collection.copy(members = merged)
+        // 2) Pull-Overwrite: Server-Subset gewinnt für diese Quelle.
+        for (p in plan.pullOverwrite) {
+            val current = repo.get(p.collectionId) ?: continue
+            val merged = mergeSubsets(current.members, mapOf(p.sourceId to p.serverMemberRemoteIds)) { _, rid ->
+                current.members.firstOrNull { it.sourceId == p.sourceId && it.remoteId == rid }?.title ?: rid
+            }
+            repo.setMembers(p.collectionId, merged)   // … nullt den Link → direkt mit Server-Stand korrigieren:
+            writeLink(p.collectionId, p.sourceId, p.remoteId, SyncStatus.SYNCED, dirty = false, updatedAt = p.serverUpdatedAt)
+        }
+        // 3) Push: lokaler Stand zum Server (nur im bidirektionalen Sync — beim reinen Connect-Pull
+        //    übersprungen). Hinweis: push() stempelt den Link mit der Geräte-Uhr; liegt die Server-Uhr
+        //    minimal vor, löst der nächste fullSync genau EINEN idempotenten Pull aus, der den Link auf
+        //    den Server-Zeitstempel ankert (selbst-korrigierend, kein Ping-Pong).
+        if (allowPush) {
+            for (id in plan.pushLocal) {
+                repo.get(id)?.let { push(it) }
+            }
+        }
+        // vanished: NICHT automatisch löschen — die UI bestätigt.
     }
 
     /** Löscht die Server-Collections in allen sync-fähigen Quellen (best-effort). */
@@ -83,7 +146,14 @@ class CollectionSyncManager(
         }
     }
 
-    private suspend fun writeLink(collectionId: Long, sourceId: Long, remoteId: String?, status: SyncStatus, dirty: Boolean) {
-        repo.updateSyncLink(CollectionSyncLink(collectionId, sourceId, remoteId, status, dirty))
+    private suspend fun writeLink(
+        collectionId: Long,
+        sourceId: Long,
+        remoteId: String?,
+        status: SyncStatus,
+        dirty: Boolean,
+        updatedAt: Long = System.currentTimeMillis(),
+    ) {
+        repo.updateSyncLink(CollectionSyncLink(collectionId, sourceId, remoteId, status, dirty, updatedAt))
     }
 }

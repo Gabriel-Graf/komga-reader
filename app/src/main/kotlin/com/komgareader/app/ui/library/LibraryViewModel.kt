@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.localSeries
+import com.komgareader.app.ui.common.UiError
+import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Series
@@ -42,14 +44,14 @@ sealed interface LibraryUiState {
         /** Effektiver Werk-Typ je Serie (remoteId → Typ) — derselbe Wert wie das Typ-Tag. */
         val effectiveTypes: Map<String, ContentType?> = emptyMap(),
     ) : LibraryUiState
-    data class Error(val message: String) : LibraryUiState
+    data class Error(val error: UiError) : LibraryUiState
 }
 
 /** Kurze Rückmeldung an die UI (Snackbar-ähnlich). */
 sealed interface LibraryEvent {
     data class DownloadStarted(val count: Int) : LibraryEvent
     data object DownloadComplete : LibraryEvent
-    data class DownloadError(val message: String) : LibraryEvent
+    data class DownloadError(val error: UiError) : LibraryEvent
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -135,7 +137,7 @@ class LibraryViewModel @Inject constructor(
                                 )
                             } else {
                                 val error = results.firstNotNullOfOrNull { it.exceptionOrNull() }
-                                LibraryUiState.Error(error?.message ?: "Verbindung fehlgeschlagen")
+                                LibraryUiState.Error(uiErrorOf(error))
                             }
                         },
                     )
@@ -171,7 +173,7 @@ class LibraryViewModel @Inject constructor(
                 }
                 events.emit(LibraryEvent.DownloadComplete)
             }.onFailure { e ->
-                events.emit(LibraryEvent.DownloadError(e.message ?: "Download fehlgeschlagen"))
+                events.emit(LibraryEvent.DownloadError(uiErrorOf(e)))
             }
         }
     }

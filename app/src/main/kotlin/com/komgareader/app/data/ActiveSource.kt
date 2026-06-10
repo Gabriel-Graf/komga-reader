@@ -46,5 +46,11 @@ open class ActiveSource @Inject constructor(
         return sources.get(sourceId) as? CollectionSyncSource
     }
 
+    /** Alle aktiven, schreibfähigen Collection-Quellen mit ihrer sourceId (für den Voll-Sync). */
+    open suspend fun allCollectionSources(): List<Pair<Long, CollectionSyncSource>> {
+        val ids = syncAll()
+        return ids.mapNotNull { id -> (sources.get(id) as? CollectionSyncSource)?.let { id to it } }
+    }
+
     private suspend fun syncAll(): Set<Long> = registration.sync(servers.configs.first())
 }

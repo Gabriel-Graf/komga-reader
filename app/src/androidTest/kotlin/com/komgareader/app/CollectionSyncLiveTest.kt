@@ -174,4 +174,70 @@ class CollectionSyncLiveTest {
                 ?.let { src.deleteCollection(CollectionKind.SERIES, it.remoteId) }
         }
     }
+
+    /**
+     * Trennen+Wiederverbinden darf am Server NICHTS löschen oder leeren: Trennen ist lokal-only,
+     * Wiederverbinden ist Pull-only. Beweist beide Nutzer-Sorgen: (1) Disconnect löscht nicht am
+     * Server, (2) der Reconnect-Pull pusht/löscht nicht, sondern entdeckt nur erneut.
+     */
+    @Test fun reconnect_pullt_nur_und_loescht_nichts_am_server() = runTest {
+        registerKomga()
+
+        val resolved = activeSource.allCollectionSources().first()
+        val src = resolved.second
+        val sourceId = resolved.first
+
+        val uniqueName = "E2E-Reconnect-${System.nanoTime()}"
+
+        // LOKAL anlegen, mit Berserk als einzigem Mitglied, dann per fullSync zum Server pushen.
+        val localId = collectionRepo.create(uniqueName, CollectionKind.SERIES)
+        collectionRepo.setMembers(
+            localId,
+            listOf(CollectionMember(sourceId, BERSERK_SERIES_ID, "Berserk")),
+        )
+
+        try {
+            manager.fullSync()
+            assertTrue(
+                "Sammlung '$uniqueName' muss nach Push am Server existieren",
+                src.listCollections(CollectionKind.SERIES).any { it.name == uniqueName },
+            )
+
+            // DISCONNECT: nur lokal aufräumen (genau das, was removeServer via removeSource macht).
+            collectionRepo.removeSource(sourceId)
+            assertTrue(
+                "Nach dem Trennen darf '$uniqueName' lokal NICHT mehr existieren",
+                collectionRepo.collections.first().none { it.name == uniqueName },
+            )
+            assertTrue(
+                "Trennen darf die Sammlung am Server NICHT löschen",
+                src.listCollections(CollectionKind.SERIES).any { it.name == uniqueName },
+            )
+
+            // RECONNECT: Pull-only zieht die Server-Sammlung wieder herein.
+            manager.pullOnlySync()
+            val rediscovered = collectionRepo.collections.first().firstOrNull { it.name == uniqueName }
+            assertTrue(
+                "pullOnlySync muss '$uniqueName' wieder lokal entdecken",
+                rediscovered != null,
+            )
+            assertTrue(
+                "Wiederentdeckte Sammlung muss Berserk als Mitglied tragen, " +
+                    "war: ${rediscovered!!.members.map { it.remoteId }}",
+                rediscovered.members.any { it.remoteId == BERSERK_SERIES_ID },
+            )
+            // Der Pull darf die Server-Sammlung NICHT geleert oder gelöscht haben.
+            val onServerAfter = src.listCollections(CollectionKind.SERIES).firstOrNull { it.name == uniqueName }
+            assertTrue("Pull-only darf '$uniqueName' am Server NICHT löschen", onServerAfter != null)
+            assertTrue(
+                "Pull-only darf '$uniqueName' am Server NICHT leeren, " +
+                    "war: ${onServerAfter!!.memberRemoteIds}",
+                onServerAfter.memberRemoteIds.contains(BERSERK_SERIES_ID),
+            )
+        } finally {
+            src.listCollections(CollectionKind.SERIES)
+                .firstOrNull { it.name == uniqueName }
+                ?.let { src.deleteCollection(CollectionKind.SERIES, it.remoteId) }
+        }
+    }
 }

@@ -32,6 +32,10 @@ class CollectionSyncManagerTest {
         override val kind = SourceKind.KOMGA
         var lastCreate: Pair<String, List<String>>? = null
         var lastUpdate: Triple<String, String, List<String>>? = null
+        /** Namen aller create()-Aufrufe — für die „kein Push"-Assertion im pullOnlySync-Test. */
+        val createdNames = mutableListOf<String>()
+        /** Namen aller update()-Aufrufe — eine adoptierte (umbenannte) Sammlung zählt auch als Push. */
+        val updatedNames = mutableListOf<String>()
 
         private fun storeFor(kind: CollectionKind) =
             if (kind == CollectionKind.SERIES) existing else existingBooks
@@ -41,12 +45,14 @@ class CollectionSyncManagerTest {
         override suspend fun createCollection(kind: CollectionKind, name: String, memberRemoteIds: List<String>): RemoteCollection {
             if (failOnCreate) throw RuntimeException("boom")
             lastCreate = name to memberRemoteIds
+            createdNames += name
             val rc = RemoteCollection("remote-$name-$id", name, memberRemoteIds, updatedAt = 0L)
             storeFor(kind) += rc
             return rc
         }
         override suspend fun updateCollection(kind: CollectionKind, remoteId: String, name: String, memberRemoteIds: List<String>) {
             lastUpdate = Triple(remoteId, name, memberRemoteIds)
+            updatedNames += name
         }
         override suspend fun deleteCollection(kind: CollectionKind, remoteId: String) {
             storeFor(kind).removeAll { it.remoteId == remoteId }
@@ -201,5 +207,35 @@ class CollectionSyncManagerTest {
         assertEquals(CollectionKind.SERIES, neu.first().kind)
         assertEquals(1, vanished.size)
         assertEquals("Weg", vanished.first().name)
+    }
+
+    @Test
+    fun `pullOnlySync entdeckt Server-Sammlung aber pusht lokale NICHT`() = runBlocking {
+        // Server (Quelle 7) hat „ServerOnly", lokal unbekannt → muss per Pull entdeckt werden.
+        val source = FakeSource(7, canWrite = true, existing = mutableListOf(
+            RemoteCollection("rc-server", "ServerOnly", listOf("s1"), updatedAt = 100L),
+        ))
+        val repo = FakeCollectionRepo()
+        // Lokal-only „NurLokal" mit DIRTY-Link (remoteId=null) — in einem fullSync wäre das ein Push.
+        val lokalId = repo.seedCollection("NurLokal", CollectionKind.SERIES, listOf(CollectionMember(7, "x", "X")))
+        repo.seedLink(CollectionSyncLink(lokalId, 7, null, SyncStatus.DIRTY, dirty = true, updatedAt = 0L))
+
+        val mgr = CollectionSyncManager(repo, resolver = { source }, allSources = { listOf(7L to source) })
+        mgr.pullOnlySync()
+
+        // Discovery lief: die Server-Sammlung ServerOnly ist jetzt lokal vorhanden.
+        assertTrue(
+            repo.storedCollections.values.any { it.name == "ServerOnly" },
+            "pullOnlySync muss die Server-Sammlung ServerOnly lokal entdecken",
+        )
+        // KEIN Push: NurLokal wurde weder erstellt noch (per Adopt) aktualisiert.
+        assertTrue(
+            "NurLokal" !in source.createdNames,
+            "pullOnlySync darf die lokale Sammlung NurLokal NICHT zum Server pushen (create), war: ${source.createdNames}",
+        )
+        assertTrue(
+            "NurLokal" !in source.updatedNames,
+            "pullOnlySync darf NurLokal NICHT zum Server pushen (update), war: ${source.updatedNames}",
+        )
     }
 }

@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.settings
 
+import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.domain.model.CollectionKind
@@ -42,23 +43,33 @@ class SettingsViewModelTest {
     private fun registration(): SourceRegistration =
         SourceRegistration(SourceManager(), KomgaSourceProvider())
 
-    private fun viewModel(servers: ServerRepository): SettingsViewModel =
-        SettingsViewModel(
+    /** pullOnlySync auf leeren Quellen ist ein harmloser No-Op — genügt fürs Konstruieren des VM. */
+    private fun syncManager(collections: CollectionRepository): CollectionSyncManager =
+        CollectionSyncManager(collections, resolver = { null }, allSources = { emptyList() })
+
+    private fun viewModel(servers: ServerRepository): SettingsViewModel {
+        val collections = StubCollectionRepository()
+        return SettingsViewModel(
             StubSettingsRepository(),
             servers,
             StubColorProfileRepository(),
             registration(),
-            StubCollectionRepository(),
+            collections,
+            syncManager(collections),
         )
+    }
 
-    private fun viewModel(settings: SettingsRepository): SettingsViewModel =
-        SettingsViewModel(
+    private fun viewModel(settings: SettingsRepository): SettingsViewModel {
+        val collections = StubCollectionRepository()
+        return SettingsViewModel(
             settings,
             CapturingServerRepository(),
             StubColorProfileRepository(),
             registration(),
-            StubCollectionRepository(),
+            collections,
+            syncManager(collections),
         )
+    }
 
     @Test
     fun `saveServer mit id 0 speichert eine neue Verbindung mit id 0`() = runTest {

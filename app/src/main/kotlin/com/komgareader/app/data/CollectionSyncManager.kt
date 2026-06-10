@@ -66,34 +66,46 @@ class CollectionSyncManager(
     }
 
     /**
-     * Voller bidirektionaler Sync: Server-Sammlungen je Quelle und kind listen, Plan rechnen, ausführen.
+     * Voller bidirektionaler Sync (Start/Tab/Button): push + pull + Discovery + vanished.
      * Gibt am Server verschwundene (früher synchrone) Sammlungen zurück — die UI bestätigt deren
      * lokale Löschung. Discovery + Pull laufen stumm.
      */
-    suspend fun fullSync(): List<VanishedCollection> = syncMutex.withLock {
-        val collections = repo.collections.first()
-        val links = collections.associate { it.id to repo.syncLinks(it.id).first() }
-        val srcs = allSources()
+    suspend fun fullSync(): List<VanishedCollection> = runSync(allowPush = true, collectVanished = true)
 
-        val vanished = mutableListOf<VanishedCollection>()
-        for (kind in CollectionKind.values()) {
-            val kindCollections = collections.filter { it.kind == kind }
-            val remotePerSource = srcs.associate { (id, src) ->
-                id to runCatching { src.listCollections(kind) }.getOrDefault(emptyList())
-            }
-            val plan = planCollectionSync(
-                local = kindCollections,
-                links = links.filterKeys { id -> kindCollections.any { it.id == id } },
-                remotePerSource = remotePerSource,
-                kind = kind,
-            )
-            executePlan(plan)
-            vanished += plan.vanished
-        }
-        vanished.distinctBy { it.collectionId }
+    /**
+     * Server-Connect-Sync: NUR pullen (Discovery + Server-gewinnt-Overwrite). Pusht NICHT und
+     * meldet KEINE vanished — beim Verbinden eines Servers werden dessen Sammlungen lediglich
+     * in die App gezogen, lokale Sammlungen werden nie auf den (frisch verbundenen) Server gedrückt.
+     */
+    suspend fun pullOnlySync() {
+        runSync(allowPush = false, collectVanished = false)
     }
 
-    private suspend fun executePlan(plan: SyncPlan) {
+    private suspend fun runSync(allowPush: Boolean, collectVanished: Boolean): List<VanishedCollection> =
+        syncMutex.withLock {
+            val collections = repo.collections.first()
+            val links = collections.associate { it.id to repo.syncLinks(it.id).first() }
+            val srcs = allSources()
+
+            val vanished = mutableListOf<VanishedCollection>()
+            for (kind in CollectionKind.values()) {
+                val kindCollections = collections.filter { it.kind == kind }
+                val remotePerSource = srcs.associate { (id, src) ->
+                    id to runCatching { src.listCollections(kind) }.getOrDefault(emptyList())
+                }
+                val plan = planCollectionSync(
+                    local = kindCollections,
+                    links = links.filterKeys { id -> kindCollections.any { it.id == id } },
+                    remotePerSource = remotePerSource,
+                    kind = kind,
+                )
+                executePlan(plan, allowPush = allowPush)
+                if (collectVanished) vanished += plan.vanished
+            }
+            vanished.distinctBy { it.collectionId }
+        }
+
+    private suspend fun executePlan(plan: SyncPlan, allowPush: Boolean) {
         // 1) Discovery: Server-Sammlung lokal anlegen.
         for (d in plan.createLocal) {
             val newId = repo.create(d.remote.name, d.kind)
@@ -110,11 +122,14 @@ class CollectionSyncManager(
             repo.setMembers(p.collectionId, merged)   // … nullt den Link → direkt mit Server-Stand korrigieren:
             writeLink(p.collectionId, p.sourceId, p.remoteId, SyncStatus.SYNCED, dirty = false, updatedAt = p.serverUpdatedAt)
         }
-        // 3) Push: lokaler Stand zum Server. Hinweis: push() stempelt den Link mit der Geräte-Uhr;
-        //    liegt die Server-Uhr minimal vor, löst der nächste fullSync genau EINEN idempotenten
-        //    Pull aus, der den Link auf den Server-Zeitstempel ankert (selbst-korrigierend, kein Ping-Pong).
-        for (id in plan.pushLocal) {
-            repo.get(id)?.let { push(it) }
+        // 3) Push: lokaler Stand zum Server (nur im bidirektionalen Sync — beim reinen Connect-Pull
+        //    übersprungen). Hinweis: push() stempelt den Link mit der Geräte-Uhr; liegt die Server-Uhr
+        //    minimal vor, löst der nächste fullSync genau EINEN idempotenten Pull aus, der den Link auf
+        //    den Server-Zeitstempel ankert (selbst-korrigierend, kein Ping-Pong).
+        if (allowPush) {
+            for (id in plan.pushLocal) {
+                repo.get(id)?.let { push(it) }
+            }
         }
         // vanished: NICHT automatisch löschen — die UI bestätigt.
     }

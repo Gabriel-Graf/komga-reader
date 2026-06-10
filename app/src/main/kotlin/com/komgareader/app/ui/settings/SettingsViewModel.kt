@@ -2,6 +2,7 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
@@ -26,6 +27,7 @@ class SettingsViewModel @Inject constructor(
     private val colorProfiles: ColorProfileRepository,
     private val registration: SourceRegistration,
     private val collections: CollectionRepository,
+    private val sync: CollectionSyncManager,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -90,6 +92,9 @@ class SettingsViewModel @Inject constructor(
                 id = id,
             )
         )
+        // Server verbunden (neu/aktualisiert) → dessen Sammlungen NUR pullen (nie lokale pushen).
+        // Best-effort: ein vorübergehender Verbindungsfehler darf das Speichern nicht abbrechen.
+        runCatching { sync.pullOnlySync() }
     }.let {}
 
     private fun String.trimToNull(): String? = trim().ifBlank { null }

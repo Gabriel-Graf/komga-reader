@@ -20,6 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -46,8 +47,11 @@ import com.komgareader.app.ui.components.BottomNavItem
 import com.komgareader.app.ui.components.EinkBottomBar
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.EinkSearchBar
+import com.komgareader.app.ui.components.RotatingViewModeButton
 import com.komgareader.app.ui.components.StatusCluster
+import com.komgareader.app.ui.components.TileViewMode
 import com.komgareader.app.ui.components.TypeFilterMenu
+import com.komgareader.app.ui.components.tileViewModeOf
 import com.komgareader.app.ui.groups.GroupsScreen
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.library.LibraryScreen
@@ -88,7 +92,17 @@ fun HomeScreen(
     var filterMenuOpen by remember { mutableStateOf(false) }
     var filterAnchor by remember { mutableStateOf(IntOffset.Zero) }
     var showCreateGroup by remember { mutableStateOf(false) }
+    var showCreateCollection by remember { mutableStateOf(false) }
+    // Collections-Tab: Liste ⇄ Detail als interner Zustand (hochgezogen, damit die TopBar-Aktionen
+    // wissen, ob die Liste oder ein Detail sichtbar ist).
+    var openCollectionId by rememberSaveable { mutableStateOf<Long?>(null) }
     val libraryVm: LibraryViewModel = hiltViewModel()
+    // Dieselbe VM-Instanz wie in den Tab-Screens (gemeinsamer NavBackStackEntry) — die TopBar
+    // liest/setzt den persistierten Ansichtsmodus, die Screens rendern danach.
+    val groupsVm: com.komgareader.app.ui.groups.GroupsViewModel = hiltViewModel()
+    val collectionsVm: com.komgareader.app.ui.collections.CollectionsViewModel = hiltViewModel()
+    val groupsViewMode = tileViewModeOf(groupsVm.viewMode.collectAsState().value, TileViewMode.LIST)
+    val collectionsViewMode = tileViewModeOf(collectionsVm.viewMode.collectAsState().value, TileViewMode.LARGE_TILE)
 
     val items = remember(s) {
         listOf(
@@ -173,8 +187,32 @@ fun HomeScreen(
                                 TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
                                     Icon(AppIcons.Refresh, contentDescription = null)
                                 }
-                                TAB_GROUPS -> IconButton(onClick = { showCreateGroup = true }) {
-                                    Icon(AppIcons.Plus, contentDescription = s.newGroup)
+                                // Sammlungen-Liste: „+" (neue Sammlung) + rotierender Ansichts-Button.
+                                // Im Sammlungs-Detail keine dieser Aktionen.
+                                TAB_COLLECTIONS -> if (openCollectionId == null) {
+                                    IconButton(onClick = { showCreateCollection = true }) {
+                                        Icon(AppIcons.Plus, contentDescription = s.newCollection)
+                                    }
+                                    RotatingViewModeButton(
+                                        current = collectionsViewMode,
+                                        onSelect = { collectionsVm.setViewMode(it.name) },
+                                        listLabel = s.viewList,
+                                        tileLabel = s.viewTile,
+                                        largeTileLabel = s.viewLargeTile,
+                                    )
+                                }
+                                // Bibliotheken: „+" (neue Bibliothek) + rotierender Ansichts-Button.
+                                TAB_GROUPS -> {
+                                    IconButton(onClick = { showCreateGroup = true }) {
+                                        Icon(AppIcons.Plus, contentDescription = s.newGroup)
+                                    }
+                                    RotatingViewModeButton(
+                                        current = groupsViewMode,
+                                        onSelect = { groupsVm.setViewMode(it.name) },
+                                        listLabel = s.viewList,
+                                        tileLabel = s.viewTile,
+                                        largeTileLabel = s.viewLargeTile,
+                                    )
                                 }
                             }
                         }
@@ -215,11 +253,14 @@ fun HomeScreen(
                             viewModel = libraryVm,
                         )
                         TAB_COLLECTIONS -> {
-                            // Liste ⇄ Detail als interner Tab-Zustand (kein eigener NavHost-Eintrag nötig).
-                            var openCollectionId by rememberSaveable { mutableStateOf<Long?>(null) }
                             val openId = openCollectionId
                             if (openId == null) {
-                                CollectionsScreen(onOpenCollection = { openCollectionId = it })
+                                CollectionsScreen(
+                                    onOpenCollection = { openCollectionId = it },
+                                    onNewCollection = { showCreateCollection = true },
+                                    showCreateDialog = showCreateCollection,
+                                    onDismissCreate = { showCreateCollection = false },
+                                )
                             } else {
                                 BackHandler { openCollectionId = null }
                                 CollectionDetailScreen(
@@ -249,6 +290,8 @@ fun HomeScreen(
                     downloadedOnly = false
                     filterMenuOpen = false
                     showCreateGroup = false
+                    showCreateCollection = false
+                    openCollectionId = null
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

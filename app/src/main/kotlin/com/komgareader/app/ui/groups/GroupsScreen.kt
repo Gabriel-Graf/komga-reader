@@ -54,7 +54,6 @@ import com.komgareader.app.ui.components.EntityListRow
 import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.TileViewMode
-import com.komgareader.app.ui.components.ViewModeToggle
 import com.komgareader.app.ui.components.tileViewModeOf
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
@@ -101,18 +100,7 @@ fun GroupsScreen(
         }
     } else {
         Column(modifier.fillMaxSize()) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = EinkTokens.screenPadding, vertical = 8.dp),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                ViewModeToggle(
-                    current = viewMode,
-                    onSelect = { viewModel.setViewMode(it.name) },
-                    listLabel = s.viewList,
-                    tileLabel = s.viewTile,
-                    largeTileLabel = s.viewLargeTile,
-                )
-            }
+            // Ansichts-Umschalter liegt in der Home-TopBar (rotierender Button rechts).
             val openGroup: (Shelf) -> Unit = { shelf ->
                 state.serverSourceId?.let { onOpenGroup(shelf.id, it) }
             }

@@ -3,7 +3,6 @@ package com.komgareader.app.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,9 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,7 +28,6 @@ import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
-import com.komgareader.app.ui.theme.LocalDesignTokens
 
 /**
  * Drei Anzeigemodi für die Sammlungen-/Bibliotheken-Listen — geteilt (DRY), damit beide Tabs
@@ -47,48 +44,33 @@ enum class TileViewMode(val columns: Int?) {
 fun tileViewModeOf(value: String?, fallback: TileViewMode): TileViewMode =
     runCatching { value?.let { TileViewMode.valueOf(it) } }.getOrNull() ?: fallback
 
+/** Nächster Modus im Rotations-Zyklus Liste → Kachel → große Kachel → Liste. */
+fun TileViewMode.next(): TileViewMode = when (this) {
+    TileViewMode.LIST -> TileViewMode.TILE
+    TileViewMode.TILE -> TileViewMode.LARGE_TILE
+    TileViewMode.LARGE_TILE -> TileViewMode.LIST
+}
+
 /**
- * Drei-Segment-Umschalter (Liste · Kachel · große Kachel) — wie der Toggle in den Buch-Details,
- * nur dreistufig. Aktives Segment in der Geräteklassen-Akzentfarbe ([LocalDesignTokens]); flach,
- * E-Ink-konform.
+ * **Ein** Umschalt-Button (wie der Listen/Gitter-Toggle in den Buch-Details), der die drei Ansichten
+ * durchrotiert: zeigt das Icon des **aktuellen** Modus, ein Tipp schaltet auf den nächsten. Für die
+ * Top-Bar (kompakt, neutrale Chrome — kein Dauer-Akzent).
  */
 @Composable
-fun ViewModeToggle(
+fun RotatingViewModeButton(
     current: TileViewMode,
     onSelect: (TileViewMode) -> Unit,
     listLabel: String,
     tileLabel: String,
     largeTileLabel: String,
-    modifier: Modifier = Modifier,
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        ViewModeSegment(AppIcons.ListView, listLabel, current == TileViewMode.LIST) { onSelect(TileViewMode.LIST) }
-        ViewModeSegment(AppIcons.GridView, tileLabel, current == TileViewMode.TILE) { onSelect(TileViewMode.TILE) }
-        ViewModeSegment(AppIcons.LargeGridView, largeTileLabel, current == TileViewMode.LARGE_TILE) { onSelect(TileViewMode.LARGE_TILE) }
+    val (icon, label) = when (current) {
+        TileViewMode.LIST -> AppIcons.ListView to listLabel
+        TileViewMode.TILE -> AppIcons.GridView to tileLabel
+        TileViewMode.LARGE_TILE -> AppIcons.LargeGridView to largeTileLabel
     }
-}
-
-@Composable
-private fun ViewModeSegment(icon: ImageVector, label: String, active: Boolean, onClick: () -> Unit) {
-    val accent = LocalDesignTokens.current.accent
-    val onAccent = LocalDesignTokens.current.onAccent
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .then(
-                if (active) Modifier.background(accent)
-                else Modifier.border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
-            )
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            icon,
-            contentDescription = label,
-            tint = if (active) onAccent else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(20.dp),
-        )
+    IconButton(onClick = { onSelect(current.next()) }) {
+        Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.onSurface)
     }
 }
 

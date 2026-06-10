@@ -1,11 +1,15 @@
 package com.komgareader.app.ui.collections
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,18 +27,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.request.ImageRequest
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
+import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.SectionHeader
 import com.komgareader.app.ui.components.SubPageScaffold
+import com.komgareader.app.ui.components.TileTitleBand
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.SyncStatus
 import com.komgareader.domain.repository.CollectionSyncLink
@@ -77,20 +88,28 @@ fun CollectionDetailScreen(
             Text(s.collectionSyncNow)
         }
 
-        // Mitglieder-Sektion
+        // Mitglieder als Cover-Gitter (3 Spalten, nicht-lazy — passt in den scrollenden Scaffold-Body).
         if (collection.members.isNotEmpty()) {
             SectionHeader(
                 text = when (collection.kind) {
-                    com.komgareader.domain.model.CollectionKind.SERIES -> s.collectionKindSeries
-                    com.komgareader.domain.model.CollectionKind.BOOK -> s.collectionKindBook
+                    CollectionKind.SERIES -> s.collectionKindSeries
+                    CollectionKind.BOOK -> s.collectionKindBook
                 },
             )
+            val isSeries = collection.kind == CollectionKind.SERIES
             Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap)) {
-                collection.members.forEach { member ->
-                    MemberRow(
-                        member = member,
-                        onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
-                    )
+                collection.members.chunked(3).forEach { rowMembers ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap)) {
+                        rowMembers.forEach { member ->
+                            MemberTile(
+                                member = member,
+                                isSeries = isSeries,
+                                onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        repeat(3 - rowMembers.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
         }
@@ -140,39 +159,53 @@ fun CollectionDetailScreen(
 }
 
 /**
- * Einzelne Mitglied-Zeile: Titel links, Entfernen-Icon rechts.
- * Hairline-Border; kein Cover (out of scope).
+ * Mitglied als **Cover-Kachel** (2:3): Cover (quellen-agnostisch über [SourceCover]), Titelband
+ * unten, Entfernen-Aktion oben rechts.
  */
 @Composable
-private fun MemberRow(
+private fun MemberTile(
     member: CollectionMember,
+    isSeries: Boolean,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val s = LocalStrings.current
-    val rowShape = RoundedCornerShape(EinkTokens.tileRadius)
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, rowShape)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val ctx = LocalContext.current
+    val request = remember(member, isSeries) {
+        ImageRequest.Builder(ctx)
+            .data(SourceCover(member.sourceId, member.remoteId, isSeries))
+            .crossfade(false).build()
+    }
+    Box(
+        modifier
+            .aspectRatio(2f / 3f)
+            .clip(RoundedCornerShape(8.dp))
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
     ) {
-        Text(
-            text = member.title,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+        FilteredAsyncImage(
+            model = request,
+            contentDescription = member.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
         )
-        IconButton(onClick = onRemove) {
-            Icon(
-                imageVector = AppIcons.Delete,
-                contentDescription = s.removeFromCollection,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        val cornerShape = RoundedCornerShape(bottomStart = 10.dp)
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .clip(cornerShape)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, cornerShape),
+        ) {
+            IconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    AppIcons.Delete,
+                    contentDescription = s.removeFromCollection,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
+        TileTitleBand(member.title, Modifier.align(Alignment.BottomStart))
     }
 }
 

@@ -241,11 +241,11 @@ private fun CollectionDetailHeader(
                     EinkSearchBar(
                         query = query,
                         onQueryChange = onQueryChange,
-                        onSubmit = {},
+                        // Action-Icon der Bar (immer sichtbar) = X → schließt die Suche zurück zum Titel.
+                        onSubmit = onCloseSearch,
+                        actionIcon = AppIcons.Close,
+                        actionLabel = s.clearSearch,
                         placeholder = s.searchInCollection(title),
-                        actionLabel = s.searchAction,
-                        clearLabel = s.clearSearch,
-                        onClear = onCloseSearch,
                         modifier = Modifier
                             .fillMaxWidth(0.74f)
                             .focusRequester(focus)

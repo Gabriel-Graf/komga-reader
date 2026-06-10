@@ -91,7 +91,7 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
                 remoteCollectionId = link.remoteCollectionId,
                 status = link.status.name,
                 dirty = link.dirty,
-                updatedAt = nowMillis(),
+                updatedAt = link.updatedAt,  // Caller-Timestamp übernehmen (z.B. Server-Stand bei Pull)
             ),
         )
     }
@@ -115,6 +115,7 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
         remoteCollectionId = e.remoteCollectionId,
         status = SyncStatus.valueOf(e.status),
         dirty = e.dirty,
+        updatedAt = e.updatedAt,
     )
 
     private fun nowMillis(): Long = System.currentTimeMillis()

@@ -13,6 +13,7 @@ data class CollectionSyncLink(
     val remoteCollectionId: String?,
     val status: SyncStatus,
     val dirty: Boolean,
+    val updatedAt: Long,   // UTC-Epochenmillis: lokale Änderungszeit bzw. zuletzt abgeglichener Server-Stand
 )
 
 interface CollectionRepository {

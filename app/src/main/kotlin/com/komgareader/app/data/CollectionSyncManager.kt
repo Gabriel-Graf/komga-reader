@@ -83,7 +83,14 @@ class CollectionSyncManager(
         }
     }
 
-    private suspend fun writeLink(collectionId: Long, sourceId: Long, remoteId: String?, status: SyncStatus, dirty: Boolean) {
-        repo.updateSyncLink(CollectionSyncLink(collectionId, sourceId, remoteId, status, dirty))
+    private suspend fun writeLink(
+        collectionId: Long,
+        sourceId: Long,
+        remoteId: String?,
+        status: SyncStatus,
+        dirty: Boolean,
+        updatedAt: Long = System.currentTimeMillis(),
+    ) {
+        repo.updateSyncLink(CollectionSyncLink(collectionId, sourceId, remoteId, status, dirty, updatedAt))
     }
 }

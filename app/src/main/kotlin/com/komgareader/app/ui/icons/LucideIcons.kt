@@ -30,12 +30,30 @@ object LucideIcons {
             strokeLineJoin = StrokeJoin.Round,
         ).build()
 
+    /**
+     * Gefüllte Variante eines (geschlossenen) Lucide-Pfads — als **Aktiv-Zustand** eines sonst
+     * outline-gezeichneten Glyphs (z. B. Lesezeichen gesetzt). Füllung statt Strich; `Icon(…)`
+     * tönt sie wie jeden anderen Glyph. Nur für geschlossene Pfade sinnvoll.
+     */
+    private fun lucideFilled(name: String, pathData: String): ImageVector =
+        ImageVector.Builder(
+            name = name,
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).addPath(
+            pathData = PathParser().parsePathString(pathData).toNodes(),
+            fill = SolidColor(Color.Black),
+        ).build()
+
     val AlignJustify: ImageVector by lazy { lucide("AlignJustify", "M3 12H21 M3 18H21 M3 6H21") }
     val AlignLeft: ImageVector by lazy { lucide("AlignLeft", "M15 12H3 M17 18H3 M21 6H3") }
     val ArrowLeft: ImageVector by lazy { lucide("ArrowLeft", "M12 19L5 12 12 5 M19 12H5") }
     val ArrowRight: ImageVector by lazy { lucide("ArrowRight", "M5 12H19 M12 5L19 12 12 19") }
     val BookOpen: ImageVector by lazy { lucide("BookOpen", "M12 7V21 M3 18A1 1 0 0 1 2 17V4A1 1 0 0 1 3 3H8A4 4 0 0 1 12 7 4 4 0 0 1 16 3H21A1 1 0 0 1 22 4V17A1 1 0 0 1 21 18H15A3 3 0 0 0 12 21 3 3 0 0 0 9 18Z") }
     val Bookmark: ImageVector by lazy { lucide("Bookmark", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
+    val BookmarkFilled: ImageVector by lazy { lucideFilled("BookmarkFilled", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
     val Check: ImageVector by lazy { lucide("Check", "M20 6L9 17 4 12") }
     val ChevronDown: ImageVector by lazy { lucide("ChevronDown", "M6 9L12 15 18 9") }
     val ChevronRight: ImageVector by lazy { lucide("ChevronRight", "M9 18L15 12 9 6") }

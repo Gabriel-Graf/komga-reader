@@ -51,6 +51,7 @@ fun EinkModal(
     dismissLabel: String,
     modifier: Modifier = Modifier,
     confirmEnabled: Boolean = true,
+    headerAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -69,7 +70,11 @@ fun EinkModal(
                 Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(title, style = MaterialTheme.typography.titleLarge)
+                // Sticky-Titel; optionale Header-Aktion (z. B. „+") rechts, wo sonst nichts steht.
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    headerAction?.invoke()
+                }
                 content()
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     EinkOutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(dismissLabel) }

@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.collections.AddToCollectionSheet
+import com.komgareader.app.ui.collections.CollectionsViewModel
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.app.ui.components.AnchoredMenuPopup
@@ -87,9 +88,12 @@ fun SeriesDetailScreen(
     onBack: () -> Unit,
     onOpenBook: (bookId: String, sourceId: Long, pageCount: Int, format: String, forceStream: Boolean, viewerMode: String) -> Unit,
     viewModel: SeriesDetailViewModel = hiltViewModel(),
+    collectionsVm: CollectionsViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
     val state by viewModel.state.collectAsState()
+    // Für den Lesezeichen-Aktiv-Zustand: gehört die Serie irgendeiner Collection an?
+    val collections by collectionsVm.collections.collectAsState()
     val localIds by viewModel.localBookIds.collectAsState()
     val downloadingIds by viewModel.downloadingIds.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
@@ -121,9 +125,17 @@ fun SeriesDetailScreen(
             // (RowScope): Collections-Bookmark + „Zur Bibliothek" (springt über LocalOnHome bis zur
             // Graph-Wurzel, von jedem Detail-Screen aus). Zurück-Navigation trägt onBack.
             LocalResolvedSlots.current.header(title, onBack) {
-                if (state is SeriesDetailUiState.Content) {
+                (state as? SeriesDetailUiState.Content)?.let { c ->
+                    val seriesSourceId = c.books.firstOrNull()?.sourceId
+                    val inAnyCollection = seriesSourceId != null && collections.any { col ->
+                        col.kind == CollectionKind.SERIES &&
+                            col.members.any { it.sourceId == seriesSourceId && it.remoteId == c.seriesRemoteId }
+                    }
                     IconButton(onClick = { showAddToCollection = true }) {
-                        Icon(AppIcons.Bookmark, contentDescription = s.addToCollection)
+                        Icon(
+                            if (inAnyCollection) AppIcons.BookmarkFilled else AppIcons.Bookmark,
+                            contentDescription = s.addToCollection,
+                        )
                     }
                 }
                 val onHome = LocalOnHome.current

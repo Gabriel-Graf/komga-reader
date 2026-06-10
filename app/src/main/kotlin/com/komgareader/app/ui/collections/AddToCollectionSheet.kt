@@ -3,12 +3,16 @@ package com.komgareader.app.ui.collections
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -17,21 +21,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
-import com.komgareader.app.ui.components.EinkInfoDialog
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
+import com.komgareader.domain.model.UserCollection
 
 /**
  * Picker-Sheet „Zu Collection hinzufügen" — wiederverwendbar für Serien und Bücher.
  *
- * Zeigt alle Collections des passenden [kind] als auswählbare Zeilen; ein Tipp toggelt
- * die Zugehörigkeit sofort (add/remove ohne separaten Bestätigen-Button). Am Ende
- * eine Inline-Neuanlage: Feld + „Erstellen". Der Modal lässt sich über das X oben rechts
- * (oder Back) verlassen — kein separater Bestätigen/Abbrechen-Knopf.
+ * **Staged-Auswahl:** Antippen einer Zeile ändert nur die lokale Auswahl, **Bestätigen**
+ * übernimmt sie (add/remove gegen den aktuellen Mitgliedsstand), **Abbrechen** verwirft sie.
+ * Das **„+" im Kopf** (wo sonst das Schließen-X säße) blendet die Inline-Neuanlage ein.
  *
- * Wird über [hiltViewModel] mit dem Activity-weiten [CollectionsViewModel] verbunden;
- * die Screens, die dieses Sheet öffnen, müssen es nur rendern — kein eigenes VM nötig.
+ * Über [hiltViewModel] mit dem Activity-weiten [CollectionsViewModel] verbunden; öffnende
+ * Screens rendern das Sheet nur — kein eigenes VM nötig.
  */
 @Composable
 fun AddToCollectionSheet(
@@ -47,15 +52,43 @@ fun AddToCollectionSheet(
     var showNewField by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
 
-    // Read-only-Rahmen mit nur einem X (kein Bestätigen/Abbrechen-Paar) — add/remove passiert
-    // inline beim Antippen einer Zeile, ein zweiter „Schließen"-Button wäre redundant.
-    EinkInfoDialog(
+    // Lokale (staged) Auswahl: die Collection-IDs, in denen das Werk nach Bestätigen liegen soll.
+    // Einmal aus dem aktuellen Mitgliedsstand geseedet, sobald die Liste das erste Mal da ist
+    // (neu angelegte Collections setzen den Seed nicht zurück → keine Auswahl geht verloren).
+    val staged = remember { mutableStateListOf<Long>() }
+    var seeded by remember { mutableStateOf(false) }
+    LaunchedEffect(filtered) {
+        if (!seeded && filtered.isNotEmpty()) {
+            staged.clear()
+            staged.addAll(filtered.filter { it.isMemberOf(member) }.map { it.id })
+            seeded = true
+        }
+    }
+
+    EinkModal(
         title = s.addToCollection,
         onDismiss = onDismiss,
-        closeLabel = s.close,
+        confirmLabel = s.save,
+        onConfirm = {
+            // Staged-Auswahl gegen den Ist-Stand abgleichen: nur echte Änderungen anwenden.
+            filtered.forEach { collection ->
+                val want = collection.id in staged
+                val have = collection.isMemberOf(member)
+                when {
+                    want && !have -> viewModel.addMember(collection.id, member)
+                    !want && have -> viewModel.removeMember(collection.id, member.sourceId, member.remoteId)
+                }
+            }
+            onDismiss()
+        },
+        dismissLabel = s.cancel,
+        headerAction = {
+            IconButton(onClick = { showNewField = !showNewField }) {
+                Icon(AppIcons.Plus, contentDescription = s.newCollection)
+            }
+        },
     ) {
-        // Liste bestehender Collections dieses Typs
-        if (filtered.isEmpty()) {
+        if (filtered.isEmpty() && !showNewField) {
             Text(
                 text = s.collectionsEmpty,
                 style = MaterialTheme.typography.bodyMedium,
@@ -63,28 +96,22 @@ fun AddToCollectionSheet(
             )
         } else {
             filtered.forEach { collection ->
-                val isMember = collection.members.any { m ->
-                    m.sourceId == member.sourceId && m.remoteId == member.remoteId
-                }
                 ChoiceRow(
                     label = collection.name,
-                    selected = isMember,
+                    selected = collection.id in staged,
                     dense = true,
                     onSelect = {
-                        if (isMember) {
-                            viewModel.removeMember(collection.id, member.sourceId, member.remoteId)
-                        } else {
-                            viewModel.addMember(collection.id, member)
-                        }
+                        if (collection.id in staged) staged.remove(collection.id)
+                        else staged.add(collection.id)
                     },
                 )
             }
         }
 
-        Spacer(Modifier.height(4.dp))
-
-        // Neue Collection anlegen
+        // Inline-Neuanlage über das „+" im Kopf: Feld + „Erstellen". Die neue Collection
+        // erscheint danach in der Liste und kann ausgewählt werden.
         if (showNewField) {
+            Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = newName,
                 onValueChange = { newName = it },
@@ -106,13 +133,10 @@ fun AddToCollectionSheet(
             ) {
                 Text(s.create)
             }
-        } else {
-            EinkOutlinedButton(
-                onClick = { showNewField = true },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(s.newCollection)
-            }
         }
     }
 }
+
+/** Ist [member] (gleiche Quelle + Remote-ID) in dieser Collection? */
+private fun UserCollection.isMemberOf(member: CollectionMember): Boolean =
+    members.any { it.sourceId == member.sourceId && it.remoteId == member.remoteId }

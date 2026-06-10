@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
@@ -53,10 +54,11 @@ fun readerOverlayScrim(base: Color, transparentAlpha: Float): Color =
 
 /**
  * Toggle­bare Reader-Menüleiste, die **über** dem Inhalt schwebt (kein Reflow). Nur
- * sichtbar, wenn [visible]. Zurück-Button links; rechts die **geteilten** Shortcuts
- * [onHome] (Bibliothek) und [onSettings] (Einstellungen), danach die reader-spezifischen
- * [actions]. Die geteilten Buttons leben hier an genau **einer** Stelle
- * (`shared-structure-before-variants`) — kein Reader baut sie selbst.
+ * sichtbar, wenn [visible]. Zurück-Button links; rechts zuerst die reader-spezifischen
+ * [actions] (Inhaltsverzeichnis, Suche, Typografie, …), dann die **geteilten** Shortcuts
+ * [onHome] (Bibliothek) und [onSettings] (Einstellungen) ganz rechts. Die geteilten Buttons
+ * leben hier an genau **einer** Stelle (`shared-structure-before-variants`) — kein Reader
+ * baut sie selbst.
  *
  * Hintergrund über [readerOverlayScrim]: E-Ink deckend schwarz, Smartphone halbtransparent.
  */
@@ -89,8 +91,9 @@ fun BoxScope.ReaderChromeOverlay(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
         )
-        // Geteilte Shortcuts: Home links, Einstellungen rechts daneben — dann die
-        // reader-spezifischen Aktionen (Modus-Toggle, Typografie, …).
+        // Erst die reader-spezifischen Aktionen (Inhaltsverzeichnis, Suche, Typografie, …),
+        // dann die geteilten Shortcuts Home + Einstellungen ganz rechts — über alle Reader gleich.
+        actions()
         IconButton(onClick = onHome) {
             Icon(
                 AppIcons.Home,
@@ -107,7 +110,6 @@ fun BoxScope.ReaderChromeOverlay(
                 modifier = Modifier.size(24.dp),
             )
         }
-        actions()
     }
 }
 
@@ -138,9 +140,10 @@ fun BoxScope.ReaderStatusBar(text: String, dark: Boolean) {
  * Page-Header und Page-Footer (DRY). Links [start], rechts [end], dazwischen Dehnung.
  * Eine Hairline-Trennlinie zur Inhaltsseite ([dividerOnTop] = Footer oben, Header unten).
  *
- * Ersetzt den engine-eigenen crengine-Streifen durch eine E-Ink-konforme, flache Leiste
- * (weiße Fläche, schwarze Schrift, Hairline statt Schatten). Auf E-Ink deckend, auf
- * Smartphone leicht durchscheinend.
+ * Ersetzt den engine-eigenen crengine-Streifen durch eine E-Ink-konforme, flache Leiste —
+ * **schwarze Fläche, weiße Schrift wie das Top-Overlay** (Hairline statt Schatten). Über
+ * [readerOverlayScrim] geräteklassen-gegatet: auf E-Ink deckend schwarz, auf Smartphone
+ * leicht durchscheinend.
  */
 @Composable
 fun BoxScope.ReaderInfoBar(
@@ -155,7 +158,7 @@ fun BoxScope.ReaderInfoBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(readerOverlayScrim(Color.White, 0.85f))
+                .background(readerOverlayScrim(Color.Black, 0.6f))
                 .displayCutoutPadding()
                 .padding(horizontal = BAR_INSET, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -177,13 +180,18 @@ private fun Hairline(color: Color) {
     Box(Modifier.fillMaxWidth().height(EinkTokens.hairline).background(color))
 }
 
-/** Schwarze Schrift in `bodySmall` — gemeinsamer Stil für die Info-Leisten-Slots. */
+/**
+ * Weiße Schrift auf der schwarzen Info-Leiste — gemeinsamer Stil für Header-/Footer-Slots.
+ * `bodyMedium` + SemiBold: einen Tick größer/dicker als der Material-Default, damit der
+ * dünne Page-Header/-Footer auf E-Ink gut lesbar bleibt.
+ */
 @Composable
 fun ReaderInfoText(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        color = Color.Black,
-        style = MaterialTheme.typography.bodySmall,
+        color = Color.White,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.SemiBold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,

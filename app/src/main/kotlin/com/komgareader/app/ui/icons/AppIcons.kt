@@ -37,6 +37,9 @@ object AppIcons {
     val GridView: ImageVector get() = LucideIcons.LayoutGrid
     val ListView: ImageVector get() = LucideIcons.List
     val Bookmark: ImageVector get() = LucideIcons.Bookmark
+
+    /** Aktiv-Zustand des Lesezeichens: gefüllt, wenn das Werk in mindestens einer Collection liegt. */
+    val BookmarkFilled: ImageVector get() = LucideIcons.BookmarkFilled
     val Library: ImageVector get() = LucideIcons.Library
     val Groups: ImageVector get() = LucideIcons.LayoutDashboard
     val Plugins: ImageVector get() = LucideIcons.Puzzle

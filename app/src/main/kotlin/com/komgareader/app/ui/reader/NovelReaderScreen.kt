@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
@@ -108,6 +109,7 @@ fun NovelReaderScreen(
     }
 
     ReaderScaffold(
+        modifier = Modifier.testTag("reader_novel"),
         chrome = novelVm,
         title = "${state.currentPage + 1} / ${state.pageCount.coerceAtLeast(1)}",
         onBack = onBack,

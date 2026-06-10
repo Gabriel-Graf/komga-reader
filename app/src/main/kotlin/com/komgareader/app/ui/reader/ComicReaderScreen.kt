@@ -25,6 +25,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
@@ -102,6 +103,7 @@ fun ComicReaderScreen(
     }
 
     ReaderScaffold(
+        modifier = Modifier.testTag("reader_comic"),
         chrome = comicVm,
         title = "${state.position.page + 1} / $pageCount",
         onBack = onBack,

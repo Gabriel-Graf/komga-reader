@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
@@ -117,6 +118,7 @@ fun WebtoonReaderScreen(
     }
 
     ReaderScaffold(
+        modifier = Modifier.testTag("reader_webtoon"),
         chrome = chrome,
         title = "${listState.firstVisibleItemIndex + 1} / $pageCount",
         onBack = onBack,

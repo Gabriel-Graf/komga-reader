@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
@@ -56,6 +57,7 @@ fun PagedReaderScreen(
     }
 
     ReaderScaffold(
+        modifier = Modifier.testTag("reader_paged"),
         chrome = viewModel,
         title = "${pagerState.currentPage + 1} / $pageCount",
         onBack = onBack,

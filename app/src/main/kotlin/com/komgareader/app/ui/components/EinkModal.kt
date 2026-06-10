@@ -70,10 +70,13 @@ fun EinkModal(
                 Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // Sticky-Titel; optionale Header-Aktion (z. B. „+") rechts, wo sonst nichts steht.
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    headerAction?.invoke()
+                // Sticky-Titel; optionale Header-Aktion (z. B. „+") rechts. Leerer Titel ohne Aktion
+                // → Kopfzeile entfällt ganz (kompaktes Modal).
+                if (title.isNotBlank() || headerAction != null) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        headerAction?.invoke()
+                    }
                 }
                 content()
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

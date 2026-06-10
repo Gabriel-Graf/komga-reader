@@ -341,7 +341,7 @@ private fun AddWorksModal(
     val staged = remember { mutableStateListOf<Series>() }
 
     EinkModal(
-        title = s.addWorks,
+        title = "",
         onDismiss = onDismiss,
         confirmLabel = s.save,
         onConfirm = { onConfirm(staged.map { CollectionMember(it.sourceId, it.remoteId, it.title) }) },
@@ -352,7 +352,7 @@ private fun AddWorksModal(
             query = query,
             onQueryChange = { query = it },
             onSubmit = {},
-            placeholder = s.searchMediaHint,
+            placeholder = s.addWorksHint,
             actionLabel = s.searchAction,
             clearLabel = s.clearSearch,
             onClear = { query = "" },

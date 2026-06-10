@@ -148,7 +148,8 @@ interface Strings {
     val deleteCollectionServerToo: String
     fun searchInCollection(name: String): String   // Suchfeld-Platzhalter im Sammlungs-Detail
     fun sourceLabel(id: Long): String              // „Quelle {id}" im Sync-Status
-    val addWorks: String                           // Titel: Werke aus der Bibliothek hinzufügen
+    val addWorks: String                           // Aktions-Label „Werke hinzufügen" (Icon-Beschreibung)
+    val addWorksHint: String                       // Such-Platzhalter im kompakten Hinzufügen-Modal
     val collectionPending: String                  // Sync-Link noch nicht abgeglichen (dirty)
     val collectionSynced: String                   // Sync-Link abgeglichen
     // Comic-Reader
@@ -407,6 +408,7 @@ object StringsDe : Strings {
     override fun searchInCollection(name: String) = "In „$name“ suchen"
     override fun sourceLabel(id: Long) = "Quelle $id"
     override val addWorks = "Werke hinzufügen"
+    override val addWorksHint = "Werke aus Bibliothek hinzufügen"
     override val collectionPending = "ausstehend"
     override val collectionSynced = "synchron"
     // Comic-Reader
@@ -656,6 +658,7 @@ object StringsEn : Strings {
     override fun searchInCollection(name: String) = "Search in “$name”"
     override fun sourceLabel(id: Long) = "Source $id"
     override val addWorks = "Add works"
+    override val addWorksHint = "Add works from library"
     override val collectionPending = "pending"
     override val collectionSynced = "synced"
     // Comic reader

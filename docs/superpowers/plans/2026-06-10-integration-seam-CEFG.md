@@ -366,7 +366,7 @@ class BlockFDownloadTest {
 
         // Offline rendern (MuPDF) — beweist „lesbar ohne Netz".
         val doc = MupdfDocumentFactory().open(localBytes, ".cbz")
-        assertTrue("Mind. eine Seite renderbar", doc.pageCount >= 1)
+        assertTrue("Mind. eine Seite renderbar", doc.pageCount() >= 1)
 
         // Aufräumen → Eintrag + Datei weg.
         downloads.delete(book.remoteId)

@@ -155,7 +155,9 @@ Marker: `[UI]` / `[Seam]` Ebene · `[pending]` Feature existiert noch nicht.
 
 ### G — Geräteklasse / E-Ink (orthogonale Achsen)
 - **G22** E-Ink-Modus: keine Bewegung, Akzent monochrom-schwarz (auch Kaleido) `[Seam/UI]` — bewacht device-class
+  - *Status (Plan 3):* die pure Logik `displayBehaviorFor(mode, capabilities)` ist durch den Domain-Unit-Test `DisplayBehaviorTest` (mono/kaleido/lcd) **vollständig abgedeckt** — kein Integrations-Duplikat. Sichtbare UI-Wirkung (Bewegung/Akzent im Compose-Baum) → UI-Set (Plan 4).
 - **G23** Device-managed Refresh default → `fullRefresh` No-Op, Fast-Mode an `[Seam]`
+  - *Status (Plan 3):* `RefreshScheduler` ist pur + eigen-unit-getestet; der `OnyxRefresher.deviceManaged`-No-Op ist gerätenah (Boox-SDK), auf Nicht-Boox-HW nicht sinnvoll instrumentierbar — kein eigener Integrationstest.
 
 ### H — Plugins & modulare UI
 System grösstenteils noch nicht gebaut → vorformuliert, `[pending]` bis Feature existiert.

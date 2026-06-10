@@ -68,8 +68,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (nicht mehr in `source-api`) — `domain` darf nicht auf `source-api` hängen, der pure Planner braucht
   ihn aber; `source-api` (das auf `domain` hängt) referenziert ihn von dort. Zeitstempel: `RemoteCollection.updatedAt`
   + Domain-`CollectionSyncLink.updatedAt`, alles **UTC-Epoch-Millis** (Komga `lastModifiedDate` über
-  `parseIsoUtcMillis`, no-offset = UTC). Details: `source-agnostic-integration.md`,
-  `source-extensibility.md` (Kochrezept Metadatum).
+  `parseIsoUtcMillis`, no-offset = UTC). **Server-Entfernen räumt auf** (≠ Vanish-Modal): wird eine
+  Verbindung entfernt, löscht `CollectionRepository.removeSource(sourceId)` deren Member/Sync-Links
+  und entfernt dadurch leer gewordene, von der Quelle berührte Sammlungen (multi-source-Sammlungen
+  behalten die anderen Quellen; fremde leere Sammlungen bleiben). Verdrahtet in
+  `SettingsViewModel.removeServer` über `SourceRegistration.sourceIdOf(config)`. Details:
+  `source-agnostic-integration.md`, `source-extensibility.md` (Kochrezept Metadatum).
 
 ## Naht B — Render & E-Ink (`render-core`, `eink-onyx`)
 

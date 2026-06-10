@@ -324,7 +324,7 @@ class BlockAConnectionTest {
 - [ ] **Step 2: Emulator + Fixtures laufen lassen, Test ausführen**
 
 Run (Fixtures via Plan 1 müssen laufen): `tools/ci-fixtures/up.sh` (einmal), dann
-`./gradlew :app:connectedDebugAndroidTest --tests "com.komgareader.app.ci.BlockAConnectionTest"`
+`ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.komgareader.app.ci.BlockAConnectionTest`
 Expected: 5 Tests grün (a1, a2, a3a, a3b, a4).
 
 - [ ] **Step 3: Falls a3a (Dedup) fehlschlägt**
@@ -413,7 +413,7 @@ class BlockAMixedSourcesTest {
 
 - [ ] **Step 2: Ausführen**
 
-Run: `./gradlew :app:connectedDebugAndroidTest --tests "com.komgareader.app.ci.BlockAMixedSourcesTest"`
+Run: `ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.komgareader.app.ci.BlockAMixedSourcesTest`
 Expected: 2 Tests grün. (OPDS-Catalog-URL ggf. anpassen, falls Komga den Root anders ausliefert —
 A5 zeigt dann „leeres Werk", dann auf `/opds/v1.2/series/<id>` der Manga-Serie zeigen wie im
 alten `MixedSourcesLiveTest`.)
@@ -504,7 +504,7 @@ class BlockBResolutionTest {
 
 - [ ] **Step 2: Ausführen**
 
-Run: `./gradlew :app:connectedDebugAndroidTest --tests "com.komgareader.app.ci.BlockBResolutionTest"`
+Run: `ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.komgareader.app.ci.BlockBResolutionTest`
 Expected: 2 Tests grün.
 
 - [ ] **Step 3: Commit**
@@ -520,7 +520,7 @@ git commit -m "test(ci): Block B — Werk-Auflösung pro Quelle (B7/B8)"
 
 - [ ] **Step 1: Beide Blöcke zusammen ausführen**
 
-Run: `./gradlew :app:connectedDebugAndroidTest --tests "com.komgareader.app.ci.*"`
+Run: `ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci`
 Expected: 9 Tests grün (A: 5, A-mixed: 2, B: 2). Test-Report unter
 `app/build/reports/androidTests/connected/` sichern.
 

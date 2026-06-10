@@ -186,6 +186,17 @@ Slot rendert Pack-Inhalt, Theme-Token an den Call-Sites wirksam).
 - **H10** Voller `UiPack` pro Geräteklasse (LCD Indigo / Kaleido gedämpft / mono S/W) via `packFor(behavior)`, im Host angewandt `[Seam/UI]`
 - **H11** Nur Farbpalette (Token-only, Smartphone und/oder Tablet) → ColorScheme ersetzt, Layout/Slots unverändert `[UI/pending]` — bewacht „Theme zuerst, Layout danach"
 
+## 9b. Umsetzungsstand (2026-06-10)
+
+**Lokal grün, 23 Integrationstests** (`com.komgareader.app.ci.*`, Emulator gegen Live-CI-Komga):
+- **Seam (17):** A1seam/A2/A3a/A3b/A4 · A5/A6 (Komga+OPDS) · B7/B8 · C9–C12 (Resolver auf echten Metadaten) · E-local/E18/E20 · F21.
+- **UI (6):** Smoke · A1 (Add-Server übers UI) · A4 (Remove→Leerzustand) · C9 (Manga→`reader_paged`) · C11 (Novel→`reader_novel`) · D14 (Sammlung anlegen).
+- **G22/G23:** durch Domain-Unit-Tests (`DisplayBehaviorTest`/`RefreshScheduler`) abgedeckt — kein Integrations-Duplikat; UI-Akzent/Bewegung nicht robust UI-assertbar.
+- **Zurückgestellt:** C10 (Webtoon-UI, Logik seam-grün) · Block D17 (Sammlungen-Push/Pull, Feature in Arbeit) · Block H (Plugins, `[pending]`).
+- **Noch offen:** CI-Pipeline (`.gitlab-ci.yml` + Runner-`devices=["/dev/kvm"]`).
+
+Pläne: `plans/2026-06-10-integration-{fixtures-orchestration, harness-seam-AB, seam-CEFG, ui-hilt-infra, ui-catalog}.md`.
+
 ## 10. Neue/berührte Dateien (Übersicht)
 
 - `tools/ci-fixtures/` — `docker-compose.yml`, `seed.sh`, `freeze-from-nas.sh`, `manifest.json`,

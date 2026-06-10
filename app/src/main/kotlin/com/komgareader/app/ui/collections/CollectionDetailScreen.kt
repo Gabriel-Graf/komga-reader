@@ -80,6 +80,7 @@ import com.komgareader.domain.model.Series
 fun CollectionDetailScreen(
     collectionId: Long,
     onBack: () -> Unit,
+    onOpenSeries: (seriesId: String, sourceId: Long) -> Unit,
     viewModel: CollectionsViewModel = hiltViewModel(),
     libraryVm: LibraryViewModel = hiltViewModel(),
 ) {
@@ -129,6 +130,7 @@ fun CollectionDetailScreen(
                 MemberTile(
                     member = member,
                     isSeries = isSeries,
+                    onOpen = if (isSeries) ({ onOpenSeries(member.remoteId, member.sourceId) }) else null,
                     onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
                 )
             }
@@ -161,7 +163,7 @@ fun CollectionDetailScreen(
                 }
                 Spacer(Modifier.height(12.dp))
                 EinkOutlinedButton(
-                    onClick = { viewModel.syncNow(collectionId); showSyncPanel = false },
+                    onClick = { viewModel.syncNow(); showSyncPanel = false },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(AppIcons.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -440,6 +442,7 @@ private fun MemberTile(
     member: CollectionMember,
     isSeries: Boolean,
     onRemove: () -> Unit,
+    onOpen: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val s = LocalStrings.current
@@ -453,7 +456,8 @@ private fun MemberTile(
         modifier
             .aspectRatio(2f / 3f)
             .clip(RoundedCornerShape(8.dp))
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .then(if (onOpen != null) Modifier.clickable(onClick = onOpen) else Modifier),
     ) {
         FilteredAsyncImage(
             model = request,

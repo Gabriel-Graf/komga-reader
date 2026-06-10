@@ -29,11 +29,22 @@ class CollectionSyncManager(
     private val repo: CollectionRepository,
     private val resolver: suspend (sourceId: Long) -> CollectionSyncSource?,
     private val allSources: suspend () -> List<Pair<Long, CollectionSyncSource>>,
+    /** Liefert den echten Anzeigetitel zu (sourceId, kind, remoteId) oder null (→ Fallback remoteId).
+     *  SERIES via BrowsableSource.seriesDetail; BOOK noch nicht (Follow-up). */
+    private val titleResolver: suspend (sourceId: Long, kind: CollectionKind, remoteId: String) -> String?,
 ) {
-    @Inject constructor(repo: CollectionRepository, active: ActiveSource) :
-        this(repo, { id -> active.collectionSource(id) }, { active.allCollectionSources() })
+    @Inject constructor(repo: CollectionRepository, active: ActiveSource) : this(
+        repo,
+        { id -> active.collectionSource(id) },
+        { active.allCollectionSources() },
+        { sourceId, kind, remoteId -> resolveMemberTitle(active, sourceId, kind, remoteId) },
+    )
 
     private val syncMutex = Mutex()
+
+    /** Echter Titel des Werks oder Fallback auf die remoteId (die zugleich der Sync-Link bleibt). */
+    private suspend fun resolveTitle(sourceId: Long, kind: CollectionKind, remoteId: String): String =
+        titleResolver(sourceId, kind, remoteId)?.takeIf { it.isNotBlank() } ?: remoteId
 
     /** Pusht die kanonische Collection in alle betroffenen Quellen (best-effort, pro Quelle). */
     suspend fun push(collection: UserCollection) {
@@ -99,25 +110,34 @@ class CollectionSyncManager(
                     remotePerSource = remotePerSource,
                     kind = kind,
                 )
-                executePlan(plan, allowPush = allowPush)
+                executePlan(plan, kind, allowPush = allowPush)
                 if (collectVanished) vanished += plan.vanished
             }
             vanished.distinctBy { it.collectionId }
         }
 
-    private suspend fun executePlan(plan: SyncPlan, allowPush: Boolean) {
-        // 1) Discovery: Server-Sammlung lokal anlegen.
+    private suspend fun executePlan(plan: SyncPlan, kind: CollectionKind, allowPush: Boolean) {
+        // 1) Discovery: Server-Sammlung lokal anlegen. Komgas listCollections liefert nur Member-IDs,
+        //    keine Titel — den echten Anzeigetitel je Mitglied über die Quelle auflösen (Fallback: remoteId).
         for (d in plan.createLocal) {
             val newId = repo.create(d.remote.name, d.kind)
-            val members = d.remote.memberRemoteIds.map { CollectionMember(d.sourceId, it, it) }
+            val members = d.remote.memberRemoteIds.map { rid ->
+                CollectionMember(d.sourceId, rid, resolveTitle(d.sourceId, d.kind, rid))
+            }
             repo.setMembers(newId, members)   // markiert Link DIRTY/remoteId=null …
             writeLink(newId, d.sourceId, d.remote.remoteId, SyncStatus.SYNCED, dirty = false, updatedAt = d.remote.updatedAt)
         }
-        // 2) Pull-Overwrite: Server-Subset gewinnt für diese Quelle.
+        // 2) Pull-Overwrite: Server-Subset gewinnt für diese Quelle. mergeSubsets.titleFor ist NICHT
+        //    suspend → Titel vorab auflösen (vorhandener lokaler Titel gewinnt, sonst über die Quelle,
+        //    sonst remoteId).
         for (p in plan.pullOverwrite) {
             val current = repo.get(p.collectionId) ?: continue
+            val titles = p.serverMemberRemoteIds.associateWith { rid ->
+                current.members.firstOrNull { it.sourceId == p.sourceId && it.remoteId == rid }?.title
+                    ?: resolveTitle(p.sourceId, kind, rid)
+            }
             val merged = mergeSubsets(current.members, mapOf(p.sourceId to p.serverMemberRemoteIds)) { _, rid ->
-                current.members.firstOrNull { it.sourceId == p.sourceId && it.remoteId == rid }?.title ?: rid
+                titles[rid] ?: rid
             }
             repo.setMembers(p.collectionId, merged)   // … nullt den Link → direkt mit Server-Stand korrigieren:
             writeLink(p.collectionId, p.sourceId, p.remoteId, SyncStatus.SYNCED, dirty = false, updatedAt = p.serverUpdatedAt)
@@ -157,3 +177,18 @@ class CollectionSyncManager(
         repo.updateSyncLink(CollectionSyncLink(collectionId, sourceId, remoteId, status, dirty, updatedAt))
     }
 }
+
+/** Default-Titel-Auflösung über die agnostische Quelle: SERIES via [seriesDetail], sonst null
+ *  (BOOK ist Follow-up). Top-level, damit der delegierende Konstruktor sie ohne Instanz-Zugriff
+ *  aus einer Lambda heraus aufrufen kann. */
+private suspend fun resolveMemberTitle(
+    active: ActiveSource,
+    sourceId: Long,
+    kind: CollectionKind,
+    remoteId: String,
+): String? =
+    if (kind == CollectionKind.SERIES) {
+        runCatching { active.get(sourceId)?.seriesDetail(remoteId)?.title }.getOrNull()
+    } else {
+        null
+    }

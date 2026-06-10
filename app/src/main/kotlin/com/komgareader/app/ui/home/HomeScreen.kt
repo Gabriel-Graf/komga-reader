@@ -203,6 +203,11 @@ fun HomeScreen(
                                         tileLabel = s.viewTile,
                                         largeTileLabel = s.viewLargeTile,
                                     )
+                                    // Ganz rechts: manueller bidirektionaler Sync (push + pull) — dieselbe
+                                    // Refresh-Mechanik wie der Bibliotheks-Reload, ruft den Voll-Sync.
+                                    IconButton(onClick = { collectionsVm.syncNow() }) {
+                                        Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow)
+                                    }
                                 }
                                 // Bibliotheken: „+" (neue Bibliothek) + rotierender Ansichts-Button.
                                 TAB_GROUPS -> {
@@ -269,6 +274,7 @@ fun HomeScreen(
                                 CollectionDetailScreen(
                                     collectionId = openId,
                                     onBack = { openCollectionId = null },
+                                    onOpenSeries = onOpenSeries,
                                 )
                             }
                         }

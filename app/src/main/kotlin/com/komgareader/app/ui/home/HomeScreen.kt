@@ -124,11 +124,14 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
+            // Im Sammlungs-Detail liefert CollectionDetailScreen seine EIGENE TopBar (Titel/Suche +
+            // Aktionen) — die Home-TopBar tritt dort zurück, sonst lägen zwei Bars übereinander.
+            val collectionDetailOpen = selected == TAB_COLLECTIONS && openCollectionId != null
             // Strukturell eigener Header (StatusCluster + Suchzeile + Filter-Chips + Aktionen) —
             // passt nicht in HeaderSlot v1 (title, onBack?, actions). Bewusst außerhalb des Slots.
             // Für Pack-Autoren: Tauschen des Headers über LocalResolvedSlots betrifft HomeScreen NICHT.
             // Ein künftiger HomeHeaderSlot (breitere Signatur) ist die Erweiterung wenn der Slot-Vertrag wächst.
-            TopAppBar(
+            if (!collectionDetailOpen) TopAppBar(
                 // Volle Breite: Status links, Suche echt mittig (feste Breite), Aktion rechts.
                 title = {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

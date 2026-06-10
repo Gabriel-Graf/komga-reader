@@ -146,6 +146,11 @@ interface Strings {
     val collectionSyncForbidden: String
     val deleteCollection: String
     val deleteCollectionServerToo: String
+    fun searchInCollection(name: String): String   // Suchfeld-Platzhalter im Sammlungs-Detail
+    fun sourceLabel(id: Long): String              // „Quelle {id}" im Sync-Status
+    val addWorks: String                           // Titel: Werke aus der Bibliothek hinzufügen
+    val collectionPending: String                  // Sync-Link noch nicht abgeglichen (dirty)
+    val collectionSynced: String                   // Sync-Link abgeglichen
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -399,6 +404,11 @@ object StringsDe : Strings {
     override val collectionSyncForbidden = "Dein Konto darf am Server keine Sammlungen anlegen (nur Admins) — diese Werke bleiben nur lokal."
     override val deleteCollection = "Sammlung löschen"
     override val deleteCollectionServerToo = "Auch auf dem Server löschen"
+    override fun searchInCollection(name: String) = "In „$name“ suchen"
+    override fun sourceLabel(id: Long) = "Quelle $id"
+    override val addWorks = "Werke hinzufügen"
+    override val collectionPending = "ausstehend"
+    override val collectionSynced = "synchron"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -643,6 +653,11 @@ object StringsEn : Strings {
     override val collectionSyncForbidden = "Your account cannot create collections on the server (admins only) — these works stay local only."
     override val deleteCollection = "Delete collection"
     override val deleteCollectionServerToo = "Also delete on server"
+    override fun searchInCollection(name: String) = "Search in “$name”"
+    override fun sourceLabel(id: Long) = "Source $id"
+    override val addWorks = "Add works"
+    override val collectionPending = "pending"
+    override val collectionSynced = "synced"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

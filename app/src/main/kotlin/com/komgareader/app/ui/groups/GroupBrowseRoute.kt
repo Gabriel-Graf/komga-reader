@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.common.UiErrorText
 import com.komgareader.app.ui.components.LoadingIndicator
 import androidx.compose.material3.Icon
@@ -86,7 +87,7 @@ fun GroupBrowseRoute(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         UiErrorText(current.error, modifier = Modifier.padding(16.dp))
                         Button(onClick = { viewModel.refresh() }) {
-                            Text("Wiederholen")
+                            Text(LocalStrings.current.retry)
                         }
                     }
                 }

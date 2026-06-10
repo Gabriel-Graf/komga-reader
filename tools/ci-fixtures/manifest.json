@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "tier1": {
+    "manga":    { "library": "Manga",    "contentType": "MANGA",   "series": ["Sample-Manga"],   "seriesCount": 1, "bookCount": 2 },
+    "webtoon":  { "library": "Webtoon",  "contentType": "WEBTOON", "series": ["Sample-Webtoon"], "seriesCount": 1, "bookCount": 1 },
+    "novels-a": { "library": "Novels-A", "contentType": "NOVEL",   "series": ["Alpha-Novel", "Beta-Novel"], "seriesCount": 2, "bookCount": 2 },
+    "novels-b": { "library": "Novels-B", "contentType": "NOVEL",   "series": ["Gamma-Novel"], "seriesCount": 1, "bookCount": 1 }
+  },
+  "instances": {
+    "komga-a": { "port": 25701, "libraries": ["manga", "novels-a"] },
+    "komga-b": { "port": 25702, "libraries": ["webtoon", "novels-b"] },
+    "komga-c": { "port": 25703, "libraries": ["manga", "novels-a"], "mirrorOf": "komga-a" }
+  }
+}

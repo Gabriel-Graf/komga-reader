@@ -58,8 +58,15 @@ trennen auf zwei **orthogonalen** Achsen, die ein einzelnes `isEink`-Flag nicht 
 | Klasse | Bewegung erlaubt | Akzentfarbe erlaubt |
 |---|---|---|
 | mono E-Ink | nein | nein |
-| Farb-E-Ink (Kaleido) | nein | ja (gedämpft, via Color-Filter) |
+| Farb-E-Ink (Kaleido) | nein | **nein** (UI-Akzent = Schwarz; Cover-Farbe via Color-Filter) |
 | LCD-Phone/-Tablet | ja | ja |
+
+> **User-Entscheidung (2026-06-10, auf echter Go Color 7 verifiziert):** der **E-Ink-Modus ist beim
+> UI-Akzent monochrom** — auch auf Kaleido **Schwarz** (gedämpftes Indigo wirkte falsch). `DisplayMode.EINK`
+> setzt `allowsAccentColor = false`, unabhängig von `capabilities.canColor`. Die **Farbe der Cover/Seiten**
+> auf Kaleido regelt weiterhin der Color-Filter (separat vom UI-Akzent). Das **Modell** behält beide
+> orthogonalen Achsen (kein binäres `isEink`): ein künftiges optionales *Farb-E-Ink-Profil* könnte
+> `allowsAccentColor = true` setzen — nur der heutige E-Ink-Modus tut es nicht.
 
 **Richtung (Soll):** Geräte-Verhalten aus einem `DisplayBehavior`-Wertobjekt mit getrennten
 Flags (`allowsMotion`, `allowsAccentColor`) ableiten, gespeist aus `EinkController.capabilities`

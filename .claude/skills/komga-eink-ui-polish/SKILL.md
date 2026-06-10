@@ -28,8 +28,13 @@ die getrennt gehören (siehe `big-picture-and-goals.md` → „Geräteklassen si
 | Klasse | `allowsMotion` | `allowsAccentColor` | Konsequenz fürs UI |
 |---|---|---|---|
 | mono E-Ink | **false** | **false** | keine Bewegung, monochrom (schwarz/weiß-Akzent) |
-| Farb-E-Ink (Kaleido) | **false** | **true** (gedämpft) | keine Bewegung, **aber** gedämpfte Akzentfarbe erlaubt |
+| Farb-E-Ink (Kaleido) | **false** | **false** | keine Bewegung, **UI-Akzent Schwarz** (Cover-Farbe via Color-Filter, separat) |
 | LCD-Phone/-Tablet | **true** | **true** | Bewegung + Farbe erlaubt (hier glänzt `frontend-design`) |
+
+> **User-Entscheidung (auf echter Go Color 7 verifiziert):** der E-Ink-Modus ist beim UI-Akzent
+> **monochrom — auch auf Kaleido Schwarz** (`DisplayMode.EINK` setzt `allowsAccentColor = false`,
+> unabhängig von `canColor`). Farbe der **Cover/Seiten** regelt der Color-Filter, nicht der Akzent.
+> Das Modell behält beide Achsen (kein binäres `isEink`); nur der E-Ink-Modus wählt Schwarz.
 
 **Quelle der Wahrheit (Ist, verdrahtet):** `DisplayBehavior(allowsMotion, allowsAccentColor)`
 (`domain/model/DisplayBehavior.kt`), abgeleitet via `displayBehaviorFor(mode, capabilities)` in
@@ -43,7 +48,8 @@ modus-sensitives Verhalten.
   für bestehende Gates). Siehe `animation-gating.md` — jede Animation hat einen bewegungsfreien Pfad.
 - **Farbe/Akzent?** → `LocalDisplayBehavior.current.allowsAccentColor`. Akzentfarbe **nur** hinter
   diesem Gate, **nie** unkonditional, **nie** an `allowsMotion`/`LocalEinkMode` koppeln (das ist die
-  *Bewegungs*-Achse — Kaleido bekäme sonst fälschlich Schwarz).
+  *Bewegungs*-Achse). Heute setzt der **E-Ink-Modus `allowsAccentColor = false`** → UI-Akzent Schwarz
+  (auch Kaleido); Akzentfarbe nur im Smartphone-Modus.
 
 > **Soll/Ist-Ehrlichkeit (docs-match-code):** Die Achse `allowsAccentColor` ist verdrahtet, **aber**
 > `Theme.kt` ist heute monochrom (`primary = Black`/`White`) — es gibt **noch kein Akzent-Farbtoken**
@@ -113,10 +119,9 @@ Betonung und **immer** für Modals. **Akzent-/Farbtoken: siehe Soll/Ist-Hinweis 
 Haupt-Navigation. Flach, gleich breite Items, **Icon über Label**, Outlined-Icon (28 dp) + ~11 sp Label.
 Aktives Item: **kurzer Akzent-Balken (3 dp) über dem Icon** + Label fett. Reihenfolge fix: primärer Tab
 **links**, Einstellungen **rechts**. Aktueller Satz: `Bibliothek · Gruppen · Plugins(bald) · Einstellungen`.
-> **Akzent-Balken-Farbe = 2-Achsen-Fall:** heute `onSurface` (schwarz, monochrom). Sobald ein
-> Akzent-Token existiert, die Aktiv-Farbe hinter `allowsAccentColor` verzweigen (mono → schwarz,
-> Kaleido/LCD → gedämpfter Akzent). Die **Mechanik** (Balken, kein Material-Indikator, keine Animation)
-> bleibt über alle Klassen gleich — nur die Farbe verzweigt.
+> **Akzent-Balken-Farbe:** liest `LocalDesignTokens.current.accent` (hinter `allowsAccentColor`) —
+> **E-Ink-Modus (mono + Kaleido) → Schwarz**, LCD/Smartphone → Akzent (Indigo). Die **Mechanik**
+> (Balken, kein Material-Indikator, keine Animation) bleibt über alle Klassen gleich — nur die Farbe verzweigt.
 
 ### Top-Action-Leiste
 Nur Icons (kein Text) rechts in der `TopAppBar`, Outlined, 24 dp. Nur **funktionierende** Aktionen —

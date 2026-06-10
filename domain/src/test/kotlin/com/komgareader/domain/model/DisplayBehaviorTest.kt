@@ -22,9 +22,11 @@ class DisplayBehaviorTest {
         )
     }
 
-    @Test fun `farb e-ink (Kaleido) - keine Bewegung, aber Akzentfarbe`() {
+    @Test fun `e-ink-modus ist monochrom - auch auf Kaleido kein Akzent (User-Entscheidung)`() {
+        // E-Ink-Modus = Schwarz/Weiß-Akzent, unabhängig von der Farbfähigkeit der Hardware.
+        // Akzentfarbe nur im Smartphone-Modus. (Cover-Farbe regelt der Farbfilter separat.)
         assertEquals(
-            DisplayBehavior(allowsMotion = false, allowsAccentColor = true),
+            DisplayBehavior(allowsMotion = false, allowsAccentColor = false),
             displayBehaviorFor(DisplayMode.EINK, kaleido),
         )
     }

@@ -25,7 +25,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -59,6 +58,7 @@ import com.komgareader.app.ui.components.AnchoredMenuPopup
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
+import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.TileTitleBand
@@ -238,16 +238,14 @@ private fun CollectionDetailHeader(
                     // Nicht-Fokus, der sonst sofort schließt) und leer ist.
                     var wasFocused by remember { mutableStateOf(false) }
                     LaunchedEffect(Unit) { focus.requestFocus() }
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = onQueryChange,
-                        placeholder = { Text(s.searchInCollection(title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = onCloseSearch) {
-                                Icon(AppIcons.Close, contentDescription = s.clearSearch, modifier = Modifier.size(20.dp))
-                            }
-                        },
+                    EinkSearchBar(
+                        query = query,
+                        onQueryChange = onQueryChange,
+                        onSubmit = {},
+                        placeholder = s.searchInCollection(title),
+                        actionLabel = s.searchAction,
+                        clearLabel = s.clearSearch,
+                        onClear = onCloseSearch,
                         modifier = Modifier
                             .fillMaxWidth(0.74f)
                             .focusRequester(focus)
@@ -350,11 +348,14 @@ private fun AddWorksModal(
         dismissLabel = s.cancel,
         confirmEnabled = staged.isNotEmpty(),
     ) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = { Text(s.searchMediaHint) },
-            singleLine = true,
+        EinkSearchBar(
+            query = query,
+            onQueryChange = { query = it },
+            onSubmit = {},
+            placeholder = s.searchMediaHint,
+            actionLabel = s.searchAction,
+            clearLabel = s.clearSearch,
+            onClear = { query = "" },
             modifier = Modifier.fillMaxWidth(),
         )
         // 4er-Cover-Gitter; FESTE Höhe → das Modal öffnet sofort in voller Größe (kein Nachwachsen,

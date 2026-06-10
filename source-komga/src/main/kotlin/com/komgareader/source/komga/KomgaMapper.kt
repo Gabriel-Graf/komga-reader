@@ -12,6 +12,10 @@ import com.komgareader.source.komga.dto.CollectionDto
 import com.komgareader.source.komga.dto.PageDto
 import com.komgareader.source.komga.dto.ReadListDto
 import com.komgareader.source.komga.dto.SeriesDto
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 /** Lokale DB-ID, die erst beim Persistieren vergeben wird. */
 private const val UNASSIGNED_ID = 0L
@@ -101,8 +105,20 @@ class KomgaMapper(private val sourceId: Long, private val baseUrl: String) {
     }
 
     fun toRemoteCollection(dto: CollectionDto) =
-        RemoteCollection(dto.id, dto.name, dto.seriesIds)
+        RemoteCollection(dto.id, dto.name, dto.seriesIds, parseIsoUtcMillis(dto.lastModifiedDate))
 
     fun toRemoteCollection(dto: ReadListDto) =
-        RemoteCollection(dto.id, dto.name, dto.bookIds)
+        RemoteCollection(dto.id, dto.name, dto.bookIds, parseIsoUtcMillis(dto.lastModifiedDate))
+
+    /**
+     * Komga-Zeitstempel → UTC epoch millis. Komga liefert `lastModifiedDate` mal mit Offset/`Z`,
+     * mal OHNE Zone (dann ist UTC gemeint, NICHT die lokale Zone) — daher der UTC-Fallback.
+     */
+    internal fun parseIsoUtcMillis(s: String): Long {
+        if (s.isBlank()) return 0L   // kein Zeitstempel → 0 = „uralt", LWW überschreibt gefahrlos
+        return runCatching { Instant.parse(s).toEpochMilli() }                          // Z-Suffix (UTC-Instant)
+            .recoverCatching { OffsetDateTime.parse(s).toInstant().toEpochMilli() }     // mit Offset ±HH:mm
+            .recoverCatching { LocalDateTime.parse(s).toInstant(ZoneOffset.UTC).toEpochMilli() } // ohne Zone → als UTC
+            .getOrDefault(0L)
+    }
 }

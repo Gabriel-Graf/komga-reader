@@ -34,7 +34,7 @@ class CollectionSyncManagerTest {
         override suspend fun createCollection(kind: CollectionKind, name: String, memberRemoteIds: List<String>): RemoteCollection {
             if (failOnCreate) throw RuntimeException("boom")
             lastCreate = name to memberRemoteIds
-            val rc = RemoteCollection("remote-$name-$id", name, memberRemoteIds)
+            val rc = RemoteCollection("remote-$name-$id", name, memberRemoteIds, updatedAt = 0L)
             existing += rc
             return rc
         }
@@ -80,7 +80,7 @@ class CollectionSyncManagerTest {
 
     @Test
     fun `push adopts existing remote collection by name instead of creating`() = runBlocking {
-        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"))))
+        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"), updatedAt = 0L)))
         val repo = FakeCollectionRepo()
         val mgr = CollectionSyncManager(repo, resolver = { s1 })
         val col = UserCollection(10, "Mix", CollectionKind.SERIES, listOf(CollectionMember(1, "a", "A")))
@@ -128,7 +128,7 @@ class CollectionSyncManagerTest {
 
     @Test
     fun `push adopt stores remoteId of the adopted remote collection`() = runBlocking {
-        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"))))
+        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"), updatedAt = 0L)))
         val repo = FakeCollectionRepo()
         val mgr = CollectionSyncManager(repo, resolver = { s1 })
         val col = UserCollection(10, "Mix", CollectionKind.SERIES, listOf(CollectionMember(1, "a", "A")))
@@ -139,7 +139,7 @@ class CollectionSyncManagerTest {
     }
 
     @Test fun `refresh merges server subsets back into canonical list`() = runBlocking {
-        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("r1", "Mix", listOf("a", "d"))))
+        val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("r1", "Mix", listOf("a", "d"), updatedAt = 0L)))
         val repo = FakeCollectionRepo()
         val mgr = CollectionSyncManager(repo, resolver = { s1 })
         val col = UserCollection(10, "Mix", CollectionKind.SERIES,

@@ -31,3 +31,5 @@ done
 
 date -u +"frozen-at=%Y-%m-%dT%H:%M:%SZ" > "${OUT}/FROZEN.txt"
 err "Tier-2-Subset eingefroren nach ${OUT}/ (NIE committen — siehe PROVENANCE.md)"
+err "TODO Operator: Tier-2-Einträge in manifest.json + PROVENANCE.md manuell nachtragen"
+err "  (Auto-Eintrag kommt mit dem ersten Tier-2-Render-Smoke-Test, Plan 2+)"

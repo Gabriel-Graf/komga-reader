@@ -759,6 +759,25 @@ git commit -m "feat(ci-fixtures): freeze-from-nas.sh — kuratierter Tier-2-Subs
 - **Keine Phantome:** Komga-REST-Shapes (`claim`-Header, `LibraryCreationDto`-Pflichtfelder, `ApiKeyDto.key`, `series?size=0.totalElements`) gegen die laufende `gotson/komga:latest` verifiziert.
 - **Determinismus:** committeter Content + feste ZIP-Timestamps; verify.sh asserted gegen Manifest; Cache-Key = Manifest-Hash.
 
+## Review-Findings (bewusst deferred, mit Begründung)
+
+Branch-Review (Spec- + Code-Quality-Reviewer) + Lifecycle-Test deckten ab. Behoben: novels
+in Unterordnern, `up.sh` wartet auf Boot, selbstheilender Cache-Gate (`content_ok` statt
+Volume-Existenz), idempotenter `make_api_key` (löscht alten `ci`-Key vor Neuerzeugung).
+Zwei Spec-Findings bleiben **bewusst offen**:
+
+- **Manifest-SHAs (Spec §3 „SHA der Quelldateien"):** für Tier-1 **redundant** — der Content
+  ist git-committet, also bit-gepinnt; verify asserted Serien-Namen+Counts. SHA-Manifest wird
+  erst für **Tier-2** (runner-lokal, nicht git-getrackt) sinnvoll → dort beim Freeze nachziehen.
+- **`freeze-from-nas.sh` schreibt Manifest/PROVENANCE-Einträge (Spec §5):** Tier-2 wird heute von
+  **keinem** Test genutzt (erst ab Plan 2+) und der Operator kuratiert die `SELECTION` ohnehin
+  manuell. Auto-Eintrag braucht einen Scan-Roundtrip → wird zusammen mit dem ersten Tier-2-Test
+  (Render-Smoke) implementiert, nicht auf Vorrat. Bis dahin trägt der Operator Manifest/PROVENANCE
+  manuell nach (im Script-Footer vermerkt).
+
+False Positives des Code-Reviewers (verifiziert): `.keys.env` ist **nicht** getrackt (gitignore
+greift); shellcheck 0.10.0 meldet **ALL CLEAN** (die behaupteten SC2044/SC2043 feuern nicht).
+
 ## Nächste Pläne (folgen nach Plan 1)
 
 - **Plan 2** Harness (`CiKomga` liest `.keys.env`/Env, `CiFixtures` liest `manifest.json`) + Seam-Tests A/B/C/D/E/F/G.

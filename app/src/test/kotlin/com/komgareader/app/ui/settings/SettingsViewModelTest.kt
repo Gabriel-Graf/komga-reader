@@ -1,12 +1,20 @@
 package com.komgareader.app.ui.settings
 
+import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.SourceRegistration
+import com.komgareader.domain.model.CollectionKind
+import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
+import com.komgareader.domain.model.UserCollection
 import com.komgareader.domain.render.NovelFonts
+import com.komgareader.domain.repository.CollectionRepository
+import com.komgareader.domain.repository.CollectionSyncLink
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.source.SourceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -31,11 +39,26 @@ class SettingsViewModelTest {
         override suspend fun clear() = error("not used")
     }
 
+    private fun registration(): SourceRegistration =
+        SourceRegistration(SourceManager(), KomgaSourceProvider())
+
     private fun viewModel(servers: ServerRepository): SettingsViewModel =
-        SettingsViewModel(StubSettingsRepository(), servers, StubColorProfileRepository())
+        SettingsViewModel(
+            StubSettingsRepository(),
+            servers,
+            StubColorProfileRepository(),
+            registration(),
+            StubCollectionRepository(),
+        )
 
     private fun viewModel(settings: SettingsRepository): SettingsViewModel =
-        SettingsViewModel(settings, CapturingServerRepository(), StubColorProfileRepository())
+        SettingsViewModel(
+            settings,
+            CapturingServerRepository(),
+            StubColorProfileRepository(),
+            registration(),
+            StubCollectionRepository(),
+        )
 
     @Test
     fun `saveServer mit id 0 speichert eine neue Verbindung mit id 0`() = runTest {
@@ -220,6 +243,21 @@ private class CapturingSettingsRepository(
     override suspend fun setNovelHyphenationLang(lang: String) { novelHyphenationLangValue = lang }
     override suspend fun setNovelFontWeight(value: Int) { novelFontWeightValue = value }
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
+}
+
+/** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */
+private class StubCollectionRepository : CollectionRepository {
+    override val collections: Flow<List<UserCollection>> = flowOf(emptyList())
+    override fun syncLinks(collectionId: Long): Flow<List<CollectionSyncLink>> = flowOf(emptyList())
+    override suspend fun create(name: String, kind: CollectionKind): Long = 0
+    override suspend fun rename(collectionId: Long, name: String) {}
+    override suspend fun delete(collectionId: Long) {}
+    override suspend fun setMembers(collectionId: Long, members: List<CollectionMember>) {}
+    override suspend fun addMember(collectionId: Long, member: CollectionMember) {}
+    override suspend fun removeMember(collectionId: Long, sourceId: Long, remoteId: String) {}
+    override suspend fun updateSyncLink(link: CollectionSyncLink) {}
+    override suspend fun get(collectionId: Long): UserCollection? = null
+    override suspend fun removeSource(sourceId: Long) {}
 }
 
 /** Minimal-Stub: aktives Profil ist OFF; Schreib-Operationen werden im Test nicht ausgeübt. */

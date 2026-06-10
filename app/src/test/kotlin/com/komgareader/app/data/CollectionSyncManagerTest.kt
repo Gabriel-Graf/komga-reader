@@ -102,6 +102,7 @@ class CollectionSyncManagerTest {
         }
 
         override suspend fun get(collectionId: Long): UserCollection? = storedCollections[collectionId]
+        override suspend fun removeSource(sourceId: Long) {}
     }
 
     @Test

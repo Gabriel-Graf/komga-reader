@@ -32,4 +32,11 @@ interface CollectionRepository {
     /** Sync-Engine schreibt Ergebnis zurück. */
     suspend fun updateSyncLink(link: CollectionSyncLink)
     suspend fun get(collectionId: Long): UserCollection?
+
+    /**
+     * Entfernt alle lokalen Sammlungs-Daten einer Quelle (beim Abmelden eines Servers): Mitglieder
+     * und Sync-Links dieser [sourceId]. Sammlungen, die dadurch komplett leer werden UND von dieser
+     * Quelle berührt waren, werden ganz gelöscht; Sammlungen mit Mitgliedern anderer Quellen bleiben.
+     */
+    suspend fun removeSource(sourceId: Long)
 }

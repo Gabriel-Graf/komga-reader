@@ -2,9 +2,11 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.SourceRegistration
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
+import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
@@ -12,6 +14,7 @@ import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,6 +24,8 @@ class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val servers: ServerRepository,
     private val colorProfiles: ColorProfileRepository,
+    private val registration: SourceRegistration,
+    private val collections: CollectionRepository,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -89,6 +94,10 @@ class SettingsViewModel @Inject constructor(
 
     private fun String.trimToNull(): String? = trim().ifBlank { null }
 
-    /** Entfernt genau eine Server-Verbindung (per Rowid) — die anderen bleiben. */
-    fun removeServer(id: Long) = viewModelScope.launch { servers.remove(id) }.let {}
+    /** Entfernt eine Server-Verbindung (per Rowid) und räumt die lokalen Sammlungs-Daten dieser Quelle auf. */
+    fun removeServer(id: Long) = viewModelScope.launch {
+        val cfg = servers.configs.first().firstOrNull { it.id == id }
+        servers.remove(id)
+        cfg?.let { registration.sourceIdOf(it) }?.let { collections.removeSource(it) }
+    }.let {}
 }

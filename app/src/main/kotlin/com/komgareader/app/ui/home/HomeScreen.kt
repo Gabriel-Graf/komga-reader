@@ -170,18 +170,22 @@ fun HomeScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                             )
-                            if (selected == TAB_LIBRARY) {
-                                IconButton(
-                                    onClick = { filterMenuOpen = true },
-                                    modifier = Modifier.onGloballyPositioned { coords ->
-                                        val pos = coords.positionInWindow()
-                                        filterAnchor = IntOffset(
-                                            (pos.x + coords.size.width).toInt(),
-                                            (pos.y + coords.size.height).toInt(),
-                                        )
-                                    },
-                                ) {
-                                    Icon(AppIcons.Filter, contentDescription = s.filterByType)
+                            // Filter-Slot: feste Breite auf ALLEN Tabs, damit das Suchfeld überall gleich breit ist (DRY).
+                            // Filter-Aktion nur auf der Bibliothek; sonst bleibt der Slot leer.
+                            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                                if (selected == TAB_LIBRARY) {
+                                    IconButton(
+                                        onClick = { filterMenuOpen = true },
+                                        modifier = Modifier.onGloballyPositioned { coords ->
+                                            val pos = coords.positionInWindow()
+                                            filterAnchor = IntOffset(
+                                                (pos.x + coords.size.width).toInt(),
+                                                (pos.y + coords.size.height).toInt(),
+                                            )
+                                        },
+                                    ) {
+                                        Icon(AppIcons.Filter, contentDescription = s.filterByType)
+                                    }
                                 }
                             }
                         }

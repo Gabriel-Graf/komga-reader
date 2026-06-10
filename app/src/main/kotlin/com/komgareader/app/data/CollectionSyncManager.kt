@@ -113,6 +113,18 @@ class CollectionSyncManager(
                 executePlan(plan, kind, allowPush = allowPush)
                 if (collectVanished) vanished += plan.vanished
             }
+
+            // Titel-Heilung: Altbestand-Mitglieder, deren Titel noch die remoteId ist (vor der
+            // Titel-Auflösung entdeckt), echten Titel nachladen — ohne den Sync-Link zu verändern.
+            val current = repo.collections.first()
+            for (c in current) {
+                if (c.members.none { it.title == it.remoteId }) continue
+                val healed = c.members.map { m ->
+                    if (m.title == m.remoteId) m.copy(title = resolveTitle(m.sourceId, c.kind, m.remoteId)) else m
+                }
+                if (healed != c.members) repo.updateMemberTitles(c.id, healed)
+            }
+
             vanished.distinctBy { it.collectionId }
         }
 

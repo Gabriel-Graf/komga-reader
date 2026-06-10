@@ -72,6 +72,21 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
         }
     }
 
+    override suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>) {
+        dao.replaceMembers(
+            collectionId,
+            members.mapIndexed { i, m ->
+                CollectionMemberEntity(
+                    collectionId = collectionId,
+                    sourceId = m.sourceId,
+                    remoteId = m.remoteId,
+                    title = m.title,
+                    position = i,
+                )
+            },
+        )
+    }
+
     override suspend fun addMember(collectionId: Long, member: CollectionMember) {
         val current = currentMembers(collectionId)
         if (current.any { it.sourceId == member.sourceId && it.remoteId == member.remoteId }) return

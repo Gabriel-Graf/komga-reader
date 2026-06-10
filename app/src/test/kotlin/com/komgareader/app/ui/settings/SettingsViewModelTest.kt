@@ -264,6 +264,7 @@ private class StubCollectionRepository : CollectionRepository {
     override suspend fun rename(collectionId: Long, name: String) {}
     override suspend fun delete(collectionId: Long) {}
     override suspend fun setMembers(collectionId: Long, members: List<CollectionMember>) {}
+    override suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>) {}
     override suspend fun addMember(collectionId: Long, member: CollectionMember) {}
     override suspend fun removeMember(collectionId: Long, sourceId: Long, remoteId: String) {}
     override suspend fun updateSyncLink(link: CollectionSyncLink) {}

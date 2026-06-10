@@ -29,6 +29,10 @@ interface CollectionRepository {
     suspend fun addMember(collectionId: Long, member: CollectionMember)
     suspend fun removeMember(collectionId: Long, sourceId: Long, remoteId: String)
 
+    /** Aktualisiert NUR die Anzeigetitel der Mitglieder — KEINE Sync-Link-Änderung, kein dirty.
+     *  Für die Titel-Heilung (Altbestand mit title==remoteId). */
+    suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>)
+
     /** Sync-Engine schreibt Ergebnis zurück. */
     suspend fun updateSyncLink(link: CollectionSyncLink)
     suspend fun get(collectionId: Long): UserCollection?

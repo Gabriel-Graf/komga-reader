@@ -97,6 +97,11 @@ class CollectionSyncManagerTest {
             storedCollections[collectionId]?.let { storedCollections[collectionId] = it.copy(members = members) }
         }
 
+        override suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>) {
+            // Nur Titel — die Sync-Links bleiben unangetastet (genau wie die Room-Impl).
+            storedCollections[collectionId]?.let { storedCollections[collectionId] = it.copy(members = members) }
+        }
+
         override suspend fun addMember(collectionId: Long, member: CollectionMember) = error("not used")
         override suspend fun removeMember(collectionId: Long, sourceId: Long, remoteId: String) = error("not used")
 
@@ -227,6 +232,35 @@ class CollectionSyncManagerTest {
         val marvel = repo.storedCollections.values.first { it.name == "Marvel" }
         assertEquals(listOf("Berserk", "Saga"), marvel.members.map { it.title })
         assertEquals(listOf("s1", "s2"), marvel.members.map { it.remoteId }) // remoteId unverändert (= Link)
+    }
+
+    @Test
+    fun `fullSync heilt Altbestand-Titel die noch die remoteId sind ohne den Sync-Link zu veraendern`() = runBlocking {
+        // Server kennt die Sammlung schon (synced) — kein Discovery/Pull/Push nötig.
+        val source = FakeSource(7, canWrite = true, existing = mutableListOf(
+            RemoteCollection("rc-marvel", "Marvel", listOf("s1"), updatedAt = 50L),
+        ))
+        val repo = FakeCollectionRepo()
+        // Altbestand: Mitglied wurde VOR der Titel-Auflösung entdeckt → title == remoteId.
+        val colId = repo.seedCollection("Marvel", CollectionKind.SERIES, listOf(CollectionMember(7, "s1", "s1")))
+        repo.seedLink(CollectionSyncLink(colId, 7, "rc-marvel", SyncStatus.SYNCED, dirty = false, updatedAt = 50L))
+
+        val mgr = CollectionSyncManager(
+            repo,
+            resolver = { source },
+            allSources = { listOf(7L to source) },
+            titleResolver = { _, _, rid -> mapOf("s1" to "Berserk")[rid] },
+        )
+        mgr.fullSync()
+
+        val healed = repo.storedCollections.getValue(colId)
+        assertEquals(listOf("Berserk"), healed.members.map { it.title }, "Titel geheilt (echter Titel statt remoteId)")
+        assertEquals(listOf("s1"), healed.members.map { it.remoteId }, "remoteId unverändert")
+        // Sync-Link NICHT verändert: remoteCollectionId bleibt, status SYNCED, nicht dirty.
+        val link = repo.links.getValue(7)
+        assertEquals("rc-marvel", link.remoteCollectionId, "Heilung darf den Sync-Link NICHT nullen")
+        assertEquals(SyncStatus.SYNCED, link.status)
+        assertEquals(false, link.dirty)
     }
 
     @Test

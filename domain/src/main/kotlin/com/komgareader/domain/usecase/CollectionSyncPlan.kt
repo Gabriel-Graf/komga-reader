@@ -42,13 +42,15 @@ data class SyncPlan(
  *  - nur lokal, war synced, am Server weg: vanished.
  *
  * @param remotePerSource pro Quelle die Server-Liste EINER kind-Familie. Die Shell ruft je kind
- *  getrennt auf; daher trägt [DiscoveredCollection.kind] hier das Default SERIES und wird von der
- *  Shell beim Ausführen mit dem tatsächlichen kind überschrieben.
+ *  getrennt auf.
+ * @param kind die kind-Familie der übergebenen lokalen und Server-Listen; sie wird in jede
+ *  [DiscoveredCollection] übernommen, damit der Aufrufer sie beim Anlegen nicht überschreiben muss.
  */
 fun planCollectionSync(
     local: List<UserCollection>,
     links: Map<Long, List<CollectionSyncLink>>,
     remotePerSource: Map<Long, List<RemoteCollection>>,
+    kind: CollectionKind,
 ): SyncPlan {
     val createLocal = mutableListOf<DiscoveredCollection>()
     val pushLocal = mutableSetOf<Long>()
@@ -104,7 +106,7 @@ fun planCollectionSync(
         val matched = matchedRemoteIds[sourceId].orEmpty()
         for (remote in remotes) {
             if (remote.remoteId !in matched) {
-                createLocal += DiscoveredCollection(sourceId, CollectionKind.SERIES, remote)
+                createLocal += DiscoveredCollection(sourceId, kind, remote)
             }
         }
     }

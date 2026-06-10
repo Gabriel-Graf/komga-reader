@@ -62,9 +62,9 @@ data class NovelSettings(
          * 12/25/50 sind gelistet und erhalten die Abstufung NARROW < NORMAL < WIDE.
          */
         fun marginFor(preset: String): Margins = when (preset) {
-            MARGIN_NARROW -> Margins(20, 20, 20, 20)
-            MARGIN_WIDE -> Margins(100, 100, 100, 100)
-            else -> Margins(50, 50, 50, 50)
+            MARGIN_NARROW -> Margins(12, 12, 12, 12)
+            MARGIN_WIDE -> Margins(50, 50, 50, 50)
+            else -> Margins.NORMAL
         }
     }
 }

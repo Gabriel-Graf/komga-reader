@@ -1,21 +1,13 @@
 package com.komgareader.app.ci.ui
 
-import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.komgareader.app.MainActivity
 import com.komgareader.app.ci.CiFixtures
 import com.komgareader.app.ci.CiKomga
-import com.komgareader.domain.repository.ServerRepository
-import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.runBlocking
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import javax.inject.Inject
 
 /**
  * Beweist die UI-Test-Infrastruktur end-to-end: in-memory-DB (Hilt) + vor-Start-Seeding eines
@@ -26,17 +18,12 @@ import javax.inject.Inject
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
-class HiltUiSmokeTest {
-
-    @get:Rule(order = 0) val hiltRule = HiltAndroidRule(this)
-    @get:Rule(order = 1) val composeRule = createEmptyComposeRule()
-
-    @Inject lateinit var servers: ServerRepository
+class HiltUiSmokeTest : UiTestBase() {
 
     @Before fun seedAndLaunch() {
-        hiltRule.inject()
-        runBlocking { servers.save(CiKomga.A) }   // in-memory-DB → isoliert
-        ActivityScenario.launch(MainActivity::class.java)
+        inject()
+        seedServers(CiKomga.A)   // in-memory-DB → isoliert
+        launch()
     }
 
     /** A1 (UI-Smoke): nach dem Start erscheint die Live-Bibliothek mit der Manga-Serie. */

@@ -120,6 +120,13 @@ interface Strings {
     val downloadComplete: String
     fun downloadingChapters(count: Int): String
     fun downloadFailed(message: String): String
+    // Nutzerfreundliche Fehlerklassen (zentrales Fehler-Mapping)
+    val errorNoConnection: String
+    val errorUnauthorized: String
+    val errorForbidden: String
+    val errorNotFound: String
+    val errorServer: String
+    val errorUnknown: String
     // Suche
     val searchMediaHint: String
     val searchSettingsHint: String
@@ -374,6 +381,12 @@ object StringsDe : Strings {
     override val downloadComplete = "Serie heruntergeladen."
     override fun downloadingChapters(count: Int) = "Lade $count Kapitel…"
     override fun downloadFailed(message: String) = "Fehler: $message"
+    override val errorNoConnection = "Keine Verbindung zum Server"
+    override val errorUnauthorized = "Falsche Anmeldedaten"
+    override val errorForbidden = "Zugriff verweigert"
+    override val errorNotFound = "Nicht gefunden"
+    override val errorServer = "Serverfehler"
+    override val errorUnknown = "Unbekannter Fehler"
     // Suche
     override val searchMediaHint = "Bibliothek durchsuchen"
     override val searchSettingsHint = "Einstellungen durchsuchen"
@@ -628,6 +641,12 @@ object StringsEn : Strings {
     override val downloadComplete = "Series downloaded."
     override fun downloadingChapters(count: Int) = "Downloading $count chapters…"
     override fun downloadFailed(message: String) = "Error: $message"
+    override val errorNoConnection = "No connection to the server"
+    override val errorUnauthorized = "Invalid credentials"
+    override val errorForbidden = "Access denied"
+    override val errorNotFound = "Not found"
+    override val errorServer = "Server error"
+    override val errorUnknown = "Unknown error"
     // Search
     override val searchMediaHint = "Search library"
     override val searchSettingsHint = "Search settings"

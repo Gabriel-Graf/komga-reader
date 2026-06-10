@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
+import com.komgareader.app.ui.common.UiError
+import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.render.Chapter
@@ -36,7 +38,7 @@ import javax.inject.Inject
 /** Zustand des Roman-Readers: reflowte Seiten zur aktuellen Viewport-Größe. */
 data class NovelUiState(
     val loading: Boolean = true,
-    val error: String? = null,
+    val error: UiError? = null,
     val pageCount: Int = 0,
     val currentPage: Int = 0,
     val chromeVisible: Boolean = false,
@@ -227,7 +229,7 @@ class NovelReaderViewModel @Inject constructor(
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     loading = false,
-                    error = e.message ?: "Roman konnte nicht geöffnet werden",
+                    error = uiErrorOf(e),
                 )
             }
         }

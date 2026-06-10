@@ -1,6 +1,7 @@
 package com.komgareader.app.ui.reader
 
 import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.ui.common.UiError
 import com.komgareader.domain.reader.WebtoonStrip
 
 sealed interface ReaderContent {
@@ -36,5 +37,5 @@ sealed interface ReaderContent {
      * Modus — die Bytes lädt der Novel-Reader über denselben Mechanismus.
      */
     data object Novel : ReaderContent
-    data class Error(val message: String) : ReaderContent
+    data class Error(val error: UiError) : ReaderContent
 }

@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
+import com.komgareader.app.ui.common.ErrorKind
+import com.komgareader.app.ui.common.UiError
+import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.eink.RefreshScheduler
@@ -177,7 +180,7 @@ class ReaderViewModel @Inject constructor(
             // Kein lokaler Download (oder forceStream) → Stream über die Quelle dieses Werks.
             val source = active.get(routeSourceId)
             if (source == null) {
-                _content.value = ReaderContent.Error("Kein Server verbunden.")
+                _content.value = ReaderContent.Error(UiError(ErrorKind.NO_CONNECTION, ""))
                 return@launch
             }
 
@@ -196,7 +199,7 @@ class ReaderViewModel @Inject constructor(
                 )
             }
         }.onFailure { e ->
-            _content.value = ReaderContent.Error(e.message ?: "Buch konnte nicht geladen werden")
+            _content.value = ReaderContent.Error(uiErrorOf(e))
         }
     }
 

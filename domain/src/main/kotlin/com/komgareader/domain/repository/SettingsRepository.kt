@@ -12,6 +12,8 @@ interface SettingsRepository {
     val activeColorProfileId: Flow<Long?>  // id des aktiven Farbfilter-Profils, null = noch keines gesetzt
     val webtoonOverlapPercent: Flow<Int>  // Überlappung zwischen Webtoon-Streifen in Prozent (0–50)
     val chapterViewMode: Flow<String>  // "LIST" | "GRID" — Kapitel als Textliste oder Cover-Gitter
+    val librariesViewMode: Flow<String>    // "LIST" | "TILE" | "LARGE_TILE" — Bibliotheken-Tab (Default LIST)
+    val collectionsViewMode: Flow<String>  // "LIST" | "TILE" | "LARGE_TILE" — Sammlungen-Tab (Default LARGE_TILE)
     // Roman-Reader-Typografie (global, gilt für alle Romane). Strings/Floats UI-neutral;
     // der Mapper NovelSettings.toReflowConfig() setzt sie in eine ReflowConfig um.
     val novelFontSizeEm: Flow<Float>          // Schriftgröße in em (1.0 = Basis)
@@ -32,6 +34,8 @@ interface SettingsRepository {
     suspend fun setActiveColorProfileId(id: Long)
     suspend fun setWebtoonOverlapPercent(percent: Int)
     suspend fun setChapterViewMode(mode: String)
+    suspend fun setLibrariesViewMode(mode: String)
+    suspend fun setCollectionsViewMode(mode: String)
     suspend fun setNovelFontSizeEm(value: Float)
     suspend fun setNovelLineHeight(value: Float)
     suspend fun setNovelMarginPreset(preset: String)

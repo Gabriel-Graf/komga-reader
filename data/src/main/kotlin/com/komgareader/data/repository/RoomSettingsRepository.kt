@@ -21,6 +21,11 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     // Default GRID: Kapitel als Cover-Kacheln (nutzt die Buch-Covers).
     override val chapterViewMode: Flow<String> =
         dao.observe(KEY_CHAPTER_VIEW_MODE).map { it ?: "GRID" }
+    // Default LIST für Bibliotheken, LARGE_TILE (3er-Gitter) für Sammlungen.
+    override val librariesViewMode: Flow<String> =
+        dao.observe(KEY_LIBRARIES_VIEW_MODE).map { it ?: "LIST" }
+    override val collectionsViewMode: Flow<String> =
+        dao.observe(KEY_COLLECTIONS_VIEW_MODE).map { it ?: "LARGE_TILE" }
     // Roman-Typografie: Defaults = lesbare Startwerte (NovelSettings-Defaults).
     override val novelFontSizeEm: Flow<Float> =
         dao.observe(KEY_NOVEL_FONT_SIZE).map { it?.toFloatOrNull() ?: 1.0f }
@@ -52,6 +57,10 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_WEBTOON_OVERLAP, percent.toString()))
     override suspend fun setChapterViewMode(mode: String) =
         dao.put(SettingEntity(KEY_CHAPTER_VIEW_MODE, mode))
+    override suspend fun setLibrariesViewMode(mode: String) =
+        dao.put(SettingEntity(KEY_LIBRARIES_VIEW_MODE, mode))
+    override suspend fun setCollectionsViewMode(mode: String) =
+        dao.put(SettingEntity(KEY_COLLECTIONS_VIEW_MODE, mode))
     override suspend fun setNovelFontSizeEm(value: Float) =
         dao.put(SettingEntity(KEY_NOVEL_FONT_SIZE, value.toString()))
     override suspend fun setNovelLineHeight(value: Float) =
@@ -80,6 +89,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_PANEL_OVERLAY = "guided_panel_overlay"
         const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"
         const val KEY_WEBTOON_OVERLAP = "webtoon_overlap_percent"
+        const val KEY_LIBRARIES_VIEW_MODE = "libraries_view_mode"
+        const val KEY_COLLECTIONS_VIEW_MODE = "collections_view_mode"
         const val KEY_CHAPTER_VIEW_MODE = "chapter_view_mode"
         const val KEY_NOVEL_FONT_SIZE = "novel_font_size_em"
         const val KEY_NOVEL_LINE_HEIGHT = "novel_line_height"

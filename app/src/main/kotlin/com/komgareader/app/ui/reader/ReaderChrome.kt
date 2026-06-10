@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -140,10 +139,9 @@ fun BoxScope.ReaderStatusBar(text: String, dark: Boolean) {
  * Page-Header und Page-Footer (DRY). Links [start], rechts [end], dazwischen Dehnung.
  * Eine Hairline-Trennlinie zur Inhaltsseite ([dividerOnTop] = Footer oben, Header unten).
  *
- * Ersetzt den engine-eigenen crengine-Streifen durch eine E-Ink-konforme, flache Leiste —
- * **schwarze Fläche, weiße Schrift wie das Top-Overlay** (Hairline statt Schatten). Über
- * [readerOverlayScrim] geräteklassen-gegatet: auf E-Ink deckend schwarz, auf Smartphone
- * leicht durchscheinend.
+ * Ersetzt den engine-eigenen crengine-Streifen durch eine E-Ink-konforme, flache Leiste
+ * (weiße Fläche, schwarze Schrift, Hairline statt Schatten). Auf E-Ink deckend, auf
+ * Smartphone leicht durchscheinend.
  */
 @Composable
 fun BoxScope.ReaderInfoBar(
@@ -158,7 +156,7 @@ fun BoxScope.ReaderInfoBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(readerOverlayScrim(Color.Black, 0.6f))
+                .background(readerOverlayScrim(Color.White, 0.85f))
                 .displayCutoutPadding()
                 .padding(horizontal = BAR_INSET, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -181,7 +179,7 @@ private fun Hairline(color: Color) {
 }
 
 /**
- * Weiße Schrift auf der schwarzen Info-Leiste — gemeinsamer Stil für Header-/Footer-Slots.
+ * Schwarze Schrift auf der weißen Info-Leiste — gemeinsamer Stil für Header-/Footer-Slots.
  * `bodyMedium` + SemiBold: einen Tick größer/dicker als der Material-Default, damit der
  * dünne Page-Header/-Footer auf E-Ink gut lesbar bleibt.
  */
@@ -189,7 +187,7 @@ private fun Hairline(color: Color) {
 fun ReaderInfoText(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        color = Color.White,
+        color = Color.Black,
         style = MaterialTheme.typography.bodyMedium,
         fontWeight = FontWeight.SemiBold,
         maxLines = 1,
@@ -245,14 +243,11 @@ fun BoxScope.ReaderTapZoneHints() {
 
 @Composable
 private fun TapZoneChip(modifier: Modifier, icon: ImageVector, label: String) {
+    // Schwarz mit weißer Schrift wie das Top-Overlay, über [readerOverlayScrim]
+    // geräteklassen-gegatet (E-Ink deckend, Smartphone durchscheinend).
     Column(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(EinkTokens.tileRadius))
-            .border(
-                EinkTokens.strongBorder,
-                MaterialTheme.colorScheme.outline,
-                RoundedCornerShape(EinkTokens.tileRadius),
-            )
+            .background(readerOverlayScrim(Color.Black, 0.6f), RoundedCornerShape(EinkTokens.tileRadius))
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -260,10 +255,10 @@ private fun TapZoneChip(modifier: Modifier, icon: ImageVector, label: String) {
         Icon(
             icon,
             contentDescription = label,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = Color.White,
             modifier = Modifier.size(24.dp),
         )
-        Text(label, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
+        Text(label, color = Color.White, style = MaterialTheme.typography.bodySmall)
     }
 }
 

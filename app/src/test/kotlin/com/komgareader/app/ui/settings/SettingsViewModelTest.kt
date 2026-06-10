@@ -133,6 +133,8 @@ private class StubSettingsRepository : SettingsRepository {
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
     override val webtoonOverlapPercent: Flow<Int> = flowOf(25)
     override val chapterViewMode: Flow<String> = flowOf("LIST")
+    override val librariesViewMode: Flow<String> = flowOf("LIST")
+    override val collectionsViewMode: Flow<String> = flowOf("LARGE_TILE")
     override val novelFontSizeEm: Flow<Float> = flowOf(1.0f)
     override val novelLineHeight: Flow<Float> = flowOf(1.0f)
     override val novelMarginPreset: Flow<String> = flowOf("NORMAL")
@@ -149,6 +151,8 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setActiveColorProfileId(id: Long) {}
     override suspend fun setWebtoonOverlapPercent(percent: Int) {}
     override suspend fun setChapterViewMode(mode: String) {}
+    override suspend fun setLibrariesViewMode(mode: String) {}
+    override suspend fun setCollectionsViewMode(mode: String) {}
     override suspend fun setNovelFontSizeEm(value: Float) {}
     override suspend fun setNovelLineHeight(value: Float) {}
     override suspend fun setNovelMarginPreset(preset: String) {}
@@ -188,6 +192,8 @@ private class CapturingSettingsRepository(
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
     override val webtoonOverlapPercent: Flow<Int> = flowOf(25)
     override val chapterViewMode: Flow<String> = flowOf("LIST")
+    override val librariesViewMode: Flow<String> = flowOf("LIST")
+    override val collectionsViewMode: Flow<String> = flowOf("LARGE_TILE")
     override val novelFontSizeEm: Flow<Float> = flowOf(fontSizeEm)
     override val novelLineHeight: Flow<Float> = flowOf(lineHeight)
     override val novelMarginPreset: Flow<String> = flowOf(marginPreset)
@@ -204,6 +210,8 @@ private class CapturingSettingsRepository(
     override suspend fun setActiveColorProfileId(id: Long) {}
     override suspend fun setWebtoonOverlapPercent(percent: Int) {}
     override suspend fun setChapterViewMode(mode: String) {}
+    override suspend fun setLibrariesViewMode(mode: String) {}
+    override suspend fun setCollectionsViewMode(mode: String) {}
     override suspend fun setNovelFontSizeEm(value: Float) { novelFontSizeEmValue = value }
     override suspend fun setNovelLineHeight(value: Float) { novelLineHeightValue = value }
     override suspend fun setNovelMarginPreset(preset: String) { novelMarginPresetValue = preset }

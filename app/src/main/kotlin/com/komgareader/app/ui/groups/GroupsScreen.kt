@@ -1,12 +1,11 @@
 package com.komgareader.app.ui.groups
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -14,9 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -40,20 +40,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.request.ImageRequest
-import com.komgareader.app.ui.components.ChoiceRow
-import com.komgareader.app.ui.components.FieldCaption
-import com.komgareader.app.ui.components.FilteredAsyncImage
-import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.i18n.Strings
+import com.komgareader.app.ui.components.ChoiceRow
+import com.komgareader.app.ui.components.CollageTile
 import com.komgareader.app.ui.components.EinkModal
-import com.komgareader.app.ui.components.TileTitleBand
+import com.komgareader.app.ui.components.EntityListRow
+import com.komgareader.app.ui.components.FieldCaption
+import com.komgareader.app.ui.components.LocalContentBottomInset
+import com.komgareader.app.ui.components.TileViewMode
+import com.komgareader.app.ui.components.ViewModeToggle
+import com.komgareader.app.ui.components.tileViewModeOf
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.domain.model.ContentType
@@ -62,9 +64,10 @@ import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.SourceContainer
 
 /**
- * Bibliotheken-Tab. Das Erstellen wird extern über [showCreateDialog] (FAB in der
- * Home-TopBar) ausgelöst; das Bearbeiten intern über das Settings-Icon je Karte.
- * Der Dialog wählt Komga-Libraries aus und setzt einen optionalen Fallback-Typ.
+ * Bibliotheken-Tab. Drei Ansichten über den geteilten [ViewModeToggle] (Liste · Kachel · große
+ * Kachel, persistiert; Default Liste). Die Kachel-Mechanik kommt aus dem geteilten [CollageTile],
+ * die Listen-Zeile aus [EntityListRow] (DRY mit den Sammlungen). Erstellen wird extern über
+ * [showCreateDialog] (FAB in der Home-TopBar) ausgelöst; Bearbeiten je Eintrag.
  */
 @Composable
 fun GroupsScreen(
@@ -78,50 +81,69 @@ fun GroupsScreen(
     val state by viewModel.state.collectAsState()
     val containers by viewModel.containers.collectAsState()
     val covers by viewModel.covers.collectAsState()
+    val viewModeStr by viewModel.viewMode.collectAsState()
+    val viewMode = tileViewModeOf(viewModeStr, TileViewMode.LIST)
     var editing by remember { mutableStateOf<Shelf?>(null) }
 
     val dialogOpen = showCreateDialog || editing != null
 
-    // Library-Liste laden, sobald der Dialog (Erstellen oder Bearbeiten) öffnet.
     LaunchedEffect(dialogOpen) {
         if (dialogOpen) viewModel.loadContainers()
     }
-
-    // Collage-Cover (erste 4 Titel je Bibliothek) laden, sobald sich die Liste ändert.
-    LaunchedEffect(state.shelves) {
-        if (state.shelves.isNotEmpty()) viewModel.loadCovers()
+    // Collage-Cover (erste 4 Titel je Bibliothek) nur für die Kachel-Ansichten laden.
+    LaunchedEffect(state.shelves, viewMode) {
+        if (state.shelves.isNotEmpty() && viewMode != TileViewMode.LIST) viewModel.loadCovers()
     }
 
     if (state.shelves.isEmpty()) {
-        Box(
-            modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                s.noGroupsHint,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(32.dp),
-            )
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(s.noGroupsHint, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
         }
     } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = modifier.fillMaxSize().padding(horizontal = EinkTokens.tileGap),
-            contentPadding = PaddingValues(top = 4.dp, bottom = LocalContentBottomInset.current + 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
-            verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
-        ) {
-            items(state.shelves, key = { it.id }) { shelf ->
-                GroupTile(
-                    shelf = shelf,
-                    covers = covers[shelf.id] ?: emptyList(),
-                    onClick = {
-                        val sourceId = state.serverSourceId ?: return@GroupTile
-                        onOpenGroup(shelf.id, sourceId)
-                    },
-                    onEdit = { editing = shelf },
-                    onDelete = { viewModel.deleteGroup(shelf.id) },
+        Column(modifier.fillMaxSize()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = EinkTokens.screenPadding, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                ViewModeToggle(
+                    current = viewMode,
+                    onSelect = { viewModel.setViewMode(it.name) },
+                    listLabel = s.viewList,
+                    tileLabel = s.viewTile,
+                    largeTileLabel = s.viewLargeTile,
                 )
+            }
+            val openGroup: (Shelf) -> Unit = { shelf ->
+                state.serverSourceId?.let { onOpenGroup(shelf.id, it) }
+            }
+            val cols = viewMode.columns
+            if (cols == null) {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = EinkTokens.screenPadding,
+                        end = EinkTokens.screenPadding,
+                        top = 4.dp,
+                        bottom = LocalContentBottomInset.current + 4.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                ) {
+                    items(state.shelves, key = { it.id }) { shelf ->
+                        GroupListRow(shelf, s, { openGroup(shelf) }, { editing = shelf }, { viewModel.deleteGroup(shelf.id) })
+                    }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(cols),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = EinkTokens.tileGap),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = LocalContentBottomInset.current + 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                    verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                ) {
+                    items(state.shelves, key = { it.id }) { shelf ->
+                        GroupTile(shelf, covers[shelf.id] ?: emptyList(), { openGroup(shelf) }, { editing = shelf }, { viewModel.deleteGroup(shelf.id) })
+                    }
+                }
             }
         }
     }
@@ -144,11 +166,7 @@ fun GroupsScreen(
     }
 }
 
-/**
- * Bibliotheks-Kachel im Grid: 2×2-Collage aus den ersten vier Titel-Covern, darüber als
- * Overlay die Aktionen (Einstellungen, Löschen) oben rechts und der Name unten.
- */
-@OptIn(ExperimentalFoundationApi::class)
+/** Bibliotheks-Kachel: geteiltes [CollageTile] mit Typ-Chip (oben links) + Aktionen (oben rechts). */
 @Composable
 private fun GroupTile(
     shelf: Shelf,
@@ -158,31 +176,34 @@ private fun GroupTile(
     onDelete: () -> Unit,
 ) {
     val s = LocalStrings.current
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .aspectRatio(2f / 3f)
-            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
-            .combinedClickable(onClick = onClick),
-    ) {
-        CompositeCover(covers = covers)
+    CollageTile(
+        covers = covers,
+        name = shelf.name,
+        onClick = onClick,
+        modifier = Modifier.aspectRatio(2f / 3f),
+        topStart = { shelf.defaultContentType?.let { TypeChip(labelForContentType(it, s)) } },
+        topEnd = { CornerActions(onEdit = onEdit, onDelete = onDelete) },
+    )
+}
 
-        shelf.defaultContentType?.let { type ->
-            TypeChip(
-                label = labelForContentType(type, s),
-                modifier = Modifier.align(Alignment.TopStart).padding(4.dp),
-            )
-        }
-
-        CornerActions(
-            modifier = Modifier.align(Alignment.TopEnd),
-            onEdit = onEdit,
-            onDelete = onDelete,
-        )
-
-        TileTitleBand(shelf.name, Modifier.align(Alignment.BottomStart))
-    }
+/** Bibliotheks-Zeile (Listen-Ansicht): geteiltes [EntityListRow], Aktionen rechts. */
+@Composable
+private fun GroupListRow(
+    shelf: Shelf,
+    s: Strings,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    EntityListRow(
+        title = shelf.name,
+        subtitle = shelf.defaultContentType?.let { labelForContentType(it, s) },
+        onClick = onClick,
+        trailing = {
+            CornerAction(AppIcons.Edit, s.editLibrary, onEdit)
+            CornerAction(AppIcons.Delete, s.deleteGroup, onDelete)
+        },
+    )
 }
 
 /** Inhaltstyp-Chip oben links auf der Collage; opak für Kontrast über Covern. */
@@ -200,8 +221,8 @@ private fun TypeChip(label: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * Aktions-Ecke oben rechts: eine flache, opake Leiste mit Einstellungen + Löschen, die
- * sich an die Kachelecke schmiegt (nur innere Ecke gerundet) — E-Ink-flach, Hairline-Rand.
+ * Aktions-Ecke oben rechts: flache, opake Leiste mit Einstellungen + Löschen, die sich an die
+ * Kachelecke schmiegt (nur innere Ecke gerundet) — E-Ink-flach, Hairline-Rand.
  */
 @Composable
 private fun CornerActions(
@@ -215,7 +236,7 @@ private fun CornerActions(
         modifier = modifier
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.5.dp, MaterialTheme.colorScheme.outline, shape),
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CornerAction(AppIcons.Edit, s.editLibrary, onEdit)
@@ -223,10 +244,10 @@ private fun CornerActions(
     }
 }
 
-/** Einzel-Icon der Aktions-Ecke ohne eigenen Hintergrund. */
+/** Einzel-Icon-Button (40 dp) — in der Kachelecke und als Listen-Zeilen-Aktion wiederverwendet. */
 @Composable
 private fun CornerAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
 ) {
@@ -237,51 +258,6 @@ private fun CornerAction(
             modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onSurface,
         )
-    }
-}
-
-/**
- * 2×2-Collage der ersten vier Cover. Fehlende Slots bleiben leer (neutrale Fläche) —
- * bei 1–3 Titeln wird stets das Vierer-Raster gezeigt.
- */
-@Composable
-private fun CompositeCover(
-    covers: List<SourceCover>,
-) {
-    Column(Modifier.fillMaxSize()) {
-        repeat(2) { row ->
-            Row(Modifier.fillMaxWidth().weight(1f)) {
-                repeat(2) { col ->
-                    CoverSlot(
-                        cover = covers.getOrNull(row * 2 + col),
-                        modifier = Modifier.fillMaxSize().weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** Einzelne Cover-Zelle der Collage; ohne Cover eine ruhige Platzhalter-Fläche. */
-@Composable
-private fun CoverSlot(
-    cover: SourceCover?,
-    modifier: Modifier = Modifier,
-) {
-    val ctx = LocalContext.current
-    Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
-        if (cover != null) {
-            val request = remember(cover) {
-                ImageRequest.Builder(ctx).data(cover)
-                    .crossfade(false).build()
-            }
-            FilteredAsyncImage(
-                model = request,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
     }
 }
 
@@ -368,7 +344,7 @@ private fun LibraryEditDialog(
     }
 }
 
-private fun labelForContentType(type: ContentType, s: com.komgareader.app.i18n.Strings) = when (type) {
+private fun labelForContentType(type: ContentType, s: Strings) = when (type) {
     ContentType.MANGA -> s.tagManga
     ContentType.COMIC -> s.tagComic
     ContentType.NOVEL -> s.tagNovel

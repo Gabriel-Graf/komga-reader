@@ -39,6 +39,10 @@ interface Strings {
     val chapters: String
     val chapterViewSwitchToGrid: String
     val chapterViewSwitchToList: String
+    // Ansichts-Umschalter (Liste / Kacheln / große Kacheln) für Bibliotheken + Sammlungen
+    val viewList: String
+    val viewTile: String
+    val viewLargeTile: String
     val chapterInfo: String
     val backToSeries: String
     val noDescription: String
@@ -281,6 +285,9 @@ object StringsDe : Strings {
     override val chapters = "Kapitel"
     override val chapterViewSwitchToGrid = "Kachelansicht"
     override val chapterViewSwitchToList = "Listenansicht"
+    override val viewList = "Liste"
+    override val viewTile = "Kacheln"
+    override val viewLargeTile = "Große Kacheln"
     override val chapterInfo = "Beschreibung"
     override val backToSeries = "Zurück zur Serie"
     override val noDescription = "Keine Beschreibung vorhanden"
@@ -377,20 +384,20 @@ object StringsDe : Strings {
             "Lade ein Werk herunter (langes Tippen auf ein Cover oder in den Serien-Details " +
             "über „Alle herunterladen“), dann erscheint es hier — auch offline."
     // Collections
-    override val collections = "Collections"
-    override val collectionsEmpty = "Noch keine Collections. Sammle Werke in einer eigenen Liste."
-    override val newCollection = "Neue Collection"
-    override val collectionName = "Name"
+    override val collections = "Sammlungen"
+    override val collectionsEmpty = "Noch keine Sammlungen. Sammle Werke in einer eigenen Liste."
+    override val newCollection = "Neue Sammlung"
+    override val collectionName = "Name der Sammlung"
     override val collectionKindSeries = "Serien"
     override val collectionKindBook = "Bücher"
-    override val addToCollection = "Zu Collection hinzufügen"
-    override val removeFromCollection = "Aus Collection entfernen"
+    override val addToCollection = "Zu Sammlung hinzufügen"
+    override val removeFromCollection = "Aus Sammlung entfernen"
     override val collectionSyncNow = "Jetzt synchronisieren"
     override val collectionLocalOnly = "Nur lokal"
     override val collectionSyncInfoTitle = "Sync-Status"
     override val collectionSyncUnsupported = "Die hinterlegte Quelle unterstützt keinen Sync — diese Werke bleiben nur lokal, kein Abgleich zwischen Geräten."
-    override val collectionSyncForbidden = "Dein Konto darf am Server keine Collections anlegen (nur Admins) — diese Werke bleiben nur lokal."
-    override val deleteCollection = "Collection löschen"
+    override val collectionSyncForbidden = "Dein Konto darf am Server keine Sammlungen anlegen (nur Admins) — diese Werke bleiben nur lokal."
+    override val deleteCollection = "Sammlung löschen"
     override val deleteCollectionServerToo = "Auch auf dem Server löschen"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
@@ -522,6 +529,9 @@ object StringsEn : Strings {
     override val chapters = "Chapters"
     override val chapterViewSwitchToGrid = "Grid view"
     override val chapterViewSwitchToList = "List view"
+    override val viewList = "List"
+    override val viewTile = "Tiles"
+    override val viewLargeTile = "Large tiles"
     override val chapterInfo = "Description"
     override val backToSeries = "Back to series"
     override val noDescription = "No description available"

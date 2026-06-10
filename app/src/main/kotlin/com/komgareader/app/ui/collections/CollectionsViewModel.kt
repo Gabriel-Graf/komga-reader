@@ -7,6 +7,7 @@ import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.UserCollection
 import com.komgareader.domain.repository.CollectionRepository
+import com.komgareader.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,10 +24,17 @@ import javax.inject.Inject
 class CollectionsViewModel @Inject constructor(
     private val repo: CollectionRepository,
     private val sync: CollectionSyncManager,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     val collections: StateFlow<List<UserCollection>> =
         repo.collections.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Anzeigemodus des Sammlungen-Tabs (Liste/Kachel/große Kachel), persistiert. Default LARGE_TILE. */
+    val viewMode: StateFlow<String> =
+        settings.collectionsViewMode.stateIn(viewModelScope, SharingStarted.Eagerly, "LARGE_TILE")
+
+    fun setViewMode(mode: String) = viewModelScope.launch { settings.setCollectionsViewMode(mode) }
 
     /**
      * Liefert für jede Collection-ID, ob sie „nur lokal" ist — d. h. mindestens ein Sync-Link

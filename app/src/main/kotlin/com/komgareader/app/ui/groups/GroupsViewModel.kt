@@ -9,6 +9,7 @@ import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.model.ShelfSource
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.ShelfRepository
 import com.komgareader.domain.source.ContainerSource
 import com.komgareader.domain.source.SourceContainer
@@ -37,7 +38,14 @@ class GroupsViewModel @Inject constructor(
     private val shelfRepository: ShelfRepository,
     private val serverRepository: ServerRepository,
     private val active: ActiveSource,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
+
+    /** Anzeigemodus des Bibliotheken-Tabs (Liste/Kachel/große Kachel), persistiert. Default LIST. */
+    val viewMode: StateFlow<String> =
+        settings.librariesViewMode.stateIn(viewModelScope, SharingStarted.Eagerly, "LIST")
+
+    fun setViewMode(mode: String) = viewModelScope.launch { settings.setLibrariesViewMode(mode) }
 
     val state: StateFlow<GroupsUiState> = combine(
         shelfRepository.shelves,

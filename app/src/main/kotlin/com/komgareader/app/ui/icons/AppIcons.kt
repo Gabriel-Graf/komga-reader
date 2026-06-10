@@ -35,6 +35,9 @@ object AppIcons {
     val Overflow: ImageVector get() = LucideIcons.EllipsisVertical
     val Stop: ImageVector get() = LucideIcons.CircleStop
     val GridView: ImageVector get() = LucideIcons.LayoutGrid
+
+    /** Größeres Cover-Gitter (3er-Raster) — Drittstufe des Ansichts-Umschalters. */
+    val LargeGridView: ImageVector get() = LucideIcons.Grid2x2
     val ListView: ImageVector get() = LucideIcons.List
     val Bookmark: ImageVector get() = LucideIcons.Bookmark
 

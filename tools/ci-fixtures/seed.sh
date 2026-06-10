@@ -1,7 +1,8 @@
 #!/bin/bash
 # Seedet eine Komga-Instanz: claim Admin, erzeuge API-Key, lege Libraries an, warte auf Scan.
-# Gibt den API-Key auf STDOUT aus. Idempotent: bereits geclaimte Instanz wird übersprungen,
-# vorhandene Libraries werden nicht doppelt angelegt.
+# Gibt den API-Key auf STDOUT aus. Idempotent (Re-Seed-sicher): bereits geclaimte Instanz wird
+# übersprungen, vorhandene Libraries nicht doppelt angelegt, ein vorhandener "ci"-API-Key wird
+# vor dem Neuerzeugen gelöscht (Komga lehnt doppelte Key-Kommentare ab).
 set -euo pipefail
 
 readonly ADMIN_EMAIL="admin@ci.local"
@@ -30,7 +31,17 @@ claim_admin() {
 }
 
 make_api_key() {
-  local base="$1"
+  local base="$1" id
+  # Vorhandene "ci"-Keys löschen: Komga lehnt einen doppelten Key-Kommentar mit HTTP 400 ab,
+  # sonst bräche jeder Re-Seed einer schon einmal geseedeten Instanz. So bleibt make_api_key
+  # idempotent und liefert immer einen frischen, brauchbaren Key (der Wert wird nur beim
+  # Anlegen einmalig zurückgegeben — Wiederverwenden eines alten Keys ist nicht möglich).
+  while IFS= read -r id; do
+    [[ -n "${id}" ]] || continue
+    curl -fsS -X DELETE "${base}/api/v2/users/me/api-keys/${id}" \
+      -u "${ADMIN_EMAIL}:${ADMIN_PASS}" >/dev/null
+  done < <(curl -fsS "${base}/api/v2/users/me/api-keys" \
+    -u "${ADMIN_EMAIL}:${ADMIN_PASS}" | jq -r '.[] | select(.comment == "ci") | .id')
   curl -fsS -X POST "${base}/api/v2/users/me/api-keys" \
     -u "${ADMIN_EMAIL}:${ADMIN_PASS}" \
     -H "Content-Type: application/json" \

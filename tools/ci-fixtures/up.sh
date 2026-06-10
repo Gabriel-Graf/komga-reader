@@ -36,11 +36,26 @@ docker compose up -d
 err "Container gestartet"
 wait_ready
 
-if [[ -f "${MARKER}" && -f "${KEYS}" ]]; then
+# Selbstheilender Cache-Gate: nicht auf die Volume-Existenz prüfen (docker compose legt ein
+# fehlendes Named-Volume beim Start LEER neu an → wäre fälschlich „vorhanden"), sondern auf
+# den tatsächlichen Inhalt. Stimmen die Serien-Counts jeder Instanz mit dem Manifest, ist der
+# Cache echt warm; sonst (frische/leere/gewipete DB) fällt up.sh auf den Seed-Pfad durch.
+# Admin-Creds gespiegelt aus seed.sh (Fixture-Konstanten).
+content_ok() {
+  local inst base want got
+  for inst in $(jq -r '.instances | keys[]' manifest.json); do
+    base="$(url "${inst}")"
+    want="$(jq -r "[.instances.\"${inst}\".libraries[] as \$l | .tier1[\$l].seriesCount] | add" manifest.json)"
+    got="$(curl -fsS -m 5 "${base}/api/v1/series?size=0" -u "admin@ci.local:ci-testpass-123" 2>/dev/null | jq -r '.totalElements' 2>/dev/null)" || return 1
+    [[ "${got}" == "${want}" ]] || return 1
+  done
+}
+
+if [[ -f "${MARKER}" && -f "${KEYS}" ]] && content_ok; then
   err "Cache-Hit (${MARKER}) — Seed übersprungen"
 else
   rm -f .seeded-* "${KEYS}"
-  # komga-a: Manga (2) + Novels-A (2) = 3 Serien total
+  # komga-a: Manga (1 Serie/2 Bücher) + Novels-A (2 Serien) = 3 Serien total
   KEY_A="$(./seed.sh "$(url komga-a)" 3 Manga /content/manga Novels-A /content/novels-a)"
   # komga-b: Webtoon (1) + Novels-B (1) = 2 Serien total
   KEY_B="$(./seed.sh "$(url komga-b)" 2 Webtoon /content/webtoon Novels-B /content/novels-b)"

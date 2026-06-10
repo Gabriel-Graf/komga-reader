@@ -13,22 +13,21 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,6 +47,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -138,34 +138,35 @@ fun CollectionDetailScreen(
     // Sync-Status als Kontextfeld direkt unter dem Sync-Icon (outside-tap schließt = „blur").
     if (showSyncPanel) {
         AnchoredMenuPopup(anchor = syncAnchor, alignEnd = true, onDismiss = { showSyncPanel = false }) {
-            EinkOutlinedButton(
-                onClick = { viewModel.syncNow(collectionId); showSyncPanel = false },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(AppIcons.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(s.collectionSyncNow)
-            }
-            if (syncLinks.isEmpty()) {
+            Column(Modifier.width(268.dp)) {
                 Text(
-                    s.collectionLocalOnly,
-                    style = MaterialTheme.typography.bodySmall,
+                    s.collectionSyncInfoTitle,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(bottom = 6.dp),
                 )
-            } else {
-                syncLinks.forEach { link ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(s.sourceLabel(link.sourceId), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                        Text(
-                            "${link.status.name} · ${if (link.dirty) s.collectionPending else s.collectionSynced}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                if (syncLinks.isEmpty()) {
+                    SyncStatusRow(label = s.collectionLocalOnly, status = s.collectionLocalOnly, synced = false)
+                } else {
+                    syncLinks.forEachIndexed { i, link ->
+                        if (i > 0) {
+                            Box(Modifier.fillMaxWidth().height(EinkTokens.hairline).background(MaterialTheme.colorScheme.outlineVariant))
+                        }
+                        SyncStatusRow(
+                            label = s.sourceLabel(link.sourceId),
+                            status = if (link.dirty) s.collectionPending else s.collectionSynced,
+                            synced = !link.dirty,
                         )
                     }
+                }
+                Spacer(Modifier.height(12.dp))
+                EinkOutlinedButton(
+                    onClick = { viewModel.syncNow(collectionId); showSyncPanel = false },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(AppIcons.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(s.collectionSyncNow)
                 }
             }
         }
@@ -176,7 +177,7 @@ fun CollectionDetailScreen(
             existingKeys = remember(collection.members) { collection.members.map { it.sourceId to it.remoteId }.toSet() },
             libraryVm = libraryVm,
             onConfirm = { picked ->
-                picked.forEach { viewModel.addMember(collectionId, it) }
+                viewModel.addMembers(collectionId, picked)
                 showAdd = false
             },
             onDismiss = { showAdd = false },
@@ -202,13 +203,12 @@ fun CollectionDetailScreen(
     }
 }
 
-/** Höhe der Detail-TopBar — auf Höhe der übrigen Aktions-Icons. */
-private val HEADER_HEIGHT = 56.dp
-
 /**
- * Eigene TopBar des Sammlungs-Details: Zurück (links), Titel groß+zentriert bzw. Suchfeld (Lupe),
- * rechts die Aktionen. Verlässt das Suchfeld den Fokus ohne Eingabe, klappt es wieder zum Titel.
+ * Eigene TopBar des Sammlungs-Details — **dieselbe `TopAppBar` wie der Hauptscreen** (kein eigener
+ * Unterstrich, gleiche Chrome): Zurück (links), Titel groß+zentriert bzw. Suchfeld (Lupe), rechts
+ * die Aktionen. Verlässt das Suchfeld den Fokus ohne Eingabe, klappt es wieder zum Titel.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CollectionDetailHeader(
     title: String,
@@ -225,68 +225,97 @@ private fun CollectionDetailHeader(
     onDelete: () -> Unit,
 ) {
     val s = LocalStrings.current
-    Column {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(HEADER_HEIGHT)
-                .padding(horizontal = 8.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
-                Icon(AppIcons.Back, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-            }
+    TopAppBar(
+        title = {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+                    Icon(AppIcons.Back, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                }
 
-            if (searchActive) {
-                val focus = remember { FocusRequester() }
-                LaunchedEffect(Unit) { focus.requestFocus() }
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    placeholder = { Text(s.searchInCollection(title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .focusRequester(focus)
-                        .onFocusChanged { if (!it.isFocused && query.isBlank()) onCloseSearch() },
-                )
-            } else {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(0.6f),
-                )
-            }
-
-            if (!searchActive) {
-                Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onOpenSearch) {
-                        Icon(AppIcons.Search, contentDescription = s.searchInCollection(title), tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    if (showAdd) {
-                        IconButton(onClick = onAdd) {
-                            Icon(AppIcons.Plus, contentDescription = s.addWorks, tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                    IconButton(
-                        onClick = onSync,
-                        modifier = Modifier.onGloballyPositioned {
-                            val p = it.positionInWindow()
-                            onSyncAnchor(IntOffset((p.x + it.size.width).toInt(), (p.y + it.size.height).toInt()))
+                if (searchActive) {
+                    val focus = remember { FocusRequester() }
+                    // Erst schließen, wenn das Feld den Fokus WIEDER verliert (nicht beim initialen
+                    // Nicht-Fokus, der sonst sofort schließt) und leer ist.
+                    var wasFocused by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { focus.requestFocus() }
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        placeholder = { Text(s.searchInCollection(title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = onCloseSearch) {
+                                Icon(AppIcons.Close, contentDescription = s.clearSearch, modifier = Modifier.size(20.dp))
+                            }
                         },
-                    ) {
-                        Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow, tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(AppIcons.Delete, contentDescription = s.deleteCollection, tint = MaterialTheme.colorScheme.onSurface)
+                        modifier = Modifier
+                            .fillMaxWidth(0.74f)
+                            .focusRequester(focus)
+                            .onFocusChanged {
+                                if (it.isFocused) wasFocused = true
+                                else if (wasFocused && query.isBlank()) onCloseSearch()
+                            },
+                    )
+                } else {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(0.5f),
+                    )
+                    Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onOpenSearch) {
+                            Icon(AppIcons.Search, contentDescription = s.searchInCollection(title), tint = MaterialTheme.colorScheme.onSurface)
+                        }
+                        if (showAdd) {
+                            IconButton(onClick = onAdd) {
+                                Icon(AppIcons.Plus, contentDescription = s.addWorks, tint = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                        IconButton(
+                            onClick = onSync,
+                            modifier = Modifier.onGloballyPositioned {
+                                val p = it.positionInWindow()
+                                onSyncAnchor(IntOffset((p.x + it.size.width).toInt(), (p.y + it.size.height).toInt()))
+                            },
+                        ) {
+                            Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow, tint = MaterialTheme.colorScheme.onSurface)
+                        }
+                        IconButton(onClick = onDelete) {
+                            Icon(AppIcons.Delete, contentDescription = s.deleteCollection, tint = MaterialTheme.colorScheme.onSurface)
+                        }
                     }
                 }
             }
-        }
-        Box(Modifier.fillMaxWidth().height(EinkTokens.hairline).background(MaterialTheme.colorScheme.outlineVariant))
+        },
+    )
+}
+
+/** Eine Quellen-Zeile im Sync-Kontextfeld: Quelle links, Status-Dot (gefüllt = synchron) + Label rechts. */
+@Composable
+private fun SyncStatusRow(label: String, status: String, synced: Boolean) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .then(
+                    if (synced) Modifier.background(MaterialTheme.colorScheme.onSurface)
+                    else Modifier.border(EinkTokens.hairline, MaterialTheme.colorScheme.onSurface, CircleShape),
+                ),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -328,15 +357,19 @@ private fun AddWorksModal(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Column(
-            Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+        // 4er-Cover-Gitter; FESTE Höhe → das Modal öffnet sofort in voller Größe (kein Nachwachsen,
+        // ruhig auf E-Ink). Die Kacheln tragen nur Cover + Auswahl-Overlay (kein Titel) und behalten
+        // ihren Rahmen-Platz schon vor dem Laden — keine Größen-Sprünge.
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.fillMaxWidth().height(ADD_GRID_HEIGHT),
+            horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
             verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
         ) {
-            shown.forEach { series ->
-                val key = series.sourceId to series.remoteId
-                val alreadyIn = key in existingKeys
+            items(shown, key = { it.sourceId.toString() + it.remoteId }) { series ->
                 val isStaged = staged.any { it.sourceId == series.sourceId && it.remoteId == series.remoteId }
-                AddWorkRow(
+                val alreadyIn = (series.sourceId to series.remoteId) in existingKeys
+                AddWorkTile(
                     series = series,
                     checked = alreadyIn || isStaged,
                     enabled = !alreadyIn,
@@ -350,64 +383,50 @@ private fun AddWorksModal(
     }
 }
 
-/** Zeile in „Werke hinzufügen": kleines Cover mit „+"/✓-Overlay + Titel. */
+/** Feste Höhe des Auswahl-Gitters — Modal hat sofort seine endgültige Größe. */
+private val ADD_GRID_HEIGHT = 440.dp
+
+/** Cover-Kachel im „Werke hinzufügen"-Gitter: nur Cover (Rahmen-Platzhalter) + „+"/✓-Overlay. */
 @Composable
-private fun AddWorkRow(series: Series, checked: Boolean, enabled: Boolean, onToggle: () -> Unit) {
+private fun AddWorkTile(series: Series, checked: Boolean, enabled: Boolean, onToggle: () -> Unit) {
     val ctx = LocalContext.current
     val accent = LocalDesignTokens.current.accent
     val onAccent = LocalDesignTokens.current.onAccent
     val request = remember(series.sourceId, series.remoteId) {
         ImageRequest.Builder(ctx).data(SourceCover(series.sourceId, series.remoteId, isSeries = true)).crossfade(false).build()
     }
-    Row(
+    Box(
         Modifier
-            .fillMaxWidth()
+            .aspectRatio(2f / 3f)
+            .clip(RoundedCornerShape(6.dp))
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
             .clickable(enabled = enabled, onClick = onToggle),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
+        FilteredAsyncImage(
+            model = request,
+            contentDescription = series.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
         Box(
             Modifier
-                .width(40.dp)
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(4.dp))
-                .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
+                .align(Alignment.TopEnd)
+                .padding(3.dp)
+                .size(20.dp)
+                .clip(CircleShape)
+                .then(
+                    if (checked) Modifier.background(accent)
+                    else Modifier.background(MaterialTheme.colorScheme.surface).border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, CircleShape),
+                ),
+            contentAlignment = Alignment.Center,
         ) {
-            FilteredAsyncImage(
-                model = request,
-                contentDescription = series.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+            Icon(
+                if (checked) AppIcons.Check else AppIcons.Plus,
+                contentDescription = null,
+                tint = if (checked) onAccent else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(13.dp),
             )
-            // „+"/✓-Overlay oben rechts: gewählt = gefüllter Akzent, sonst Outline.
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(2.dp)
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .then(
-                        if (checked) Modifier.background(accent)
-                        else Modifier.background(MaterialTheme.colorScheme.surface).border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, CircleShape),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    if (checked) AppIcons.Check else AppIcons.Plus,
-                    contentDescription = null,
-                    tint = if (checked) onAccent else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(11.dp),
-                )
-            }
         }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            series.title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
     }
 }
 

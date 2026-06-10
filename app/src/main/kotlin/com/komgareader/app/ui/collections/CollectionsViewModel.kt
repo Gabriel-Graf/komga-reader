@@ -69,6 +69,16 @@ class CollectionsViewModel @Inject constructor(
         repo.get(id)?.let { sync.push(it) }
     }
 
+    /**
+     * Mehrere Werke in **einer** Coroutine sequentiell hinzufügen — `addMember` ist read-modify-write,
+     * parallele `launch`-Aufrufe würden sich gegenseitig überschreiben (nur das letzte bliebe). Ein
+     * abschließender Push.
+     */
+    fun addMembers(id: Long, members: List<CollectionMember>) = viewModelScope.launch {
+        members.forEach { repo.addMember(id, it) }
+        repo.get(id)?.let { sync.push(it) }
+    }
+
     fun removeMember(id: Long, sourceId: Long, remoteId: String) = viewModelScope.launch {
         repo.removeMember(id, sourceId, remoteId)
         repo.get(id)?.let { sync.push(it) }

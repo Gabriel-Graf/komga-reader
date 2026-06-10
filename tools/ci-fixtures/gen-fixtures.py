@@ -80,11 +80,13 @@ def main() -> int:
     make_cbz(ROOT / "manga" / "Sample-Manga", 2, pages=5, size=(800, 1200), hue=90)
     # Webtoon: tall pages, 1 Serie
     make_cbz(ROOT / "webtoon" / "Sample-Webtoon", 1, pages=4, size=(800, 3200), hue=140)
-    # Novels A (disjunkt zu B)
-    make_epub(ROOT / "novels-a" / "Alpha-Novel.epub", "Alpha-Novel", chapters=3)
-    make_epub(ROOT / "novels-a" / "Beta-Novel.epub", "Beta-Novel", chapters=2)
+    # Novels A (disjunkt zu B) — jede Novel in eigenem Unterordner, damit Komga
+    # pro Verzeichnis genau EINE Serie erkennt (flache epubs im Library-Root würden
+    # sonst zu einer einzigen Serie „novels-a" gruppiert).
+    make_epub(ROOT / "novels-a" / "Alpha-Novel" / "Alpha-Novel.epub", "Alpha-Novel", chapters=3)
+    make_epub(ROOT / "novels-a" / "Beta-Novel" / "Beta-Novel.epub", "Beta-Novel", chapters=2)
     # Novels B (disjunkt zu A)
-    make_epub(ROOT / "novels-b" / "Gamma-Novel.epub", "Gamma-Novel", chapters=3)
+    make_epub(ROOT / "novels-b" / "Gamma-Novel" / "Gamma-Novel.epub", "Gamma-Novel", chapters=3)
     print("Fixtures generiert nach", ROOT)
     return 0
 

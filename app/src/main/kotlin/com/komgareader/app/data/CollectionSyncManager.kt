@@ -13,6 +13,8 @@ import com.komgareader.domain.usecase.groupBySource
 import com.komgareader.domain.usecase.mergeSubsets
 import com.komgareader.domain.usecase.planCollectionSync
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +32,8 @@ class CollectionSyncManager(
 ) {
     @Inject constructor(repo: CollectionRepository, active: ActiveSource) :
         this(repo, { id -> active.collectionSource(id) }, { active.allCollectionSources() })
+
+    private val syncMutex = Mutex()
 
     /** Pusht die kanonische Collection in alle betroffenen Quellen (best-effort, pro Quelle). */
     suspend fun push(collection: UserCollection) {
@@ -66,7 +70,7 @@ class CollectionSyncManager(
      * Gibt am Server verschwundene (früher synchrone) Sammlungen zurück — die UI bestätigt deren
      * lokale Löschung. Discovery + Pull laufen stumm.
      */
-    suspend fun fullSync(): List<VanishedCollection> {
+    suspend fun fullSync(): List<VanishedCollection> = syncMutex.withLock {
         val collections = repo.collections.first()
         val links = collections.associate { it.id to repo.syncLinks(it.id).first() }
         val srcs = allSources()
@@ -86,7 +90,7 @@ class CollectionSyncManager(
             executePlan(plan)
             vanished += plan.vanished
         }
-        return vanished.distinctBy { it.collectionId }
+        vanished.distinctBy { it.collectionId }
     }
 
     private suspend fun executePlan(plan: SyncPlan) {
@@ -106,7 +110,9 @@ class CollectionSyncManager(
             repo.setMembers(p.collectionId, merged)   // … nullt den Link → direkt mit Server-Stand korrigieren:
             writeLink(p.collectionId, p.sourceId, p.remoteId, SyncStatus.SYNCED, dirty = false, updatedAt = p.serverUpdatedAt)
         }
-        // 3) Push: lokaler Stand zum Server (best-effort, unverändert).
+        // 3) Push: lokaler Stand zum Server. Hinweis: push() stempelt den Link mit der Geräte-Uhr;
+        //    liegt die Server-Uhr minimal vor, löst der nächste fullSync genau EINEN idempotenten
+        //    Pull aus, der den Link auf den Server-Zeitstempel ankert (selbst-korrigierend, kein Ping-Pong).
         for (id in plan.pushLocal) {
             repo.get(id)?.let { push(it) }
         }

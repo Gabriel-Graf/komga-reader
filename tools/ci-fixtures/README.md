@@ -28,3 +28,10 @@ Vom Android-Emulator erreichbar über `http://10.0.2.2:<port>/api/v1/`.
 
 `manifest.json` hält erwartete Serien/Counts/Typen + SHAs. `verify.sh` asserted dagegen.
 Tier-1-Content ist committet → jeder Lauf identisch.
+
+## CI
+
+Die GitLab-Pipeline (`.gitlab-ci.yml` im Repo-Root) fährt diese Fixtures im `integration`-Stage
+automatisch hoch (`up.sh`) und nach den Tests wieder runter (`down.sh`). Sie braucht einen
+shell-executor-Runner mit Tag `android-kvm` (Docker + /dev/kvm + Android-SDK + AVD `eink_test`).
+Siehe `docs/superpowers/plans/2026-06-10-integration-ci-pipeline.md`.

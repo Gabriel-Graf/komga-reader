@@ -73,6 +73,11 @@ if [[ "${booted}" != "1" ]]; then err "Boot-Timeout"; exit 1; fi
 err "Emulator bereit"
 ```
 
+> **Ist-Stand:** die committete `emulator-up.sh` spricht den Emulator **gezielt per Serial** an
+> (`adb -s <emulator-…>`) statt `adb wait-for-device` — sonst bricht es lokal mit „more than one
+> device", wenn neben dem Emulator noch die physische Boox angeschlossen ist. In CI (ein Emulator)
+> wäre beides ok; serial-gezielt ist robuster.
+
 - [ ] **Step 2: emulator-down.sh schreiben**
 
 ```bash

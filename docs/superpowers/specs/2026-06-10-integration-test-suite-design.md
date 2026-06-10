@@ -115,6 +115,15 @@ cross-source-Collections.
 Emulator-AVD wie der lokale `eink_test`: Boox-Geometrie 1264×1680@300dpi, damit CI-UI-Tests die
 reale Hardware-Proportion treffen.
 
+> **Ist-Stand (2026-06-10, gebaut):** umgesetzt als 3-Stage-Pipeline (`build`/`unit`/`integration`)
+> auf einem **shell-executor**-Runner (Tag `android-kvm`), **nicht** docker-executor+dind. Grund:
+> `up.sh`-Volume-Mounts (relativ) und der KVM-Emulator laufen so direkt auf dem Host wie lokal,
+> ohne dind/Socket-/Volume-Pfad-Probleme. Der `integration`-Job kapselt `up.sh` + `tools/ci/emulator-up.sh`
+> (before), `connectedDebugAndroidTest …package=com.komgareader.app.ci` (script), Teardown (after).
+> Der docker-executor-`devices=["/dev/kvm"]`-Fix gilt nur für den verworfenen docker-Weg und entfällt
+> hier. `.gitlab-ci.yml` im Root, Helfer `tools/ci/emulator-{up,down}.sh`. Der erste echte Lauf
+> braucht `git push` + den registrierten Runner (siehe Plan CI, Runner-Voraussetzungen).
+
 ## 9. Szenario-Katalog (A–H, 34 Szenarien)
 
 Marker: `[UI]` / `[Seam]` Ebene · `[pending]` Feature existiert noch nicht.

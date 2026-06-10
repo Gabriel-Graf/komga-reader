@@ -24,6 +24,7 @@ coreKtx = "1.13.1"
 lifecycle = "2.8.7"
 securityCrypto = "1.1.0-alpha06"
 documentfile = "1.0.1"
+androidxTestCore = "1.6.1"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -61,6 +62,10 @@ hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", ve
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

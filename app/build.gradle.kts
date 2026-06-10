@@ -16,7 +16,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.komgareader.app.HiltTestRunner"
     }
     buildTypes {
         release { isMinifyEnabled = false }
@@ -66,6 +66,12 @@ dependencies {
     androidTestImplementation(libs.room.runtime)
     androidTestImplementation(libs.room.ktx)
     androidTestImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.androidx.test.core)
+    kspAndroidTest(libs.hilt.compiler)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
 
 tasks.withType<Test> { useJUnitPlatform() }

@@ -1,0 +1,50 @@
+# GitLab-CI für die Komga-Reader-Integrationstest-Suite.
+# build/unit laufen auf jedem Runner; integration braucht einen shell-executor-Runner mit
+# Docker + /dev/kvm + Android-SDK (Tag android-kvm) — siehe
+# docs/superpowers/plans/2026-06-10-integration-ci-pipeline.md (Runner-Voraussetzungen).
+stages:
+  - build
+  - unit
+  - integration
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
+
+build:
+  stage: build
+  tags: [android-kvm]
+  script:
+    - ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+  artifacts:
+    paths:
+      - app/build/outputs/apk/debug/
+    expire_in: 1 day
+
+unit:
+  stage: unit
+  tags: [android-kvm]
+  script:
+    - ./gradlew test
+  artifacts:
+    when: always
+    paths:
+      - "**/build/reports/tests/"
+    expire_in: 1 week
+
+integration:
+  stage: integration
+  tags: [android-kvm]
+  before_script:
+    - tools/ci-fixtures/up.sh          # Komga-Fixtures (Cache-Hit schnell)
+    - tools/ci/emulator-up.sh          # headless KVM-Emulator booten
+  script:
+    # In CI ist genau EIN Emulator und keine physische Boox → kein ANDROID_SERIAL nötig.
+    - ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci
+  after_script:
+    - tools/ci/emulator-down.sh
+    - tools/ci-fixtures/down.sh
+  artifacts:
+    when: always
+    paths:
+      - app/build/reports/androidTests/
+    expire_in: 1 week

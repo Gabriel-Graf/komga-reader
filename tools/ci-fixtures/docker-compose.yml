@@ -1,0 +1,34 @@
+# 3 Komga-Instanzen für Integrationstests. Content read-only gemountet (schützt Repo-Fixtures),
+# config-Volumes pro Instanz (halten Scan-Ergebnis → Volume-Cache).
+services:
+  komga-a:
+    image: gotson/komga:latest
+    ports: ["25701:25600"]
+    environment:
+      - KOMGA_LIBRARIES_SCAN_STARTUP=false
+    volumes:
+      - komga-a-config:/config
+      - ./content/manga:/content/manga:ro
+      - ./content/novels-a:/content/novels-a:ro
+  komga-b:
+    image: gotson/komga:latest
+    ports: ["25702:25600"]
+    environment:
+      - KOMGA_LIBRARIES_SCAN_STARTUP=false
+    volumes:
+      - komga-b-config:/config
+      - ./content/webtoon:/content/webtoon:ro
+      - ./content/novels-b:/content/novels-b:ro
+  komga-c:
+    image: gotson/komga:latest
+    ports: ["25703:25600"]
+    environment:
+      - KOMGA_LIBRARIES_SCAN_STARTUP=false
+    volumes:
+      - komga-c-config:/config
+      - ./content/manga:/content/manga:ro
+      - ./content/novels-a:/content/novels-a:ro
+volumes:
+  komga-a-config:
+  komga-b-config:
+  komga-c-config:

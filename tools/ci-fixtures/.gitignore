@@ -1,0 +1,5 @@
+# Tier-2 NAS-Subset ist runner-lokal, NIE committen (Urheberrecht)
+/tier2/
+# Laufzeit-Marker
+/.seeded-*
+/.keys.env

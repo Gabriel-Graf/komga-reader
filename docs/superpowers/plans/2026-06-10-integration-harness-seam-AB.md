@@ -197,15 +197,13 @@ class CiSourceStack {
     }
 
     /** Entfernt eine zuvor registrierte Verbindung über ihre Rowid. */
-    suspend fun remove(rowId: Long) = repo.delete(rowId)
+    suspend fun remove(rowId: Long) = repo.remove(rowId)
 
     fun close() = db.close()
 }
 ```
 
-> Hinweis für den Implementer: `RoomServerRepository.delete(rowId: Long)` existiert laut
-> `ServerRepository`-Interface (siehe `ServerRepository.kt` „Entfernt die Verbindung mit dieser
-> Rowid"). Falls die Signatur abweicht, an die echte Signatur anpassen und im Report vermerken.
+> Verifiziert: `ServerRepository.remove(id: Long)` (`RoomServerRepository.kt:52` → `dao.delete(id)`).
 
 - [ ] **Step 2: Kompiliert**
 

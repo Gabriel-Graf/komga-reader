@@ -155,7 +155,7 @@ import com.komgareader.domain.repository.ShelfRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.android.testing.TestInstallIn
+import dagger.hilt.testing.TestInstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 

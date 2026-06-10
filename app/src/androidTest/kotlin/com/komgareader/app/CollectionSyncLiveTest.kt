@@ -157,6 +157,11 @@ class CollectionSyncLiveTest {
             // Push-Zeitpunkt gesetzt hat und dieses Update DANACH passiert, gewinnt der Server per LWW.
             src.updateCollection(CollectionKind.SERIES, onServer.remoteId, uniqueName, listOf(SAGA_SERIES_ID))
 
+            // Lokalen Link künstlich „alt" stempeln, damit der Server-Stand eindeutig neuer ist
+            // (sonst entscheidet bei ~gleichem Zeitstempel der LWW-Tie zugunsten lokal → Pull übersprungen, Test-Flake).
+            val link = collectionRepo.syncLinks(localId).first().first()
+            collectionRepo.updateSyncLink(link.copy(updatedAt = 1L))
+
             // PULL: fullSync zieht die Server-Mitglieder-Liste (LWW, Server neuer).
             manager.fullSync()
 

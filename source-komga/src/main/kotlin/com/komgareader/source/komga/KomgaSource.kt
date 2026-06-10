@@ -11,7 +11,7 @@ import com.komgareader.domain.source.CollectionSyncSource
 import com.komgareader.domain.source.ContainerSource
 import com.komgareader.domain.source.PageRef
 import com.komgareader.domain.source.PagedResult
-import com.komgareader.domain.source.RemoteCollection
+import com.komgareader.domain.model.RemoteCollection
 import com.komgareader.domain.source.SourceContainer
 import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.source.SourceId

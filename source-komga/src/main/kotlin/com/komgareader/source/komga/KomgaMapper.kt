@@ -6,7 +6,7 @@ import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.ReadingDirection
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.source.PageRef
-import com.komgareader.domain.source.RemoteCollection
+import com.komgareader.domain.model.RemoteCollection
 import com.komgareader.source.komga.dto.BookDto
 import com.komgareader.source.komga.dto.CollectionDto
 import com.komgareader.source.komga.dto.PageDto

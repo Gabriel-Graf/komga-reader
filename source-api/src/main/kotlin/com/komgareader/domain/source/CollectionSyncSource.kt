@@ -1,14 +1,7 @@
 package com.komgareader.domain.source
 
 import com.komgareader.domain.model.CollectionKind
-
-/** Eine vom Server gehaltene Collection/Read-List (innerhalb EINER Quelle). */
-data class RemoteCollection(
-    val remoteId: String,
-    val name: String,
-    val memberRemoteIds: List<String>,
-    val updatedAt: Long,   // UTC epoch millis (GMT), niemals zonenbehaftet
-)
+import com.komgareader.domain.model.RemoteCollection
 
 /**
  * Optionale Capability (Naht A): Quelle kann Nutzer-Collections server-seitig schreiben.

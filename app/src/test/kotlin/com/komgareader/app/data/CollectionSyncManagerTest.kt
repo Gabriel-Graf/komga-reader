@@ -8,7 +8,7 @@ import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.CollectionSyncLink
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.CollectionSyncSource
-import com.komgareader.domain.source.RemoteCollection
+import com.komgareader.domain.model.RemoteCollection
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking

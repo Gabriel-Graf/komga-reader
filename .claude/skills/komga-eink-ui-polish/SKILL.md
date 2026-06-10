@@ -91,6 +91,24 @@ Betonung und **immer** für Modals. **Akzent-/Farbtoken: siehe Soll/Ist-Hinweis 
 
 ## Baustein-Katalog (`ui/components/`)
 
+> **Erst suchen, nie roh bauen (verbindlich).** Bevor du ein Chrome-Stück baust (Suchfeld, TopBar,
+> Tile, Listenzeile, Dialog, Toggle, Auswahl), **grep zuerst** nach einer bestehenden `Eink*`-/
+> geteilten Komponente und nutze **dieselbe** wie der Rest der App — nie ein rohes Material-Control,
+> nie ein Eigenbau neben einem existierenden Muster. Fehlt eine, ergänze sie **in `ui/components/`**
+> (nicht lokal duplizieren). Real passiert: rohes Suchfeld/eigene TopBar gebaut, obwohl `EinkSearchBar`
+> + die `HomeScreen`-`TopAppBar` existierten → „sieht anders aus als der Rest der App".
+
+| Statt (roh/Material) | nutze (geteilt) |
+|---|---|
+| `OutlinedTextField` als **Suche** | **`EinkSearchBar`** |
+| `Checkbox` | `ChoiceRow` (Häkchen) |
+| `FilterChip` / `RadioButton` | `SegmentedChoiceRow` bzw. `ChoiceRow` |
+| `Button` | `EinkOutlinedButton` |
+| eigene TopBar / `SubPageScaffold` in einem Tab | **dieselbe** `TopAppBar` wie `HomeScreen` (Box: Back · Titel/Suche · Aktionen) |
+| `AlertDialog` | `EinkModal` (Titel optional — leer = ohne Kopf, kompakt) |
+| Status-/Kontext-Dropdown | `AnchoredMenuPopup` (Outside-Tap schließt) |
+| Cover-Kachel / Collage / Listenzeile | `CollageTile` · `CompositeCover` · `EntityListRow` · `TileTitleBand` |
+
 ### Bottom-Menubar — `EinkBottomBar`
 Haupt-Navigation. Flach, gleich breite Items, **Icon über Label**, Outlined-Icon (28 dp) + ~11 sp Label.
 Aktives Item: **kurzer Akzent-Balken (3 dp) über dem Icon** + Label fett. Reihenfolge fix: primärer Tab
@@ -139,7 +157,10 @@ Zentrierte Line-Art/Icon + Label + darunter gestapelte **full-width Outlined-But
    **Die UI nutzt ausschließlich `AppIcons.*`.**
 
 **Regel:** In `app/` **nie** `androidx.compose.material.icons.*` und **nie** `LucideIcons.*` direkt —
-immer `AppIcons.<Zweck>`. Eine Variante pro Zweck (Outline), kein Filled/Outlined-Mix.
+immer `AppIcons.<Zweck>`. Eine Variante pro Zweck (Outline), kein **stilistischer** Filled/Outlined-Mix.
+**Ausnahme:** ein **gefülltes** Glyph als **Aktiv-Zustand** desselben Outline-Glyphs ist erlaubt/erwünscht
+(z. B. Lesezeichen gesetzt) — via `lucideFilled(...)` in `LucideIcons.kt` + eigener `AppIcons`-Eintrag
+(`BookmarkFilled`); `Icon(...)` tönt es wie jedes andere.
 (`androidx.compose.material3.Icon` — das Composable — bleibt.)
 
 **Neues Icon:** Glyph auf [lucide.dev/icons](https://lucide.dev/icons) → `icon-set.mjs` ergänzen →
@@ -176,17 +197,55 @@ Beschreibung **neben** dem Cover, füllt bis zur **Cover-Unterkante** (rechte Sp
 Fehlt Beschreibung → Platzhalter (`noDescription`, gedämpft). Referenz: `TruncatedDescription` /
 `DescriptionModal` in `SeriesDetailScreen.kt`.
 
+## E-Ink-Layout-Stabilität (kein Reflow beim Öffnen/Laden)
+
+Auf E-Ink ist **jeder Layout-Sprung ein sichtbarer Full-Refresh/Flash**. Modal/Liste **öffnet in
+Endgröße** und wächst nicht nach:
+- Cover-/Inhalts-Gitter im Modal: **feste Höhe** (`Modifier.height(…)`) — nicht `heightIn`/
+  `wrapContent`, das mit dem Inhalt wächst.
+- Kacheln: **fester Rahmen-Platzhalter** (`aspectRatio` + Border) **vor** dem Bild; im Picker
+  **ohne Titel** (uniforme Frames). `crossfade(false)`.
+- Kein „Loading → Content"-Tausch, der die Höhe ändert (siehe Voll-Reload-Anti-Pattern).
+
+Real beobachtet: das „Werke hinzufügen"-Modal wuchs beim Öffnen (Liste/Cover luden nach) →
+sichtbare Bewegung/Flash. Fix: feste Gitterhöhe + Rahmen-Platzhalter.
+
+## Weitere Muster (aus der Praxis)
+
+- **Ein Auswahl-Signal:** ALLE Selektions-Indikatoren (Häkchen, Nav-/Sidebar-Balken, Segment,
+  +/✓-Overlay) lesen **denselben** `LocalDesignTokens.current.accent`. Nie eines schwarz, das andere
+  Akzent (real: `ChoiceRow`-Häkchen war `onSurface`, während Balken/Segmente Akzent trugen).
+- **Such-als-Overlay:** Lupe ersetzt den Titel durch `EinkSearchBar`; ein **immer sichtbares X**
+  (Action-Icon = `AppIcons.Close`, `onSubmit` = schließen) klappt zurück zum Titel; Blur **mit
+  leerem Feld** schließt — Guard: erst nach **erstem** Fokus schließen (sonst schließt es sofort beim
+  Öffnen); `FocusRequester` für Auto-Fokus.
+- **Chrome-Ownership / TopBar-DRY:** Eine Sub-View, die in einem Tab lebt, **unterdrückt die
+  Host-TopBar** und liefert **dieselbe** `TopAppBar` selbst (Titel zentriert via `textAlign = Center`).
+  Nie zwei Bars übereinander.
+- **Staged-Auswahl → eine Transaktion:** Mehrfachauswahl beim Bestätigen in **einer** Coroutine
+  anwenden (`forEach { repo… }`), nie pro Item ein `viewModelScope.launch` — ein read-modify-write-
+  State (z. B. `addMember`) überschriebe sich sonst (nur das letzte bliebe markiert-aber-gespeichert).
+- **i18n-Reichweite:** auch **Snackbars/Events/Error-States** und inline-Strings (`"Quelle $id"`)
+  über `Strings`-Keys — nicht nur sichtbare Labels. Hartkodiertes Deutsch dort ist ein häufiges Leck.
+
 ## Checkliste pro UI-Stück
 
 1. **Beide Achsen beantwortet?** Bewegung über `allowsMotion`/`LocalEinkMode`, Farbe über
    `allowsAccentColor` — getrennt, nie gekoppelt. Funktioniert es auf mono E-Ink **und** Kaleido **und** LCD?
-2. Token aus der Tabelle — keine Magic-dp/-Farben inline.
-3. Existierende `ui/components/`-Composable nutzen; fehlt eine, dort ergänzen (nicht lokal duplizieren).
-4. Icon über `AppIcons.<Zweck>` — nie Material-Icons, nie `LucideIcons.*` direkt.
-5. Modal? → `EinkModal` (schwarzer Rand).
-6. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute/ß.
+2. Token aus der Tabelle — keine Magic-dp/-Farben inline; **eine** Linienstärke (`hairline`), **ein**
+   Gitter-Gap (`tileGap`) — auch über zwei verschiedene Grids gleich.
+3. **Erst geppt, dann gebaut:** für jedes Chrome-Stück die geteilte `Eink*`-Komponente aus der
+   Ersatztabelle nutzen (Suche → `EinkSearchBar`, TopBar → `HomeScreen`-`TopAppBar`, …) — nie roh,
+   nie Eigenbau neben Bestehendem. Fehlt eine, in `ui/components/` ergänzen (nicht lokal duplizieren).
+4. Icon über `AppIcons.<Zweck>` — nie Material-Icons, nie `LucideIcons.*` direkt. Gefülltes Glyph nur
+   als Aktiv-Zustand (`lucideFilled`).
+5. Modal? → `EinkModal` (schwarzer Rand; leerer Titel = kompakt ohne Kopf).
+6. Neuer sichtbarer Text → `Strings`-Key in **DE + EN**, echte Umlaute/ß — **auch** Snackbars/Errors/inline.
 7. Teil-Update statt Voll-Reload (siehe Anti-Pattern) — kein `Loading`-Flash bei kleinen Änderungen.
-8. Auf echter Boox/`eink_test` (1264×1680@300) verifizieren — „sieht man am LCD" reicht nicht.
+8. **Öffnet in Endgröße?** Modal/Liste mit fester Höhe + Rahmen-Platzhalter — kein Nachwachsen beim
+   Laden (E-Ink-Layout-Stabilität).
+9. **Ein Auswahl-Signal:** jede Selektion über denselben `accent`-Token.
+10. Auf echter Boox/`eink_test` (1264×1680@300) verifizieren — „sieht man am LCD" reicht nicht.
 
 ## Anti-Pattern: Voll-Reload bei Teil-Update
 
@@ -200,6 +259,11 @@ ein sichtbarer Flash + Full-Refresh (Ghosting) — unnötig, weil sich nur ein D
 
 ## Anti-Pattern (sofort ablehnen)
 
+- **Roh statt geteilt.** Ein rohes Material-Control (`OutlinedTextField`-Suche, `Checkbox`,
+  `FilterChip`, `Button`) **oder** ein Chrome-Eigenbau (eigene TopBar, eigenes Suchfeld) neben einer
+  bestehenden geteilten Komponente — auch wenn es lokal „funktioniert". Erst die Ersatztabelle
+  (oben) greppen, dieselbe Komponente wie der Rest der App nutzen. Symptom: „sieht anders aus als der
+  Rest der App" / „zwei TopBars".
 - **Geräte-Annahme binär / Farbe an Bewegung gekoppelt.** `if (LocalEinkMode) monochrom else farbig`
   koppelt Farbe an die *Bewegungs*-Achse — Farb-E-Ink (Kaleido: kein Motion, **aber** Farbe) fiele
   fälschlich auf monochrom. Farbe **immer** über `allowsAccentColor`, Bewegung über `allowsMotion`. Ein

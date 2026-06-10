@@ -15,8 +15,26 @@ readonly KEYS=".keys.env"
 # Host-URL (lokal/CI auf demselben Host). Emulator nutzt 10.0.2.2:<port> — siehe README.
 url() { echo "http://localhost:$(jq -r ".instances.\"$1\".port" manifest.json)"; }
 
+# Wartet, bis jede Instanz ihren claim-Endpoint bedient (Komga-Boot dauert nach jedem
+# `compose up` ~30–60s). Muss VOR dem Cache/Seed-Zweig laufen: beim Cache-Hit wird seed.sh
+# (das selbst wartet) übersprungen, und verify.sh würde sonst gegen noch nicht gebootete
+# Container laufen.
+wait_ready() {
+  local inst base i
+  for inst in $(jq -r '.instances | keys[]' manifest.json); do
+    base="$(url "${inst}")"
+    for i in $(seq 1 60); do
+      if curl -fsS -m 3 "${base}/api/v1/claim" >/dev/null 2>&1; then break; fi
+      if [[ "${i}" -eq 60 ]]; then err "${inst} (${base}) nicht erreichbar"; return 1; fi
+      sleep 2
+    done
+  done
+  err "alle Instanzen bereit"
+}
+
 docker compose up -d
 err "Container gestartet"
+wait_ready
 
 if [[ -f "${MARKER}" && -f "${KEYS}" ]]; then
   err "Cache-Hit (${MARKER}) — Seed übersprungen"

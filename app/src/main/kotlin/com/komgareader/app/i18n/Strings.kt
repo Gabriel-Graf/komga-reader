@@ -152,6 +152,10 @@ interface Strings {
     val addWorksHint: String                       // Such-Platzhalter im kompakten Hinzufügen-Modal
     val collectionPending: String                  // Sync-Link noch nicht abgeglichen (dirty)
     val collectionSynced: String                   // Sync-Link abgeglichen
+    val collectionVanishedTitle: String            // Sammlung am Server verschwunden
+    val collectionVanishedBody: String
+    val collectionVanishedDeleteHere: String
+    val collectionVanishedKeepHere: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -411,6 +415,10 @@ object StringsDe : Strings {
     override val addWorksHint = "Werke aus Bibliothek hinzufügen"
     override val collectionPending = "ausstehend"
     override val collectionSynced = "synchron"
+    override val collectionVanishedTitle = "Am Server gelöscht"
+    override val collectionVanishedBody = "Diese Sammlungen sind am Server nicht mehr vorhanden. Hier auch löschen?"
+    override val collectionVanishedDeleteHere = "Hier auch löschen"
+    override val collectionVanishedKeepHere = "Hier behalten"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -661,6 +669,10 @@ object StringsEn : Strings {
     override val addWorksHint = "Add works from library"
     override val collectionPending = "pending"
     override val collectionSynced = "synced"
+    override val collectionVanishedTitle = "Deleted on server"
+    override val collectionVanishedBody = "These collections no longer exist on the server. Delete them here too?"
+    override val collectionVanishedDeleteHere = "Delete here too"
+    override val collectionVanishedKeepHere = "Keep here"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

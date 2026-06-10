@@ -68,6 +68,13 @@ class CollectionSyncLiveTest {
             collectionRepo,
             resolver = { id -> activeSource.collectionSource(id) },
             allSources = { activeSource.allCollectionSources() },
+            titleResolver = { sourceId, kind, remoteId ->
+                if (kind == CollectionKind.SERIES) {
+                    runCatching { activeSource.get(sourceId)?.seriesDetail(remoteId)?.title }.getOrNull()
+                } else {
+                    null
+                }
+            },
         )
     }
 

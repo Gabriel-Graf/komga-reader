@@ -170,18 +170,22 @@ fun HomeScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                             )
-                            if (selected == TAB_LIBRARY) {
-                                IconButton(
-                                    onClick = { filterMenuOpen = true },
-                                    modifier = Modifier.onGloballyPositioned { coords ->
-                                        val pos = coords.positionInWindow()
-                                        filterAnchor = IntOffset(
-                                            (pos.x + coords.size.width).toInt(),
-                                            (pos.y + coords.size.height).toInt(),
-                                        )
-                                    },
-                                ) {
-                                    Icon(AppIcons.Filter, contentDescription = s.filterByType)
+                            // Filter-Slot: feste Breite auf ALLEN Tabs, damit das Suchfeld überall gleich breit ist (DRY).
+                            // Filter-Aktion nur auf der Bibliothek; sonst bleibt der Slot leer.
+                            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                                if (selected == TAB_LIBRARY) {
+                                    IconButton(
+                                        onClick = { filterMenuOpen = true },
+                                        modifier = Modifier.onGloballyPositioned { coords ->
+                                            val pos = coords.positionInWindow()
+                                            filterAnchor = IntOffset(
+                                                (pos.x + coords.size.width).toInt(),
+                                                (pos.y + coords.size.height).toInt(),
+                                            )
+                                        },
+                                    ) {
+                                        Icon(AppIcons.Filter, contentDescription = s.filterByType)
+                                    }
                                 }
                             }
                         }
@@ -203,6 +207,11 @@ fun HomeScreen(
                                         tileLabel = s.viewTile,
                                         largeTileLabel = s.viewLargeTile,
                                     )
+                                    // Ganz rechts: manueller bidirektionaler Sync (push + pull) — dieselbe
+                                    // Refresh-Mechanik wie der Bibliotheks-Reload, ruft den Voll-Sync.
+                                    IconButton(onClick = { collectionsVm.syncNow() }) {
+                                        Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow)
+                                    }
                                 }
                                 // Bibliotheken: „+" (neue Bibliothek) + rotierender Ansichts-Button.
                                 TAB_GROUPS -> {
@@ -269,6 +278,7 @@ fun HomeScreen(
                                 CollectionDetailScreen(
                                     collectionId = openId,
                                     onBack = { openCollectionId = null },
+                                    onOpenSeries = onOpenSeries,
                                 )
                             }
                         }

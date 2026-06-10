@@ -97,6 +97,11 @@ class CollectionSyncManagerTest {
             storedCollections[collectionId]?.let { storedCollections[collectionId] = it.copy(members = members) }
         }
 
+        override suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>) {
+            // Nur Titel — die Sync-Links bleiben unangetastet (genau wie die Room-Impl).
+            storedCollections[collectionId]?.let { storedCollections[collectionId] = it.copy(members = members) }
+        }
+
         override suspend fun addMember(collectionId: Long, member: CollectionMember) = error("not used")
         override suspend fun removeMember(collectionId: Long, sourceId: Long, remoteId: String) = error("not used")
 
@@ -116,7 +121,7 @@ class CollectionSyncManagerTest {
         val s1 = FakeSource(1, canWrite = true)
         val s2 = FakeSource(2, canWrite = true)
         val repo = FakeCollectionRepo()
-        val mgr = CollectionSyncManager(repo, resolver = { id -> mapOf(1L to s1, 2L to s2)[id] }, allSources = { emptyList() })
+        val mgr = CollectionSyncManager(repo, resolver = { id -> mapOf(1L to s1, 2L to s2)[id] }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
         val col = UserCollection(
             id = 10, name = "Mix", kind = CollectionKind.SERIES,
             members = listOf(CollectionMember(1, "a", "A"), CollectionMember(2, "b", "B"), CollectionMember(1, "c", "C")),
@@ -132,7 +137,7 @@ class CollectionSyncManagerTest {
     fun `push adopts existing remote collection by name instead of creating`() = runBlocking {
         val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"), updatedAt = 0L)))
         val repo = FakeCollectionRepo()
-        val mgr = CollectionSyncManager(repo, resolver = { s1 }, allSources = { emptyList() })
+        val mgr = CollectionSyncManager(repo, resolver = { s1 }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
         val col = UserCollection(10, "Mix", CollectionKind.SERIES, listOf(CollectionMember(1, "a", "A")))
         mgr.push(col)
         // adoptiert pre1 → update statt create
@@ -145,7 +150,7 @@ class CollectionSyncManagerTest {
     fun `push marks non-writable source FORBIDDEN, keeps local`() = runBlocking {
         val s1 = FakeSource(1, canWrite = false)
         val repo = FakeCollectionRepo()
-        val mgr = CollectionSyncManager(repo, resolver = { s1 }, allSources = { emptyList() })
+        val mgr = CollectionSyncManager(repo, resolver = { s1 }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
         mgr.push(UserCollection(10, "X", CollectionKind.SERIES, listOf(CollectionMember(1, "a", "A"))))
         assertEquals(SyncStatus.FORBIDDEN, repo.links.getValue(1).status)
         assertNull(s1.lastCreate)
@@ -154,7 +159,7 @@ class CollectionSyncManagerTest {
     @Test
     fun `push marks unsupported source (no CollectionSyncSource) UNSUPPORTED`() = runBlocking {
         val repo = FakeCollectionRepo()
-        val mgr = CollectionSyncManager(repo, resolver = { null }, allSources = { emptyList() })  // z.B. OPDS
+        val mgr = CollectionSyncManager(repo, resolver = { null }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })  // z.B. OPDS
         mgr.push(UserCollection(10, "X", CollectionKind.SERIES, listOf(CollectionMember(5, "o", "O"))))
         assertEquals(SyncStatus.UNSUPPORTED, repo.links.getValue(5).status)
     }
@@ -164,7 +169,7 @@ class CollectionSyncManagerTest {
         val s1 = FakeSource(1, canWrite = true, failOnCreate = true)
         val s2 = FakeSource(2, canWrite = true)
         val repo = FakeCollectionRepo()
-        val mgr = CollectionSyncManager(repo, resolver = { id -> mapOf(1L to s1, 2L to s2)[id] }, allSources = { emptyList() })
+        val mgr = CollectionSyncManager(repo, resolver = { id -> mapOf(1L to s1, 2L to s2)[id] }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
         val col = UserCollection(
             id = 10, name = "Mix", kind = CollectionKind.SERIES,
             members = listOf(CollectionMember(1, "a", "A"), CollectionMember(2, "b", "B")),
@@ -180,7 +185,7 @@ class CollectionSyncManagerTest {
     fun `push adopt stores remoteId of the adopted remote collection`() = runBlocking {
         val s1 = FakeSource(1, canWrite = true, existing = mutableListOf(RemoteCollection("pre1", "Mix", listOf("x"), updatedAt = 0L)))
         val repo = FakeCollectionRepo()
-        val mgr = CollectionSyncManager(repo, resolver = { s1 }, allSources = { emptyList() })
+        val mgr = CollectionSyncManager(repo, resolver = { s1 }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
         val col = UserCollection(10, "Mix", CollectionKind.SERIES, listOf(CollectionMember(1, "a", "A")))
         mgr.push(col)
         assertEquals("pre1", repo.links.getValue(1).remoteCollectionId)
@@ -199,7 +204,7 @@ class CollectionSyncManagerTest {
         val wegId = repo.seedCollection("Weg", CollectionKind.SERIES, listOf(CollectionMember(7, "x", "X")))
         repo.seedLink(CollectionSyncLink(wegId, 7, "rc-weg", SyncStatus.SYNCED, dirty = false, updatedAt = 50L))
 
-        val mgr = CollectionSyncManager(repo, resolver = { source }, allSources = { listOf(7L to source) })
+        val mgr = CollectionSyncManager(repo, resolver = { source }, allSources = { listOf(7L to source) }, titleResolver = { _, _, _ -> null })
         val vanished = mgr.fullSync()
 
         val neu = repo.storedCollections.values.filter { it.name == "Neu" }
@@ -207,6 +212,55 @@ class CollectionSyncManagerTest {
         assertEquals(CollectionKind.SERIES, neu.first().kind)
         assertEquals(1, vanished.size)
         assertEquals("Weg", vanished.first().name)
+    }
+
+    @Test
+    fun `discovery loest echte Titel auf statt remoteId`() = runBlocking {
+        val source = FakeSource(7, canWrite = true, existing = mutableListOf(
+            RemoteCollection("rc-marvel", "Marvel", listOf("s1", "s2"), updatedAt = 100L),
+        ))
+        val repo = FakeCollectionRepo()
+        val titles = mapOf("s1" to "Berserk", "s2" to "Saga")
+        val manager = CollectionSyncManager(
+            repo,
+            resolver = { source },
+            allSources = { listOf(7L to source) },
+            titleResolver = { _, _, rid -> titles[rid] },
+        )
+        manager.fullSync()
+
+        val marvel = repo.storedCollections.values.first { it.name == "Marvel" }
+        assertEquals(listOf("Berserk", "Saga"), marvel.members.map { it.title })
+        assertEquals(listOf("s1", "s2"), marvel.members.map { it.remoteId }) // remoteId unverändert (= Link)
+    }
+
+    @Test
+    fun `fullSync heilt Altbestand-Titel die noch die remoteId sind ohne den Sync-Link zu veraendern`() = runBlocking {
+        // Server kennt die Sammlung schon (synced) — kein Discovery/Pull/Push nötig.
+        val source = FakeSource(7, canWrite = true, existing = mutableListOf(
+            RemoteCollection("rc-marvel", "Marvel", listOf("s1"), updatedAt = 50L),
+        ))
+        val repo = FakeCollectionRepo()
+        // Altbestand: Mitglied wurde VOR der Titel-Auflösung entdeckt → title == remoteId.
+        val colId = repo.seedCollection("Marvel", CollectionKind.SERIES, listOf(CollectionMember(7, "s1", "s1")))
+        repo.seedLink(CollectionSyncLink(colId, 7, "rc-marvel", SyncStatus.SYNCED, dirty = false, updatedAt = 50L))
+
+        val mgr = CollectionSyncManager(
+            repo,
+            resolver = { source },
+            allSources = { listOf(7L to source) },
+            titleResolver = { _, _, rid -> mapOf("s1" to "Berserk")[rid] },
+        )
+        mgr.fullSync()
+
+        val healed = repo.storedCollections.getValue(colId)
+        assertEquals(listOf("Berserk"), healed.members.map { it.title }, "Titel geheilt (echter Titel statt remoteId)")
+        assertEquals(listOf("s1"), healed.members.map { it.remoteId }, "remoteId unverändert")
+        // Sync-Link NICHT verändert: remoteCollectionId bleibt, status SYNCED, nicht dirty.
+        val link = repo.links.getValue(7)
+        assertEquals("rc-marvel", link.remoteCollectionId, "Heilung darf den Sync-Link NICHT nullen")
+        assertEquals(SyncStatus.SYNCED, link.status)
+        assertEquals(false, link.dirty)
     }
 
     @Test
@@ -220,7 +274,7 @@ class CollectionSyncManagerTest {
         val lokalId = repo.seedCollection("NurLokal", CollectionKind.SERIES, listOf(CollectionMember(7, "x", "X")))
         repo.seedLink(CollectionSyncLink(lokalId, 7, null, SyncStatus.DIRTY, dirty = true, updatedAt = 0L))
 
-        val mgr = CollectionSyncManager(repo, resolver = { source }, allSources = { listOf(7L to source) })
+        val mgr = CollectionSyncManager(repo, resolver = { source }, allSources = { listOf(7L to source) }, titleResolver = { _, _, _ -> null })
         mgr.pullOnlySync()
 
         // Discovery lief: die Server-Sammlung ServerOnly ist jetzt lokal vorhanden.

@@ -45,7 +45,7 @@ class SettingsViewModelTest {
 
     /** pullOnlySync auf leeren Quellen ist ein harmloser No-Op — genügt fürs Konstruieren des VM. */
     private fun syncManager(collections: CollectionRepository): CollectionSyncManager =
-        CollectionSyncManager(collections, resolver = { null }, allSources = { emptyList() })
+        CollectionSyncManager(collections, resolver = { null }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
 
     private fun viewModel(servers: ServerRepository): SettingsViewModel {
         val collections = StubCollectionRepository()
@@ -264,6 +264,7 @@ private class StubCollectionRepository : CollectionRepository {
     override suspend fun rename(collectionId: Long, name: String) {}
     override suspend fun delete(collectionId: Long) {}
     override suspend fun setMembers(collectionId: Long, members: List<CollectionMember>) {}
+    override suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>) {}
     override suspend fun addMember(collectionId: Long, member: CollectionMember) {}
     override suspend fun removeMember(collectionId: Long, sourceId: Long, remoteId: String) {}
     override suspend fun updateSyncLink(link: CollectionSyncLink) {}

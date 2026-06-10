@@ -118,8 +118,9 @@ class CollectionsViewModel @Inject constructor(
         repo.get(id)?.let { sync.push(it) }
     }
 
-    // Nutzer-initiiertes „jetzt synchronisieren" = voller bidirektionaler Sync (push + pull).
-    fun syncNow(id: Long) = viewModelScope.launch {
+    // Nutzer-initiiertes „jetzt synchronisieren" = voller bidirektionaler Sync (push + pull)
+    // über alle Sammlungen/Quellen. Kein Argument: fullSync deckt ohnehin die ganze Bibliothek ab.
+    fun syncNow() = viewModelScope.launch {
         _vanished.value = sync.fullSync()
     }
 

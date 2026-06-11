@@ -56,7 +56,9 @@ class PluginsViewModel @Inject constructor(
         _presetPlugins.value = presets
 
         val installed = (srcs.map { it.packageName } + presets.map { it.packageName }).toSet()
-        val taggedPkgs = profiles.value.mapNotNull { it.pluginPackage }
+        // Suspending lesen (nicht profiles.value): beim allerersten refresh() kann der Eagerly-StateFlow
+        // noch auf der initialen emptyList() stehen → der Prune würde getaggte Profile übersehen.
+        val taggedPkgs = colorProfiles.observeAll().first().mapNotNull { it.pluginPackage }
         val pluginConfigs = servers.configs.first().filter { it.kind == SourceKind.PLUGIN }
         val plan = planPluginPrune(installed, taggedPkgs, pluginConfigs)
         plan.presetPackagesToDrop.forEach { colorProfiles.deleteByPluginPackage(it) }

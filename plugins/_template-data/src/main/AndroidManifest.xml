@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Data-only Plugin-Template. KEIN Code — nur Metadaten + assets/data.json.
+     DATA_CATEGORY auf COLOR_PRESET | READER_PRESET | LANGUAGE setzen. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="Komga Data Plugin">
+        <meta-data
+            android:name="com.komgareader.plugin.DATA_CATEGORY"
+            android:value="LANGUAGE" />
+        <meta-data
+            android:name="com.komgareader.plugin.DATA_ASSET"
+            android:value="data.json" />
+        <meta-data
+            android:name="com.komgareader.plugin.ABI_VERSION"
+            android:value="2" />
+    </application>
+</manifest>

@@ -128,4 +128,8 @@ object DataModule {
         settings: SettingsRepository,
     ): com.komgareader.data.plugin.repo.RepoStore =
         com.komgareader.data.plugin.repo.RepoStore(dao, settings)
+
+    @Provides @Singleton
+    fun pluginRepoClient(): com.komgareader.data.plugin.repo.PluginRepoClient =
+        com.komgareader.data.plugin.repo.PluginRepoClient(okhttp3.OkHttpClient())
 }

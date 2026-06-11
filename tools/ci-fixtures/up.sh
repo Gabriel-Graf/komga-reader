@@ -61,10 +61,13 @@ else
   KEY_B="$(./seed.sh "$(url komga-b)" 2 Webtoon /content/webtoon Novels-B /content/novels-b)"
   # komga-c: Spiegel von A = 3 Serien total
   KEY_C="$(./seed.sh "$(url komga-c)" 3 Manga /content/manga Novels-A /content/novels-a)"
+  # kavita: zweite Server-Art (Source-Plugin-E2E). Seed emittiert KAVITA_URL/KAVITA_KEY-Zeilen.
+  KAVITA_OUT="$(./seed-kavita.sh "http://localhost:25710")"
   {
     echo "KOMGA_A_URL=$(url komga-a)"; echo "KOMGA_A_KEY=${KEY_A}"
     echo "KOMGA_B_URL=$(url komga-b)"; echo "KOMGA_B_KEY=${KEY_B}"
     echo "KOMGA_C_URL=$(url komga-c)"; echo "KOMGA_C_KEY=${KEY_C}"
+    echo "${KAVITA_OUT}"
   } > "${KEYS}"
   touch "${MARKER}"
   err "Seed abgeschlossen → ${KEYS}"

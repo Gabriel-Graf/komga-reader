@@ -28,7 +28,16 @@ services:
       - komga-c-config:/config
       - ./content/manga:/content/manga:ro
       - ./content/novels-a:/content/novels-a:ro
+  # Kavita als zweite Server-Art für den Source-Plugin-E2E (Kavita-Quellen-Plugin). Bewusst
+  # dieselben CC0-Manga-Fixtures wie Komga — bekannter, deterministischer Inhalt; eigener Port.
+  kavita:
+    image: jvmilazz0/kavita:latest
+    ports: ["25710:5000"]
+    volumes:
+      - kavita-config:/kavita/config
+      - ./content/manga:/manga:ro
 volumes:
   komga-a-config:
   komga-b-config:
   komga-c-config:
+  kavita-config:

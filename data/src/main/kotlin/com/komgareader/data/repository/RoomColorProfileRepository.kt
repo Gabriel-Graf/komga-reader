@@ -52,5 +52,6 @@ private fun ColorProfile.toEntity() = ColorProfileEntity(
     id = id, name = name, saturation = saturation, contrast = contrast, brightness = brightness,
     blackPoint = blackPoint, whitePoint = whitePoint, gamma = gamma,
     sharpenAmount = sharpenAmount, sharpenRadius = sharpenRadius,
-    ditherMode = ditherMode.name, ditherLevels = ditherLevels, builtIn = builtIn, pluginPackage = pluginPackage,
+    ditherMode = ditherMode.name, ditherLevels = ditherLevels,
+    builtIn = builtIn, pluginPackage = pluginPackage,
 )

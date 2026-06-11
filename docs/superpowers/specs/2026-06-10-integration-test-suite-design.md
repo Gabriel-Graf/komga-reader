@@ -197,17 +197,19 @@ Slot rendert Pack-Inhalt, Theme-Token an den Call-Sites wirksam).
 
 ## 9b. Umsetzungsstand (2026-06-11)
 
-**Lokal grün, 26 Integrationstests** (`com.komgareader.app.ci.*`, Emulator gegen Live-CI-Komga):
+**Lokal grün, 29 Integrationstests** (`com.komgareader.app.ci.*`, Emulator gegen Live-CI-Backends):
 - **Seam (17):** A1seam/A2/A3a/A3b/A4 · A5/A6 (Komga+OPDS) · B7/B8 · C9–C12 (Resolver auf echten Metadaten) · E-local/E18/E20 · F21.
 - **UI (6):** Smoke · A1 (Add-Server übers UI) · A4 (Remove→Leerzustand) · C9 (Manga→`reader_paged`) · C11 (Novel→`reader_novel`) · D14 (Sammlung anlegen).
 - **Collection-Sync multi-source (2):** D15 (cross-source: App-Sammlung mit Mitgliedern aus A+B syncт jedes Subset zu seiner Quelle) · D16 (`removeSource` behält die andere Quelle + löscht nichts am Server, Invariante #2).
 - **Fortschritt-Round-Trip (1):** Lese-Fortschritt überlebt lokalen Wipe/Reconnect via Server-Pull (zwei Stacks/DBs, ein Server).
-- **D17 Single-Server-Sync:** durch den gemergten `app/src/androidTest/.../CollectionSyncLiveTest.kt` abgedeckt (Discovery/Push-Pull-LWW/Reconnect-pull-only gegen Dev-Komga 25600).
+- **Plugin-E2E (3, Block H):** Plugin-Tab-UI (installiertes Kavita-Plugin erscheint im Plugins-Tab → Entdeckung→UI-Integration) · Color-Preset-Discovery (data-only APK → `discoverColorPresetPlugins` + Spec-Parse) · Source-Plugin gegen **reproduzierbare CI-Kavita** (`PluginKavitaCiTest`, Port 25710, arg-gespeist). Alle drei mit `assumeTrue`-Präkondition (APK/Args vorhanden) → skippen statt failen, wenn die Voraussetzung fehlt.
+- **D17 Single-Server-Sync:** durch den gemergten `app/src/androidTest/.../CollectionSyncLiveTest.kt` abgedeckt (Discovery/Push-Pull-LWW/Reconnect-pull-only gegen Dev-Komga 25600). Voller Source-Plugin-Lade-Kette-E2E zusätzlich in `KavitaPluginLiveTest` (manuell, Dev-Kavita 5001).
+- **Kavita reproduzierbar:** Kavita-Instanz in `tools/ci-fixtures` (compose `kavita:25710` + `seed-kavita.sh`, emittiert `KAVITA_URL`/`KAVITA_KEY` nach `.keys.env`); CC0-Manga-Content geteilt mit Komga.
 - **G22/G23:** durch Domain-Unit-Tests (`DisplayBehaviorTest`/`RefreshScheduler`) abgedeckt — kein Integrations-Duplikat; UI-Akzent/Bewegung nicht robust UI-assertbar.
-- **Zurückgestellt:** C10 (Webtoon-UI, Logik seam-grün) · Block H (Plugins, `[pending]`) · optionaler UI-level-Fortschritt-Round-Trip.
-- **CI-Pipeline:** `.gitlab-ci.yml` (shell-executor, KVM-Emulator) gebaut + lokal validiert; erster echter Lauf = Push + Runner-Registrierung.
+- **Zurückgestellt:** C10 (Webtoon-UI, Logik seam-grün) · H1-„filtert echt"/H6 (`[pending]`) · optionaler UI-level-Fortschritt-Round-Trip · **Plugin-APK-Build/-Install in der CI-Pipeline** (Plugin-E2E setzen installierte APKs voraus; ohne Provisioning skippen sie).
+- **CI-Pipeline:** `.gitlab-ci.yml` (shell-executor, KVM-Emulator) gebaut + lokal validiert; erster echter Lauf = Push + Runner-Registrierung. ⚠️ Pipeline sollte die **Skip-Count** überwachen, damit „alle Plugin-Tests geskippt" (kein APK provisioniert) nicht still als grün durchgeht.
 
-Pläne: `plans/2026-06-10-integration-{fixtures-orchestration, harness-seam-AB, seam-CEFG, ui-hilt-infra, ui-catalog, ci-pipeline}.md` + `plans/2026-06-11-integration-collsync-progress-roundtrip.md`.
+Pläne: `plans/2026-06-10-integration-{fixtures-orchestration, harness-seam-AB, seam-CEFG, ui-hilt-infra, ui-catalog, ci-pipeline}.md` + `plans/2026-06-11-integration-{collsync-progress-roundtrip, plugin-e2e}.md`.
 
 ## 10. Neue/berührte Dateien (Übersicht)
 

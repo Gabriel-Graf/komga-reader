@@ -89,6 +89,7 @@ fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = h
             PluginRow(
                 title = src.metadata.displayName,
                 typeLabel = s.pluginTabSourceLabel,
+                abiLabel = s.pluginAbiLabel,
                 abiVersion = src.abiVersion,
                 configureLabel = s.pluginConfigure,
                 uninstallLabel = s.pluginUninstall,
@@ -100,6 +101,7 @@ fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = h
             PluginRow(
                 title = p.displayName,
                 typeLabel = s.pluginTabPresetLabel,
+                abiLabel = s.pluginAbiLabel,
                 abiVersion = p.abiVersion,
                 configureLabel = s.pluginConfigure,
                 uninstallLabel = s.pluginUninstall,
@@ -156,6 +158,7 @@ fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = h
 private fun PluginRow(
     title: String,
     typeLabel: String,
+    abiLabel: String,
     abiVersion: Int,
     configureLabel: String,
     uninstallLabel: String,
@@ -172,7 +175,7 @@ private fun PluginRow(
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(
-                "$typeLabel · ABI $abiVersion",
+                "$typeLabel · $abiLabel $abiVersion",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

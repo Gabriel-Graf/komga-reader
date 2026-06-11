@@ -36,7 +36,7 @@ class PersistenceInstrumentedTest {
         assertEquals("NAS", loaded.name)
         assertEquals("geheim", loaded.apiKey)
         // Secret darf NICHT im Klartext in der Room-Entity liegen:
-        val entity = db.serverDao().observe().first()!!
+        val entity = db.serverDao().observeAll().first().first()
         assertNull("Klartext-ApiKey darf nicht in Room stehen", entity.apiKeyCiphertext?.takeIf { it == "geheim" })
         assert(entity.apiKeyCiphertext != null) { "Ciphertext muss in Room persistiert sein" }
         repo.clear()
@@ -54,7 +54,7 @@ class PersistenceInstrumentedTest {
         assertEquals("s3krit", loaded.password)
         assertNull(loaded.apiKey)
         // Passwort-Ciphertext muss in Room liegen:
-        val entity = db.serverDao().observe().first()!!
+        val entity = db.serverDao().observeAll().first().first()
         assert(entity.passwordCiphertext != null) { "Passwort-Ciphertext muss in Room persistiert sein" }
         assertNull("Klartext-Passwort darf nicht in Room stehen", entity.passwordCiphertext?.takeIf { it == "s3krit" })
         repo.clear()

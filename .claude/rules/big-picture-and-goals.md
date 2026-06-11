@@ -205,25 +205,31 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > `UiPackRegistry`, angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware**
 > (LCD volles Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das
 > „Theme zuerst"-Stück.
-> **Die Layout-Slot-Naht ist angefangen — erste Region `header` gebaut:** `app/ui/slots/UiSlots.kt`
-> trägt den In-Tree-Vertrag `HeaderSlot` (typealias `@Composable (title, onBack?, actions) -> Unit`),
-> das optionale `UiSlotPack(header)`, den puren Resolver `UiSlots.resolve` (fehlender Slot → `DefaultSlots`,
-> nie `null`, analog `StubSource`) und `LocalResolvedSlots` (im Host `KomgaReaderTheme` bereitgestellt,
-> spiegelt `LocalUiPack`). Die Header-Call-Sites (`SeriesDetailScreen`, `SubPageScaffold`) rendern jetzt
-> `LocalResolvedSlots.current.header(...)` statt `StandardTopAppBar` direkt; das `DefaultSlots`-Pack reicht
-> verhaltensgleich an `StandardTopAppBar` durch (kein visueller Unterschied fürs Default-Pack). Bewegung/
-> Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) — ein Slot
-> liefert nur Inhalt/Struktur. Swap-Beweis: `HeaderSlotPreview.kt` (`@Preview` mit zentriertem Alternativ-Header,
-> nur Debug/Preview, **keine** Nutzer-Einstellung). **Ausnahme `HomeScreen`:** dessen Header
-> (StatusCluster + Suchzeile + Filter-Chips + Aktionen) passt strukturell nicht in `HeaderSlot v1`
-> (`title, onBack?, actions`) — er bleibt direkter `TopAppBar`-Aufruf und ist für Pack-Autoren
-> **nicht** über `LocalResolvedSlots` swappable; ein künftiger `HomeHeaderSlot` mit breiterer Signatur
-> deckt ihn ab, sobald der Slot-Vertrag wächst.
-> **Noch Soll/Richtung (existiert NICHT):** die **weiteren fünf Slots** (overlay/tiles/nav/settings/dialog —
-> `UiSlotPack` trägt heute nur `header`), ein eigenes **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht
-> eingefroren) und der **externe Pack-Lader** (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur
-> der In-Tree-Einhängepunkt). Wer hier weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im
-> selben Commit nach und behauptet keinen Typ als real, den `grep` nicht findet.
+> **Die Layout-Slot-Naht wächst — zwei Regionen gebaut:**
+> - **Region `header` (Ist, 2026-06-09):** `app/ui/slots/UiSlots.kt` trägt `HeaderSlot`
+>   (typealias `@Composable (title, onBack?, actions) -> Unit`), `UiSlotPack(header)`, den puren Resolver
+>   `UiSlots.resolve` (fehlender Slot → `DefaultSlots`, nie `null`, analog `StubSource`) und
+>   `LocalResolvedSlots` (im Host `KomgaReaderTheme`). Die Call-Sites (`SeriesDetailScreen`, `SubPageScaffold`)
+>   rendern `LocalResolvedSlots.current.header(...)`. Swap-Beweis: `HeaderSlotPreview.kt` (`@Preview` mit
+>   zentriertem Alternativ-Header, nur Debug/Preview, **keine** Nutzer-Einstellung).
+> - **Region `homeHeader` (Ist, 2026-06-12):** zweite gebaute Slot-Region. Vertrag: `HomeHeaderSlot`
+>   (typealias `@Composable (state: HomeHeaderState) -> Unit`). Capability-Surface-Prinzip: **„UI neu,
+>   Kernlogik gleich"** — der Host (Core) baut `HomeHeaderState` (Status · `HomeHeaderSearch` · optional
+>   `HomeHeaderFilter` · Menü-Overlay · `actions: @Composable RowScope.() -> Unit`) und besitzt alle
+>   Logik; ein Pack **arrangiert** die Capabilities, implementiert sie nie neu. `DefaultHomeHeader`
+>   (`app/ui/home/HomeHeader.kt`) ist das mitgelieferte Onyx-Layout. `HomeScreen` baut die Surface pro Tab
+>   und ruft `LocalResolvedSlots.current.homeHeader(state)`. Die frühere **„Ausnahme `HomeScreen`"** (nicht
+>   über `LocalResolvedSlots` swappable, direkter `TopAppBar`-Aufruf) ist damit **aufgehoben** — `HomeScreen`
+>   ist vollständig in die Slot-Naht integriert. Swap-Beweis:
+>   `app/src/debug/kotlin/com/komgareader/app/ui/home/HomeHeaderSlotPreview.kt`
+>   (`AlternativeHomeHeader`: Status oben, Aktionen darunter — nur Debug/Preview, **keine** Nutzer-Einstellung).
+>   Bewegung/Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) —
+>   ein Slot liefert nur Inhalt/Struktur. `UiSlotPack(header, homeHeader)` · `ResolvedSlots(header, homeHeader)`.
+> **Noch Soll/Richtung (existiert NICHT):** die **übrigen vier Slots** (overlay/tiles/nav/settings/dialog —
+> `UiSlotPack` trägt heute `header` + `homeHeader`), ein eigenes **`ui-api`-Modul** (Vertrag bewusst in-tree,
+> noch nicht eingefroren) und der **externe Pack-Lader** (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry`
+> ist nur der In-Tree-Einhängepunkt). Wer hier weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md`
+> im selben Commit nach und behauptet keinen Typ als real, den `grep` nicht findet.
 
 ## docs-match-code
 

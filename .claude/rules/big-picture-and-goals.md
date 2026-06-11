@@ -83,32 +83,39 @@ nicht nur die Animation.
 
 ## Plugins — festgelegte Architektur-Entscheidungen (Referenz, Phase 4)
 
-Noch nicht gebaut. Diese Entscheidungen stehen aber fest, damit nicht jede Session sie neu
-herleitet (und divergiert). Modell: Mihon/Tachiyomi.
+**Update (2026-06-11): Loader + erstes APK-Plugin sind gebaut** — die unten beschriebenen
+Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
 
-1. **Vertrag in eigenem Modul `plugin-api`** (pure Kotlin), **nicht** in `domain`. Plugins linken
-   es `compileOnly`; `domain` zu shippen würde App-Interna in die ABI ziehen. `plugin-api` ist eine
-   dünne, eingefrorene Fassade über die stabilen Naht-Typen (`MediaSource` & Co.).
+1. **Vertrag in eigenem Modul `plugin-api`** (pure JVM/Kotlin) — **Ist: gebaut.** `plugin-api`
+   (0.1.0, mavenLocal) enthält `SourcePlugin`, `PluginMetadata`, `ConfigSchema`/`ConfigField`/
+   `FieldType`, `PluginAbi` (VERSION=1) und `ColorPresetSpec`. Macht `api(project(":source-api"))`
+   → re-exportiert die Naht-A-Typen; `domain` und `source-api` werden parallel publiziert, damit
+   Plugins die transitive Kette auflösen. **Noch Soll:** ein einzel-shaded SDK-Jar als sauberes
+   Distributions-Artefakt — heute drei getrennte mavenLocal-Artefakte.
 2. **ABI-Gate als zwei Integer** (`VERSION`, `MIN_SUPPORTED`), nicht semver-Strings. Plugin-Manifest
    nennt `abiVersion`; außerhalb der Spanne → „inkompatibel", nie instanziiert. Neue Capability =
    neues **optionales** Interface (wie `ContainerSource`), additiv, ohne ABI-Bump.
 3. **Paket = separate APK**, via `PackageManager` (Metadata-Flag) entdeckt, via
    `createPackageContext(...).classLoader` geladen (Parent = Host-Classloader, sonst `ClassCastException`
    durch doppelte Interface-Klassen). Die OS macht Signatur/Integrität/Update/`.so`-Extraktion — **kein**
-   `DexClassLoader` heruntergeladener `.dex` (Security/Play-Policy). Lebt in neuem Modul `plugin-host`.
+   `DexClassLoader` heruntergeladener `.dex` (Security/Play-Policy). Modul `plugin-host` — **Ist: gebaut.**
+   `PluginHost`, `AbiGate`, `DiscoveredPlugin`, `PluginManifestKeys`, `PluginSignature`, `PluginConfigHash`
+   existieren. **Trust-Entscheidung (2026-06-11): TOFU-Signatur-Pinning** — `CONTEXT_IGNORE_SECURITY`
+   erlaubt Drittanbieter-APKs; das Trust-Gate ist der Cert-SHA-256-Pin (beim Erst-Hinzufügen vom Nutzer
+   bestätigt, in `ServerConfig.extras["__sig"]` gespeichert). Kein Cert-Pin → kein Laden.
 4. **Identität:** `packageName` = der Installierbare; `SourceId.of(name, PLUGIN, "$packageName/$configHash")`
    = der Inhalts-Namespace pro Quelle. Jeder DB-Satz trägt `sourceId` → uninstall fällt sauber auf
    `StubSource` zurück, kein Schema-Change.
 5. **Die drei Typen sind unterschiedlich schwer:**
-   - **(c) Color-Presets — gebaut, In-App-Import; APK-Lader weiter Soll (2026-06-09):**
-     `plugin-api`-Modul mit `ColorPresetSpec` + `PluginAbi`; `ColorPresetImporter` in `data`
+   - **(c) Color-Presets — gebaut, In-App-Import; APK-Lader weiter Soll:**
+     `ColorPresetSpec` + `PluginAbi` in `plugin-api`; `ColorPresetImporter` in `data`
      clampt auf `ColorProfile`-Konstanten; In-App-Import via `ActivityResultContracts.OpenDocument`
-     (JSON → `ColorPresetSpec` → DB, `builtIn=false`, löschbar). Lade-Weg bewiesen ohne
-     Classloader. APK-basierter Plugin-Lader (PackageManager-Entdeckung, `createPackageContext`)
-     ist noch **Soll**.
-   - **(a) Quellen — machbar, der designte Pfad:** `SourcePlugin` liefert `BrowsableSource`-Impls →
-     `SourceManager.register()`. Setzt aber `source-agnostic-integration.md` **vollständig** voraus:
-     solange der Reader Komga-URLs lädt, kann keine Plugin-Quelle Seiten liefern.
+     (JSON → `ColorPresetSpec` → DB, `builtIn=false`, löschbar). APK-basierter Plugin-Lader ist noch **Soll**.
+   - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert
+     `BrowsableSource`-Impls → `PluginHost.sourceFor(...)` → `SourceRegistration` → `SourceManager`.
+     Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored) ist das erste
+     APK-Plugin (implementiert `BrowsableSource`+`SyncingSource`, linkt `plugin-api` als `compileOnly`).
+     E2E gegen Live-Kavita noch offen (separater Task).
    - **(b) UI-Views — riskant, ZULETZT, eingeschränkt:** **kein** beliebiges Compose (Compiler-Kopplung,
      Crash reißt Host mit, Host-Rechte, E-Ink-Invarianten nicht erzwingbar). Stattdessen **deklarativ**:
      Plugin liefert eine *Beschreibung* (Tap-Zonen→Aktion, Panel-Strategie wie der pure `guided-view`),

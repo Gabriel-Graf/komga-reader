@@ -55,6 +55,34 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   geladen — bewiesen durch `MixedSourcesLiveTest` auf dem Emulator. `OpdsSource` trägt jetzt
   Basic-Auth-Credentials (Komga OPDS akzeptiert keinen `X-API-Key`-Header). Details/Integrationsregel:
   `source-agnostic-integration.md`.
+- **Plugin-Loader gebaut (Ist, 2026-06-11):** Der Runtime-Plugin-Mechanismus für Quellen-Plugins (Phase 4,
+  Typ a) ist real. `plugin-api` (pure JVM, `com.komgareader:plugin-api:0.1.0`) enthält den ABI-Vertrag:
+  `SourcePlugin` (Interface: `metadata`, `configSchema()`, `create(config): BrowsableSource`),
+  `PluginMetadata`, `ConfigSchema`/`ConfigField`/`FieldType{TEXT,SECRET,URL,BOOL}`, `PluginAbi`
+  (VERSION=1, MIN_SUPPORTED=1) und `ColorPresetSpec`. Es macht `api(project(":source-api"))`, re-exportiert
+  damit alle Naht-A-Typen; `domain` und `source-api` werden ebenfalls als 0.1.0 nach mavenLocal publiziert,
+  damit Plugins die transitive Abhängigkeit auflösen können.
+  `plugin-host` (Android-Lib) enthält: `AbiGate` (reines 2-Int-Gate), `PluginSignature`/`PluginConfigHash`
+  (reine, unit-testbare Helfer), `PluginManifestKeys` (`ENTRY_CLASS`=`com.komgareader.plugin.SOURCE`,
+  `ABI_VERSION`=`com.komgareader.plugin.ABI_VERSION`), `DiscoveredPlugin` (trägt `entryClass`) und
+  `PluginHost(context)` mit `discoverPlugins()`/`sourceFor(pkg, entry, expectedSignature, config)`.
+  Laden erfolgt über `createPackageContext(CONTEXT_INCLUDE_CODE or CONTEXT_IGNORE_SECURITY)` mit dem
+  Host als Parent-Classloader — kein `DexClassLoader`. **Sicherheitsmodell: TOFU** (Trust-on-First-Use,
+  Mihon-Modell): `CONTEXT_IGNORE_SECURITY` erlaubt Drittanbieter-Signaturen; das eigentliche Trust-Gate
+  ist der Cert-SHA-256-Pin in `PluginHost.sourceFor` — ein Plugin wird nur instanziiert, wenn die
+  aktuelle Paket-Signatur dem beim Erst-Hinzufügen bestätigten Pin entspricht.
+  **Wiring:** `ServerConfig.extras: Map<String,String>` (Domain, Ist) trägt Plugin-Config-Werte +
+  reservierte Wiring-Keys `__pkg`/`__entry`/`__sig`; Keystore-verschlüsselt in Room (Spalten
+  `extrasCiphertext`/`extrasIv`, Migration 14→15). `SourceRegistration.build()` hat einen
+  `SourceKind.PLUGIN`-Branch: liest `__pkg`/`__entry`/`__sig`, filtert `__`-Keys heraus, delegiert an
+  `pluginHost.sourceFor(...)`. Konkrete Quellen-Typen bleiben ausschließlich in der Wiring-Schicht
+  (`SourceRegistration`, `PluginHost` via Hilt in `AppModule`).
+  **Erstes APK-Plugin:** Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored)
+  implementiert `BrowsableSource`+`SyncingSource` und linkt `plugin-api` als `compileOnly`.
+  **Noch Soll (kein E2E gegen Live-Kavita in dieser Session; einzel-shaded Plugin-SDK-Jar).**
+  Settings-Seite: Settings „Server hinzufügen" listet entdeckte Plugins, zeigt TOFU-Trust-Dialog
+  (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
+
 - **Collections-Sync bidirektional (Ist, 2026-06-10):** Sammlungen synchronisieren jetzt **push UND
   pull**. Der reine, pur-getestete `planCollectionSync` (`domain/usecase/CollectionSyncPlan.kt`)
   entscheidet pro (Sammlung, Quelle)-Link per **Last-Write-Wins (UTC)**: Server-Sammlungen, die lokal

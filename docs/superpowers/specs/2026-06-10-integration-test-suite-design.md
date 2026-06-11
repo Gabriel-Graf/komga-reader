@@ -195,16 +195,19 @@ Slot rendert Pack-Inhalt, Theme-Token an den Call-Sites wirksam).
 - **H10** Voller `UiPack` pro Geräteklasse (LCD Indigo / Kaleido gedämpft / mono S/W) via `packFor(behavior)`, im Host angewandt `[Seam/UI]`
 - **H11** Nur Farbpalette (Token-only, Smartphone und/oder Tablet) → ColorScheme ersetzt, Layout/Slots unverändert `[UI/pending]` — bewacht „Theme zuerst, Layout danach"
 
-## 9b. Umsetzungsstand (2026-06-10)
+## 9b. Umsetzungsstand (2026-06-11)
 
-**Lokal grün, 23 Integrationstests** (`com.komgareader.app.ci.*`, Emulator gegen Live-CI-Komga):
+**Lokal grün, 26 Integrationstests** (`com.komgareader.app.ci.*`, Emulator gegen Live-CI-Komga):
 - **Seam (17):** A1seam/A2/A3a/A3b/A4 · A5/A6 (Komga+OPDS) · B7/B8 · C9–C12 (Resolver auf echten Metadaten) · E-local/E18/E20 · F21.
 - **UI (6):** Smoke · A1 (Add-Server übers UI) · A4 (Remove→Leerzustand) · C9 (Manga→`reader_paged`) · C11 (Novel→`reader_novel`) · D14 (Sammlung anlegen).
+- **Collection-Sync multi-source (2):** D15 (cross-source: App-Sammlung mit Mitgliedern aus A+B syncт jedes Subset zu seiner Quelle) · D16 (`removeSource` behält die andere Quelle + löscht nichts am Server, Invariante #2).
+- **Fortschritt-Round-Trip (1):** Lese-Fortschritt überlebt lokalen Wipe/Reconnect via Server-Pull (zwei Stacks/DBs, ein Server).
+- **D17 Single-Server-Sync:** durch den gemergten `app/src/androidTest/.../CollectionSyncLiveTest.kt` abgedeckt (Discovery/Push-Pull-LWW/Reconnect-pull-only gegen Dev-Komga 25600).
 - **G22/G23:** durch Domain-Unit-Tests (`DisplayBehaviorTest`/`RefreshScheduler`) abgedeckt — kein Integrations-Duplikat; UI-Akzent/Bewegung nicht robust UI-assertbar.
-- **Zurückgestellt:** C10 (Webtoon-UI, Logik seam-grün) · Block D17 (Sammlungen-Push/Pull, Feature in Arbeit) · Block H (Plugins, `[pending]`).
-- **Noch offen:** CI-Pipeline (`.gitlab-ci.yml` + Runner-`devices=["/dev/kvm"]`).
+- **Zurückgestellt:** C10 (Webtoon-UI, Logik seam-grün) · Block H (Plugins, `[pending]`) · optionaler UI-level-Fortschritt-Round-Trip.
+- **CI-Pipeline:** `.gitlab-ci.yml` (shell-executor, KVM-Emulator) gebaut + lokal validiert; erster echter Lauf = Push + Runner-Registrierung.
 
-Pläne: `plans/2026-06-10-integration-{fixtures-orchestration, harness-seam-AB, seam-CEFG, ui-hilt-infra, ui-catalog}.md`.
+Pläne: `plans/2026-06-10-integration-{fixtures-orchestration, harness-seam-AB, seam-CEFG, ui-hilt-infra, ui-catalog, ci-pipeline}.md` + `plans/2026-06-11-integration-collsync-progress-roundtrip.md`.
 
 ## 10. Neue/berührte Dateien (Übersicht)
 

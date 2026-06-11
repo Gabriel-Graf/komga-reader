@@ -167,6 +167,16 @@ interface Strings {
     val pluginTrustTitle: String      // Dialog-Titel
     val pluginTrustBody: String       // Erklärungstext (enthält keine Namen — die Felder darunter zeigen sie)
     val pluginTrustConfirm: String    // Bestätigen-Label
+    val pluginTabSourceLabel: String      // Typ-Label „Quelle"
+    val pluginTabPresetLabel: String      // Typ-Label „Farbprofile"
+    val pluginTabEmpty: String            // Liste leer
+    val pluginTabReposHint: String        // „+" / Repo-Browser folgt (P2)
+    val pluginConfigure: String           // ⚙ contentDescription
+    val pluginUninstall: String           // 🗑 contentDescription
+    val pluginPresetsTitle: String        // Titel des Preset-Detail-Modals
+    val pluginPresetImport: String        // „Importieren"
+    val pluginPresetRemove: String        // „Entfernen"
+    val pluginPresetImported: String      // Status „Importiert"
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -440,6 +450,16 @@ object StringsDe : Strings {
     override val pluginTrustTitle = "Diesem Plugin vertrauen?"
     override val pluginTrustBody = "Dieses Plugin erhält Zugriff auf die App-Quellen-Naht. Vertraue nur Plugins aus bekannten Quellen. Das Zertifikat (SHA-256) wird als Pin gespeichert — bei einer späteren Signaturänderung wird das Plugin nicht mehr geladen."
     override val pluginTrustConfirm = "Vertrauen und hinzufügen"
+    override val pluginTabSourceLabel = "Quelle"
+    override val pluginTabPresetLabel = "Farbprofile"
+    override val pluginTabEmpty = "Keine Plugins installiert."
+    override val pluginTabReposHint = "Plugin-Repositories zum Suchen und Installieren folgen in einem späteren Update."
+    override val pluginConfigure = "Konfigurieren"
+    override val pluginUninstall = "Entfernen"
+    override val pluginPresetsTitle = "Farbprofile"
+    override val pluginPresetImport = "Importieren"
+    override val pluginPresetRemove = "Entfernen"
+    override val pluginPresetImported = "Importiert"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -704,6 +724,16 @@ object StringsEn : Strings {
     override val pluginTrustTitle = "Trust this plugin?"
     override val pluginTrustBody = "This plugin will be granted access to the app's source seam. Only trust plugins from known sources. The certificate (SHA-256) is saved as a pin — if the signature changes later, the plugin will no longer be loaded."
     override val pluginTrustConfirm = "Trust and add"
+    override val pluginTabSourceLabel = "Source"
+    override val pluginTabPresetLabel = "Color profiles"
+    override val pluginTabEmpty = "No plugins installed."
+    override val pluginTabReposHint = "Plugin repositories for searching and installing are coming in a later update."
+    override val pluginConfigure = "Configure"
+    override val pluginUninstall = "Remove"
+    override val pluginPresetsTitle = "Color profiles"
+    override val pluginPresetImport = "Import"
+    override val pluginPresetRemove = "Remove"
+    override val pluginPresetImported = "Imported"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

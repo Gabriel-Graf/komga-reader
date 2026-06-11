@@ -120,8 +120,18 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
      gesperrt). Verwaltung im **Plugins-Tab** (`PluginsScreen`/`PluginsViewModel`): ⚙ importiert/entfernt
      Presets, 🗑 deinstalliert das APK (OS-Intent `ACTION_DELETE`), Cleanup per Re-Scan beim Tab-`onResume`
      (`planPluginPrune` → `deleteByPluginPackage`; aktiver Zeiger fällt auf `OFF`). `color_profiles.pluginPackage`
-     (nullable, Migration 15→16). Die **bespoke JSON-Datei-Import-UI ist entfernt**. **Soll (Slice P2):**
-     Repo-Browser + APK-Download/Install via `PackageInstaller` (das Screen-`+` ist heute Platzhalter).
+     (nullable, Migration 15→16). Die **bespoke JSON-Datei-Import-UI ist entfernt**.
+     **Repo-Browser gebaut + E2E-grün (Slice P2, 2026-06-11):** das Screen-`+` öffnet `RepoBrowserScreen`
+     (gepushte Route). Ein offizielles Default-Repo (Konstante `PluginRepoDefaults.OFFICIAL_URL` + Settings-
+     Toggle, abschaltbar) + vom Nutzer hinzugefügte Repo-URLs (`plugin_repos`, Migration 16→17). Jedes Repo
+     liefert ein `repo.json` (`name` + Liste {packageName,name,type,abiVersion,versionCode,apkUrl,**fingerprint**}),
+     geladen via `PluginRepoClient` (OkHttp), gemergt (dedup nach höchster versionCode), je Eintrag
+     `installState` (NOT_INSTALLED/INSTALLED/UPDATE_AVAILABLE) + ABI-Gate. Install = APK herunterladen →
+     **Cert-SHA-256 gegen den Index-`fingerprint` verifizieren** (`PluginInstaller`, reuse `PluginSignature`) →
+     nur bei Match `PackageInstaller`-Session (OS-Dialog). Mismatch = harter Abbruch, Datei gelöscht, nie
+     installiert. Die reinen Parse-/Merge-/Version-/Fingerprint-Funktionen liegen in `:data` (unit-getestet),
+     `domain` bleibt netzfrei. **Soll (späterer Slice):** Auto-Refresh/Update-Badge, Plugin-Icons, Signierung
+     des Index selbst.
    - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert
      `BrowsableSource`-Impls → `PluginHost.sourceFor(...)` → `SourceRegistration` → `SourceManager`.
      Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored) ist das erste

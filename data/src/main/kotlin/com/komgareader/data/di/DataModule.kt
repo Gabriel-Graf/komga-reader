@@ -118,4 +118,14 @@ object DataModule {
     @Provides @Singleton
     fun collectionRepository(db: AppDatabase): CollectionRepository =
         RoomCollectionRepository(db.collectionDao())
+
+    @Provides @Singleton
+    fun pluginRepoDao(db: AppDatabase): com.komgareader.data.db.PluginRepoDao = db.pluginRepoDao()
+
+    @Provides @Singleton
+    fun repoStore(
+        dao: com.komgareader.data.db.PluginRepoDao,
+        settings: SettingsRepository,
+    ): com.komgareader.data.plugin.repo.RepoStore =
+        com.komgareader.data.plugin.repo.RepoStore(dao, settings)
 }

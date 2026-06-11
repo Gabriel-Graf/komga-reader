@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.SourceRegistration
+import com.komgareader.plugin.host.PluginHost
+import io.mockk.mockk
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.data.download.LocalBookBytes
@@ -84,7 +86,7 @@ class ReaderViewModelTest {
     private class FakeActiveSource(private val sources: List<BrowsableSource>) : ActiveSource(
         sources = SourceManager(),
         servers = FakeServerRepository(),
-        registration = SourceRegistration(SourceManager(), KomgaSourceProvider()),
+        registration = SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true)),
     ) {
         constructor(source: BrowsableSource?) : this(listOfNotNull(source))
         override suspend fun current(): BrowsableSource? = sources.firstOrNull()

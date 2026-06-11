@@ -3,6 +3,8 @@ package com.komgareader.app.ui.settings
 import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.SourceRegistration
+import com.komgareader.plugin.host.PluginHost
+import io.mockk.mockk
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.ColorProfile
@@ -41,7 +43,7 @@ class SettingsViewModelTest {
     }
 
     private fun registration(): SourceRegistration =
-        SourceRegistration(SourceManager(), KomgaSourceProvider())
+        SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true))
 
     /** pullOnlySync auf leeren Quellen ist ein harmloser No-Op — genügt fürs Konstruieren des VM. */
     private fun syncManager(collections: CollectionRepository): CollectionSyncManager =

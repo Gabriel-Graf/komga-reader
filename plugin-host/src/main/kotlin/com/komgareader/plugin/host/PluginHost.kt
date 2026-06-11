@@ -47,7 +47,8 @@ class PluginHost(private val context: Context) {
      */
     fun discoverColorPresetPlugins(): List<DiscoveredPresetPlugin> {
         val pm = context.packageManager
-        return pm.getInstalledPackages(PackageManager.GET_META_DATA).mapNotNull { pkg ->
+        val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+        return packages.mapNotNull { pkg ->
             val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
             val assetName = meta.getString(PluginManifestKeys.COLOR_PRESETS) ?: return@mapNotNull null
             val abi = readAbiVersion(meta) ?: return@mapNotNull null
@@ -57,9 +58,10 @@ class PluginHost(private val context: Context) {
                     .assets.open(assetName).bufferedReader().use { it.readText() }
             }.getOrNull() ?: return@mapNotNull null
             val specs = parsePresetSpecs(json, abi) ?: return@mapNotNull null
-            val label = runCatching {
-                pm.getApplicationLabel(pkg.applicationInfo!!).toString()
-            }.getOrNull()?.ifBlank { null } ?: pkg.packageName
+            if (specs.isEmpty()) return@mapNotNull null   // leeres Asset → kein nutzbares Preset-Plugin
+            val label = pkg.applicationInfo?.let { appInfo ->
+                runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrNull()?.ifBlank { null }
+            } ?: pkg.packageName
             DiscoveredPresetPlugin(pkg.packageName, label, abi, specs)
         }
     }

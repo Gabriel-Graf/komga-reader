@@ -2,6 +2,8 @@ package com.komgareader.plugin.host
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Bundle
+import dalvik.system.PathClassLoader
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceId
@@ -9,8 +11,9 @@ import com.komgareader.plugin.SourcePlugin
 
 /**
  * Entdeckt, prüft und lädt Quellen-Plugin-APKs (Plugin-Plan-Entscheidungen 3–5).
- * Lädt via createPackageContext-Classloader mit Host als Parent — kein DexClassLoader,
- * keine heruntergeladenen .dex (OS macht Signatur/Integrität beim Install).
+ * Lädt via [PathClassLoader] auf dem installierten APK-Pfad mit Host als Parent (siehe
+ * [instantiate]) — kein DexClassLoader heruntergeladener .dex (OS macht Signatur/Integrität
+ * beim Install).
  *
  * Sicherheitsmodell: CONTEXT_IGNORE_SECURITY wird absichtlich beibehalten, damit
  * Drittanbieter-signierte Plugins überhaupt ladbar sind. Das eigentliche Trust-Gate
@@ -27,7 +30,7 @@ class PluginHost(private val context: Context) {
         return packages.mapNotNull { pkg ->
             val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
             val entry = meta.getString(PluginManifestKeys.ENTRY_CLASS) ?: return@mapNotNull null
-            val abi = meta.getInt(PluginManifestKeys.ABI_VERSION, -1)
+            val abi = readAbiVersion(meta) ?: return@mapNotNull null
             if (!AbiGate.isCompatible(abi)) return@mapNotNull null
             val sig = signatureSha256(pkg.packageName) ?: return@mapNotNull null
             val plugin = instantiate(pkg.packageName, entry) ?: return@mapNotNull null
@@ -56,6 +59,18 @@ class PluginHost(private val context: Context) {
     fun sourceId(packageName: String, displayName: String, config: Map<String, String>): Long =
         SourceId.of(displayName, SourceKind.PLUGIN, "$packageName/${PluginConfigHash.of(config)}")
 
+    /**
+     * Liest die ABI-Version aus den Manifest-Metadaten robust als Int ODER String. `aapt`
+     * typisiert `android:value="1"` je nach Deklaration als Integer oder String; `getInt`
+     * scheitert still (Default) bei String-Werten. Plugin-Autoren dürfen beide Formen nutzen,
+     * darum beide Pfade prüfen. `null` = Schlüssel fehlt/unlesbar.
+     */
+    private fun readAbiVersion(meta: Bundle): Int? {
+        val asInt = meta.getInt(PluginManifestKeys.ABI_VERSION, Int.MIN_VALUE)
+        if (asInt != Int.MIN_VALUE) return asInt
+        return meta.getString(PluginManifestKeys.ABI_VERSION)?.trim()?.toIntOrNull()
+    }
+
     /** Liest die SHA-256-Hex des ersten Signing-Zertifikats des Pakets (API 28+). */
     private fun signatureSha256(packageName: String): String? = runCatching {
         val info = context.packageManager.getPackageInfo(
@@ -66,10 +81,20 @@ class PluginHost(private val context: Context) {
         PluginSignature.sha256(cert.toByteArray())
     }.getOrNull()
 
+    /**
+     * Lädt die Plugin-Klasse über einen [PathClassLoader] auf dem APK-Pfad (`sourceDir`) mit dem
+     * Host als Parent-Classloader (Mihon-Modell). **Bewusst nicht `createPackageContext`:** dessen
+     * Classloader lädt für ein Fremdpaket nur die primäre `classes.dex` — ein Plugin mit größeren
+     * Libs (Retrofit/serialization/coroutines) ist immer Multidex, seine Entry-Klasse landet dann in
+     * einer Sekundär-`classesN.dex` → `ClassNotFoundException`. `PathClassLoader` über den APK-Pfad
+     * enumeriert **alle** dex. Parent = Host-Classloader → die Vertrags-Interfaces (SourcePlugin &
+     * Naht-Typen) sind dieselben Klassen wie im Host (kein `ClassCastException`). Kein DexClassLoader
+     * heruntergeladener `.dex` — geladen wird nur das vom OS installierte, signatur-geprüfte APK.
+     */
     private fun instantiate(packageName: String, entryClass: String): SourcePlugin? = runCatching {
-        val flags = Context.CONTEXT_INCLUDE_CODE or Context.CONTEXT_IGNORE_SECURITY
-        val pluginContext = context.createPackageContext(packageName, flags)
-        val clazz = pluginContext.classLoader.loadClass(entryClass)
+        val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
+        val loader = PathClassLoader(appInfo.sourceDir, appInfo.nativeLibraryDir, context.classLoader)
+        val clazz = loader.loadClass(entryClass)
         clazz.getDeclaredConstructor().newInstance() as SourcePlugin
     }.getOrNull()
 }

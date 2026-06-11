@@ -16,6 +16,7 @@ import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.SourceManager
+import com.komgareader.plugin.host.PluginHost
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -61,7 +62,7 @@ class CollectionSyncLiveTest {
         val store = KeystoreCredentialStore("collsync-live-${System.nanoTime()}")
         repo = RoomServerRepository(db.serverDao(), store)
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider())
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), PluginHost(ctx))
         activeSource = ActiveSource(sources, repo, registration)
         collectionRepo = RoomCollectionRepository(db.collectionDao())
         manager = CollectionSyncManager(

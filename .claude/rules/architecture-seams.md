@@ -66,11 +66,18 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (reine, unit-testbare Helfer), `PluginManifestKeys` (`ENTRY_CLASS`=`com.komgareader.plugin.SOURCE`,
   `ABI_VERSION`=`com.komgareader.plugin.ABI_VERSION`), `DiscoveredPlugin` (trägt `entryClass`) und
   `PluginHost(context)` mit `discoverPlugins()`/`sourceFor(pkg, entry, expectedSignature, config)`.
-  Laden erfolgt über `createPackageContext(CONTEXT_INCLUDE_CODE or CONTEXT_IGNORE_SECURITY)` mit dem
-  Host als Parent-Classloader — kein `DexClassLoader`. **Sicherheitsmodell: TOFU** (Trust-on-First-Use,
-  Mihon-Modell): `CONTEXT_IGNORE_SECURITY` erlaubt Drittanbieter-Signaturen; das eigentliche Trust-Gate
-  ist der Cert-SHA-256-Pin in `PluginHost.sourceFor` — ein Plugin wird nur instanziiert, wenn die
-  aktuelle Paket-Signatur dem beim Erst-Hinzufügen bestätigten Pin entspricht.
+  Laden erfolgt über `PathClassLoader(appInfo.sourceDir, nativeLibDir, hostClassLoader)` (Mihon-Modell) —
+  kein `DexClassLoader` heruntergeladener `.dex`, geladen wird nur das OS-installierte APK. **Sicherheitsmodell:
+  TOFU** (Trust-on-First-Use): das Trust-Gate ist der Cert-SHA-256-Pin in `PluginHost.sourceFor` — ein Plugin
+  wird nur instanziiert, wenn die aktuelle Paket-Signatur dem beim Erst-Hinzufügen bestätigten Pin entspricht.
+  **Drei im E2E (2026-06-11) entdeckte+behobene Naht-Härtungen** (Lackmus „funktioniert es auf echtem Gerät?"):
+  (1) **Paket-Visibility** ab API 30 — der Host braucht `QUERY_ALL_PACKAGES` (app-Manifest), sonst sieht
+  `getInstalledPackages` das Plugin-APK gar nicht; bewusst gewählt statt intent-`<queries>`, um den Plugin-Vertrag
+  minimal zu halten (Plugin deklariert nur Metadata, keine Discovery-Komponente). (2) **Multidex-Foreign-Load** —
+  `createPackageContext` lädt für ein Fremdpaket nur die primäre `classes.dex`; die Entry-Klasse großer Plugins
+  (Retrofit/serialization → Multidex) liegt in `classesN.dex` → `ClassNotFoundException`. `PathClassLoader` über
+  `sourceDir` lädt alle dex (deshalb der Wechsel weg von `createPackageContext`). (3) **ABI-Metadata** robust als
+  Int **oder** String lesen (`aapt` typisiert `android:value` uneinheitlich).
   **Wiring:** `ServerConfig.extras: Map<String,String>` (Domain, Ist) trägt Plugin-Config-Werte +
   reservierte Wiring-Keys `__pkg`/`__entry`/`__sig`; Keystore-verschlüsselt in Room (Spalten
   `extrasCiphertext`/`extrasIv`, Migration 14→15). `SourceRegistration.build()` hat einen
@@ -78,8 +85,11 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `pluginHost.sourceFor(...)`. Konkrete Quellen-Typen bleiben ausschließlich in der Wiring-Schicht
   (`SourceRegistration`, `PluginHost` via Hilt in `AppModule`).
   **Erstes APK-Plugin:** Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored)
-  implementiert `BrowsableSource`+`SyncingSource` und linkt `plugin-api` als `compileOnly`.
-  **Noch Soll (kein E2E gegen Live-Kavita in dieser Session; einzel-shaded Plugin-SDK-Jar).**
+  implementiert `BrowsableSource`+`SyncingSource` und linkt `plugin-api` als `compileOnly`. **E2E-verifiziert
+  (2026-06-11):** `KavitaPluginLiveTest` auf dem Emulator gegen Docker-Kavita ([[local-test-kavita]]) — ganze
+  Kette Entdeckung→ABI→TOFU-Signatur→PathClassLoader-Load→`browse`/`books`/`pages`/`openPage` grün, plus
+  TOFU-Negativtest (falscher Pin lädt nicht). **Noch Soll: einzel-shaded Plugin-SDK-Jar** (heute drei mavenLocal-
+  Artefakte domain/source-api/plugin-api).
   Settings-Seite: Settings „Server hinzufügen" listet entdeckte Plugins, zeigt TOFU-Trust-Dialog
   (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
 

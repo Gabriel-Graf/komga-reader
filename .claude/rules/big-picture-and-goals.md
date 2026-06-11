@@ -96,13 +96,15 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
    nennt `abiVersion`; außerhalb der Spanne → „inkompatibel", nie instanziiert. Neue Capability =
    neues **optionales** Interface (wie `ContainerSource`), additiv, ohne ABI-Bump.
 3. **Paket = separate APK**, via `PackageManager` (Metadata-Flag) entdeckt, via
-   `createPackageContext(...).classLoader` geladen (Parent = Host-Classloader, sonst `ClassCastException`
-   durch doppelte Interface-Klassen). Die OS macht Signatur/Integrität/Update/`.so`-Extraktion — **kein**
-   `DexClassLoader` heruntergeladener `.dex` (Security/Play-Policy). Modul `plugin-host` — **Ist: gebaut.**
-   `PluginHost`, `AbiGate`, `DiscoveredPlugin`, `PluginManifestKeys`, `PluginSignature`, `PluginConfigHash`
-   existieren. **Trust-Entscheidung (2026-06-11): TOFU-Signatur-Pinning** — `CONTEXT_IGNORE_SECURITY`
-   erlaubt Drittanbieter-APKs; das Trust-Gate ist der Cert-SHA-256-Pin (beim Erst-Hinzufügen vom Nutzer
-   bestätigt, in `ServerConfig.extras["__sig"]` gespeichert). Kein Cert-Pin → kein Laden.
+   `PathClassLoader(sourceDir, nativeLibDir, hostClassLoader)` geladen (Parent = Host-Classloader, sonst
+   `ClassCastException` durch doppelte Interface-Klassen). Die OS macht Signatur/Integrität/Update/`.so`-
+   Extraktion — **kein** `DexClassLoader` heruntergeladener `.dex` (Security/Play-Policy). Modul `plugin-host`
+   — **Ist: gebaut + E2E-verifiziert (2026-06-11).** `PluginHost`, `AbiGate`, `DiscoveredPlugin`,
+   `PluginManifestKeys`, `PluginSignature`, `PluginConfigHash` existieren. **E2E-Härtungen:** Host braucht
+   `QUERY_ALL_PACKAGES` (Paket-Visibility ab API 30); `PathClassLoader` statt `createPackageContext` (der lädt
+   bei Fremdpaketen nur die primäre `classes.dex` → Multidex-Entry-Klasse nicht gefunden). **Trust-Entscheidung
+   (2026-06-11): TOFU-Signatur-Pinning** — das Trust-Gate ist der Cert-SHA-256-Pin (beim Erst-Hinzufügen vom
+   Nutzer bestätigt, in `ServerConfig.extras["__sig"]` gespeichert). Kein Cert-Pin → kein Laden.
 4. **Identität:** `packageName` = der Installierbare; `SourceId.of(name, PLUGIN, "$packageName/$configHash")`
    = der Inhalts-Namespace pro Quelle. Jeder DB-Satz trägt `sourceId` → uninstall fällt sauber auf
    `StubSource` zurück, kein Schema-Change.

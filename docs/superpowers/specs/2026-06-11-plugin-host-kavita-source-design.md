@@ -154,9 +154,12 @@ das Laden ist hinter einen nutzer-bestätigten, gepinnten Cert-SHA-256 gegated (
 2. **ABI-Check:** `abiVersion ∈ MIN_SUPPORTED..VERSION`, sonst überspringen + loggen.
 3. **Signatur-Gate (TOFU):** vor dem Laden Signatur lesen; nur laden, wenn der gepinnte,
    nutzer-bestätigte Cert-SHA-256 mit der aktuellen Signatur übereinstimmt (siehe Security oben).
-4. **Laden:** `context.createPackageContext(pkg, CONTEXT_INCLUDE_CODE or CONTEXT_IGNORE_SECURITY)
-   .classLoader` → `loadClass(entry)` → `newInstance()` → cast auf `SourcePlugin`. Parent =
-   Host-Classloader (implizit über `createPackageContext`). Kein `DexClassLoader`.
+4. **Laden:** `PathClassLoader(appInfo.sourceDir, nativeLibDir, hostClassLoader)` → `loadClass(entry)`
+   → `newInstance()` → cast auf `SourcePlugin`. Parent = Host-Classloader. Kein `DexClassLoader`.
+   > **Ist-Korrektur (2026-06-11):** ursprünglich `createPackageContext` geplant — der lädt für ein
+   > Fremdpaket aber nur die primäre `classes.dex`, sodass die Entry-Klasse eines Multidex-Plugins
+   > (Retrofit/serialization sprengen 64K) nicht gefunden wird. `PathClassLoader` über `sourceDir`
+   > lädt alle dex. Zusätzlich braucht der Host `QUERY_ALL_PACKAGES` (Paket-Visibility ab API 30).
 4. **Identität:** `SourceId.of(metadata.displayName, SourceKind.PLUGIN, "$packageName/$configHash")`
    mit `configHash` = stabiler Hash der Config-Werte. Jeder DB-Satz trägt diese `sourceId` →
    Uninstall fällt sauber auf `StubSource`, kein Schema-Change.

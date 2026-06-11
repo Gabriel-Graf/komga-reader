@@ -39,6 +39,34 @@ class PluginHost(private val context: Context) {
     }
 
     /**
+     * Alle installierten, ABI-kompatiblen **data-only** Color-Preset-Plugins (Typ c). Liest pro Paket
+     * das im Manifest unter [PluginManifestKeys.COLOR_PRESETS] deklarierte Asset über
+     * `createPackageContext(pkg, 0)` — **Flags 0 = nur Ressourcen, KEIN Code**: kein PathClassLoader,
+     * keine Signatur-Prüfung, kein Multidex-Thema. Es wird ausschließlich eine Datei gelesen und
+     * geparst, niemals Plugin-Code ausgeführt. Paket-Sicht via app-Manifest-`QUERY_ALL_PACKAGES`.
+     */
+    fun discoverColorPresetPlugins(): List<DiscoveredPresetPlugin> {
+        val pm = context.packageManager
+        val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+        return packages.mapNotNull { pkg ->
+            val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
+            val assetName = meta.getString(PluginManifestKeys.COLOR_PRESETS) ?: return@mapNotNull null
+            val abi = readAbiVersion(meta) ?: return@mapNotNull null
+            if (!AbiGate.isCompatible(abi)) return@mapNotNull null
+            val json = runCatching {
+                context.createPackageContext(pkg.packageName, 0)
+                    .assets.open(assetName).bufferedReader().use { it.readText() }
+            }.getOrNull() ?: return@mapNotNull null
+            val specs = parsePresetSpecs(json, abi) ?: return@mapNotNull null
+            if (specs.isEmpty()) return@mapNotNull null   // leeres Asset → kein nutzbares Preset-Plugin
+            val label = pkg.applicationInfo?.let { appInfo ->
+                runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrNull()?.ifBlank { null }
+            } ?: pkg.packageName
+            DiscoveredPresetPlugin(pkg.packageName, label, abi, specs)
+        }
+    }
+
+    /**
      * Erzeugt die laufende BrowsableSource für eine konfigurierte Plugin-Quelle — NUR wenn die
      * aktuelle Paket-Signatur dem beim Hinzufügen gepinnten [expectedSignature] entspricht (TOFU).
      * Bei Signatur-Mismatch (ausgetauschtes/untergeschobenes APK) wird NICHT geladen → null.

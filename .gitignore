@@ -19,4 +19,5 @@ guided-view/realpages/
 tools/icons/node_modules/
 
 # Plugin-Projekte: eigene Git-Repos unter plugin/, NICHT Teil des Host-Repos
-plugin/
+# Root-anchored, sonst matcht es auch den Package-Pfad com/komgareader/plugin/ in plugin-host/plugin-api.
+/plugin/

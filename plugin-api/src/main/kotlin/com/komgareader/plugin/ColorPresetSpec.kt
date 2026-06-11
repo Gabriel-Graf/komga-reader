@@ -10,8 +10,8 @@ object PluginAbi {
  * Deklarative Beschreibung eines Color-Presets (Plugin-Typ c). Reine Daten — kein Code,
  * kein Classloader. Wird beim Import auf die ColorProfile-Wertebereiche geclampt.
  *
- * JSON-Parsing (kotlinx.serialization) liegt bewusst in der `app`-Schicht, damit
- * plugin-api keine Serialisierungs-Abhängigkeit mitschleppt und dünn bleibt.
+ * JSON-Parsing (org.json) liegt im `plugin-host` (`parsePresetSpecs`), damit plugin-api
+ * keine Serialisierungs-Abhängigkeit mitschleppt und dünn bleibt.
  */
 data class ColorPresetSpec(
     val abiVersion: Int,

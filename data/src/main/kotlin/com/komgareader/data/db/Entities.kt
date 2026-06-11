@@ -119,4 +119,5 @@ data class ColorProfileEntity(
     val ditherMode: String = "NONE",
     val ditherLevels: Int = 16,
     val builtIn: Boolean,
+    val pluginPackage: String? = null,
 )

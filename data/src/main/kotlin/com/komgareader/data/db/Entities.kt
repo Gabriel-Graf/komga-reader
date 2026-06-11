@@ -2,6 +2,7 @@ package com.komgareader.data.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /** Key-Value-Settings (id = Key). */
@@ -120,4 +121,12 @@ data class ColorProfileEntity(
     val ditherLevels: Int = 16,
     val builtIn: Boolean,
     val pluginPackage: String? = null,
+)
+
+/** Vom Nutzer hinzugefügtes Plugin-Repository (URL + optionaler Name). */
+@Entity(tableName = "plugin_repos", indices = [Index(value = ["url"], unique = true)])
+data class PluginRepoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val url: String,
+    val name: String? = null,
 )

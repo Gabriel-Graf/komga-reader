@@ -11,8 +11,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
         NovelProgressEntity::class,
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
+        PluginRepoEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun colorProfileDao(): ColorProfileDao
     abstract fun novelProgressDao(): NovelProgressDao
     abstract fun collectionDao(): CollectionDao
+    abstract fun pluginRepoDao(): PluginRepoDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -318,6 +320,22 @@ val MIGRATION_14_15 = object : Migration(14, 15) {
 val MIGRATION_15_16 = object : Migration(15, 16) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `pluginPackage` TEXT")
+    }
+}
+
+/**
+ * v16 → v17: `plugin_repos`-Tabelle (vom Nutzer hinzugefügte Plugin-Repo-URLs). **Nicht-destruktiv** —
+ * reines `CREATE TABLE` (+ Unique-Index auf `url`), keine Bestandsdaten, kein `ALTER`. Das Schema bildet
+ * exakt das vom Entity erzeugte ab, damit Rooms Validierung sauber läuft und `fallbackToDestructiveMigration`
+ * NICHT greift. Das offizielle Repo ist KEINE Zeile hier (Code-Konstante + Settings-Toggle).
+ */
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `plugin_repos` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `url` TEXT NOT NULL, `name` TEXT)",
+        )
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_plugin_repos_url` ON `plugin_repos` (`url`)")
     }
 }
 

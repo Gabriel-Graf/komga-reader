@@ -77,6 +77,7 @@ private const val TAB_SETTINGS = 4
 fun HomeScreen(
     onOpenSeries: (seriesId: String, sourceId: Long) -> Unit,
     onOpenGroup: (shelfId: Long, serverSourceId: Long) -> Unit,
+    onOpenRepoBrowser: () -> Unit,
 ) {
     val s = LocalStrings.current
     var selected by rememberSaveable { mutableIntStateOf(TAB_LIBRARY) }
@@ -287,7 +288,7 @@ fun HomeScreen(
                             showCreateDialog = showCreateGroup,
                             onDismissCreate = { showCreateGroup = false },
                         )
-                        TAB_PLUGINS -> PluginsScreen()
+                        TAB_PLUGINS -> PluginsScreen(onOpenRepoBrowser = onOpenRepoBrowser)
                         else -> SettingsScreen(query = if (onSettingsTab) query else submitted)
                     }
                 }

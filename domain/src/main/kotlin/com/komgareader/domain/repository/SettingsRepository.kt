@@ -26,6 +26,8 @@ interface SettingsRepository {
     // E-Ink-Refresh: true = der App-seitige Voll-Refresh (RefreshScheduler) ist AUS, das Gerät
     // (Onyx) entscheidet selbst über Ghosting-Clears; der Fast-Modus bleibt aktiv. Default true.
     val deviceManagedRefresh: Flow<Boolean>
+    /** Ob das offizielle Plugin-Repo im Browser geladen wird (Default true). */
+    val officialRepoEnabled: Flow<Boolean>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -44,4 +46,5 @@ interface SettingsRepository {
     suspend fun setNovelHyphenationLang(lang: String)
     suspend fun setNovelFontWeight(value: Int)
     suspend fun setDeviceManagedRefresh(value: Boolean)
+    suspend fun setOfficialRepoEnabled(enabled: Boolean)
 }

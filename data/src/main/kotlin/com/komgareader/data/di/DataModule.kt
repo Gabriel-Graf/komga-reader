@@ -18,6 +18,7 @@ import com.komgareader.data.db.MIGRATION_12_13
 import com.komgareader.data.db.MIGRATION_13_14
 import com.komgareader.data.db.MIGRATION_14_15
 import com.komgareader.data.db.MIGRATION_15_16
+import com.komgareader.data.db.MIGRATION_16_17
 import com.komgareader.data.db.SEED_CALLBACK
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.data.download.LocalBookBytes
@@ -59,7 +60,7 @@ object DataModule {
                 MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
                 MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
                 MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
-                MIGRATION_15_16,
+                MIGRATION_15_16, MIGRATION_16_17,
             )
             .addCallback(SEED_CALLBACK)
             .fallbackToDestructiveMigration()
@@ -117,4 +118,25 @@ object DataModule {
     @Provides @Singleton
     fun collectionRepository(db: AppDatabase): CollectionRepository =
         RoomCollectionRepository(db.collectionDao())
+
+    @Provides @Singleton
+    fun pluginRepoDao(db: AppDatabase): com.komgareader.data.db.PluginRepoDao = db.pluginRepoDao()
+
+    @Provides @Singleton
+    fun repoStore(
+        dao: com.komgareader.data.db.PluginRepoDao,
+        settings: SettingsRepository,
+    ): com.komgareader.data.plugin.repo.RepoStore =
+        com.komgareader.data.plugin.repo.RepoStore(dao, settings)
+
+    @Provides @Singleton
+    fun pluginRepoClient(): com.komgareader.data.plugin.repo.PluginRepoClient =
+        com.komgareader.data.plugin.repo.PluginRepoClient(
+            // Timeouts setzen, damit ein langsames/hängendes Repo den Download nicht unbegrenzt blockiert.
+            okhttp3.OkHttpClient.Builder()
+                .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .callTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+                .build(),
+        )
 }

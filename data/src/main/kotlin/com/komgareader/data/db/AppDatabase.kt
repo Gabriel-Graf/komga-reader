@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NovelProgressEntity::class,
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -297,6 +297,14 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
                 PRIMARY KEY(`collectionId`, `sourceId`)
             )""",
         )
+    }
+}
+
+/** v14 → v15: extras-Spalten (Keystore-verschlüsselter JSON-Blob) für Plugin-Quellen-Config. */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `extrasCiphertext` TEXT")
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `extrasIv` TEXT")
     }
 }
 

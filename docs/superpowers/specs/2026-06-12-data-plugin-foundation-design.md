@@ -79,9 +79,10 @@ data class DiscoveredDataPlugin(
     val category: PluginCategory,
     val abiVersion: Int,
     val assetName: String,
+    val displayName: String,   // pm.getApplicationLabel, vom Color-Preset-Wrapper genutzt
     val assetJson: String,
-    val signatureSha256: String,
 )
+// Kein signatureSha256: data-only Plugins laden nie Code (Flags 0) → kein TOFU/Pinning nötig.
 
 fun discoverDataPlugins(category: PluginCategory): List<DiscoveredDataPlugin>
 ```

@@ -5,6 +5,7 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.data.plugin.repo.BrowsableEntry
+import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginRepoClient
 import com.komgareader.data.plugin.repo.RepoSource
@@ -28,13 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
-
-/** Eine Browser-Zeile: gemergter Eintrag + abgeleiteter Install-Zustand + ABI-Kompatibilität. */
-data class BrowserRow(
-    val item: BrowsableEntry,
-    val state: InstallState,
-    val compatible: Boolean,
-)
 
 @HiltViewModel
 class RepoBrowserViewModel @Inject constructor(

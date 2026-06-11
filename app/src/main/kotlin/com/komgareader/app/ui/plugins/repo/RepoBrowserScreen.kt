@@ -35,6 +35,7 @@ import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.SubPageScaffold
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginKind
 import com.komgareader.data.plugin.repo.RepoSource

@@ -131,5 +131,12 @@ object DataModule {
 
     @Provides @Singleton
     fun pluginRepoClient(): com.komgareader.data.plugin.repo.PluginRepoClient =
-        com.komgareader.data.plugin.repo.PluginRepoClient(okhttp3.OkHttpClient())
+        com.komgareader.data.plugin.repo.PluginRepoClient(
+            // Timeouts setzen, damit ein langsames/hängendes Repo den Download nicht unbegrenzt blockiert.
+            okhttp3.OkHttpClient.Builder()
+                .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .callTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+                .build(),
+        )
 }

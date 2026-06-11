@@ -169,7 +169,6 @@ interface Strings {
     val pluginTabSourceLabel: String      // Typ-Label „Quelle"
     val pluginTabPresetLabel: String      // Typ-Label „Farbprofile"
     val pluginTabEmpty: String            // Liste leer
-    val pluginTabReposHint: String        // „+" / Repo-Browser folgt (P2)
     val pluginAbiLabel: String            // ABI-Label vor der Versionsnummer
     val pluginConfigure: String           // ⚙ contentDescription
     val pluginUninstall: String           // 🗑 contentDescription
@@ -468,7 +467,6 @@ object StringsDe : Strings {
     override val pluginTabSourceLabel = "Quelle"
     override val pluginTabPresetLabel = "Farbprofile"
     override val pluginTabEmpty = "Keine Plugins installiert."
-    override val pluginTabReposHint = "Plugin-Repositories zum Suchen und Installieren folgen in einem späteren Update."
     override val pluginAbiLabel = "ABI"
     override val pluginConfigure = "Konfigurieren"
     override val pluginUninstall = "Entfernen"
@@ -758,7 +756,6 @@ object StringsEn : Strings {
     override val pluginTabSourceLabel = "Source"
     override val pluginTabPresetLabel = "Color profiles"
     override val pluginTabEmpty = "No plugins installed."
-    override val pluginTabReposHint = "Plugin repositories for searching and installing are coming in a later update."
     override val pluginAbiLabel = "ABI"
     override val pluginConfigure = "Configure"
     override val pluginUninstall = "Remove"

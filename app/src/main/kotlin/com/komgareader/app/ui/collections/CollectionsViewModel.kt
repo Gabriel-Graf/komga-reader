@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.komgareader.app.data.aggressiveSyncAllowed
 import com.komgareader.domain.model.SyncStatus
 import javax.inject.Inject
 

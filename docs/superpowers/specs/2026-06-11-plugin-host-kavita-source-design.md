@@ -132,13 +132,29 @@ enum class FieldType { TEXT, SECRET, URL, BOOL }
 seine `abiVersion` als Metadata. Außerhalb `MIN_SUPPORTED..VERSION` → „inkompatibel", nie
 instanziiert (gleiches Muster wie `ColorPresetImporter.toProfileOrNull`).
 
+### Security: TOFU-Signatur-Pinning (Plugin-Trust)
+
+`createPackageContext` mit `CONTEXT_INCLUDE_CODE` **ohne** `IGNORE_SECURITY` lädt nur APKs, die
+mit **dem Host-Zertifikat** signiert sind — das verbietet ein offenes Drittanbieter-Ökosystem
+(Mihon-Ziel). `IGNORE_SECURITY` öffnet beliebige Signaturen → **Arbitrary Code Execution**, wenn
+ungated. Lösung (Nutzer-Entscheidung 2026-06-11, Mihon-Modell): **`IGNORE_SECURITY` bleibt, aber
+das Laden ist hinter einen nutzer-bestätigten, gepinnten Cert-SHA-256 gegated (Trust-on-first-use).**
+- `discoverPlugins()` liefert pro Plugin `signatureSha256` (erster Signer-Cert, SHA-256-Hex).
+- Beim Hinzufügen zeigt der Host den Digest, der Nutzer bestätigt einmalig → Pin wird gespeichert
+  (`ServerConfig.extras["__sig"]`).
+- `sourceFor(packageName, entryClass, expectedSignature, config)` liest die **aktuelle** Signatur
+  und lädt **nur bei Match** des Pins; Mismatch (untergeschobenes/ausgetauschtes APK) → `null`,
+  kein `instantiate`. Pure Hash/Vergleichslogik in `PluginSignature` (unit-getestet).
+
 ## Loader-Flow (`plugin-host`)
 
 1. **Entdeckung:** `PackageManager.getInstalledPackages(GET_META_DATA)` → APKs mit
    Metadata-Schlüssel `com.komgareader.plugin.SOURCE` (Wert = vollqualifizierter Entry-Class-Name)
    und `com.komgareader.plugin.ABI_VERSION` (Int).
 2. **ABI-Check:** `abiVersion ∈ MIN_SUPPORTED..VERSION`, sonst überspringen + loggen.
-3. **Laden:** `context.createPackageContext(pkg, CONTEXT_INCLUDE_CODE or CONTEXT_IGNORE_SECURITY)
+3. **Signatur-Gate (TOFU):** vor dem Laden Signatur lesen; nur laden, wenn der gepinnte,
+   nutzer-bestätigte Cert-SHA-256 mit der aktuellen Signatur übereinstimmt (siehe Security oben).
+4. **Laden:** `context.createPackageContext(pkg, CONTEXT_INCLUDE_CODE or CONTEXT_IGNORE_SECURITY)
    .classLoader` → `loadClass(entry)` → `newInstance()` → cast auf `SourcePlugin`. Parent =
    Host-Classloader (implizit über `createPackageContext`). Kein `DexClassLoader`.
 4. **Identität:** `SourceId.of(metadata.displayName, SourceKind.PLUGIN, "$packageName/$configHash")`

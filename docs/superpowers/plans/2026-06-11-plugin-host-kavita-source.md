@@ -707,9 +707,9 @@ git commit -m "feat(app): generische PluginConfigForm aus ConfigSchema (E-Ink)"
 - [ ] **Step 1: Discovery in Settings einbinden**
 
 - `PluginHost.discoverPlugins()` im SettingsViewModel aufrufen (über DI), Ergebnis als Liste anbieten: „Komga", „OPDS", + je entdecktes Plugin (`metadata.displayName`).
-- Wählt der Nutzer ein Plugin → `PluginConfigForm(plugin.configSchema)` zeigen.
-- Submit → `ServerConfig(name=displayName, kind=SourceKind.PLUGIN, extras=values, baseUrl=values["url"] ?: "")` speichern (über bestehenden addServer-Pfad). `baseUrl` best-effort aus einem URL-Feld, sonst leer (SourceId nutzt configHash, nicht baseUrl).
-- Den Plugin-`packageName` + `entryClass` mit ablegen: in `extras` unter reservierten Keys (z.B. `__pkg`, `__entry`) speichern, damit `SourceRegistration` sie wiederfindet. (Alternativ: discovery erneut in SourceRegistration — aber extras-Keys sind billiger und stabil.)
+- Wählt der Nutzer ein Plugin → **TOFU-Bestätigung:** den `DiscoveredPlugin.signatureSha256` (Cert-Digest) in einem `BaseDialog` zeigen + bestätigen lassen (einmalig, „Diesem Plugin vertrauen?"). Erst danach `PluginConfigForm(plugin.configSchema)` zeigen.
+- Submit → `ServerConfig(name=displayName, kind=SourceKind.PLUGIN, extras=values + wiringKeys, baseUrl=values["url"] ?: "")` speichern (über bestehenden addServer-Pfad). `baseUrl` best-effort aus einem URL-Feld, sonst leer (SourceId nutzt configHash, nicht baseUrl).
+- **Reservierte Wiring-Keys in `extras`** ablegen, damit `SourceRegistration` sie wiederfindet: `__pkg` = packageName, `__entry` = entryClass, **`__sig` = der bestätigte `signatureSha256` (Pin)**. Alle `__`-Keys werden vor `plugin.create(...)` herausgefiltert (nicht ans Plugin durchgereicht).
 
 - [ ] **Step 2: Build**
 
@@ -763,9 +763,11 @@ git commit -m "build(app): plugin-host-Abhängigkeit + PluginHost-DI-Provider"
         SourceKind.PLUGIN -> {
             val pkg = config.extras["__pkg"] ?: return null
             val entry = config.extras["__entry"] ?: return null
+            val sig = config.extras["__sig"] ?: return null   // ohne Pin nicht laden (TOFU)
             // reservierte Wiring-Keys nicht ans Plugin durchreichen
             val pluginConfig = config.extras.filterKeys { !it.startsWith("__") }
-            pluginHost.sourceFor(pkg, entry, pluginConfig)
+            // sourceFor verifiziert die aktuelle Signatur gegen den Pin und lädt nur bei Match.
+            pluginHost.sourceFor(pkg, entry, sig, pluginConfig)
         }
 ```
 

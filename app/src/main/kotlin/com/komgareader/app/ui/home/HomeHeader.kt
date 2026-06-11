@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,10 +58,14 @@ data class HomeHeaderFilter(
 /**
  * Das mitgelieferte Default-Layout (Onyx-Look): StatusCluster links · zentrierte Suche (max 408dp) ·
  * 40dp-Filter-Icon-Slot · Rechts-Aktionen · Menü-Overlay. Verhaltensgleich zum bisherigen
- * inline-`TopAppBar`-Block in HomeScreen.
+ * inline-`TopAppBar`-Block in HomeScreen — der `TopAppBar`-Wrapper trägt die gewohnte Bar-Höhe und
+ * das Title-Inset (~16dp links), damit der StatusCluster nicht am Display-Rand klebt und der obere
+ * Abstand über alle Tabs gleich ist.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DefaultHomeHeader(state: HomeHeaderState) {
+    TopAppBar(title = {
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Box(Modifier.align(Alignment.CenterStart)) { state.status() }
         Row(
@@ -103,4 +109,5 @@ fun DefaultHomeHeader(state: HomeHeaderState) {
         }
         state.menu()
     }
+    })
 }

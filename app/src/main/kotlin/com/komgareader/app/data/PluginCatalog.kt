@@ -119,6 +119,14 @@ class PluginCatalog @Inject constructor(
             servers.remove(id)
             cfg?.let { registration.sourceIdOf(it) }?.let { collections.removeSource(it) }
         }
+
+        // Install-States der entdeckten Repo-Einträge lokal nachziehen (kein Netz): nach
+        // Install/Uninstall (onResume-Rescan) muss ein deinstalliertes Plugin in der Entdeckungs-
+        // Liste sofort wieder als installierbar erscheinen statt „Importiert" — der Netz-Index
+        // bleibt gleich, nur der lokale Paket-Stand ändert sich, also bloß neu ableiten.
+        if (_discovered.value.isNotEmpty()) {
+            _discovered.value = withContext(Dispatchers.IO) { _discovered.value.map { it.item.toRow() } }
+        }
     }
 
     /** Netz-Repo-Fetch: aktive Repos laden, mergen, Install-Zustand berechnen. */

@@ -69,4 +69,12 @@ class SyncCoordinatorTest {
         coordinator(spy, "EINK").onCollectionsTabEntered()
         assertEquals(0, spy.fullSyncCount)
     }
+
+    @Test
+    fun `onPluginsTabResumed scans local only (no network fetch)`() = runTest {
+        val spy = Spy()
+        coordinator(spy, "EINK").onPluginsTabResumed()
+        assertEquals(1, spy.scanLocalCount)
+        assertEquals(0, spy.fetchReposCount)
+    }
 }

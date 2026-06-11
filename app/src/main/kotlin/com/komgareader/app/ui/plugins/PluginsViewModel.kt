@@ -61,8 +61,9 @@ class PluginsViewModel @Inject constructor(
             visibleRows(installedEntriesOf(srcs, presets), disc, q, f)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VisibleRows(emptyList(), emptyList(), false))
 
-    /** Lokaler Re-Scan beim Tab-`onResume` (kein Netz) — entdeckt Install/Uninstall + prunt. */
-    fun rescanLocal() = viewModelScope.launch { catalog.scanLocal() }.let {}
+    /** Tab-`onResume`: lokaler Re-Scan über den Koordinator (kein Netz) — entdeckt Install/Uninstall,
+     *  prunt Verwaistes, zieht Entdeckungs-Install-States nach. Sync-Entscheidung liegt im Koordinator. */
+    fun rescanLocal() = viewModelScope.launch { coordinator.onPluginsTabResumed() }.let {}
 
     /** Reload-Button: Netz-Repo-Fetch + lokaler Scan über den Koordinator. */
     fun reload() = viewModelScope.launch { coordinator.onManualReload() }.let {}

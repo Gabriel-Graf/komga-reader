@@ -60,6 +60,14 @@ class SyncCoordinator(
         runCatching { scanLocal() }
     }
 
+    /**
+     * Plugins-Tab wird sichtbar (onResume): nur lokal neu scannen (kein Netz). Fängt Install/
+     * Uninstall ab, die über den OS-Dialog passierten — der lokale Scan prunt deinstallierte
+     * Quellen/Profile und zieht die Install-States der Entdeckungs-Liste nach. KEIN Repo-Fetch
+     * (akkuschonend; der Netz-Index ändert sich beim Uninstall nicht).
+     */
+    suspend fun onPluginsTabResumed() { runCatching { scanLocal() } }
+
     /** Sammlungen-Tab betreten: auf Nicht-E-Ink zusätzlich voll synchronisieren (Akku-Gating). */
     suspend fun onCollectionsTabEntered() {
         if (aggressiveSyncAllowed(displayMode())) runCatching { fullSync() }

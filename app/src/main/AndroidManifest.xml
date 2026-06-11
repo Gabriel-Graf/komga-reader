@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!--
       Plugin-Entdeckung (Phase 4): ab Android 11 (API 30) filtert das OS die Sicht auf andere
@@ -31,5 +32,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".ui.plugins.repo.PluginInstallReceiver"
+            android:exported="false" />
     </application>
 </manifest>

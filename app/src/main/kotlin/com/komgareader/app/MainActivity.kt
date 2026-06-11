@@ -30,6 +30,7 @@ import com.komgareader.app.ui.components.LocalOnHome
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
+import com.komgareader.app.ui.plugins.repo.RepoBrowserScreen
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
 import com.komgareader.app.ui.settings.SettingsRoute
@@ -132,6 +133,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onOpenSeries = { seriesId, sourceId -> nav.navigate("series/$seriesId/$sourceId") },
                                 onOpenGroup = { shelfId, _ -> nav.navigate("group/$shelfId") },
+                                onOpenRepoBrowser = { nav.navigate("plugin-repos") },
                             )
                         }
                         composable(
@@ -237,6 +239,9 @@ class MainActivity : ComponentActivity() {
                         // Bibliotheks-Tab). Über den Reader gepusht → Zurück landet im selben Reader.
                         composable("settings") {
                             SettingsRoute(onBack = { nav.popBackStack() })
+                        }
+                        composable("plugin-repos") {
+                            RepoBrowserScreen(onBack = { nav.popBackStack() })
                         }
                     }
                     }

@@ -178,6 +178,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val novelHyphenationLang: Flow<String> = flowOf("")
     override val novelFontWeight: Flow<Int> = flowOf(400)
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
+    override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -196,6 +197,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setNovelHyphenationLang(lang: String) {}
     override suspend fun setNovelFontWeight(value: Int) {}
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
+    override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
 }
 
 /**
@@ -237,6 +239,7 @@ private class CapturingSettingsRepository(
     override val novelHyphenationLang: Flow<String> = flowOf(hyphenationLang)
     override val novelFontWeight: Flow<Int> = flowOf(fontWeight)
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
+    override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -255,6 +258,7 @@ private class CapturingSettingsRepository(
     override suspend fun setNovelHyphenationLang(lang: String) { novelHyphenationLangValue = lang }
     override suspend fun setNovelFontWeight(value: Int) { novelFontWeightValue = value }
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
+    override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
 }
 
 /** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */

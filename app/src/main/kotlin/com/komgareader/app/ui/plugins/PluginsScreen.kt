@@ -34,6 +34,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
+import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.plugin.ColorPresetSpec
@@ -47,7 +48,11 @@ import com.komgareader.plugin.host.DiscoveredPresetPlugin
  * via OS-Intent. Cleanup deinstallierter Plugins läuft über Re-Scan beim `onResume` (kein Intent-Callback).
  */
 @Composable
-fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = hiltViewModel()) {
+fun PluginsScreen(
+    modifier: Modifier = Modifier,
+    onOpenRepoBrowser: () -> Unit = {},
+    viewModel: PluginsViewModel = hiltViewModel(),
+) {
     val s = LocalStrings.current
     val ctx = LocalContext.current
     val sources by viewModel.sources.collectAsState()
@@ -112,12 +117,14 @@ fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = h
                 onUninstall = { uninstall(p.packageName) },
             )
         }
-        Text(
-            s.pluginTabReposHint,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 12.dp),
-        )
+        EinkOutlinedButton(
+            onClick = onOpenRepoBrowser,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+        ) {
+            Text(s.repoBrowserOpen)
+        }
     }
 
     tofuFor?.let { plugin ->

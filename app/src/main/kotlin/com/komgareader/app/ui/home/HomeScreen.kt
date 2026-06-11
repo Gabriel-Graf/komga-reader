@@ -5,10 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -16,7 +14,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
@@ -31,9 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -46,12 +41,13 @@ import com.komgareader.app.ui.collections.CollectionsScreen
 import com.komgareader.app.ui.components.BottomNavItem
 import com.komgareader.app.ui.components.EinkBottomBar
 import com.komgareader.app.ui.components.LocalContentBottomInset
-import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.RotatingViewModeButton
 import com.komgareader.app.ui.components.StatusCluster
 import com.komgareader.app.ui.components.TileViewMode
+import com.komgareader.app.ui.components.PluginFilterMenu
 import com.komgareader.app.ui.components.TypeFilterMenu
 import com.komgareader.app.ui.components.tileViewModeOf
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.app.ui.groups.GroupsScreen
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.library.LibraryScreen
@@ -92,6 +88,8 @@ fun HomeScreen(
     var downloadedOnly by rememberSaveable { mutableStateOf(false) }
     var filterMenuOpen by remember { mutableStateOf(false) }
     var filterAnchor by remember { mutableStateOf(IntOffset.Zero) }
+    var pluginFilterMenuOpen by remember { mutableStateOf(false) }
+    var pluginFilterAnchor by remember { mutableStateOf(IntOffset.Zero) }
     var showCreateGroup by remember { mutableStateOf(false) }
     var showCreateCollection by remember { mutableStateOf(false) }
     // Collections-Tab: Liste ⇄ Detail als interner Zustand (hochgezogen, damit die TopBar-Aktionen
@@ -131,141 +129,56 @@ fun HomeScreen(
             // Im Sammlungs-Detail liefert CollectionDetailScreen seine EIGENE TopBar (Titel/Suche +
             // Aktionen) — die Home-TopBar tritt dort zurück, sonst lägen zwei Bars übereinander.
             val collectionDetailOpen = selected == TAB_COLLECTIONS && openCollectionId != null
-            // Strukturell eigener Header (StatusCluster + Suchzeile + Filter-Chips + Aktionen) —
-            // passt nicht in HeaderSlot v1 (title, onBack?, actions). Bewusst außerhalb des Slots.
-            // Für Pack-Autoren: Tauschen des Headers über LocalResolvedSlots betrifft HomeScreen NICHT.
-            // Ein künftiger HomeHeaderSlot (breitere Signatur) ist die Erweiterung wenn der Slot-Vertrag wächst.
-            if (!collectionDetailOpen) TopAppBar(
-                // Volle Breite: Status links, Suche echt mittig (feste Breite), Aktion rechts.
-                title = {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        StatusCluster(modifier = Modifier.align(Alignment.CenterStart))
-                        // Suche zentriert; Filter-Icon klebt direkt rechts daneben (nur Stöbern).
-                        // Reload bzw. Neu steht allein rechts.
-                        Row(
-                            Modifier.align(Alignment.Center).fillMaxWidth(0.62f).widthIn(max = 408.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            EinkSearchBar(
-                                query = query,
-                                onQueryChange = {
-                                    query = it
-                                    if (selected == TAB_PLUGINS) pluginsVm.setQuery(it)
-                                },
-                                onSubmit = { submitSearch() },
-                                placeholder = if (onSettingsTab) s.searchSettingsHint else if (selected == TAB_PLUGINS) s.pluginSearchHint else s.searchMediaHint,
-                                actionLabel = s.searchAction,
-                                clearLabel = s.clearSearch,
-                                onClear = {
-                                    query = ""
-                                    submitted = ""
-                                    if (selected == TAB_PLUGINS) pluginsVm.setQuery("")
-                                },
-                                leading = if (selected == TAB_PLUGINS) {
-                                    {
-                                        PluginFilterChip(
-                                            label = when (pluginTypeFilter) {
-                                                PluginTypeFilter.ALL -> s.pluginFilterAll
-                                                PluginTypeFilter.SOURCES -> s.pluginFilterSources
-                                                PluginTypeFilter.PRESETS -> s.pluginFilterPresets
-                                            },
-                                            onClick = {
-                                                pluginsVm.setTypeFilter(
-                                                    when (pluginTypeFilter) {
-                                                        PluginTypeFilter.ALL -> PluginTypeFilter.SOURCES
-                                                        PluginTypeFilter.SOURCES -> PluginTypeFilter.PRESETS
-                                                        PluginTypeFilter.PRESETS -> PluginTypeFilter.ALL
-                                                    },
-                                                )
-                                            },
-                                        )
-                                    }
-                                } else if (selected == TAB_LIBRARY && (typeFilter.value.isNotEmpty() || downloadedOnly)) {
-                                    {
-                                        typeFilter.value.forEach { type ->
-                                            TypeFilterChip(
-                                                label = s.localizedContentType(type),
-                                                onRemove = { typeFilter.value = typeFilter.value - type },
-                                            )
-                                        }
-                                        if (downloadedOnly) {
-                                            TypeFilterChip(
-                                                label = s.filterDownloaded,
-                                                onRemove = { downloadedOnly = false },
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    null
-                                },
-                                modifier = Modifier.weight(1f),
-                            )
-                            // Filter-Slot: feste Breite auf ALLEN Tabs, damit das Suchfeld überall gleich breit ist (DRY).
-                            // Filter-Aktion nur auf der Bibliothek; sonst bleibt der Slot leer.
-                            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
-                                if (selected == TAB_LIBRARY) {
-                                    IconButton(
-                                        onClick = { filterMenuOpen = true },
-                                        modifier = Modifier.onGloballyPositioned { coords ->
-                                            val pos = coords.positionInWindow()
-                                            filterAnchor = IntOffset(
-                                                (pos.x + coords.size.width).toInt(),
-                                                (pos.y + coords.size.height).toInt(),
-                                            )
-                                        },
-                                    ) {
-                                        Icon(AppIcons.Filter, contentDescription = s.filterByType)
-                                    }
-                                }
-                            }
-                        }
-                        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
-                            when (selected) {
-                                TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
-                                    Icon(AppIcons.Refresh, contentDescription = null)
-                                }
-                                TAB_PLUGINS -> {
-                                    IconButton(onClick = { showRepoMgmt = true }) {
-                                        Icon(AppIcons.Settings, contentDescription = s.repoBrowserManage)
-                                    }
-                                    IconButton(onClick = { pluginsVm.reload() }) {
-                                        Icon(AppIcons.Refresh, contentDescription = s.repoBrowserRefresh)
-                                    }
-                                }
-                                // Sammlungen-Liste: „+" (neue Sammlung) + rotierender Ansichts-Button.
-                                // Im Sammlungs-Detail keine dieser Aktionen.
-                                TAB_COLLECTIONS -> if (openCollectionId == null) {
-                                    IconButton(onClick = { showCreateCollection = true }) {
-                                        Icon(AppIcons.Plus, contentDescription = s.newCollection)
-                                    }
-                                    RotatingViewModeButton(
-                                        current = collectionsViewMode,
-                                        onSelect = { collectionsVm.setViewMode(it.name) },
-                                        listLabel = s.viewList,
-                                        tileLabel = s.viewTile,
-                                        largeTileLabel = s.viewLargeTile,
-                                    )
-                                    // Ganz rechts: manueller bidirektionaler Sync (push + pull) — dieselbe
-                                    // Refresh-Mechanik wie der Bibliotheks-Reload, ruft den Voll-Sync.
-                                    IconButton(onClick = { collectionsVm.syncNow() }) {
-                                        Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow)
-                                    }
-                                }
-                                // Bibliotheken: „+" (neue Bibliothek) + rotierender Ansichts-Button.
-                                TAB_GROUPS -> {
-                                    IconButton(onClick = { showCreateGroup = true }) {
-                                        Icon(AppIcons.Plus, contentDescription = s.newGroup)
-                                    }
-                                    RotatingViewModeButton(
-                                        current = groupsViewMode,
-                                        onSelect = { groupsVm.setViewMode(it.name) },
-                                        listLabel = s.viewList,
-                                        tileLabel = s.viewTile,
-                                        largeTileLabel = s.viewLargeTile,
+            if (!collectionDetailOpen) {
+                val state = HomeHeaderState(
+                    status = { StatusCluster() },
+                    search = HomeHeaderSearch(
+                        query = query,
+                        onQueryChange = {
+                            query = it
+                            if (selected == TAB_PLUGINS) pluginsVm.setQuery(it)
+                        },
+                        onSubmit = { submitSearch() },
+                        placeholder = if (onSettingsTab) s.searchSettingsHint
+                            else if (selected == TAB_PLUGINS) s.pluginSearchHint
+                            else s.searchMediaHint,
+                        actionLabel = s.searchAction,
+                        clearLabel = s.clearSearch,
+                        onClear = {
+                            query = ""
+                            submitted = ""
+                            if (selected == TAB_PLUGINS) pluginsVm.setQuery("")
+                        },
+                        leading = if (selected == TAB_LIBRARY && (typeFilter.value.isNotEmpty() || downloadedOnly)) {
+                            {
+                                typeFilter.value.forEach { type ->
+                                    TypeFilterChip(
+                                        label = s.localizedContentType(type),
+                                        onRemove = { typeFilter.value = typeFilter.value - type },
                                     )
                                 }
+                                if (downloadedOnly) {
+                                    TypeFilterChip(label = s.filterDownloaded, onRemove = { downloadedOnly = false })
+                                }
                             }
-                        }
+                        } else null,
+                    ),
+                    filter = when (selected) {
+                        TAB_LIBRARY -> HomeHeaderFilter(
+                            icon = AppIcons.Filter,
+                            contentDescription = s.filterByType,
+                            onClick = { filterMenuOpen = true },
+                            onAnchor = { filterAnchor = it },
+                        )
+                        TAB_PLUGINS -> HomeHeaderFilter(
+                            icon = AppIcons.Filter,
+                            contentDescription = s.filterByType,
+                            onClick = { pluginFilterMenuOpen = true },
+                            onAnchor = { pluginFilterAnchor = it },
+                        )
+                        else -> null
+                    },
+                    menu = {
                         if (filterMenuOpen && selected == TAB_LIBRARY) {
                             TypeFilterMenu(
                                 anchor = filterAnchor,
@@ -280,9 +193,65 @@ fun HomeScreen(
                                 onDismiss = { filterMenuOpen = false },
                             )
                         }
-                    }
-                },
-            )
+                        if (pluginFilterMenuOpen && selected == TAB_PLUGINS) {
+                            PluginFilterMenu(
+                                anchor = pluginFilterAnchor,
+                                selected = pluginTypeFilter,
+                                onSelect = { pluginsVm.setTypeFilter(it) },
+                                onDismiss = { pluginFilterMenuOpen = false },
+                            )
+                        }
+                    },
+                    actions = {
+                        when (selected) {
+                            TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
+                                Icon(AppIcons.Refresh, contentDescription = null)
+                            }
+                            TAB_PLUGINS -> {
+                                IconButton(onClick = { showRepoMgmt = true }) {
+                                    Icon(AppIcons.Settings, contentDescription = s.repoBrowserManage)
+                                }
+                                IconButton(onClick = { pluginsVm.reload() }) {
+                                    Icon(AppIcons.Refresh, contentDescription = s.repoBrowserRefresh)
+                                }
+                            }
+                            // Sammlungen-Liste: „+" (neue Sammlung) + rotierender Ansichts-Button.
+                            // Im Sammlungs-Detail keine dieser Aktionen.
+                            TAB_COLLECTIONS -> if (openCollectionId == null) {
+                                IconButton(onClick = { showCreateCollection = true }) {
+                                    Icon(AppIcons.Plus, contentDescription = s.newCollection)
+                                }
+                                RotatingViewModeButton(
+                                    current = collectionsViewMode,
+                                    onSelect = { collectionsVm.setViewMode(it.name) },
+                                    listLabel = s.viewList,
+                                    tileLabel = s.viewTile,
+                                    largeTileLabel = s.viewLargeTile,
+                                )
+                                // Ganz rechts: manueller bidirektionaler Sync (push + pull) — dieselbe
+                                // Refresh-Mechanik wie der Bibliotheks-Reload, ruft den Voll-Sync.
+                                IconButton(onClick = { collectionsVm.syncNow() }) {
+                                    Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow)
+                                }
+                            }
+                            // Bibliotheken: „+" (neue Bibliothek) + rotierender Ansichts-Button.
+                            TAB_GROUPS -> {
+                                IconButton(onClick = { showCreateGroup = true }) {
+                                    Icon(AppIcons.Plus, contentDescription = s.newGroup)
+                                }
+                                RotatingViewModeButton(
+                                    current = groupsViewMode,
+                                    onSelect = { groupsVm.setViewMode(it.name) },
+                                    listLabel = s.viewList,
+                                    tileLabel = s.viewTile,
+                                    largeTileLabel = s.viewLargeTile,
+                                )
+                            }
+                        }
+                    },
+                )
+                LocalResolvedSlots.current.homeHeader(state)
+            }
         },
     ) { inner ->
         // Die Menubar liegt als Overlay ÜBER dem Inhalt (nicht im Scaffold-bottomBar-Slot, der den
@@ -344,6 +313,7 @@ fun HomeScreen(
                     typeFilter.value = emptySet()
                     downloadedOnly = false
                     filterMenuOpen = false
+                    pluginFilterMenuOpen = false
                     showCreateGroup = false
                     showCreateCollection = false
                     openCollectionId = null
@@ -355,30 +325,6 @@ fun HomeScreen(
                     .onSizeChanged { barHeightPx = it.height },
             )
         }
-    }
-}
-
-/**
- * Kompakter Rotations-Chip im Suchfeld für den Plugins-Tab: zeigt den aktiven Typ-Filter an und
- * rotiert bei Tap (Alle→Quellen→Presets→Alle). Kein ✕-Icon — der Tap ist die Aktion selbst.
- * Stil spiegelt [TypeFilterChip] exakt (`LocalDesignTokens.accent`-Fill, keine Animation).
- */
-@Composable
-private fun PluginFilterChip(label: String, onClick: () -> Unit) {
-    val tokens = LocalDesignTokens.current
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(tokens.accent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = tokens.onAccent,
-        )
     }
 }
 

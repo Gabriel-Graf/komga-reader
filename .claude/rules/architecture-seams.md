@@ -183,19 +183,30 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   dokumentiert direkt an `toggleViewerMode`. Die genuin webtoon-spezifische Logik ist trotzdem
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
-- **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region gebaut):** Über den Reader-Engines wird das
-  *Chrome* (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-
-  Stück der modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut ist genau die erste
-  Region `header`** (`app/ui/slots/UiSlots.kt`): der In-Tree-Vertrag `HeaderSlot`
-  (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`), das optionale
-  `UiSlotPack(header)`, der **pure** Resolver `UiSlots.resolve` (fehlender Slot → `DefaultSlots`, nie
-  `null`, analog `StubSource`) und `LocalResolvedSlots` (im Host `KomgaReaderTheme` bereitgestellt,
-  spiegelt `LocalUiPack`). Die Header-Call-Sites (`SeriesDetailScreen`, `SubPageScaffold`) rendern jetzt
-  `LocalResolvedSlots.current.header(...)` statt `StandardTopAppBar` direkt; das `DefaultSlots`-Pack ist
-  verhaltensgleich. **E-Ink-Invarianten host-erzwungen:** ein Slot liefert nur Inhalt/Struktur, nie die
+- **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
+  Region `homeHeader` gebaut):** Über den Reader-Engines wird das *Chrome* (Header/Overlay/Tiles/Nav/
+  Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der modularen UI
+  (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind zwei Regionen** (`app/ui/slots/UiSlots.kt`):
+  - **Region `header` (Ist, 2026-06-09):** In-Tree-Vertrag `HeaderSlot`
+    (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`). Call-Sites
+    (`SeriesDetailScreen`, `SubPageScaffold`) rendern `LocalResolvedSlots.current.header(...)`.
+    Swap-Beweis: `HeaderSlotPreview.kt` (zentrierter Alternativ-Header, nur Debug/Preview).
+  - **Region `homeHeader` (Ist, 2026-06-12):** In-Tree-Vertrag `HomeHeaderSlot`
+    (`@Composable (state: HomeHeaderState) -> Unit`). Die **Capability-Surface** `HomeHeaderState`
+    kapselt Status, Suche (`HomeHeaderSearch`), generischen Filter-Slot (`HomeHeaderFilter`), Menü-Overlay
+    und Tab-spezifische Aktionen. Der Host (Core) baut die Surface und besitzt die Logik; das Pack
+    **arrangiert** sie — implementiert sie nie neu („UI neu, Kernlogik gleich"). `DefaultHomeHeader`
+    (`app/ui/home/HomeHeader.kt`) ist das Default-Layout (Onyx-Look). `HomeScreen` baut die Surface pro
+    Tab und ruft `LocalResolvedSlots.current.homeHeader(state)`. Die frühere **„Ausnahme HomeScreen"**
+    (direkter `TopAppBar`-Aufruf, nicht über `LocalResolvedSlots` swappable) ist damit **aufgehoben** —
+    `HomeScreen` ist vollständig in die Slot-Naht integriert. Swap-Beweis:
+    `app/src/debug/kotlin/com/komgareader/app/ui/home/HomeHeaderSlotPreview.kt`
+    (`AlternativeHomeHeader`: Status oben, Aktionen darunter — nur Debug/Preview, keine Nutzer-Einstellung).
+  `UiSlotPack(header, homeHeader)` · `ResolvedSlots(header, homeHeader)` · `DefaultSlots` mit beiden
+  Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern Inhalt/Struktur, nie die
   Bewegungs-/Akzent-Policy (die bleibt an `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
-  **Weiter Soll:** die anderen fünf Slots, die `ui-api`-Modul-Extraktion und der APK-Pack-Lader bleiben
-  Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
+  **Weiter Soll:** die übrigen vier Slots (overlay/tiles/nav/settings/dialog), die `ui-api`-Modul-Extraktion
+  und der APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
 
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 

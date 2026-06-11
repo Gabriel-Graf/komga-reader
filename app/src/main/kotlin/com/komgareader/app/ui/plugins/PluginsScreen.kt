@@ -52,6 +52,9 @@ fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = h
     val ctx = LocalContext.current
     val sources by viewModel.sources.collectAsState()
     val presets by viewModel.presetPlugins.collectAsState()
+    // Als Compose-State beobachtet, damit das Preset-Detail-Modal den Import-Status LIVE umschaltet
+    // (nicht nur nach Neu-Öffnen) — ein profiles.value-Snapshot würde nicht rekomponieren.
+    val profiles by viewModel.profiles.collectAsState()
 
     // Re-Scan beim Tab-Sichtbarwerden (ON_RESUME) — entdeckt Neuinstallationen + prunt Deinstalliertes.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -137,13 +140,13 @@ fun PluginsScreen(modifier: Modifier = Modifier, viewModel: PluginsViewModel = h
             p.presets.forEach { spec ->
                 PresetImportRow(
                     spec = spec,
-                    imported = viewModel.isImported(p.packageName, spec.name),
+                    imported = profiles.any { it.pluginPackage == p.packageName && it.name == spec.name },
                     importLabel = s.pluginPresetImport,
                     removeLabel = s.pluginPresetRemove,
                     importedLabel = s.pluginPresetImported,
                     onImport = { viewModel.importPreset(p.packageName, spec) },
                     onRemove = {
-                        viewModel.profiles.value
+                        profiles
                             .firstOrNull { it.pluginPackage == p.packageName && it.name == spec.name }
                             ?.let { viewModel.removeImportedProfile(it) }
                     },

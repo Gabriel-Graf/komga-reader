@@ -90,10 +90,6 @@ class PluginsViewModel @Inject constructor(
         runCatching { sync.pullOnlySync() }
     }.let {}
 
-    /** True, wenn aus [pkg] bereits ein Profil mit [name] importiert wurde (Abgleich nach Tag+Name). */
-    fun isImported(pkg: String, name: String): Boolean =
-        profiles.value.any { it.pluginPackage == pkg && it.name == name }
-
     /**
      * Importiert ein Preset eines Plugins als getaggtes Profil (builtIn bleibt false, aber
      * `pluginPackage` markiert es als Plugin-eigen → in der UI nicht editierbar). Inkompatible/

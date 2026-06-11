@@ -192,7 +192,9 @@ fun ColorFilterSettingsContent(
                                         ProfileRow(
                                             name = profile.name,
                                             selected = profile.id == active.id,
-                                            editable = !profile.builtIn,
+                                            // Plugin-Profile (pluginPackage != null) sind gesperrt wie Built-ins —
+                                            // kein Editieren/Löschen im Farbfilter; Verwaltung läuft über den Plugin-Tab.
+                                            editable = !profile.builtIn && profile.pluginPackage == null,
                                             onInfo = { infoProfile = profile },
                                             onEdit = {
                                                 viewModel.setActive(profile.id)

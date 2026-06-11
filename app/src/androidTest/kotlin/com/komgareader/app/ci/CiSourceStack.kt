@@ -30,6 +30,21 @@ class CiSourceStack {
 
     val activeSource = ActiveSource(sources, repo, registration)
 
+    // Collection-Sync-Verdrahtung (identisch zu CollectionSyncManager-Produktion / CollectionSyncLiveTest).
+    val collectionRepo = com.komgareader.data.repository.RoomCollectionRepository(db.collectionDao())
+    val collectionSyncManager = com.komgareader.app.data.CollectionSyncManager(
+        collectionRepo,
+        resolver = { id -> activeSource.collectionSource(id) },
+        allSources = { activeSource.allCollectionSources() },
+        titleResolver = { sourceId, kind, remoteId ->
+            if (kind == com.komgareader.domain.model.CollectionKind.SERIES) {
+                runCatching { activeSource.get(sourceId)?.seriesDetail(remoteId)?.title }.getOrNull()
+            } else {
+                null
+            }
+        },
+    )
+
     /** Persistiert die gegebenen Server-Konfigurationen (wie der echte Settings-Flow). */
     suspend fun register(vararg configs: ServerConfig) {
         configs.forEach { repo.save(it) }

@@ -110,10 +110,18 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
    = der Inhalts-Namespace pro Quelle. Jeder DB-Satz trägt `sourceId` → uninstall fällt sauber auf
    `StubSource` zurück, kein Schema-Change.
 5. **Die drei Typen sind unterschiedlich schwer:**
-   - **(c) Color-Presets — gebaut, In-App-Import; APK-Lader weiter Soll:**
-     `ColorPresetSpec` + `PluginAbi` in `plugin-api`; `ColorPresetImporter` in `data`
-     clampt auf `ColorProfile`-Konstanten; In-App-Import via `ActivityResultContracts.OpenDocument`
-     (JSON → `ColorPresetSpec` → DB, `builtIn=false`, löschbar). APK-basierter Plugin-Lader ist noch **Soll**.
+   - **(c) Color-Presets — Ist: data-only APK-Plugin gebaut + E2E-grün (2026-06-11, P1):**
+     `ColorPresetSpec` + `PluginAbi` in `plugin-api`; `ColorPresetImporter` in `data` clampt auf
+     `ColorProfile`-Konstanten. Ein Preset-Plugin ist ein **data-only APK** (Manifest-Metadata
+     `COLOR_PRESETS`=Asset-Name + `ABI_VERSION`, `assets/*.json` = Liste `ColorPresetSpec`, **kein
+     Code**). `PluginHost.discoverColorPresetPlugins()` liest das Asset via `createPackageContext(pkg, 0)`
+     (**Flags 0 = nur Ressourcen, kein Classloader/TOFU/Multidex**), `parsePresetSpecs` (org.json) →
+     `ColorPresetImporter.toProfileOrNull` → `color_profiles` (`builtIn=false`, `pluginPackage=pkg`,
+     gesperrt). Verwaltung im **Plugins-Tab** (`PluginsScreen`/`PluginsViewModel`): ⚙ importiert/entfernt
+     Presets, 🗑 deinstalliert das APK (OS-Intent `ACTION_DELETE`), Cleanup per Re-Scan beim Tab-`onResume`
+     (`planPluginPrune` → `deleteByPluginPackage`; aktiver Zeiger fällt auf `OFF`). `color_profiles.pluginPackage`
+     (nullable, Migration 15→16). Die **bespoke JSON-Datei-Import-UI ist entfernt**. **Soll (Slice P2):**
+     Repo-Browser + APK-Download/Install via `PackageInstaller` (das Screen-`+` ist heute Platzhalter).
    - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert
      `BrowsableSource`-Impls → `PluginHost.sourceFor(...)` → `SourceRegistration` → `SourceManager`.
      Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored) ist das erste

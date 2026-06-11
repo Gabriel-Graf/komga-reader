@@ -39,4 +39,11 @@ class DataPluginManifestTest {
     @Test fun nullWhenUnknownCategory() {
         assertNull(resolveDataPluginManifest("BOGUS", "x.json", null))
     }
+
+    @Test fun blankCategoryFallsThroughToLegacy() {
+        val r = resolveDataPluginManifest(
+            dataCategory = "  ", dataAsset = "x.json", legacyColorPresets = "old.json",
+        )
+        assertEquals(PluginCategory.COLOR_PRESET to "old.json", r)
+    }
 }

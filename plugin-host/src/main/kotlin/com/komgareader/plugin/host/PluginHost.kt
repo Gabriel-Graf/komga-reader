@@ -7,6 +7,7 @@ import dalvik.system.PathClassLoader
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceId
+import com.komgareader.plugin.PluginCategory
 import com.komgareader.plugin.SourcePlugin
 
 /**
@@ -47,7 +48,7 @@ class PluginHost(private val context: Context) {
      * Plugin-Code ausgeführt. Paket-Sicht via app-Manifest-`QUERY_ALL_PACKAGES`. Die JSON-Interpretation
      * macht der Aufrufer (z.B. [discoverColorPresetPlugins] → [parsePresetSpecs]).
      */
-    fun discoverDataPlugins(category: com.komgareader.plugin.PluginCategory): List<DiscoveredDataPlugin> {
+    fun discoverDataPlugins(category: PluginCategory): List<DiscoveredDataPlugin> {
         val pm = context.packageManager
         val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
         return packages.mapNotNull { pkg ->
@@ -78,7 +79,7 @@ class PluginHost(private val context: Context) {
      * Asset-JSON via [parsePresetSpecs]; leere/kaputte Assets werden verworfen.
      */
     fun discoverColorPresetPlugins(): List<DiscoveredPresetPlugin> =
-        discoverDataPlugins(com.komgareader.plugin.PluginCategory.COLOR_PRESET).mapNotNull { d ->
+        discoverDataPlugins(PluginCategory.COLOR_PRESET).mapNotNull { d ->
             val specs = parsePresetSpecs(d.assetJson, d.abiVersion)?.takeIf { it.isNotEmpty() }
                 ?: return@mapNotNull null
             DiscoveredPresetPlugin(d.packageName, d.displayName, d.abiVersion, specs)

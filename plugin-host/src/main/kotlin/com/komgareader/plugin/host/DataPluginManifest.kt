@@ -18,7 +18,7 @@ fun resolveDataPluginManifest(
     dataAsset: String?,
     legacyColorPresets: String?,
 ): Pair<PluginCategory, String>? {
-    if (dataCategory != null) {
+    if (!dataCategory.isNullOrBlank()) {
         val asset = dataAsset?.takeIf { it.isNotBlank() } ?: return null
         val category = runCatching { PluginCategory.valueOf(dataCategory.trim()) }.getOrNull() ?: return null
         return category to asset

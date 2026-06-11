@@ -35,8 +35,9 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 | `domain` | Modelle, UseCases, Repo-/Render-/Eink-**Interfaces** | Android, Netz, irgendeiner Quelle, `source-api` |
 | `source-api` | Naht-A-Quellen-Vertrag (`MediaSource` & Co., `SourceManager`, `SourceId`) — wird von `plugin-api` re-exportiert, **noch nicht eingefroren** | Android, Netz, UI; hängt nur an `domain` |
 | `source-komga` · `source-opds` | konkrete `MediaSource`-Impls | UI, anderen Quellen |
-| `plugin-api` | Plugin-ABI-Vertrag (`SourcePlugin`, `ConfigSchema`, `PluginAbi`, `PluginMetadata`); re-exportiert `source-api` via `api()`; Plugins linken es `compileOnly` | Android, Netz, UI; hängt nur an `source-api`/`domain` |
-| `plugin-host` | Runtime-Loader (`PluginHost`, `AbiGate`, `DiscoveredPlugin`, TOFU-Pinning) | `app`-Schicht (UI); wird von Hilt in `app` bereitgestellt |
+| `plugin-api` | Plugin-ABI-Vertrag (`SourcePlugin`, `ConfigSchema`, `PluginAbi`, `PluginMetadata`); re-exportiert `source-api` via `api()` | Android, Netz, UI; hängt nur an `source-api`/`domain` |
+| `plugin-sdk` | geshadetes Single-Jar (plugin-api+source-api+domain, keine Relocation) — das **eine** `compileOnly`-Artefakt für externe Plugins (`com.komgareader:plugin-sdk`) | — (nur Build-Aggregat) |
+| `plugin-host` | Runtime-Loader (`PluginHost`, `AbiGate`, `DiscoveredPlugin`, TOFU-Pinning, `PathClassLoader`) | `app`-Schicht (UI); wird von Hilt in `app` bereitgestellt |
 | `render-core` | `Document`/`DocumentFactory` + MuPDF-JNI (Naht B) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx-SDK, HW-gated) | UI, Quellen |
 | `guided-view` | Panel-Erkennung (pure Kotlin XY-Cut) | Engine, UI |

@@ -88,8 +88,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   implementiert `BrowsableSource`+`SyncingSource` und linkt `plugin-api` als `compileOnly`. **E2E-verifiziert
   (2026-06-11):** `KavitaPluginLiveTest` auf dem Emulator gegen Docker-Kavita ([[local-test-kavita]]) — ganze
   Kette Entdeckung→ABI→TOFU-Signatur→PathClassLoader-Load→`browse`/`books`/`pages`/`openPage` grün, plus
-  TOFU-Negativtest (falscher Pin lädt nicht). **Noch Soll: einzel-shaded Plugin-SDK-Jar** (heute drei mavenLocal-
-  Artefakte domain/source-api/plugin-api).
+  TOFU-Negativtest (falscher Pin lädt nicht). **Plugin-SDK (Ist, 2026-06-11):** ein **einzelnes geshadetes**
+  Modul `:plugin-sdk` (`com.komgareader:plugin-sdk:0.1.0`, Shadow ohne Relocation) bündelt
+  plugin-api+source-api+domain (nur `com.komgareader.**`, keine Fremd-Libs, saubere POM) — Plugins linken **nur
+  das** `compileOnly`. Die separaten Publishes der drei Module sind entfallen. Kavita-Plugin nutzt es; E2E grün.
   Settings-Seite: Settings „Server hinzufügen" listet entdeckte Plugins, zeigt TOFU-Trust-Dialog
   (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
 

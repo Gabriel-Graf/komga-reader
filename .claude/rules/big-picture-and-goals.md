@@ -89,9 +89,10 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
 1. **Vertrag in eigenem Modul `plugin-api`** (pure JVM/Kotlin) — **Ist: gebaut.** `plugin-api`
    (0.1.0, mavenLocal) enthält `SourcePlugin`, `PluginMetadata`, `ConfigSchema`/`ConfigField`/
    `FieldType`, `PluginAbi` (VERSION=1) und `ColorPresetSpec`. Macht `api(project(":source-api"))`
-   → re-exportiert die Naht-A-Typen; `domain` und `source-api` werden parallel publiziert, damit
-   Plugins die transitive Kette auflösen. **Noch Soll:** ein einzel-shaded SDK-Jar als sauberes
-   Distributions-Artefakt — heute drei getrennte mavenLocal-Artefakte.
+   → re-exportiert die Naht-A-Typen. **Distribution (Ist, 2026-06-11): ein einzelnes geshadetes
+   `:plugin-sdk`** (`com.komgareader:plugin-sdk:0.1.0`, Shadow ohne Relocation) bündelt
+   plugin-api+source-api+domain (nur `com.komgareader.**`, keine Fremd-Libs, saubere POM); Plugins
+   linken nur dieses eine Artefakt `compileOnly`. Die separaten Modul-Publishes sind entfallen.
 2. **ABI-Gate als zwei Integer** (`VERSION`, `MIN_SUPPORTED`), nicht semver-Strings. Plugin-Manifest
    nennt `abiVersion`; außerhalb der Spanne → „inkompatibel", nie instanziiert. Neue Capability =
    neues **optionales** Interface (wie `ContainerSource`), additiv, ohne ABI-Bump.

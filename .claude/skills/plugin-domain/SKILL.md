@@ -138,8 +138,14 @@ in **dieser Reihenfolge** — analog dem Naht-A-Kochrezept in [[source-extensibi
 1. **Capability-Vertrag definieren.** Ein **benannter Satz Daten + Callbacks**
    (eine `data class` mit Fähigkeiten + Aktionen), **kein** arbiträrer Code. Das ist die
    *Capability-Surface*: was das Subsystem kann, ohne *wie* es aussieht.
+   **Overlays/Menüs sind host-gebaute `@Composable`-Felder der Surface** (z. B. ein `menu`-Feld),
+   die das Pack nur **platziert** — nie vom Slot selbst erfunden, sonst leckt die Menü-/Filter-Logik
+   ins Pack.
 2. **Host besitzt die Logik.** Der Host (Core) **baut** die Surface — er hält Zustand, Sync,
    Filter, I/O. Das Plugin/Pack bekommt die fertige Surface, nie die Mechanik.
+   Ein Surface-Feld darf auch ein **host-gebautes `@Composable`** sein (Status, Menü, Aktionen),
+   nicht nur reine Daten — solange der **Host** es baut und das Pack es nur **platziert/anordnet**.
+   Das bleibt „Host besitzt Logik": gebaut wird im Core, positioniert im Pack.
 3. **In-Tree-Slot mit Default.** Ein benannter, adressierbarer Einhängepunkt mit
    **garantiertem Default**: fehlt das Pack-Stück, fällt es sauber auf den Default zurück —
    **nie `null`**, analog `StubSource` bei Quellen. (Vorbild: die `header`-Region in `UiSlots`.)
@@ -147,15 +153,23 @@ in **dieser Reihenfolge** — analog dem Naht-A-Kochrezept in [[source-extensibi
    optionales Feld), damit ein Pack nicht bei jeder App-Version bricht. **E-Ink-Invarianten
    (Bewegung/Akzent) bleiben am Host** — nie Teil der Surface, nie vom Pack steuerbar.
 5. **Pack/Plugin ordnet/liefert.** Das Pack arrangiert/restyled die Surface — es **implementiert
-   die Logik nie** („UI neu, Kernlogik gleich"). Vor der N-ten Variante das Gemeinsame zuerst
-   extrahieren: [[shared-structure-before-variants]].
+   die Logik nie** („UI neu, Kernlogik gleich"). **Geteilte UI-Mechanik (z. B. Anchor-Messung via
+   `onGloballyPositioned`, oder der host-erwartete Bar-Rahmen) lebt einmal parametrisiert im
+   Default-Layout**; pro Variante fließen nur Daten/Callbacks in die Surface — nicht die Mechanik
+   ([[shared-structure-before-variants]]). **Scoped-Lambda-Gotcha:** scope-behaftete Felder
+   (`@Composable RowScope.() -> Unit`) ruft der Slot mit explizitem Receiver auf (`state.actions(this)`
+   aus einem `Row`), nie bloß `state.actions()`.
 
 > **Lackmustest:** Funktioniert das Subsystem unverändert, wenn der Slot leer bleibt (Default),
 > und kann ein Pack es komplett neu anordnen, ohne eine Zeile Kernlogik zu duplizieren? Wenn nein,
 > ist der Schnitt falsch — die Logik leckt in den Slot.
 
-Referenz-Beispiel (in Arbeit, wird hier real verlinkt): [[modular-home-header]] — der ganze
-Home-Header als `HomeHeaderState`-Capability-Surface hinter einem `HomeHeaderSlot`.
+**Referenz-Implementierung (gebaut + E2E-grün, 2026-06-12):** [[modular-home-header]] — der ganze
+Home-Header als `HomeHeaderState`-Capability-Surface hinter einem `HomeHeaderSlot` (zweite UI-Slot-
+Region nach `header`). Code: `app/ui/home/HomeHeader.kt` (Surface + `DefaultHomeHeader`),
+`app/ui/slots/UiSlots.kt` (`homeHeader`-Region), `app/ui/home/HomeScreen.kt` (Host baut die Surface
+pro Tab), Swap-Beweis `app/src/debug/.../HomeHeaderSlotPreview.kt`. Validiert gegen dieses Rezept
+(alle 5 Schritte + Lackmustest erfüllt; die Erkenntnisse oben stammen aus diesem Bau).
 
 ---
 

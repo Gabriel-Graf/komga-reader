@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -19,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.plugin.ConfigField
 import com.komgareader.plugin.ConfigSchema
@@ -74,47 +72,21 @@ fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
 }
 
 /**
- * Generisches Formular für ein Plugin-[ConfigSchema]: rendert je [ConfigField] genau ein
- * E-Ink-konformes Control, sammelt die Werte und ruft [onSubmit] mit dem fertigen
- * `Map<key, value>`-Ergebnis auf.
+ * Generisches Formular für ein Plugin-[ConfigSchema] zur Integration in ein
+ * [com.komgareader.app.ui.components.EinkModal]: rendert je [ConfigField] genau ein
+ * E-Ink-konformes Control aus [state] und sammelt die Werte. Es legt bewusst KEINEN
+ * Submit-Button ins Formular — der Modal-eigene Bestätigen-Button ist der Submit-Auslöser
+ * (`onConfirm = { onSubmit(state.snapshot()) }`, `confirmEnabled = state.isValid`).
+ * [state] muss per [rememberPluginFormState] im Aufrufer erzeugt worden sein.
  *
- * Verantwortung: Schema → Werte-Map. Kein Netzwerk, kein Dialog-Rahmen — der Aufrufer
- * entscheidet, ob das Formular in einem [EinkModal] oder direkt auf der Seite erscheint.
+ * Verantwortung: Schema → Werte-Map.
  *
  * E-Ink-Invarianten:
  * - Flach, 1.5px-Rand (OutlinedTextField + EinkToggle), keine Schatten.
  * - Keinerlei Animationen — alle State-Wechsel sind sofortig.
- * - Labels kommen vom Plugin (bereits lokalisiert); nur der Submit-Button nutzt das App-i18n
- *   ([Strings.save]).
+ * - Labels kommen vom Plugin (bereits lokalisiert) — kein App-i18n-Key nötig.
  *
  * BOOL-Felder speichern intern "true"/"false" als String — konsistent mit [ServerConfig.extras].
- */
-@Composable
-fun PluginConfigForm(
-    schema: ConfigSchema,
-    onSubmit: (Map<String, String>) -> Unit,
-) {
-    val s = LocalStrings.current
-    val formState = rememberPluginFormState(schema)
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        PluginConfigFields(formState)
-
-        Button(
-            onClick = { onSubmit(formState.snapshot()) },
-            enabled = formState.isValid,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(s.save)
-        }
-    }
-}
-
-/**
- * Formular-Variante für die Integration in [com.komgareader.app.ui.components.EinkModal]:
- * rendert nur die Felder aus [state], keinen Submit-Button — der Modal-eigene Bestätigen-Button
- * ist der Submit-Auslöser. [state] muss per [rememberPluginFormState] im Aufrufer erzeugt
- * worden sein.
  */
 @Composable
 fun PluginConfigForm(state: PluginFormState) {

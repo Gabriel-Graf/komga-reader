@@ -11,6 +11,7 @@ import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.SourceManager
+import com.komgareader.plugin.host.PluginHost
 
 /**
  * Baut einen frischen, isolierten quellen-agnostischen Stack für einen Seam-Test:
@@ -26,7 +27,9 @@ class CiSourceStack {
     private val store = KeystoreCredentialStore("ci-seam-${System.nanoTime()}")
     private val repo = RoomServerRepository(db.serverDao(), store)
     private val sources = SourceManager()
-    private val registration = SourceRegistration(sources, KomgaSourceProvider())
+    // PluginHost wird vom SourceRegistration-Vertrag verlangt; in den Seam-Tests nicht ausgeübt
+    // (keine PLUGIN-Quelle registriert) — nur konstruiert, damit die Verdrahtung wie in Produktion steht.
+    private val registration = SourceRegistration(sources, KomgaSourceProvider(), PluginHost(ctx))
 
     val activeSource = ActiveSource(sources, repo, registration)
 

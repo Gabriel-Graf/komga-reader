@@ -40,8 +40,12 @@ class PresetSpecParserTest {
     }
 
     @Test
-    fun malformedJsonReturnsNull() {
+    fun syntaxErrorReturnsNull() {
         assertNull(parsePresetSpecs("not json", abi))
+    }
+
+    @Test
+    fun objectRootReturnsNull() {
         assertNull(parsePresetSpecs("""{"name":"obj-not-array"}""", abi))
     }
 

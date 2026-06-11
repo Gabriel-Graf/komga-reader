@@ -23,5 +23,5 @@ dependencies {
     implementation(project(":domain"))
     testImplementation(kotlin("test"))
     testImplementation(libs.junit.jupiter)
-    testImplementation("org.json:json:20231013")
+    testImplementation(libs.org.json)
 }

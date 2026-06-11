@@ -3,6 +3,13 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!--
+      Plugin-Deinstallation: das Trash-Icon im Plugins-Tab startet die System-UninstallerActivity
+      via ACTION_DELETE. Ohne diese Permission lehnt sie ab ("Uid does not have
+      REQUEST_DELETE_PACKAGES") und das Paket bleibt installiert. Normale (install-time) Permission,
+      kein Runtime-Prompt — symmetrisch zu REQUEST_INSTALL_PACKAGES für den Install-Pfad.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <!--
       Plugin-Entdeckung (Phase 4): ab Android 11 (API 30) filtert das OS die Sicht auf andere

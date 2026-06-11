@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.komgareader.app.ui.components.StandardTopAppBar
+import com.komgareader.app.ui.home.DefaultHomeHeader
+import com.komgareader.app.ui.home.HomeHeaderState
 
 /**
  * # UI-Slot-Naht (Layout-Ebene der modularen UI) — erste Region: Header
@@ -40,14 +42,22 @@ import com.komgareader.app.ui.components.StandardTopAppBar
 typealias HeaderSlot = @Composable (title: String, onBack: (() -> Unit)?, actions: @Composable RowScope.() -> Unit) -> Unit
 
 /**
+ * Vertrag der Home-Header-Region. Breiter als [HeaderSlot]: der Home-Header trägt Status-Cluster,
+ * Suchfeld, generischen Filter-Slot und Tab-spezifische Aktionen — alles in [HomeHeaderState]
+ * gekapselt. Ein Pack arrangiert diese Fähigkeiten; der Host (Core) baut die Surface und besitzt
+ * die Logik („UI neu, Kernlogik gleich"). E-Ink-Invarianten bleiben host-erzwungen.
+ */
+typealias HomeHeaderSlot = @Composable (state: HomeHeaderState) -> Unit
+
+/**
  * Ein Slot-Pack: pro Region ein optionaler Slot. `null` = diese Region nicht überschreiben → Default.
  * Weitere Regionen (overlay/tiles/nav/settings/dialog) kommen später als weitere **optionale** Felder
  * hinzu, ohne bestehende Packs zu brechen (additiv).
  */
-data class UiSlotPack(val header: HeaderSlot? = null)
+data class UiSlotPack(val header: HeaderSlot? = null, val homeHeader: HomeHeaderSlot? = null)
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
-data class ResolvedSlots(val header: HeaderSlot)
+data class ResolvedSlots(val header: HeaderSlot, val homeHeader: HomeHeaderSlot)
 
 /**
  * Auflöser der Slot-Naht: pro Region „Pack-Slot **oder** Default". **Pure Funktion** über nullbare
@@ -55,16 +65,22 @@ data class ResolvedSlots(val header: HeaderSlot)
  * unverändert durch (keine Wrapper), damit referenzielle Identität trägt.
  */
 object UiSlots {
-    fun resolve(pack: UiSlotPack): ResolvedSlots = ResolvedSlots(header = pack.header ?: DefaultSlots.header)
+    fun resolve(pack: UiSlotPack): ResolvedSlots = ResolvedSlots(
+        header = pack.header ?: DefaultSlots.header,
+        homeHeader = pack.homeHeader ?: DefaultSlots.homeHeader,
+    )
 }
 
 /**
- * Das mitgelieferte Default-Pack — der heutige Onyx-Look, **verhaltensgleich** zum direkten
- * [StandardTopAppBar]-Aufruf. Fehlt einem Community-Pack ein Slot, greift dieser Wert.
+ * Das mitgelieferte Default-Pack — der heutige Onyx-Look, verhaltensgleich zu den bisherigen
+ * direkten Aufrufen. Fehlt einem Community-Pack ein Slot, greift dieser Wert.
  */
 object DefaultSlots {
     val header: HeaderSlot = { title, onBack, actions ->
         StandardTopAppBar(title = title, onBack = onBack, actions = actions)
+    }
+    val homeHeader: HomeHeaderSlot = { state ->
+        DefaultHomeHeader(state)
     }
 }
 

@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 class PluginConfigHashTest {
-    @Test fun `gleiche werte unabhaengig der reihenfolge gleicher hash`() {
+    @Test fun `gleiche werte unabhängig der reihenfolge gleicher hash`() {
         val a = PluginConfigHash.of(mapOf("url" to "x", "apiKey" to "y"))
         val b = PluginConfigHash.of(mapOf("apiKey" to "y", "url" to "x"))
         assertEquals(a, b)

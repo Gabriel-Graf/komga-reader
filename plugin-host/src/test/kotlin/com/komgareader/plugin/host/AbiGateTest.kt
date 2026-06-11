@@ -9,7 +9,7 @@ class AbiGateTest {
     @Test fun `aktuelle ABI ist kompatibel`() =
         assertTrue(AbiGate.isCompatible(PluginAbi.VERSION))
 
-    @Test fun `min unterstuetzte ABI ist kompatibel`() =
+    @Test fun `min unterstützte ABI ist kompatibel`() =
         assertTrue(AbiGate.isCompatible(PluginAbi.MIN_SUPPORTED))
 
     @Test fun `zu alt ist inkompatibel`() =

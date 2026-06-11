@@ -155,10 +155,12 @@ instanziiert (gleiches Muster wie `ColorPresetImporter.toProfileOrNull`).
 ## Config & Speicherung
 
 - `ServerConfig` bekommt `extras: Map<String,String> = emptyMap()`.
-- Room: neue Spalte `extras` (JSON-serialisiert via TypeConverter). Migration als
-  **Recreate-Table** (CREATE new + INSERT SELECT + DROP + RENAME), **nicht** `ALTER ADD COLUMN`
-  — siehe Memory `room-migration-destructive-pitfall` (destruktiver Wipe-Fallstrick) + onOpen-
-  Selbstheilung. Migrations-Test gegen echte Upgrade-DB (nicht inMemory).
+- Room: zwei **nullable** Spalten `extrasCiphertext`/`extrasIv` (Keystore-verschlüsselter
+  JSON-Blob). Migration via `ALTER TABLE ADD COLUMN` — korrekt + nicht-destruktiv für nullable
+  Spalten ohne DEFAULT (exakt das Muster der bestehenden `MIGRATION_4_5`). Die Memory-Falle
+  `room-migration-destructive-pitfall` betrifft nur **NON-NULL + DEFAULT** ohne passendes
+  `@ColumnInfo` — trifft hier nicht zu, daher KEIN Recreate-Table nötig. Migrations-Test gegen
+  echte Upgrade-DB (nicht inMemory).
 - **„Server hinzufügen" generisch:** Wählt der Nutzer ein entdecktes Plugin, rendert der Host die
   Form aus `plugin.configSchema()` (Feldtyp → Compose-Control: TEXT/URL→Textfeld, SECRET→
   maskiert, BOOL→Toggle). Eingaben → `ServerConfig.extras`. **Kein Kavita-Spezialcode in `app`.**

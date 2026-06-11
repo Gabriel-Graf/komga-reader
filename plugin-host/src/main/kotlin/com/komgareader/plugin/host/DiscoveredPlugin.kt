@@ -12,4 +12,9 @@ data class DiscoveredPlugin(
     val abiVersion: Int,
     val metadata: PluginMetadata,
     val configSchema: ConfigSchema,
+    /** Vollqualifizierter Klassenname der [com.komgareader.plugin.SourcePlugin]-Implementierung,
+     *  wie im Manifest unter [PluginManifestKeys.ENTRY_CLASS] deklariert.
+     *  Wird von [com.komgareader.plugin.host.PluginHost.sourceFor] benötigt, um das Plugin
+     *  zu laden — gehört zur Identität einer entdeckten Plugin-Quelle. */
+    val entryClass: String,
 )

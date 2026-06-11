@@ -31,7 +31,7 @@ class PluginHost(private val context: Context) {
             if (!AbiGate.isCompatible(abi)) return@mapNotNull null
             val sig = signatureSha256(pkg.packageName) ?: return@mapNotNull null
             val plugin = instantiate(pkg.packageName, entry) ?: return@mapNotNull null
-            DiscoveredPlugin(pkg.packageName, sig, abi, plugin.metadata, plugin.configSchema())
+            DiscoveredPlugin(pkg.packageName, sig, abi, plugin.metadata, plugin.configSchema(), entry)
         }
     }
 

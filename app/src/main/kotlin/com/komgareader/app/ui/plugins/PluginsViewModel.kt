@@ -16,6 +16,8 @@ import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
 import com.komgareader.plugin.host.PluginHost
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,8 +52,13 @@ class PluginsViewModel @Inject constructor(
      * was zu deinstallierten Plugin-APKs gehört (Uninstall hat kein verlässliches Callback).
      */
     fun refresh() = viewModelScope.launch {
-        val srcs = runCatching { pluginHost.discoverPlugins() }.getOrDefault(emptyList())
-        val presets = runCatching { pluginHost.discoverColorPresetPlugins() }.getOrDefault(emptyList())
+        // PackageManager-Scan + Asset-File-Read sind I/O → vom Main-Thread (ON_RESUME) wegschieben.
+        val srcs = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverPlugins() }.getOrDefault(emptyList())
+        }
+        val presets = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverColorPresetPlugins() }.getOrDefault(emptyList())
+        }
         _sources.value = srcs
         _presetPlugins.value = presets
 

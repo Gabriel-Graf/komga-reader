@@ -20,6 +20,6 @@ interface ColorProfileDao {
     @Query("DELETE FROM color_profiles WHERE id = :id AND builtIn = 0")
     suspend fun deleteCustom(id: Long)
 
-    @Query("DELETE FROM color_profiles WHERE pluginPackage = :pkg")
+    @Query("DELETE FROM color_profiles WHERE pluginPackage = :pkg AND builtIn = 0")
     suspend fun deleteByPluginPackage(pkg: String)
 }

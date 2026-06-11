@@ -1,6 +1,7 @@
 package com.komgareader.app.data
 
 import android.content.Context
+import android.util.Log
 import androidx.core.content.pm.PackageInfoCompat
 import com.komgareader.app.ui.plugins.planPluginPrune
 import com.komgareader.app.ui.plugins.repo.InstallResult
@@ -25,7 +26,6 @@ import com.komgareader.plugin.PluginAbi
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
 import com.komgareader.plugin.host.PluginHost
-import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +33,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -78,6 +80,8 @@ class PluginCatalog @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val fetchMutex = Mutex()
+
     /** Aktive Repo-Quellen (für das Repo-Verwaltungs-Modal). */
     val reposFlow: Flow<List<RepoSource>> = repoStore.observeActive()
 
@@ -119,23 +123,25 @@ class PluginCatalog @Inject constructor(
 
     /** Netz-Repo-Fetch: aktive Repos laden, mergen, Install-Zustand berechnen. */
     suspend fun fetchRepos() {
-        _loading.value = true
-        try {
-            val sources = repoStore.observeActive().first()
-            val collected = mutableListOf<BrowsableEntry>()
-            for (src in sources) {
-                val body = client.fetchIndex(src.url) ?: continue
-                val index = parseRepoIndex(body) ?: continue
-                if (!src.official) repoStore.rememberName(src.url, index.name)
-                val repoLabel = index.name.ifBlank { src.name }
-                index.plugins.forEach {
-                    collected += BrowsableEntry(it, repoLabel, src.url, pluginKindOf(it.type))
+        fetchMutex.withLock {
+            _loading.value = true
+            try {
+                val sources = repoStore.observeActive().first()
+                val collected = mutableListOf<BrowsableEntry>()
+                for (src in sources) {
+                    val body = client.fetchIndex(src.url) ?: continue
+                    val index = parseRepoIndex(body) ?: continue
+                    if (!src.official) repoStore.rememberName(src.url, index.name)
+                    val repoLabel = index.name.ifBlank { src.name }
+                    index.plugins.forEach {
+                        collected += BrowsableEntry(it, repoLabel, src.url, pluginKindOf(it.type))
+                    }
                 }
+                val merged = mergeRepoEntries(collected)
+                _discovered.value = withContext(Dispatchers.IO) { merged.map { it.toRow() } }
+            } finally {
+                _loading.value = false
             }
-            val merged = mergeRepoEntries(collected)
-            _discovered.value = withContext(Dispatchers.IO) { merged.map { it.toRow() } }
-        } finally {
-            _loading.value = false
         }
     }
 

@@ -155,14 +155,16 @@ fun PluginsScreen(
         )
     }
 
-    error?.let { code ->
-        val msg = when (code) {
-            "fingerprint" -> s.repoBrowserErrorFingerprint
-            "download" -> s.repoBrowserErrorDownload
-            else -> s.repoBrowserErrorInstall
-        }
-        EinkInfoDialog(title = s.repoBrowserErrorTitle, onDismiss = { viewModel.dismissError() }, closeLabel = s.close) {
-            Text(msg, style = MaterialTheme.typography.bodyMedium)
+    if (!showRepoManagement) {
+        error?.let { code ->
+            val msg = when (code) {
+                "fingerprint" -> s.repoBrowserErrorFingerprint
+                "download" -> s.repoBrowserErrorDownload
+                else -> s.repoBrowserErrorInstall
+            }
+            EinkInfoDialog(title = s.repoBrowserErrorTitle, onDismiss = { viewModel.dismissError() }, closeLabel = s.close) {
+                Text(msg, style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 

@@ -114,6 +114,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   behalten die anderen Quellen; fremde leere Sammlungen bleiben). Verdrahtet in
   `SettingsViewModel.removeServer` über `SourceRegistration.sourceIdOf(config)`. Details:
   `source-agnostic-integration.md`, `source-extensibility.md` (Kochrezept Metadatum).
+- **SyncCoordinator (Ist, 2026-06-11):** `app/data/SyncCoordinator.kt` (@Singleton) ist die zentrale
+  Sync-/Discovery-Naht: bündelt App-Start- (`onAppStart`, latch-geschützt: `fullSync` + lokaler
+  Plugin-Scan + 1× Repo-Fetch), Server-Changed- (`onServerChanged` → `pullOnlySync`), Reload-
+  (`onManualReload`: Repo-Fetch + Scan) und Tab-Trigger (`onCollectionsTabEntered`, gegated über
+  `aggressiveSyncAllowed`). Call-Sites (`MainActivity`, `SettingsViewModel`, `PluginsViewModel`,
+  `CollectionsViewModel`) melden nur das Ereignis. `CollectionSyncManager` bleibt der Executor darunter.
+  `PluginCatalog` (`app/data/PluginCatalog.kt`, @Singleton) hält den geteilten Plugin-Discovery-Zustand
+  (lokaler APK-Scan+Prune, Repo-Fetch, Install). Der Plugin-Repo-Browser-Screen ist entfernt — eine
+  vereinte Plugins-Seite zeigt installierte Plugins oben, Divider, darunter die entdeckten aus den Repos
+  (Typ-Filter-Chip, ⚙ Repo-Settings, ⟳ Reload).
 
 ## Naht B — Render & E-Ink (`render-core`, `eink-onyx`)
 

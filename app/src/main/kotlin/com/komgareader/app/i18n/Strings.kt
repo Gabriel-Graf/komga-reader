@@ -177,6 +177,24 @@ interface Strings {
     val pluginPresetImport: String        // „Importieren"
     val pluginPresetRemove: String        // „Entfernen"
     val pluginPresetImported: String      // Status „Importiert"
+    // Plugin-Repo-Browser (P2)
+    val repoBrowserTitle: String
+    val repoBrowserOpen: String
+    val repoBrowserSearch: String
+    val repoBrowserManage: String
+    val repoBrowserRefresh: String
+    val repoBrowserEmpty: String
+    val repoBrowserInstall: String
+    val repoBrowserUpdate: String
+    val repoBrowserIncompatible: String
+    val repoBrowserAddRepo: String
+    val repoBrowserOfficial: String
+    val repoBrowserRepoUrl: String
+    val repoBrowserRemoveRepo: String
+    val repoBrowserErrorTitle: String
+    val repoBrowserErrorFingerprint: String
+    val repoBrowserErrorDownload: String
+    val repoBrowserErrorInstall: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -458,6 +476,24 @@ object StringsDe : Strings {
     override val pluginPresetImport = "Importieren"
     override val pluginPresetRemove = "Entfernen"
     override val pluginPresetImported = "Importiert"
+    // Plugin-Repo-Browser (P2)
+    override val repoBrowserTitle = "Plugins entdecken"
+    override val repoBrowserOpen = "Plugins entdecken"
+    override val repoBrowserSearch = "Plugins durchsuchen"
+    override val repoBrowserManage = "Repos verwalten"
+    override val repoBrowserRefresh = "Aktualisieren"
+    override val repoBrowserEmpty = "Keine Plugins gefunden."
+    override val repoBrowserInstall = "Installieren"
+    override val repoBrowserUpdate = "Update"
+    override val repoBrowserIncompatible = "Inkompatibel"
+    override val repoBrowserAddRepo = "Repo hinzufügen"
+    override val repoBrowserOfficial = "Offizielles Repo"
+    override val repoBrowserRepoUrl = "Repo-URL"
+    override val repoBrowserRemoveRepo = "Repo entfernen"
+    override val repoBrowserErrorTitle = "Installation fehlgeschlagen"
+    override val repoBrowserErrorFingerprint = "Signatur passt nicht zum Repo-Eintrag — Installation abgebrochen."
+    override val repoBrowserErrorDownload = "Download fehlgeschlagen."
+    override val repoBrowserErrorInstall = "Installation konnte nicht gestartet werden."
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -730,6 +766,24 @@ object StringsEn : Strings {
     override val pluginPresetImport = "Import"
     override val pluginPresetRemove = "Remove"
     override val pluginPresetImported = "Imported"
+    // Plugin repo browser (P2)
+    override val repoBrowserTitle = "Discover plugins"
+    override val repoBrowserOpen = "Discover plugins"
+    override val repoBrowserSearch = "Search plugins"
+    override val repoBrowserManage = "Manage repos"
+    override val repoBrowserRefresh = "Refresh"
+    override val repoBrowserEmpty = "No plugins found."
+    override val repoBrowserInstall = "Install"
+    override val repoBrowserUpdate = "Update"
+    override val repoBrowserIncompatible = "Incompatible"
+    override val repoBrowserAddRepo = "Add repo"
+    override val repoBrowserOfficial = "Official repo"
+    override val repoBrowserRepoUrl = "Repo URL"
+    override val repoBrowserRemoveRepo = "Remove repo"
+    override val repoBrowserErrorTitle = "Installation failed"
+    override val repoBrowserErrorFingerprint = "Signature does not match the repo entry — installation aborted."
+    override val repoBrowserErrorDownload = "Download failed."
+    override val repoBrowserErrorInstall = "Could not start installation."
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

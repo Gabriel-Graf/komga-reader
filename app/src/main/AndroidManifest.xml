@@ -3,6 +3,18 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+      Plugin-Entdeckung (Phase 4): ab Android 11 (API 30) filtert das OS die Sicht auf andere
+      installierte Pakete. Der Plugin-Loader (PluginHost.discoverPlugins via getInstalledPackages)
+      braucht daher Paket-Sichtbarkeit. QUERY_ALL_PACKAGES hält den Plugin-Vertrag MINIMAL — ein
+      Plugin deklariert nur Manifest-Metadata, KEINE Discovery-Komponente (Mihon-Modell). Alternative
+      wäre ein intent-basiertes <queries> (Play-policy-konform), das aber jedem Plugin einen
+      exportierten Discovery-Stub aufzwingt = mehr ABI-Last. Die App wird sideloaded (AGPL/MuPDF,
+      nicht über Play), daher ist die Play-sensitive Permission hier vertretbar.
+    -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
     <application
         android:name=".KomgaReaderApp"
         android:allowBackup="false"

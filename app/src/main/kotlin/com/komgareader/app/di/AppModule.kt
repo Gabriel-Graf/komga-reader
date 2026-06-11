@@ -3,6 +3,7 @@ package com.komgareader.app.di
 import android.content.Context
 import android.os.Build
 import coil.ImageLoader
+import com.komgareader.plugin.host.PluginHost
 import com.komgareader.app.data.coil.SourceCoverFetcher
 import com.komgareader.app.data.coil.SourcePageFetcher
 import com.komgareader.app.di.ApplicationScope
@@ -92,6 +93,15 @@ object AppModule {
     @Singleton
     @ApplicationScope
     fun applicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Plugin-Lader (Naht A, Phase 4): entdeckt und lädt Quellen-Plugin-APKs via PackageManager.
+     * Sicherheits-Gate: TOFU-Signatur-Pin in [SourceRegistration] — Plugins werden nur ausgeführt,
+     * wenn die aktuelle APK-Signatur mit dem beim Hinzufügen gepinnten Cert-SHA-256 übereinstimmt.
+     */
+    @Provides
+    @Singleton
+    fun providePluginHost(@ApplicationContext context: Context): PluginHost = PluginHost(context)
 
     @Provides
     @Singleton

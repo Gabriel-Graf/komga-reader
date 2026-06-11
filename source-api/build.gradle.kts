@@ -1,12 +1,13 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    `java-library`
 }
 
-// Naht-A-Quellen-Vertrag (MediaSource & Co.) als eigenes Modul — Kandidat für das spätere
-// compileOnly der Plugins (Mihon-Modell). NICHT eingefroren/versioniert: die App entwickelt
-// sich noch. Haengt nur an :domain (Inhalts-Modelle), nie an Android/Netz/UI.
+// Naht-A-Quellen-Vertrag (MediaSource, BrowsableSource, SyncingSource, SourceId, PageRefs …).
+// Re-exportiert :domain über api(project(":domain")).
+// Für externe Plugin-Autoren gebündelt im geshadeten :plugin-sdk (kein direktes Publish mehr).
 dependencies {
-    implementation(project(":domain"))
+    api(project(":domain"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit.jupiter)

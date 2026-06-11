@@ -4,6 +4,8 @@ import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceManager
+import com.komgareader.plugin.host.PluginHost
+import io.mockk.mockk
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -25,7 +27,7 @@ class ActiveSourceTest {
 
     private fun activeSource(vararg configs: ServerConfig): ActiveSource {
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider())
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), mockk(relaxed = true))
         return ActiveSource(sources, FakeServerRepository(configs.toList()), registration)
     }
 

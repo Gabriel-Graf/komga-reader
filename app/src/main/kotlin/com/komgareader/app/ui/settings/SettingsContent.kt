@@ -66,6 +66,7 @@ import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.repository.ServerConfig
+import com.komgareader.plugin.host.DiscoveredPlugin
 
 /** Schrittweite und Grenzen der Webtoon-Überlappung (in Prozent). */
 private const val OVERLAP_STEP = 5
@@ -73,20 +74,31 @@ private const val OVERLAP_MIN = 0
 private const val OVERLAP_MAX = 50
 
 /**
- * Modus des Verbindungs-Modals: ADD (leere Felder) oder EDIT einer bestehenden [ServerConfig].
- * Genau ein Modal gleichzeitig (E-Ink-Regel) → ein einziger nullbarer State steuert beides.
+ * Zustand des Verbindungs-Modals. Genau ein Modal gleichzeitig (E-Ink-Regel) →
+ * ein einziger nullbarer State steuert den gesamten Fluss:
+ *
+ * - [Add]        → Standard-Formular für Komga/OPDS (bestehend) + Plugin-Auswahlliste
+ * - [Edit]       → Verbindung bearbeiten (Komga/OPDS; Plugins nicht editierbar in v1)
+ * - [PluginTofu] → TOFU-Bestätigungs-Dialog (Plugin ausgewählt, noch nicht bestätigt)
+ * - [PluginConfig] → generisches Config-Formular nach Bestätigung
  */
 private sealed interface ConnectionModal {
     data object Add : ConnectionModal
     data class Edit(val config: ServerConfig) : ConnectionModal
+    /** Schritt 1 des Plugin-Hinzufügen-Flusses: TOFU-Bestätigung zeigen. */
+    data class PluginTofu(val plugin: DiscoveredPlugin) : ConnectionModal
+    /** Schritt 2 des Plugin-Hinzufügen-Flusses: generisches Config-Formular ausfüllen. */
+    data class PluginConfig(val plugin: DiscoveredPlugin) : ConnectionModal
 }
 
 @Composable
 fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val servers by viewModel.serverList.collectAsState()
+    val discoveredPlugins by viewModel.discoveredPlugins.collectAsState()
 
-    // Genau EIN Modal gleichzeitig: null = zu, sonst Add oder Edit (E-Ink-Invariante).
+    // Genau EIN Modal gleichzeitig: null = zu (E-Ink-Invariante).
+    // Der Plugin-Fluss läuft über zwei aufeinanderfolgende Zustände (PluginTofu → PluginConfig).
     var modal by remember { mutableStateOf<ConnectionModal?>(null) }
 
     // Verbundene Server (mehrere gleichzeitig, gemischt) — „+" im Kopf öffnet das Modal,
@@ -95,7 +107,10 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         s.connectedServers,
         query,
         trailing = {
-            IconButton(onClick = { modal = ConnectionModal.Add }) {
+            IconButton(onClick = {
+                viewModel.refreshDiscoveredPlugins()
+                modal = ConnectionModal.Add
+            }) {
                 Icon(
                     AppIcons.Plus,
                     contentDescription = s.addServer,
@@ -126,56 +141,81 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         }
     }
 
-    modal?.let { mode ->
-        ConnectionModal(
-            mode = mode,
+    when (val mode = modal) {
+        is ConnectionModal.Add -> AddConnectionModal(
+            discoveredPlugins = discoveredPlugins,
+            onDismiss = { modal = null },
+            onSave = { name, url, apiKey, username, password, kind, id ->
+                viewModel.saveServer(name, url, apiKey, username, password, kind, id)
+                modal = null
+            },
+            onPickPlugin = { plugin -> modal = ConnectionModal.PluginTofu(plugin) },
+        )
+        is ConnectionModal.Edit -> EditConnectionModal(
+            config = mode.config,
             onDismiss = { modal = null },
             onSave = { name, url, apiKey, username, password, kind, id ->
                 viewModel.saveServer(name, url, apiKey, username, password, kind, id)
                 modal = null
             },
         )
+        is ConnectionModal.PluginTofu -> PluginTofuModal(
+            plugin = mode.plugin,
+            onDismiss = { modal = null },
+            onConfirm = { modal = ConnectionModal.PluginConfig(mode.plugin) },
+        )
+        is ConnectionModal.PluginConfig -> PluginConfigModal(
+            plugin = mode.plugin,
+            onDismiss = { modal = null },
+            onSubmit = { values ->
+                viewModel.addPluginSource(mode.plugin, values)
+                modal = null
+            },
+        )
+        null -> Unit
     }
 }
 
 /**
- * Verbindungs-Modal für ADD **und** EDIT (eine Composable, kein Duplikat). Hält alle
- * Verbindungseingaben: Quellenart, Name/URL, dann Anmeldung (Benutzer → Passwort → API-Schlüssel,
- * alle optional). Quellen-agnostisch: nur [SourceKind]/[ServerConfig], nie ein Komga-Typ.
+ * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor) plus – falls Plugins
+ * installiert sind – eine separate Auswahlliste darunter. Tippen auf ein Plugin wechselt
+ * in den TOFU-Bestätigungs-Schritt ([onPickPlugin]). Kein Plugin sichtbar = rein Komga/OPDS.
+ *
+ * Quellen-agnostisch: Plugin-Namen kommen aus [DiscoveredPlugin.metadata.displayName],
+ * kein hardkodierter Plugin-Typ in der UI.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun ConnectionModal(
-    mode: ConnectionModal,
+private fun AddConnectionModal(
+    discoveredPlugins: List<DiscoveredPlugin>,
     onDismiss: () -> Unit,
     onSave: (
         name: String, url: String, apiKey: String,
         username: String, password: String, kind: SourceKind, id: Long,
     ) -> Unit,
+    onPickPlugin: (DiscoveredPlugin) -> Unit,
 ) {
     val s = LocalStrings.current
-    val existing = (mode as? ConnectionModal.Edit)?.config
-    val id = existing?.id ?: 0L
 
-    var nameInput by remember { mutableStateOf(existing?.name.orEmpty()) }
-    var urlInput by remember { mutableStateOf(existing?.baseUrl.orEmpty()) }
-    var apiKeyInput by remember { mutableStateOf(existing?.apiKey.orEmpty()) }
-    var usernameInput by remember { mutableStateOf(existing?.username.orEmpty()) }
-    var passwordInput by remember { mutableStateOf(existing?.password.orEmpty()) }
-    var kindInput by remember { mutableStateOf(existing?.kind ?: SourceKind.KOMGA) }
+    var nameInput by remember { mutableStateOf("") }
+    var urlInput by remember { mutableStateOf("") }
+    var apiKeyInput by remember { mutableStateOf("") }
+    var usernameInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
+    var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
 
     EinkModal(
-        title = if (existing == null) s.addServer else s.editServer,
+        title = s.addServer,
         onDismiss = onDismiss,
         confirmLabel = s.save,
         onConfirm = {
-            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, id)
+            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, 0L)
         },
         dismissLabel = s.cancel,
         confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
-        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor (App-Standard,
-        // wie alle anderen Auswahlen). Markennamen — kein i18n-Key nötig.
+        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor.
+        // Markennamen — kein i18n-Key nötig.
         SegmentedChoiceRow(
             label = s.serverSectionKind,
             options = listOf(
@@ -229,6 +269,197 @@ private fun ConnectionModal(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             )
         }
+
+        // Installierte Plugins — nur anzeigen, wenn mindestens eines vorhanden ist.
+        // Jede Zeile triggert den TOFU-Bestätigungs-Fluss (E-Ink-Invariante: kein Sprung
+        // über zwei Dialoge gleichzeitig — onPickPlugin schließt diesen und öffnet den nächsten).
+        if (discoveredPlugins.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FieldCaption(s.navPlugins)
+                discoveredPlugins.forEach { plugin ->
+                    ChoiceRow(
+                        label = plugin.metadata.displayName,
+                        selected = false,
+                        dense = true,
+                        onSelect = { onPickPlugin(plugin) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Modal „Verbindung bearbeiten" für Komga/OPDS. Plugin-Verbindungen sind in v1 nicht editierbar
+ * (Plugin-Schema kann sich ändern; Signatur-Pin bleibt; Benutzer entfernt und fügt neu hinzu).
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun EditConnectionModal(
+    config: ServerConfig,
+    onDismiss: () -> Unit,
+    onSave: (
+        name: String, url: String, apiKey: String,
+        username: String, password: String, kind: SourceKind, id: Long,
+    ) -> Unit,
+) {
+    val s = LocalStrings.current
+    val id = config.id
+
+    var nameInput by remember { mutableStateOf(config.name) }
+    var urlInput by remember { mutableStateOf(config.baseUrl) }
+    var apiKeyInput by remember { mutableStateOf(config.apiKey.orEmpty()) }
+    var usernameInput by remember { mutableStateOf(config.username.orEmpty()) }
+    var passwordInput by remember { mutableStateOf(config.password.orEmpty()) }
+    var kindInput by remember { mutableStateOf(config.kind) }
+
+    EinkModal(
+        title = s.editServer,
+        onDismiss = onDismiss,
+        confirmLabel = s.save,
+        onConfirm = {
+            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, id)
+        },
+        dismissLabel = s.cancel,
+        confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
+    ) {
+        SegmentedChoiceRow(
+            label = s.serverSectionKind,
+            options = listOf(
+                SegmentOption(SourceKind.KOMGA.name, "Komga"),
+                SegmentOption(SourceKind.OPDS.name, "OPDS"),
+            ),
+            selectedKey = kindInput.name,
+            onSelect = { kindInput = SourceKind.valueOf(it) },
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FieldCaption(s.serverSectionServer)
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = { nameInput = it },
+                label = { Text(s.serverDisplayName) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = urlInput,
+                onValueChange = { urlInput = it },
+                label = { Text(s.serverUrl) },
+                placeholder = { Text(s.serverUrlHint) },
+                supportingText = { Text(s.serverUrlHelper) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FieldCaption(s.serverSectionAuth)
+            CredentialsFields(
+                username = usernameInput,
+                password = passwordInput,
+                onUsername = { usernameInput = it },
+                onPassword = { passwordInput = it },
+                usernameLabel = s.serverUsername,
+                passwordLabel = s.serverPassword,
+            )
+            OutlinedTextField(
+                value = apiKeyInput,
+                onValueChange = { apiKeyInput = it },
+                label = { Text(s.serverApiKeyOptional) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
+        }
+    }
+}
+
+/**
+ * TOFU-Bestätigungs-Dialog (Schritt 1 des Plugin-Flusses). Zeigt Anzeigename, Paketname
+ * und Zertifikat-Fingerabdruck (SHA-256) des Plugins. Erst nach expliziter Bestätigung
+ * werden die Plugin-Felder konfiguriert (Schritt 2). Abbrechen bricht den gesamten Fluss ab.
+ *
+ * E-Ink-Invariante: Kein zweites Modal gleichzeitig — dieser Dialog ersetzt das Add-Modal
+ * (der aufrufende State wechselt von [ConnectionModal.Add] zu [ConnectionModal.PluginTofu]).
+ */
+@Composable
+private fun PluginTofuModal(
+    plugin: DiscoveredPlugin,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val s = LocalStrings.current
+
+    EinkModal(
+        title = s.pluginTrustTitle,
+        onDismiss = onDismiss,
+        confirmLabel = s.pluginTrustConfirm,
+        onConfirm = onConfirm,
+        dismissLabel = s.cancel,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(s.pluginTrustBody, style = MaterialTheme.typography.bodyMedium)
+            // Paketname + Zertifikat-Fingerabdruck: monospaced, damit Hex-String lesbar ist.
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                PluginInfoRow(label = plugin.metadata.displayName, value = plugin.packageName)
+                PluginInfoRow(
+                    label = "SHA-256",
+                    value = plugin.signatureSha256
+                        .chunked(8)
+                        .joinToString(" "),
+                )
+            }
+        }
+    }
+}
+
+/** Kompakte Label-/Wert-Zeile im TOFU-Dialog: Label gedämpft links, Wert rechts. */
+@Composable
+private fun PluginInfoRow(label: String, value: String) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+/**
+ * Plugin-Konfigurations-Modal (Schritt 2 des Plugin-Flusses). Rendert generisch die
+ * Schema-Felder des Plugins via [PluginConfigForm] (state-Variante ohne eigenen Submit-Button).
+ * Der [EinkModal]-eigene Bestätigen-Button übernimmt den Submit — [formState.isValid] steuert,
+ * ob er aktiv ist.
+ *
+ * E-Ink-Invariante: Kein zweites Modal gleichzeitig — dieser Dialog ersetzt [PluginTofuModal].
+ */
+@Composable
+private fun PluginConfigModal(
+    plugin: DiscoveredPlugin,
+    onDismiss: () -> Unit,
+    onSubmit: (Map<String, String>) -> Unit,
+) {
+    val s = LocalStrings.current
+    // Formular-Zustand im Aufrufer gehalten, damit EinkModal confirmEnabled + onConfirm
+    // auf den aktuellen Formular-Zustand zugreifen kann (Compose-State-Hoisting).
+    val formState = rememberPluginFormState(plugin.configSchema)
+
+    EinkModal(
+        title = plugin.metadata.displayName,
+        onDismiss = onDismiss,
+        confirmLabel = s.save,
+        onConfirm = { onSubmit(formState.snapshot()) },
+        confirmEnabled = formState.isValid,
+        dismissLabel = s.cancel,
+    ) {
+        PluginConfigForm(formState)
     }
 }
 

@@ -17,3 +17,6 @@ guided-view/realpages/
 
 # Icon-Generator (Node) — Deps nicht tracken
 tools/icons/node_modules/
+
+# Plugin-Projekte: eigene Git-Repos unter plugin/, NICHT Teil des Host-Repos
+plugin/

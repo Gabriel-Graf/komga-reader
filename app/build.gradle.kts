@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":source-api"))
     implementation(project(":plugin-api"))
+    implementation(project(":plugin-host"))
     implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
     implementation(project(":source-opds"))
@@ -59,6 +60,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
 
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

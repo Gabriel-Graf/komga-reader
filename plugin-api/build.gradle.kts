@@ -1,12 +1,15 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    `java-library`
 }
 
-// Plugin-Vertrag (Typ c Color-Presets, später a Quellen). Kandidat für compileOnly der Plugin-APKs.
+// Plugin-Vertrag (SourcePlugin, ConfigSchema, PluginMetadata, PluginAbi, ColorPresetSpec).
+// Re-exportiert Naht-Typen über api(project(":source-api")) → api(project(":domain")).
 // NICHT eingefroren/versioniert: die App entwickelt sich noch.
-// Hängt nur an :domain (ColorProfile-Modell), nie an Android/Netz/UI.
+// Externe Plugin-Autoren linken das geshadete :plugin-sdk (kein direktes Publish mehr):
+//   compileOnly("com.komgareader:plugin-sdk:0.1.0")
 dependencies {
-    implementation(project(":domain"))
+    api(project(":source-api"))
     testImplementation(kotlin("test"))
 }
 tasks.test { useJUnitPlatform() }

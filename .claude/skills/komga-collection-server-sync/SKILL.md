@@ -9,6 +9,26 @@ Hält die Sync-Regeln fest, damit sie nicht versehentlich (oft als „DRY-Aufrä
 Schnitt" getarnt) gebrochen werden. Gehört zu [[project-komga-eink-reader]]; setzt
 `architecture-seams.md` (Naht A) + `source-agnostic-integration.md` voraus.
 
+## SyncCoordinator (Ist, 2026-06-11) — die zentrale Sync-/Discovery-Naht
+
+`app/data/SyncCoordinator.kt` (@Singleton) bündelt **alle** Sync- und Discovery-Trigger.
+Call-Sites melden nur das Ereignis; der Koordinator entscheidet die Aktion. Das Gating
+(`aggressiveSyncAllowed`, jetzt in `app/data/SyncGating.kt`) liegt **im Koordinator** —
+kein ViewModel muss es selbst prüfen.
+
+| Vertrag | Aktion | Aufgerufen aus |
+|---|---|---|
+| `onAppStart()` | latch-geschützt (einmal/Launch): `fullSync` + lokaler Plugin-Scan + 1× Repo-Fetch | `MainActivity` (`LaunchedEffect`) |
+| `onServerChanged()` | `pullOnlySync()` | `SettingsViewModel.saveServer`, `PluginsViewModel.addPluginSource` |
+| `onManualReload()` | Repo-Fetch + lokaler Scan | PluginsViewModel „⟳ Reload" |
+| `onCollectionsTabEntered()` | `fullSync()` nur wenn `aggressiveSyncAllowed` | `CollectionsViewModel.syncOnTabOpen` |
+
+`CollectionSyncManager` bleibt der **Executor unter dem Koordinator** (unchanged): er kennt
+die Sync-Richtungen (`pullOnlySync`/`fullSync`) und `planCollectionSync`. Früher verstreute
+Einzel-Trigger (`syncOnceOnEnter`/`syncOnTabOpen` direkt in VMs, Server-Connect→direkter
+`pullOnlySync`, Plugin-Add→direkter `pullOnlySync`) rufen jetzt den Koordinator. Die
+Richtungs-Invarianten unten bleiben unverändert gültig.
+
 ## Die fünf Invarianten
 
 ### 1. Drei Sync-Events — NICHT eins. Sie sind keine Duplikation.
@@ -16,9 +36,9 @@ Jedes Event erlaubt eine **andere Richtung**. Das ist Absicht, kein Versehen:
 
 | Event | Methode | Erlaubt |
 |---|---|---|
-| **Connect** (Server hinzufügen/bearbeiten, `SettingsViewModel.saveServer`) | `CollectionSyncManager.pullOnlySync()` (`allowPush=false`) | **nur Pull** (Discovery + Server-Overwrite). **Nie Push, kein vanished.** |
+| **Connect** (Server hinzufügen/bearbeiten, `SettingsViewModel.saveServer`) | `SyncCoordinator.onServerChanged()` → `CollectionSyncManager.pullOnlySync()` (`allowPush=false`) | **nur Pull** (Discovery + Server-Overwrite). **Nie Push, kein vanished.** |
 | **Disconnect** (Server entfernen, `removeServer`) | `CollectionRepository.removeSource(sourceId)` | **nur lokales Löschen.** Nie Push, nie Pull, **nie** Server-seitig löschen. |
-| **Steady-state** (App-Start-Tab, „Sync"-Button, LCD-Tab-Open) | `fullSync()` (`allowPush=true`) | bidirektional: push + pull + Discovery + vanished. |
+| **Steady-state** (App-Start-Tab, „Sync"-Button, LCD-Tab-Open) | `SyncCoordinator.onAppStart()`/`onCollectionsTabEntered()` → `fullSync()` (`allowPush=true`) | bidirektional: push + pull + Discovery + vanished. |
 
 **Connect = nur Pull**, weil sonst lokale Sammlungen auf einen frisch verbundenen Server gedrückt/
 dupliziert würden. Die `allowPush=false`-Trennung ist eine **explizite Garantie** — nicht „zufällig

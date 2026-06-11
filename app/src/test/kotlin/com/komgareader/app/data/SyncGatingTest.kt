@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.collections
+package com.komgareader.app.data
 
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

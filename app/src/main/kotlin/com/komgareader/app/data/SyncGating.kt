@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.collections
+package com.komgareader.app.data
 
 /**
  * Darf bei jedem Tab-Öffnen voll gesynct werden? Nur auf bewegungs-/akku-unkritischen Geräten

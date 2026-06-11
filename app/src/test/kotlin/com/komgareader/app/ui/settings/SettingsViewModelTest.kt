@@ -1,8 +1,8 @@
 package com.komgareader.app.ui.settings
 
-import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.SourceRegistration
+import com.komgareader.app.data.SyncCoordinator
 import io.mockk.mockk
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
@@ -44,9 +44,15 @@ class SettingsViewModelTest {
     private fun registration(): SourceRegistration =
         SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true))
 
-    /** pullOnlySync auf leeren Quellen ist ein harmloser No-Op — genügt fürs Konstruieren des VM. */
-    private fun syncManager(collections: CollectionRepository): CollectionSyncManager =
-        CollectionSyncManager(collections, resolver = { null }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
+    /** No-Op-Koordinator — Tests prüfen nicht den Sync-Trigger, nur die Server-Persistenz. */
+    private fun noOpCoordinator(): SyncCoordinator =
+        SyncCoordinator(
+            fullSync = { emptyList() },
+            pullOnlySync = {},
+            scanLocal = {},
+            fetchRepos = {},
+            displayMode = { "EINK" },
+        )
 
     private fun viewModel(servers: ServerRepository): SettingsViewModel {
         val collections = StubCollectionRepository()
@@ -56,7 +62,7 @@ class SettingsViewModelTest {
             StubColorProfileRepository(),
             registration(),
             collections,
-            syncManager(collections),
+            noOpCoordinator(),
         )
     }
 
@@ -68,7 +74,7 @@ class SettingsViewModelTest {
             StubColorProfileRepository(),
             registration(),
             collections,
-            syncManager(collections),
+            noOpCoordinator(),
         )
     }
 

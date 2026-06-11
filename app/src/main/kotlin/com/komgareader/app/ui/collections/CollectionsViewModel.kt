@@ -3,6 +3,7 @@ package com.komgareader.app.ui.collections
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.CollectionSyncManager
+import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.UserCollection
@@ -15,7 +16,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -29,6 +29,7 @@ class CollectionsViewModel @Inject constructor(
     private val repo: CollectionRepository,
     private val sync: CollectionSyncManager,
     private val settings: SettingsRepository,
+    private val coordinator: SyncCoordinator,
 ) : ViewModel() {
 
     val collections: StateFlow<List<UserCollection>> =
@@ -52,10 +53,8 @@ class CollectionsViewModel @Inject constructor(
         runFullSync()
     }
 
-    /** Tab-Öffnen: nur auf Nicht-E-Ink zusätzlich voll synchronisieren (Akku-Schonung auf E-Ink). */
-    fun syncOnTabOpen() = viewModelScope.launch {
-        if (aggressiveSyncAllowed(settings.displayMode.first())) runFullSync()
-    }
+    /** Tab-Öffnen: Gating-Entscheidung liegt jetzt im Koordinator (zentralisiert). */
+    fun syncOnTabOpen() = viewModelScope.launch { coordinator.onCollectionsTabEntered() }
 
     private fun runFullSync() = viewModelScope.launch {
         _vanished.value = sync.fullSync()

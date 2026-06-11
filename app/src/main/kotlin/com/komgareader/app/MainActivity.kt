@@ -8,6 +8,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import coil.Coil
@@ -30,7 +31,6 @@ import com.komgareader.app.ui.components.LocalOnHome
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
-import com.komgareader.app.ui.plugins.repo.RepoBrowserScreen
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
 import com.komgareader.app.ui.settings.SettingsRoute
@@ -60,6 +60,8 @@ class MainActivity : ComponentActivity() {
      * Coils Default-Singleton, der `SourceImage`/`SourceCover` NICHT auflöst (Cover blank, Seiten schwarz).
      */
     @Inject lateinit var imageLoader: ImageLoader
+
+    @Inject lateinit var syncCoordinator: com.komgareader.app.data.SyncCoordinator
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
@@ -119,6 +121,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 KomgaReaderTheme(themeMode = themeMode) {
                     val nav = rememberNavController()
+                    LaunchedEffect(Unit) { syncCoordinator.onAppStart() }
                     // „Zur Bibliothek" app-weit verfügbar (Home-Button im Detail-Header u. a.):
                     // räumt bis zur Graph-Wurzel ab, sodass Home wieder oben liegt statt sich zu stapeln.
                     val onHome: () -> Unit = {
@@ -133,7 +136,6 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onOpenSeries = { seriesId, sourceId -> nav.navigate("series/$seriesId/$sourceId") },
                                 onOpenGroup = { shelfId, _ -> nav.navigate("group/$shelfId") },
-                                onOpenRepoBrowser = { nav.navigate("plugin-repos") },
                             )
                         }
                         composable(
@@ -239,9 +241,6 @@ class MainActivity : ComponentActivity() {
                         // Bibliotheks-Tab). Über den Reader gepusht → Zurück landet im selben Reader.
                         composable("settings") {
                             SettingsRoute(onBack = { nav.popBackStack() })
-                        }
-                        composable("plugin-repos") {
-                            RepoBrowserScreen(onBack = { nav.popBackStack() })
                         }
                     }
                     }

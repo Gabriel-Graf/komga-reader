@@ -59,6 +59,7 @@ import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
 import com.komgareader.app.ui.settings.SettingsScreen
 import com.komgareader.app.ui.theme.LocalDesignTokens
+import com.komgareader.data.plugin.repo.PluginTypeFilter
 import com.komgareader.domain.model.ContentType
 
 private const val TAB_LIBRARY = 0
@@ -77,7 +78,6 @@ private const val TAB_SETTINGS = 4
 fun HomeScreen(
     onOpenSeries: (seriesId: String, sourceId: Long) -> Unit,
     onOpenGroup: (shelfId: Long, serverSourceId: Long) -> Unit,
-    onOpenRepoBrowser: () -> Unit,
 ) {
     val s = LocalStrings.current
     var selected by rememberSaveable { mutableIntStateOf(TAB_LIBRARY) }
@@ -102,6 +102,9 @@ fun HomeScreen(
     // liest/setzt den persistierten Ansichtsmodus, die Screens rendern danach.
     val groupsVm: com.komgareader.app.ui.groups.GroupsViewModel = hiltViewModel()
     val collectionsVm: com.komgareader.app.ui.collections.CollectionsViewModel = hiltViewModel()
+    val pluginsVm: com.komgareader.app.ui.plugins.PluginsViewModel = hiltViewModel()
+    val pluginTypeFilter by pluginsVm.typeFilter.collectAsState()
+    var showRepoMgmt by remember { mutableStateOf(false) }
     val groupsViewMode = tileViewModeOf(groupsVm.viewMode.collectAsState().value, TileViewMode.LIST)
     val collectionsViewMode = tileViewModeOf(collectionsVm.viewMode.collectAsState().value, TileViewMode.LARGE_TILE)
 
@@ -145,13 +148,39 @@ fun HomeScreen(
                         ) {
                             EinkSearchBar(
                                 query = query,
-                                onQueryChange = { query = it },
+                                onQueryChange = {
+                                    query = it
+                                    if (selected == TAB_PLUGINS) pluginsVm.setQuery(it)
+                                },
                                 onSubmit = { submitSearch() },
-                                placeholder = if (onSettingsTab) s.searchSettingsHint else s.searchMediaHint,
+                                placeholder = if (onSettingsTab) s.searchSettingsHint else if (selected == TAB_PLUGINS) s.pluginSearchHint else s.searchMediaHint,
                                 actionLabel = s.searchAction,
                                 clearLabel = s.clearSearch,
-                                onClear = { query = ""; submitted = "" },
-                                leading = if (selected == TAB_LIBRARY && (typeFilter.value.isNotEmpty() || downloadedOnly)) {
+                                onClear = {
+                                    query = ""
+                                    submitted = ""
+                                    if (selected == TAB_PLUGINS) pluginsVm.setQuery("")
+                                },
+                                leading = if (selected == TAB_PLUGINS) {
+                                    {
+                                        PluginFilterChip(
+                                            label = when (pluginTypeFilter) {
+                                                PluginTypeFilter.ALL -> s.pluginFilterAll
+                                                PluginTypeFilter.SOURCES -> s.pluginFilterSources
+                                                PluginTypeFilter.PRESETS -> s.pluginFilterPresets
+                                            },
+                                            onClick = {
+                                                pluginsVm.setTypeFilter(
+                                                    when (pluginTypeFilter) {
+                                                        PluginTypeFilter.ALL -> PluginTypeFilter.SOURCES
+                                                        PluginTypeFilter.SOURCES -> PluginTypeFilter.PRESETS
+                                                        PluginTypeFilter.PRESETS -> PluginTypeFilter.ALL
+                                                    },
+                                                )
+                                            },
+                                        )
+                                    }
+                                } else if (selected == TAB_LIBRARY && (typeFilter.value.isNotEmpty() || downloadedOnly)) {
                                     {
                                         typeFilter.value.forEach { type ->
                                             TypeFilterChip(
@@ -194,6 +223,14 @@ fun HomeScreen(
                             when (selected) {
                                 TAB_LIBRARY -> IconButton(onClick = { libraryVm.refresh() }) {
                                     Icon(AppIcons.Refresh, contentDescription = null)
+                                }
+                                TAB_PLUGINS -> {
+                                    IconButton(onClick = { showRepoMgmt = true }) {
+                                        Icon(AppIcons.Settings, contentDescription = s.repoBrowserManage)
+                                    }
+                                    IconButton(onClick = { pluginsVm.reload() }) {
+                                        Icon(AppIcons.Refresh, contentDescription = s.repoBrowserRefresh)
+                                    }
                                 }
                                 // Sammlungen-Liste: „+" (neue Sammlung) + rotierender Ansichts-Button.
                                 // Im Sammlungs-Detail keine dieser Aktionen.
@@ -288,7 +325,11 @@ fun HomeScreen(
                             showCreateDialog = showCreateGroup,
                             onDismissCreate = { showCreateGroup = false },
                         )
-                        TAB_PLUGINS -> PluginsScreen(onOpenRepoBrowser = onOpenRepoBrowser)
+                        TAB_PLUGINS -> PluginsScreen(
+                            showRepoManagement = showRepoMgmt,
+                            onRepoManagementDismiss = { showRepoMgmt = false },
+                            viewModel = pluginsVm,
+                        )
                         else -> SettingsScreen(query = if (onSettingsTab) query else submitted)
                     }
                 }
@@ -306,12 +347,38 @@ fun HomeScreen(
                     showCreateGroup = false
                     showCreateCollection = false
                     openCollectionId = null
+                    showRepoMgmt = false
+                    pluginsVm.setQuery("")
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .onSizeChanged { barHeightPx = it.height },
             )
         }
+    }
+}
+
+/**
+ * Kompakter Rotations-Chip im Suchfeld für den Plugins-Tab: zeigt den aktiven Typ-Filter an und
+ * rotiert bei Tap (Alle→Quellen→Presets→Alle). Kein ✕-Icon — der Tap ist die Aktion selbst.
+ * Stil spiegelt [TypeFilterChip] exakt (`LocalDesignTokens.accent`-Fill, keine Animation).
+ */
+@Composable
+private fun PluginFilterChip(label: String, onClick: () -> Unit) {
+    val tokens = LocalDesignTokens.current
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(tokens.accent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = tokens.onAccent,
+        )
     }
 }
 

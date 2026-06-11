@@ -133,7 +133,6 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onOpenSeries = { seriesId, sourceId -> nav.navigate("series/$seriesId/$sourceId") },
                                 onOpenGroup = { shelfId, _ -> nav.navigate("group/$shelfId") },
-                                onOpenRepoBrowser = { nav.navigate("plugin-repos") },
                             )
                         }
                         composable(

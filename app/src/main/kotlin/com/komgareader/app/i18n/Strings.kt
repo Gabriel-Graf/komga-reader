@@ -176,6 +176,11 @@ interface Strings {
     val pluginPresetImport: String        // „Importieren"
     val pluginPresetRemove: String        // „Entfernen"
     val pluginPresetImported: String      // Status „Importiert"
+    // Plugin-Tab Suche + Typ-Filter-Chip
+    val pluginSearchHint: String          // Placeholder in der Suchleiste auf dem Plugins-Tab
+    val pluginFilterAll: String           // Chip-Label „Alle"
+    val pluginFilterSources: String       // Chip-Label „Quellen"
+    val pluginFilterPresets: String       // Chip-Label „Presets"
     // Plugin-Repo-Browser (P2)
     val repoBrowserTitle: String
     val repoBrowserOpen: String
@@ -474,6 +479,10 @@ object StringsDe : Strings {
     override val pluginPresetImport = "Importieren"
     override val pluginPresetRemove = "Entfernen"
     override val pluginPresetImported = "Importiert"
+    override val pluginSearchHint = "Plugins suchen"
+    override val pluginFilterAll = "Alle"
+    override val pluginFilterSources = "Quellen"
+    override val pluginFilterPresets = "Presets"
     // Plugin-Repo-Browser (P2)
     override val repoBrowserTitle = "Plugins entdecken"
     override val repoBrowserOpen = "Plugins entdecken"
@@ -763,6 +772,10 @@ object StringsEn : Strings {
     override val pluginPresetImport = "Import"
     override val pluginPresetRemove = "Remove"
     override val pluginPresetImported = "Imported"
+    override val pluginSearchHint = "Search plugins"
+    override val pluginFilterAll = "All"
+    override val pluginFilterSources = "Sources"
+    override val pluginFilterPresets = "Presets"
     // Plugin repo browser (P2)
     override val repoBrowserTitle = "Discover plugins"
     override val repoBrowserOpen = "Discover plugins"

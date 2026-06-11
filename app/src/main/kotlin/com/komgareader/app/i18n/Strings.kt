@@ -103,7 +103,6 @@ interface Strings {
     val fallbackType: String
     // Navigation
     val navPlugins: String
-    val pluginsComingSoon: String
     // Settings-Landing (Kachel-Titel)
     val settingsConnection: String
     val settingsAppearance: String
@@ -227,8 +226,6 @@ interface Strings {
     val colorFilterDitherFloydDesc: String
     val colorFilterDitherOrderedDesc: String
     val colorFilterDitherLevelsAbout: String
-    val colorFilterImportPreset: String
-    val colorFilterImportError: String
     val close: String
     // Reader-Einstellungen
     val settingsWebtoon: String
@@ -380,7 +377,6 @@ object StringsDe : Strings {
     override val fallbackType = "Fallback-Typ (optional)"
     // Navigation
     override val navPlugins = "Plugins"
-    override val pluginsComingSoon = "Bald verfügbar — externe Quellen-Plugins laden."
     // Settings-Landing
     override val settingsConnection = "Verbindung"
     override val settingsAppearance = "Darstellung"
@@ -508,8 +504,6 @@ object StringsDe : Strings {
     override val colorFilterDitherFloydDesc = "Fehlerdiffusion: Der Rundungsfehler wird gewichtet an die folgenden Pixel weitergegeben. Beste Ergebnisse bei Verläufen und Hauttönen, wirkt am natürlichsten. Läuft pixelweise nacheinander, daher am rechenintensivsten (höchster Akku-Verbrauch)."
     override val colorFilterDitherOrderedDesc = "Feste Bayer-Rastermatrix als Schwellwert. Deutlich billiger und parallel berechenbar, hinterlässt aber ein leichtes, regelmäßiges Punktmuster. Gut, wenn Akku wichtiger ist als maximale Glätte."
     override val colorFilterDitherLevelsAbout = "Stufen: Anzahl der Helligkeitswerte pro Kanal, auf die reduziert wird (2 = sehr grob und stark sichtbar, 64 = fein und dezent). Niedriger = stärkerer Dither-Effekt."
-    override val colorFilterImportPreset = "Preset importieren"
-    override val colorFilterImportError = "Ungültiges Preset — inkompatible ABI-Version oder fehlerhaftes JSON."
     override val close = "Schließen"
     // Reader-Einstellungen
     override val settingsWebtoon = "Webtoon"
@@ -655,7 +649,6 @@ object StringsEn : Strings {
     override val fallbackType = "Fallback type (optional)"
     // Navigation
     override val navPlugins = "Plugins"
-    override val pluginsComingSoon = "Coming soon — load external source plugins."
     // Settings landing
     override val settingsConnection = "Connection"
     override val settingsAppearance = "Appearance"
@@ -783,8 +776,6 @@ object StringsEn : Strings {
     override val colorFilterDitherFloydDesc = "Error diffusion: the rounding error is passed on, weighted, to the following pixels. Best results on gradients and skin tones, looks most natural. Runs pixel by pixel in sequence, so it is the most compute-heavy (highest battery use)."
     override val colorFilterDitherOrderedDesc = "A fixed Bayer threshold matrix. Much cheaper and computable in parallel, but leaves a faint regular dot pattern. Good when battery matters more than maximum smoothness."
     override val colorFilterDitherLevelsAbout = "Levels: how many brightness values per channel the image is reduced to (2 = very coarse and strong, 64 = fine and subtle). Lower = stronger dithering."
-    override val colorFilterImportPreset = "Import preset"
-    override val colorFilterImportError = "Invalid preset — incompatible ABI version or malformed JSON."
     override val close = "Close"
     // Reader settings
     override val settingsWebtoon = "Webtoon"

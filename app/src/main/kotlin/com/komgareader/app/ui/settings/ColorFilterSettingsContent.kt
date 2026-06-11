@@ -1,7 +1,5 @@
 package com.komgareader.app.ui.settings
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,7 +85,6 @@ fun ColorFilterSettingsContent(
     val edit by viewModel.edit.collectAsState()
     val preview by viewModel.preview.collectAsState()
     val canGoBack by viewModel.canGoBack.collectAsState()
-    val importError by viewModel.importError.collectAsState()
     val ctx = LocalContext.current
 
     var showSaveDialog by remember { mutableStateOf(false) }
@@ -96,16 +93,6 @@ fun ColorFilterSettingsContent(
     var showDitherInfo by remember { mutableStateOf(false) }
     var profilesExpanded by remember { mutableStateOf(false) }
     var selectorSize by remember { mutableStateOf(IntSize.Zero) }
-
-    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        // Lesefehler (Exception oder null-Stream) werden als null durchgereicht — das ViewModel
-        // behandelt null als Fehler und zeigt denselben Import-Fehler-Dialog wie ein Parse-Fehler.
-        val json = runCatching {
-            ctx.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-        }.getOrNull()
-        viewModel.importPresetJson(json)
-    }
 
     // Zentrierte Vorschau: Cover mittig, Icon-Pfeile in symmetrischen festen Slots daneben.
     val previewProfile = edit?.let {
@@ -238,13 +225,6 @@ fun ColorFilterSettingsContent(
                     Icon(AppIcons.Plus, contentDescription = s.colorFilterNewProfile, modifier = Modifier.size(24.dp))
                 }
             }
-            // Preset aus JSON-Datei importieren (Plugin-Typ c).
-            EinkOutlinedButton(
-                onClick = { importLauncher.launch(arrayOf("application/json")) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(s.colorFilterImportPreset)
-            }
         }
 
         // Editor (Adjust) — erscheint nur beim Anlegen oder über das Zahnrad. Eng gestellt.
@@ -370,13 +350,6 @@ fun ColorFilterSettingsContent(
             if (p.ditherMode != DitherMode.NONE) {
                 InfoValueRow(s.colorFilterDitherLevels, p.ditherLevels.toString())
             }
-        }
-    }
-
-    // Fehlermeldung bei inkompatiblem oder fehlerhaftem Preset-Import.
-    if (importError) {
-        EinkInfoDialog(title = s.colorFilterImportPreset, onDismiss = { viewModel.dismissImportError() }, closeLabel = s.close) {
-            Text(s.colorFilterImportError, style = MaterialTheme.typography.bodyMedium)
         }
     }
 

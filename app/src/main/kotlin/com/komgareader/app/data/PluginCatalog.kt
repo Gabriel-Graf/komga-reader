@@ -38,6 +38,14 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Pure Abbildung installierter Plugins auf die agnostische [InstalledEntry]-Sicht. */
+fun installedEntriesOf(
+    sources: List<DiscoveredPlugin>,
+    presets: List<DiscoveredPresetPlugin>,
+): List<InstalledEntry> =
+    sources.map { InstalledEntry(it.packageName, it.metadata.displayName, PluginKind.SOURCE) } +
+        presets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PRESET) }
+
 /**
  * Einziger Halter des Plugin-Discovery-Zustands (installierte APK-Quellen/-Presets + entdeckte
  * Repo-Einträge). Von [SyncCoordinator] (App-Start/Reload) und dem dünnen `PluginsViewModel`
@@ -77,8 +85,7 @@ class PluginCatalog @Inject constructor(
 
     /** Installierte als quellen-agnostische [InstalledEntry] (für die pure `visibleRows`-Filterung). */
     fun installedEntries(): List<InstalledEntry> =
-        _sources.value.map { InstalledEntry(it.packageName, it.metadata.displayName, PluginKind.SOURCE) } +
-            _presetPlugins.value.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PRESET) }
+        installedEntriesOf(_sources.value, _presetPlugins.value)
 
     /**
      * Lokaler APK-Scan (kein Netz): Quellen + Presets neu entdecken, danach Verwaistes prunen

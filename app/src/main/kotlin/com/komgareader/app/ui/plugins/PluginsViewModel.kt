@@ -2,84 +2,82 @@ package com.komgareader.app.ui.plugins
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.komgareader.app.data.CollectionSyncManager
-import com.komgareader.app.data.SourceRegistration
+import com.komgareader.app.data.PluginCatalog
+import com.komgareader.app.data.installedEntriesOf
+import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.data.plugin.ColorPresetImporter
+import com.komgareader.data.plugin.repo.BrowserRow
+import com.komgareader.data.plugin.repo.PluginTypeFilter
+import com.komgareader.data.plugin.repo.RepoSource
+import com.komgareader.data.plugin.repo.VisibleRows
+import com.komgareader.data.plugin.repo.visibleRows
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
-import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.plugin.ColorPresetSpec
 import com.komgareader.plugin.host.DiscoveredPlugin
-import com.komgareader.plugin.host.DiscoveredPresetPlugin
-import com.komgareader.plugin.host.PluginHost
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PluginsViewModel @Inject constructor(
-    private val pluginHost: PluginHost,
+    private val catalog: PluginCatalog,
+    private val coordinator: SyncCoordinator,
     private val servers: ServerRepository,
-    private val registration: SourceRegistration,
-    private val collections: CollectionRepository,
     private val colorProfiles: ColorProfileRepository,
-    private val sync: CollectionSyncManager,
 ) : ViewModel() {
 
-    private val _sources = MutableStateFlow<List<DiscoveredPlugin>>(emptyList())
-    val sources: StateFlow<List<DiscoveredPlugin>> = _sources.asStateFlow()
+    val sources = catalog.sources
+    val presetPlugins = catalog.presetPlugins
+    val loading = catalog.loading
+    val error = catalog.error
 
-    private val _presetPlugins = MutableStateFlow<List<DiscoveredPresetPlugin>>(emptyList())
-    val presetPlugins: StateFlow<List<DiscoveredPresetPlugin>> = _presetPlugins.asStateFlow()
+    val profiles: StateFlow<List<ColorProfile>> =
+        colorProfiles.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Alle Profile (für „bereits importiert?"-Abgleich pro Preset-Plugin nach (pkg, name)). */
-    val profiles = colorProfiles.observeAll()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val repos: StateFlow<List<RepoSource>> =
+        catalog.reposFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /**
-     * Re-Scan beim Tab-Öffnen/`onResume`: Quellen + Presets neu entdecken, danach aufräumen,
-     * was zu deinstallierten Plugin-APKs gehört (Uninstall hat kein verlässliches Callback).
-     */
-    fun refresh() = viewModelScope.launch {
-        // PackageManager-Scan + Asset-File-Read sind I/O → vom Main-Thread (ON_RESUME) wegschieben.
-        val srcs = withContext(Dispatchers.IO) {
-            runCatching { pluginHost.discoverPlugins() }.getOrDefault(emptyList())
-        }
-        val presets = withContext(Dispatchers.IO) {
-            runCatching { pluginHost.discoverColorPresetPlugins() }.getOrDefault(emptyList())
-        }
-        _sources.value = srcs
-        _presetPlugins.value = presets
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
+    fun setQuery(q: String) { _query.value = q }
 
-        val installed = (srcs.map { it.packageName } + presets.map { it.packageName }).toSet()
-        // Suspending lesen (nicht profiles.value): beim allerersten refresh() kann der Eagerly-StateFlow
-        // noch auf der initialen emptyList() stehen → der Prune würde getaggte Profile übersehen.
-        val taggedPkgs = colorProfiles.observeAll().first().mapNotNull { it.pluginPackage }
-        val pluginConfigs = servers.configs.first().filter { it.kind == SourceKind.PLUGIN }
-        val plan = planPluginPrune(installed, taggedPkgs, pluginConfigs)
-        plan.presetPackagesToDrop.forEach { colorProfiles.deleteByPluginPackage(it) }
-        plan.sourceConfigIdsToRemove.forEach { id ->
-            val cfg = pluginConfigs.firstOrNull { it.id == id }
-            servers.remove(id)
-            cfg?.let { registration.sourceIdOf(it) }?.let { collections.removeSource(it) }
-        }
-    }.let {}
+    private val _typeFilter = MutableStateFlow(PluginTypeFilter.ALL)
+    val typeFilter: StateFlow<PluginTypeFilter> = _typeFilter.asStateFlow()
+    fun setTypeFilter(f: PluginTypeFilter) { _typeFilter.value = f }
+
+    /** Gefilterte, anzeigefertige Sicht: installiert oben, entdeckt unten, Divider-Flag. */
+    val visible: StateFlow<VisibleRows> =
+        combine(catalog.sources, catalog.presetPlugins, catalog.discovered, _query, _typeFilter) { srcs, presets, disc, q, f ->
+            visibleRows(installedEntriesOf(srcs, presets), disc, q, f)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VisibleRows(emptyList(), emptyList(), false))
+
+    /** Lokaler Re-Scan beim Tab-`onResume` (kein Netz) — entdeckt Install/Uninstall + prunt. */
+    fun rescanLocal() = viewModelScope.launch { catalog.scanLocal() }.let {}
+
+    /** Reload-Button: Netz-Repo-Fetch + lokaler Scan über den Koordinator. */
+    fun reload() = viewModelScope.launch { coordinator.onManualReload() }.let {}
+
+    fun install(row: BrowserRow) = viewModelScope.launch { catalog.install(row) }.let {}
+    fun dismissError() { catalog.dismissError() }
+
+    fun addRepo(url: String) = viewModelScope.launch { catalog.addRepo(url) }.let {}
+    fun removeRepo(id: Long) = viewModelScope.launch { catalog.removeRepo(id) }.let {}
+    fun setOfficialEnabled(enabled: Boolean) = viewModelScope.launch { catalog.setOfficialEnabled(enabled) }.let {}
 
     /**
      * Persistiert eine bestätigte Plugin-Quelle als [ServerConfig] (kind = PLUGIN). Extras tragen
      * neben den Nutzerwerten die reservierten Wiring-Keys `__pkg`/`__entry`/`__sig` (TOFU-Pin).
-     * Verschoben aus SettingsViewModel — der Add-Flow lebt jetzt im Plugin-Tab.
+     * Nach dem Speichern Sync anstoßen (neue Sammlungen pullen).
      */
     fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) = viewModelScope.launch {
         servers.save(
@@ -94,11 +92,11 @@ class PluginsViewModel @Inject constructor(
                 ),
             )
         )
-        runCatching { sync.pullOnlySync() }
+        coordinator.onServerChanged()
     }.let {}
 
     /**
-     * Importiert ein Preset eines Plugins als getaggtes Profil (builtIn bleibt false, aber
+     * Importiert ein Preset eines Plugins als getaggtes Profil (builtIn bleibt false,
      * `pluginPackage` markiert es als Plugin-eigen → in der UI nicht editierbar). Inkompatible/
      * fehlerhafte Specs werden still verworfen (ABI-/Wert-Validierung in ColorPresetImporter).
      */

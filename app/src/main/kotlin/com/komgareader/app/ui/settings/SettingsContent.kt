@@ -59,6 +59,8 @@ import com.komgareader.app.ui.components.SettingsGroupIndent
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.SwitchRow
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.plugins.PluginConfigModal
+import com.komgareader.app.ui.plugins.PluginTofuModal
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
@@ -374,92 +376,6 @@ private fun EditConnectionModal(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             )
         }
-    }
-}
-
-/**
- * TOFU-Bestätigungs-Dialog (Schritt 1 des Plugin-Flusses). Zeigt Anzeigename, Paketname
- * und Zertifikat-Fingerabdruck (SHA-256) des Plugins. Erst nach expliziter Bestätigung
- * werden die Plugin-Felder konfiguriert (Schritt 2). Abbrechen bricht den gesamten Fluss ab.
- *
- * E-Ink-Invariante: Kein zweites Modal gleichzeitig — dieser Dialog ersetzt das Add-Modal
- * (der aufrufende State wechselt von [ConnectionModal.Add] zu [ConnectionModal.PluginTofu]).
- */
-@Composable
-private fun PluginTofuModal(
-    plugin: DiscoveredPlugin,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    val s = LocalStrings.current
-
-    EinkModal(
-        title = s.pluginTrustTitle,
-        onDismiss = onDismiss,
-        confirmLabel = s.pluginTrustConfirm,
-        onConfirm = onConfirm,
-        dismissLabel = s.cancel,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(s.pluginTrustBody, style = MaterialTheme.typography.bodyMedium)
-            // Paketname + Zertifikat-Fingerabdruck: monospaced, damit Hex-String lesbar ist.
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                PluginInfoRow(label = plugin.metadata.displayName, value = plugin.packageName)
-                PluginInfoRow(
-                    label = "SHA-256",
-                    value = plugin.signatureSha256
-                        .chunked(8)
-                        .joinToString(" "),
-                )
-            }
-        }
-    }
-}
-
-/** Kompakte Label-/Wert-Zeile im TOFU-Dialog: Label gedämpft links, Wert rechts. */
-@Composable
-private fun PluginInfoRow(label: String, value: String) {
-    Column(Modifier.fillMaxWidth()) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-}
-
-/**
- * Plugin-Konfigurations-Modal (Schritt 2 des Plugin-Flusses). Rendert generisch die
- * Schema-Felder des Plugins via [PluginConfigForm] (state-Variante ohne eigenen Submit-Button).
- * Der [EinkModal]-eigene Bestätigen-Button übernimmt den Submit — [formState.isValid] steuert,
- * ob er aktiv ist.
- *
- * E-Ink-Invariante: Kein zweites Modal gleichzeitig — dieser Dialog ersetzt [PluginTofuModal].
- */
-@Composable
-private fun PluginConfigModal(
-    plugin: DiscoveredPlugin,
-    onDismiss: () -> Unit,
-    onSubmit: (Map<String, String>) -> Unit,
-) {
-    val s = LocalStrings.current
-    // Formular-Zustand im Aufrufer gehalten, damit EinkModal confirmEnabled + onConfirm
-    // auf den aktuellen Formular-Zustand zugreifen kann (Compose-State-Hoisting).
-    val formState = rememberPluginFormState(plugin.configSchema)
-
-    EinkModal(
-        title = plugin.metadata.displayName,
-        onDismiss = onDismiss,
-        confirmLabel = s.save,
-        onConfirm = { onSubmit(formState.snapshot()) },
-        confirmEnabled = formState.isValid,
-        dismissLabel = s.cancel,
-    ) {
-        PluginConfigForm(formState)
     }
 }
 

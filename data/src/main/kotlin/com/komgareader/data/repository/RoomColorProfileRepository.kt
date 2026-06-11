@@ -35,6 +35,8 @@ class RoomColorProfileRepository(
 
     override suspend fun delete(id: Long) = dao.deleteCustom(id)
 
+    override suspend fun deleteByPluginPackage(pkg: String) = dao.deleteByPluginPackage(pkg)
+
     override suspend fun setActive(id: Long) = setActivePointer(id)
 }
 
@@ -43,12 +45,12 @@ private fun ColorProfileEntity.toDomain() = ColorProfile(
     blackPoint = blackPoint, whitePoint = whitePoint, gamma = gamma,
     sharpenAmount = sharpenAmount, sharpenRadius = sharpenRadius,
     ditherMode = runCatching { DitherMode.valueOf(ditherMode) }.getOrDefault(DitherMode.NONE),
-    ditherLevels = ditherLevels, builtIn = builtIn,
+    ditherLevels = ditherLevels, builtIn = builtIn, pluginPackage = pluginPackage,
 )
 
 private fun ColorProfile.toEntity() = ColorProfileEntity(
     id = id, name = name, saturation = saturation, contrast = contrast, brightness = brightness,
     blackPoint = blackPoint, whitePoint = whitePoint, gamma = gamma,
     sharpenAmount = sharpenAmount, sharpenRadius = sharpenRadius,
-    ditherMode = ditherMode.name, ditherLevels = ditherLevels, builtIn = builtIn,
+    ditherMode = ditherMode.name, ditherLevels = ditherLevels, builtIn = builtIn, pluginPackage = pluginPackage,
 )

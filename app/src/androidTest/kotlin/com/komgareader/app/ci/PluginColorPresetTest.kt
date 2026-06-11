@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.plugin.host.PluginHost
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +27,6 @@ class PluginColorPresetTest {
         assertTrue("Entdecktes Preset-Plugin muss ABI 1 haben", pkg.abiVersion == 1)
         assertTrue("Preset-Plugin muss mind. ein ColorPresetSpec liefern, war: ${pkg.presets.size}", pkg.presets.isNotEmpty())
         val spec = pkg.presets.first()
-        assertNotNull("ColorPresetSpec braucht einen Namen", spec.name)
         assertTrue("ColorPresetSpec-Name darf nicht leer sein", spec.name.isNotBlank())
     }
 }

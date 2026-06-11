@@ -13,8 +13,13 @@ import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.plugin.host.DiscoveredPlugin
+import com.komgareader.plugin.host.PluginHost
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -28,6 +33,7 @@ class SettingsViewModel @Inject constructor(
     private val registration: SourceRegistration,
     private val collections: CollectionRepository,
     private val sync: CollectionSyncManager,
+    private val pluginHost: PluginHost,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -50,6 +56,19 @@ class SettingsViewModel @Inject constructor(
     val serverList = servers.configs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeColorProfile = colorProfiles.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, ColorProfile.OFF)
+
+    /**
+     * Alle installierten, ABI-kompatiblen Quellen-Plugins. Wird beim ersten Laden und jedes Mal,
+     * wenn das Server-Hinzufügen-Modal geöffnet wird (über [refreshDiscoveredPlugins]) gefüllt.
+     * Leere Liste = kein Plugin installiert oder kein PackageManager-Zugriff.
+     */
+    private val _discoveredPlugins = MutableStateFlow<List<DiscoveredPlugin>>(emptyList())
+    val discoveredPlugins: StateFlow<List<DiscoveredPlugin>> = _discoveredPlugins.asStateFlow()
+
+    /** Erfrische die Plugin-Liste (wird vom UI beim Öffnen des Add-Server-Modals aufgerufen). */
+    fun refreshDiscoveredPlugins() = viewModelScope.launch {
+        _discoveredPlugins.value = runCatching { pluginHost.discoverPlugins() }.getOrDefault(emptyList())
+    }.let {}
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
@@ -94,6 +113,31 @@ class SettingsViewModel @Inject constructor(
         )
         // Server verbunden (neu/aktualisiert) → dessen Sammlungen NUR pullen (nie lokale pushen).
         // Best-effort: ein vorübergehender Verbindungsfehler darf das Speichern nicht abbrechen.
+        runCatching { sync.pullOnlySync() }
+    }.let {}
+
+    /**
+     * Persistiert eine neu bestätigte Plugin-Quelle als [ServerConfig] (kind = [SourceKind.PLUGIN]).
+     * Die Extras tragen neben den nutzerkonfigurierten Werten ([values]) drei interne Schlüssel:
+     * - `__pkg`   = Paketname des Plugin-APKs (für [PluginHost.sourceFor])
+     * - `__entry` = Entry-Class-Name (für den Classloader)
+     * - `__sig`   = gepinntes Cert-SHA-256 (TOFU-Pin; bei Signaturänderung → kein Laden)
+     *
+     * OPDS-Normalisierung wird bewusst übersprungen, [SourceKind.PLUGIN] braucht kein Komga-URL-Format.
+     */
+    fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) = viewModelScope.launch {
+        servers.save(
+            ServerConfig(
+                name = plugin.metadata.displayName,
+                baseUrl = values["url"]?.trim() ?: "",
+                kind = SourceKind.PLUGIN,
+                extras = values + mapOf(
+                    "__pkg" to plugin.packageName,
+                    "__entry" to plugin.entryClass,
+                    "__sig" to plugin.signatureSha256,
+                ),
+            )
+        )
         runCatching { sync.pullOnlySync() }
     }.let {}
 

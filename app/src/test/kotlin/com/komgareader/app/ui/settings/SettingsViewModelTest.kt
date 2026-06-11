@@ -4,6 +4,7 @@ import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.plugin.host.PluginHost
+import io.mockk.every
 import io.mockk.mockk
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
@@ -49,6 +50,11 @@ class SettingsViewModelTest {
     private fun syncManager(collections: CollectionRepository): CollectionSyncManager =
         CollectionSyncManager(collections, resolver = { null }, allSources = { emptyList() }, titleResolver = { _, _, _ -> null })
 
+    /** Minimal-Mock für [PluginHost]: kein APK installiert → leere Plugin-Liste. */
+    private fun pluginHost(): PluginHost = mockk<PluginHost>().also {
+        every { it.discoverPlugins() } returns emptyList()
+    }
+
     private fun viewModel(servers: ServerRepository): SettingsViewModel {
         val collections = StubCollectionRepository()
         return SettingsViewModel(
@@ -58,6 +64,7 @@ class SettingsViewModelTest {
             registration(),
             collections,
             syncManager(collections),
+            pluginHost(),
         )
     }
 
@@ -70,6 +77,7 @@ class SettingsViewModelTest {
             registration(),
             collections,
             syncManager(collections),
+            pluginHost(),
         )
     }
 

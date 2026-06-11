@@ -18,13 +18,60 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.plugin.ConfigField
 import com.komgareader.plugin.ConfigSchema
 import com.komgareader.plugin.FieldType
+
+/**
+ * Gehaltener Zustand eines Plugin-Konfigurations-Formulars — ermöglicht es dem Aufrufer
+ * (z. B. einem [com.komgareader.app.ui.components.EinkModal]), den Bestätigen-Button zu
+ * steuern und die Werte beim Bestätigen abzugreifen, ohne den Submit-Button ins Formular
+ * zu legen.
+ *
+ * Typischer Verwendungsfall:
+ * ```kotlin
+ * val formState = rememberPluginFormState(schema)
+ * EinkModal(
+ *     confirmEnabled = formState.isValid,
+ *     onConfirm = { onSubmit(formState.snapshot()) },
+ * ) {
+ *     PluginConfigForm(formState)
+ * }
+ * ```
+ */
+class PluginFormState(
+    internal val schema: ConfigSchema,
+    val values: SnapshotStateMap<String, String>,
+) {
+    /** true, wenn alle Pflichtfelder (nicht-BOOL) ausgefüllt sind. */
+    val isValid: Boolean
+        get() = schema.fields
+            .filter { it.required && it.type != FieldType.BOOL }
+            .all { field -> values[field.key].orEmpty().isNotBlank() }
+
+    /** Liefert eine unveränderliche Kopie der aktuellen Werte. */
+    fun snapshot(): Map<String, String> = values.toMap()
+}
+
+/**
+ * Erzeugt und merkt sich einen [PluginFormState] für das gegebene [schema].
+ * Vorbelegt: gesetzter Default oder leerer String (BOOL-Felder → "false" wenn leer).
+ */
+@Composable
+fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
+    val values: SnapshotStateMap<String, String> = remember(schema) {
+        schema.fields.map { field ->
+            val initial = field.default.ifEmpty {
+                if (field.type == FieldType.BOOL) "false" else ""
+            }
+            field.key to initial
+        }.toMutableStateMap()
+    }
+    return remember(schema, values) { PluginFormState(schema, values) }
+}
 
 /**
  * Generisches Formular für ein Plugin-[ConfigSchema]: rendert je [ConfigField] genau ein
@@ -48,37 +95,42 @@ fun PluginConfigForm(
     onSubmit: (Map<String, String>) -> Unit,
 ) {
     val s = LocalStrings.current
-
-    // Vorbelegen: gesetzter Default oder leerer String (BOOL-Felder → "false" wenn leer).
-    val values: SnapshotStateMap<String, String> = remember(schema) {
-        schema.fields.map { field ->
-            val initial = field.default.ifEmpty {
-                if (field.type == FieldType.BOOL) "false" else ""
-            }
-            field.key to initial
-        }.toMutableStateMap()
-    }
-
-    // Submit nur aktiv, wenn alle Pflichtfelder (nicht-BOOL) ausgefüllt sind.
-    val submitEnabled = schema.fields
-        .filter { it.required && it.type != FieldType.BOOL }
-        .all { field -> values[field.key].orEmpty().isNotBlank() }
+    val formState = rememberPluginFormState(schema)
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        schema.fields.forEach { field ->
-            PluginConfigField(
-                field = field,
-                value = values[field.key].orEmpty(),
-                onValueChange = { values[field.key] = it },
-            )
-        }
+        PluginConfigFields(formState)
 
         Button(
-            onClick = { onSubmit(values.toMap()) },
-            enabled = submitEnabled,
+            onClick = { onSubmit(formState.snapshot()) },
+            enabled = formState.isValid,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(s.save)
+        }
+    }
+}
+
+/**
+ * Formular-Variante für die Integration in [com.komgareader.app.ui.components.EinkModal]:
+ * rendert nur die Felder aus [state], keinen Submit-Button — der Modal-eigene Bestätigen-Button
+ * ist der Submit-Auslöser. [state] muss per [rememberPluginFormState] im Aufrufer erzeugt
+ * worden sein.
+ */
+@Composable
+fun PluginConfigForm(state: PluginFormState) {
+    PluginConfigFields(state)
+}
+
+/** Rendert alle Schema-Felder eines [PluginFormState] — gemeinsamer Kern beider Formular-Varianten. */
+@Composable
+private fun PluginConfigFields(state: PluginFormState) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        state.schema.fields.forEach { field ->
+            PluginConfigField(
+                field = field,
+                value = state.values[field.key].orEmpty(),
+                onValueChange = { state.values[field.key] = it },
+            )
         }
     }
 }

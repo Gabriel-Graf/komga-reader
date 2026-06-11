@@ -163,6 +163,10 @@ interface Strings {
     val collectionVanishedBody: String
     val collectionVanishedDeleteHere: String
     val collectionVanishedKeepHere: String
+    // Plugin-TOFU-Bestätigung (Trust-on-First-Use)
+    val pluginTrustTitle: String      // Dialog-Titel
+    val pluginTrustBody: String       // Erklärungstext (enthält keine Namen — die Felder darunter zeigen sie)
+    val pluginTrustConfirm: String    // Bestätigen-Label
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -432,6 +436,10 @@ object StringsDe : Strings {
     override val collectionVanishedBody = "Diese Sammlungen sind am Server nicht mehr vorhanden. Hier auch löschen?"
     override val collectionVanishedDeleteHere = "Hier auch löschen"
     override val collectionVanishedKeepHere = "Hier behalten"
+    // Plugin-TOFU-Bestätigung
+    override val pluginTrustTitle = "Diesem Plugin vertrauen?"
+    override val pluginTrustBody = "Dieses Plugin erhält Zugriff auf die App-Quellen-Naht. Vertraue nur Plugins aus bekannten Quellen. Das Zertifikat (SHA-256) wird als Pin gespeichert — bei einer späteren Signaturänderung wird das Plugin nicht mehr geladen."
+    override val pluginTrustConfirm = "Vertrauen und hinzufügen"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -692,6 +700,10 @@ object StringsEn : Strings {
     override val collectionVanishedBody = "These collections no longer exist on the server. Delete them here too?"
     override val collectionVanishedDeleteHere = "Delete here too"
     override val collectionVanishedKeepHere = "Keep here"
+    // Plugin TOFU confirmation
+    override val pluginTrustTitle = "Trust this plugin?"
+    override val pluginTrustBody = "This plugin will be granted access to the app's source seam. Only trust plugins from known sources. The certificate (SHA-256) is saved as a pin — if the signature changes later, the plugin will no longer be loaded."
+    override val pluginTrustConfirm = "Trust and add"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

@@ -2,13 +2,16 @@ package com.komgareader.app.ui.reader
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +29,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.text.style.TextAlign
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.common.label
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.icons.AppIcons
@@ -167,7 +172,21 @@ fun NovelReaderScreen(
                     Modifier.fillMaxSize().background(Color.White),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(state.error!!, color = Color.Black)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(32.dp),
+                    ) {
+                        Text(state.error!!.kind.label(), color = Color.Black, textAlign = TextAlign.Center)
+                        if (state.error!!.detail.isNotBlank()) {
+                            Text(
+                                state.error!!.detail,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Black.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
                 }
                 state.loading -> Box(
                     Modifier.fillMaxSize(),

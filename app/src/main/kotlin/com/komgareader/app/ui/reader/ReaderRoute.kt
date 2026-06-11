@@ -1,9 +1,13 @@
 package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import com.komgareader.app.ui.components.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,7 +16,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.ui.common.label
 import com.komgareader.eink.onyx.OnyxRefresher
 
 /**
@@ -55,7 +62,21 @@ fun ReaderRoute(
         }
         is ReaderContent.Error -> {
             Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-                Text(c.message, color = Color.White)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(32.dp),
+                ) {
+                    Text(c.error.kind.label(), color = Color.White, textAlign = TextAlign.Center)
+                    if (c.error.detail.isNotBlank()) {
+                        Text(
+                            c.error.detail,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
             }
         }
         is ReaderContent.Novel -> {

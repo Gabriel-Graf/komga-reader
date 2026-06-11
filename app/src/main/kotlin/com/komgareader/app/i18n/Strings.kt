@@ -120,6 +120,13 @@ interface Strings {
     val downloadComplete: String
     fun downloadingChapters(count: Int): String
     fun downloadFailed(message: String): String
+    // Nutzerfreundliche Fehlerklassen (zentrales Fehler-Mapping)
+    val errorNoConnection: String
+    val errorUnauthorized: String
+    val errorForbidden: String
+    val errorNotFound: String
+    val errorServer: String
+    val errorUnknown: String
     // Suche
     val searchMediaHint: String
     val searchSettingsHint: String
@@ -152,6 +159,10 @@ interface Strings {
     val addWorksHint: String                       // Such-Platzhalter im kompakten Hinzufügen-Modal
     val collectionPending: String                  // Sync-Link noch nicht abgeglichen (dirty)
     val collectionSynced: String                   // Sync-Link abgeglichen
+    val collectionVanishedTitle: String            // Sammlung am Server verschwunden
+    val collectionVanishedBody: String
+    val collectionVanishedDeleteHere: String
+    val collectionVanishedKeepHere: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -370,6 +381,12 @@ object StringsDe : Strings {
     override val downloadComplete = "Serie heruntergeladen."
     override fun downloadingChapters(count: Int) = "Lade $count Kapitel…"
     override fun downloadFailed(message: String) = "Fehler: $message"
+    override val errorNoConnection = "Keine Verbindung zum Server"
+    override val errorUnauthorized = "Falsche Anmeldedaten"
+    override val errorForbidden = "Zugriff verweigert"
+    override val errorNotFound = "Nicht gefunden"
+    override val errorServer = "Serverfehler"
+    override val errorUnknown = "Unbekannter Fehler"
     // Suche
     override val searchMediaHint = "Bibliothek durchsuchen"
     override val searchSettingsHint = "Einstellungen durchsuchen"
@@ -411,6 +428,10 @@ object StringsDe : Strings {
     override val addWorksHint = "Werke aus Bibliothek hinzufügen"
     override val collectionPending = "ausstehend"
     override val collectionSynced = "synchron"
+    override val collectionVanishedTitle = "Am Server gelöscht"
+    override val collectionVanishedBody = "Diese Sammlungen sind am Server nicht mehr vorhanden. Hier auch löschen?"
+    override val collectionVanishedDeleteHere = "Hier auch löschen"
+    override val collectionVanishedKeepHere = "Hier behalten"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -620,6 +641,12 @@ object StringsEn : Strings {
     override val downloadComplete = "Series downloaded."
     override fun downloadingChapters(count: Int) = "Downloading $count chapters…"
     override fun downloadFailed(message: String) = "Error: $message"
+    override val errorNoConnection = "No connection to the server"
+    override val errorUnauthorized = "Invalid credentials"
+    override val errorForbidden = "Access denied"
+    override val errorNotFound = "Not found"
+    override val errorServer = "Server error"
+    override val errorUnknown = "Unknown error"
     // Search
     override val searchMediaHint = "Search library"
     override val searchSettingsHint = "Search settings"
@@ -661,6 +688,10 @@ object StringsEn : Strings {
     override val addWorksHint = "Add works from library"
     override val collectionPending = "pending"
     override val collectionSynced = "synced"
+    override val collectionVanishedTitle = "Deleted on server"
+    override val collectionVanishedBody = "These collections no longer exist on the server. Delete them here too?"
+    override val collectionVanishedDeleteHere = "Delete here too"
+    override val collectionVanishedKeepHere = "Keep here"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

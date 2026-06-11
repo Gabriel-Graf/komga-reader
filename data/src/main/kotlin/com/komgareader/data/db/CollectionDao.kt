@@ -45,6 +45,24 @@ interface CollectionDao {
     @Query("DELETE FROM collection_sync_links WHERE collectionId = :id")
     suspend fun clearLinks(id: Long)
 
+    @Query("SELECT DISTINCT collectionId FROM collection_members WHERE sourceId = :sourceId")
+    suspend fun collectionIdsWithMemberSource(sourceId: Long): List<Long>
+
+    @Query("SELECT DISTINCT collectionId FROM collection_sync_links WHERE sourceId = :sourceId")
+    suspend fun collectionIdsWithLinkSource(sourceId: Long): List<Long>
+
+    @Query("DELETE FROM collection_members WHERE sourceId = :sourceId")
+    suspend fun clearMembersForSource(sourceId: Long)
+
+    @Query("DELETE FROM collection_sync_links WHERE sourceId = :sourceId")
+    suspend fun clearLinksForSource(sourceId: Long)
+
+    @Query("SELECT COUNT(*) FROM collection_members WHERE collectionId = :id")
+    suspend fun memberCount(id: Long): Int
+
+    @Query("SELECT COUNT(*) FROM collection_sync_links WHERE collectionId = :id")
+    suspend fun linkCount(id: Long): Int
+
     /** Mitglieder atomar ersetzen (kanonische Reihenfolge via position). */
     @Transaction
     suspend fun replaceMembers(collectionId: Long, members: List<CollectionMemberEntity>) {

@@ -30,6 +30,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
+import com.komgareader.app.ui.common.UiErrorText
+import com.komgareader.app.ui.common.snackbar
 import com.komgareader.app.ui.components.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -109,7 +111,7 @@ fun SeriesDetailScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is SeriesDetailEvent.DownloadError -> snackbarHostState.showSnackbar(event.message)
+                is SeriesDetailEvent.DownloadError -> snackbarHostState.showSnackbar(event.error.snackbar(s))
                 SeriesDetailEvent.DownloadCancelled -> snackbarHostState.showSnackbar(s.downloadCancelled)
             }
         }
@@ -159,7 +161,7 @@ fun SeriesDetailScreen(
             }
             is SeriesDetailUiState.Error -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text(current.message)
+                    UiErrorText(current.error)
                 }
             }
             is SeriesDetailUiState.Content -> {

@@ -8,10 +8,14 @@ import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.UserCollection
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.usecase.VanishedCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -35,6 +39,36 @@ class CollectionsViewModel @Inject constructor(
         settings.collectionsViewMode.stateIn(viewModelScope, SharingStarted.Eagerly, "LARGE_TILE")
 
     fun setViewMode(mode: String) = viewModelScope.launch { settings.setCollectionsViewMode(mode) }
+
+    private val _vanished = MutableStateFlow<List<VanishedCollection>>(emptyList())
+    val vanished: StateFlow<List<VanishedCollection>> = _vanished.asStateFlow()
+
+    private var autoSyncedOnce = false
+
+    /** Einmaliger Auto-Sync beim ersten Sichtbarwerden (Recompositions lösen keinen Sturm aus). */
+    fun syncOnceOnEnter() {
+        if (autoSyncedOnce) return
+        autoSyncedOnce = true
+        runFullSync()
+    }
+
+    /** Tab-Öffnen: nur auf Nicht-E-Ink zusätzlich voll synchronisieren (Akku-Schonung auf E-Ink). */
+    fun syncOnTabOpen() = viewModelScope.launch {
+        if (aggressiveSyncAllowed(settings.displayMode.first())) runFullSync()
+    }
+
+    private fun runFullSync() = viewModelScope.launch {
+        _vanished.value = sync.fullSync()
+    }
+
+    /** „Hier auch löschen": lokal entfernen (Server-Stand bleibt — Sammlung ist dort weg). */
+    fun confirmVanishedDelete(ids: List<Long>) = viewModelScope.launch {
+        ids.forEach { repo.delete(it) }
+        _vanished.value = emptyList()
+    }
+
+    /** „Hier behalten": Modal schließen; Sammlung bleibt, nächster Push legt sie am Server neu an. */
+    fun dismissVanished() { _vanished.value = emptyList() }
 
     /**
      * Liefert für jede Collection-ID, ob sie „nur lokal" ist — d. h. mindestens ein Sync-Link
@@ -84,11 +118,10 @@ class CollectionsViewModel @Inject constructor(
         repo.get(id)?.let { sync.push(it) }
     }
 
-    // Nutzer-initiiertes „jetzt synchronisieren" = lokalen Stand hochschieben (Status → SYNCED).
-    // Kein anschließendes refresh — dessen setMembers würde die Links sofort wieder DIRTY markieren
-    // und das Badge fälschlich auf „nur lokal" zurücksetzen. (Server-Pull ist eine eigene Aktion.)
-    fun syncNow(id: Long) = viewModelScope.launch {
-        repo.get(id)?.let { sync.push(it) }
+    // Nutzer-initiiertes „jetzt synchronisieren" = voller bidirektionaler Sync (push + pull)
+    // über alle Sammlungen/Quellen. Kein Argument: fullSync deckt ohnehin die ganze Bibliothek ab.
+    fun syncNow() = viewModelScope.launch {
+        _vanished.value = sync.fullSync()
     }
 
     /** Alle Sync-Links einer Collection, als Flow — für den Erklär-Dialog. */

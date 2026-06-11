@@ -50,6 +50,9 @@ class SourceRegistration @Inject constructor(
         desiredIds
     }
 
+    /** Reine Abbildung Config → sourceId (ohne Registrierung) — für Cleanup beim Server-Entfernen. */
+    fun sourceIdOf(config: ServerConfig): Long? = build(config)?.id
+
     /** Übergangs-API: genau eine Quelle (null = keine). Delegiert an [sync]. */
     fun activate(config: ServerConfig?): Long? =
         sync(listOfNotNull(config)).firstOrNull()

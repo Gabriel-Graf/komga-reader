@@ -72,6 +72,21 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
         }
     }
 
+    override suspend fun updateMemberTitles(collectionId: Long, members: List<CollectionMember>) {
+        dao.replaceMembers(
+            collectionId,
+            members.mapIndexed { i, m ->
+                CollectionMemberEntity(
+                    collectionId = collectionId,
+                    sourceId = m.sourceId,
+                    remoteId = m.remoteId,
+                    title = m.title,
+                    position = i,
+                )
+            },
+        )
+    }
+
     override suspend fun addMember(collectionId: Long, member: CollectionMember) {
         val current = currentMembers(collectionId)
         if (current.any { it.sourceId == member.sourceId && it.remoteId == member.remoteId }) return
@@ -91,7 +106,7 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
                 remoteCollectionId = link.remoteCollectionId,
                 status = link.status.name,
                 dirty = link.dirty,
-                updatedAt = nowMillis(),
+                updatedAt = link.updatedAt,  // Caller-Timestamp übernehmen (z.B. Server-Stand bei Pull)
             ),
         )
     }
@@ -106,6 +121,19 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
         )
     }
 
+    override suspend fun removeSource(sourceId: Long) {
+        // Vor dem Löschen: welche Sammlungen berührt diese Quelle überhaupt?
+        val affected = (dao.collectionIdsWithMemberSource(sourceId) + dao.collectionIdsWithLinkSource(sourceId)).toSet()
+        dao.clearMembersForSource(sourceId)
+        dao.clearLinksForSource(sourceId)
+        // Nur die berührten Sammlungen, die jetzt komplett leer sind, ganz entfernen.
+        affected.forEach { id ->
+            if (dao.memberCount(id) == 0 && dao.linkCount(id) == 0) {
+                dao.deleteCollection(id)
+            }
+        }
+    }
+
     private suspend fun currentMembers(collectionId: Long): List<CollectionMember> =
         dao.getMembers(collectionId).map { CollectionMember(it.sourceId, it.remoteId, it.title) }
 
@@ -115,6 +143,7 @@ class RoomCollectionRepository(private val dao: CollectionDao) : CollectionRepos
         remoteCollectionId = e.remoteCollectionId,
         status = SyncStatus.valueOf(e.status),
         dirty = e.dirty,
+        updatedAt = e.updatedAt,
     )
 
     private fun nowMillis(): Long = System.currentTimeMillis()

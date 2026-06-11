@@ -6,7 +6,7 @@ plugins {
 // compileOnly der Plugins (Mihon-Modell). NICHT eingefroren/versioniert: die App entwickelt
 // sich noch. Haengt nur an :domain (Inhalts-Modelle), nie an Android/Netz/UI.
 dependencies {
-    implementation(project(":domain"))
+    api(project(":domain"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit.jupiter)

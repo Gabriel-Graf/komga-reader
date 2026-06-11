@@ -6,7 +6,7 @@ plugins {
 // NICHT eingefroren/versioniert: die App entwickelt sich noch.
 // Hängt nur an :domain (ColorProfile-Modell), nie an Android/Netz/UI.
 dependencies {
-    implementation(project(":domain"))
+    api(project(":source-api"))
     testImplementation(kotlin("test"))
 }
 tasks.test { useJUnitPlatform() }

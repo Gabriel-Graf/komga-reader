@@ -288,5 +288,6 @@ private class StubColorProfileRepository : ColorProfileRepository {
     override fun observeActive(): Flow<ColorProfile> = flowOf(ColorProfile.OFF)
     override suspend fun upsert(profile: ColorProfile): Long = 0
     override suspend fun delete(id: Long) {}
+    override suspend fun deleteByPluginPackage(pkg: String) {}
     override suspend fun setActive(id: Long) {}
 }

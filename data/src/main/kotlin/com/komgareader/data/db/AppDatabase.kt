@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         NovelProgressEntity::class,
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
     ],
-    version = 14,
+    version = 16,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -297,6 +297,27 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
                 PRIMARY KEY(`collectionId`, `sourceId`)
             )""",
         )
+    }
+}
+
+/** v14 → v15: extras-Spalten (Keystore-verschlüsselter JSON-Blob) für Plugin-Quellen-Config. */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `extrasCiphertext` TEXT")
+        db.execSQL("ALTER TABLE `server` ADD COLUMN `extrasIv` TEXT")
+    }
+}
+
+/**
+ * v15 → v16: Spalte `pluginPackage` an `color_profiles` (Preset-Plugin-Herkunft, Typ c).
+ * **Additiv & nicht-destruktiv** — nullable `ALTER ADD COLUMN` ohne Default, exakt passend zu
+ * `ColorProfileEntity.pluginPackage: String? = null` (kein `@ColumnInfo(defaultValue=…)`), damit
+ * Rooms Schema-Validierung sauber durchläuft und `fallbackToDestructiveMigration` NICHT greift.
+ * Bestandsprofile (Built-ins/Custom) behalten NULL. `seedColorProfiles` bleibt unberührt.
+ */
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `color_profiles` ADD COLUMN `pluginPackage` TEXT")
     }
 }
 

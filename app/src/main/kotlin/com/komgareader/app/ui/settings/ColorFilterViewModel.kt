@@ -4,12 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.coil.SourceCover
-import com.komgareader.data.plugin.ColorPresetImporter
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.source.SourceFilter
-import com.komgareader.plugin.ColorPresetSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -158,39 +156,6 @@ class ColorFilterViewModel @Inject constructor(
     fun delete(id: Long) = viewModelScope.launch {
         colorProfiles.delete(id)
         if (_edit.value?.baseProfileId == id) _edit.value = null
-    }
-
-    /** Zeigt einen Fehler-Dialog nach einem fehlgeschlagenen Preset-Import. */
-    private val _importError = MutableStateFlow(false)
-    val importError: StateFlow<Boolean> = _importError
-
-    fun dismissImportError() { _importError.value = false }
-
-    /**
-     * Importiert ein Color-Preset aus dem gelesenen JSON-Text (null = Datei konnte nicht gelesen
-     * werden). Das JSON muss die Felder `abiVersion`, `name`, `saturation`, `contrast`,
-     * `brightness` enthalten. Fehlerhafte, nicht-endliche oder inkompatible Specs sowie
-     * ein null-Argument (Lesefehler) setzen [importError].
-     */
-    fun importPresetJson(json: String?) = viewModelScope.launch {
-        if (json == null) { _importError.value = true; return@launch }
-        val spec = runCatching {
-            val obj = org.json.JSONObject(json)
-            ColorPresetSpec(
-                abiVersion = obj.getInt("abiVersion"),
-                name = obj.getString("name"),
-                saturation = obj.getDouble("saturation").toFloat(),
-                contrast = obj.getDouble("contrast").toFloat(),
-                brightness = obj.getDouble("brightness").toFloat(),
-            )
-        }.getOrNull()
-        val profile = spec?.let { ColorPresetImporter.toProfileOrNull(it) }
-        if (profile == null) {
-            _importError.value = true
-            return@launch
-        }
-        val id = colorProfiles.upsert(profile)
-        colorProfiles.setActive(id)
     }
 
     private fun mutate(f: (EditState) -> EditState) { _edit.value = _edit.value?.let(f) }

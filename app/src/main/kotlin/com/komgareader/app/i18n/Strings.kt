@@ -103,7 +103,6 @@ interface Strings {
     val fallbackType: String
     // Navigation
     val navPlugins: String
-    val pluginsComingSoon: String
     // Settings-Landing (Kachel-Titel)
     val settingsConnection: String
     val settingsAppearance: String
@@ -163,6 +162,21 @@ interface Strings {
     val collectionVanishedBody: String
     val collectionVanishedDeleteHere: String
     val collectionVanishedKeepHere: String
+    // Plugin-TOFU-Bestätigung (Trust-on-First-Use)
+    val pluginTrustTitle: String      // Dialog-Titel
+    val pluginTrustBody: String       // Erklärungstext (enthält keine Namen — die Felder darunter zeigen sie)
+    val pluginTrustConfirm: String    // Bestätigen-Label
+    val pluginTabSourceLabel: String      // Typ-Label „Quelle"
+    val pluginTabPresetLabel: String      // Typ-Label „Farbprofile"
+    val pluginTabEmpty: String            // Liste leer
+    val pluginTabReposHint: String        // „+" / Repo-Browser folgt (P2)
+    val pluginAbiLabel: String            // ABI-Label vor der Versionsnummer
+    val pluginConfigure: String           // ⚙ contentDescription
+    val pluginUninstall: String           // 🗑 contentDescription
+    val pluginPresetsTitle: String        // Titel des Preset-Detail-Modals
+    val pluginPresetImport: String        // „Importieren"
+    val pluginPresetRemove: String        // „Entfernen"
+    val pluginPresetImported: String      // Status „Importiert"
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -212,8 +226,6 @@ interface Strings {
     val colorFilterDitherFloydDesc: String
     val colorFilterDitherOrderedDesc: String
     val colorFilterDitherLevelsAbout: String
-    val colorFilterImportPreset: String
-    val colorFilterImportError: String
     val close: String
     // Reader-Einstellungen
     val settingsWebtoon: String
@@ -365,7 +377,6 @@ object StringsDe : Strings {
     override val fallbackType = "Fallback-Typ (optional)"
     // Navigation
     override val navPlugins = "Plugins"
-    override val pluginsComingSoon = "Bald verfügbar — externe Quellen-Plugins laden."
     // Settings-Landing
     override val settingsConnection = "Verbindung"
     override val settingsAppearance = "Darstellung"
@@ -432,6 +443,21 @@ object StringsDe : Strings {
     override val collectionVanishedBody = "Diese Sammlungen sind am Server nicht mehr vorhanden. Hier auch löschen?"
     override val collectionVanishedDeleteHere = "Hier auch löschen"
     override val collectionVanishedKeepHere = "Hier behalten"
+    // Plugin-TOFU-Bestätigung
+    override val pluginTrustTitle = "Diesem Plugin vertrauen?"
+    override val pluginTrustBody = "Dieses Plugin erhält Zugriff auf die App-Quellen-Naht. Vertraue nur Plugins aus bekannten Quellen. Das Zertifikat (SHA-256) wird als Pin gespeichert — bei einer späteren Signaturänderung wird das Plugin nicht mehr geladen."
+    override val pluginTrustConfirm = "Vertrauen und hinzufügen"
+    override val pluginTabSourceLabel = "Quelle"
+    override val pluginTabPresetLabel = "Farbprofile"
+    override val pluginTabEmpty = "Keine Plugins installiert."
+    override val pluginTabReposHint = "Plugin-Repositories zum Suchen und Installieren folgen in einem späteren Update."
+    override val pluginAbiLabel = "ABI"
+    override val pluginConfigure = "Konfigurieren"
+    override val pluginUninstall = "Entfernen"
+    override val pluginPresetsTitle = "Farbprofile"
+    override val pluginPresetImport = "Importieren"
+    override val pluginPresetRemove = "Entfernen"
+    override val pluginPresetImported = "Importiert"
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -478,8 +504,6 @@ object StringsDe : Strings {
     override val colorFilterDitherFloydDesc = "Fehlerdiffusion: Der Rundungsfehler wird gewichtet an die folgenden Pixel weitergegeben. Beste Ergebnisse bei Verläufen und Hauttönen, wirkt am natürlichsten. Läuft pixelweise nacheinander, daher am rechenintensivsten (höchster Akku-Verbrauch)."
     override val colorFilterDitherOrderedDesc = "Feste Bayer-Rastermatrix als Schwellwert. Deutlich billiger und parallel berechenbar, hinterlässt aber ein leichtes, regelmäßiges Punktmuster. Gut, wenn Akku wichtiger ist als maximale Glätte."
     override val colorFilterDitherLevelsAbout = "Stufen: Anzahl der Helligkeitswerte pro Kanal, auf die reduziert wird (2 = sehr grob und stark sichtbar, 64 = fein und dezent). Niedriger = stärkerer Dither-Effekt."
-    override val colorFilterImportPreset = "Preset importieren"
-    override val colorFilterImportError = "Ungültiges Preset — inkompatible ABI-Version oder fehlerhaftes JSON."
     override val close = "Schließen"
     // Reader-Einstellungen
     override val settingsWebtoon = "Webtoon"
@@ -625,7 +649,6 @@ object StringsEn : Strings {
     override val fallbackType = "Fallback type (optional)"
     // Navigation
     override val navPlugins = "Plugins"
-    override val pluginsComingSoon = "Coming soon — load external source plugins."
     // Settings landing
     override val settingsConnection = "Connection"
     override val settingsAppearance = "Appearance"
@@ -692,6 +715,21 @@ object StringsEn : Strings {
     override val collectionVanishedBody = "These collections no longer exist on the server. Delete them here too?"
     override val collectionVanishedDeleteHere = "Delete here too"
     override val collectionVanishedKeepHere = "Keep here"
+    // Plugin TOFU confirmation
+    override val pluginTrustTitle = "Trust this plugin?"
+    override val pluginTrustBody = "This plugin will be granted access to the app's source seam. Only trust plugins from known sources. The certificate (SHA-256) is saved as a pin — if the signature changes later, the plugin will no longer be loaded."
+    override val pluginTrustConfirm = "Trust and add"
+    override val pluginTabSourceLabel = "Source"
+    override val pluginTabPresetLabel = "Color profiles"
+    override val pluginTabEmpty = "No plugins installed."
+    override val pluginTabReposHint = "Plugin repositories for searching and installing are coming in a later update."
+    override val pluginAbiLabel = "ABI"
+    override val pluginConfigure = "Configure"
+    override val pluginUninstall = "Remove"
+    override val pluginPresetsTitle = "Color profiles"
+    override val pluginPresetImport = "Import"
+    override val pluginPresetRemove = "Remove"
+    override val pluginPresetImported = "Imported"
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"
@@ -738,8 +776,6 @@ object StringsEn : Strings {
     override val colorFilterDitherFloydDesc = "Error diffusion: the rounding error is passed on, weighted, to the following pixels. Best results on gradients and skin tones, looks most natural. Runs pixel by pixel in sequence, so it is the most compute-heavy (highest battery use)."
     override val colorFilterDitherOrderedDesc = "A fixed Bayer threshold matrix. Much cheaper and computable in parallel, but leaves a faint regular dot pattern. Good when battery matters more than maximum smoothness."
     override val colorFilterDitherLevelsAbout = "Levels: how many brightness values per channel the image is reduced to (2 = very coarse and strong, 64 = fine and subtle). Lower = stronger dithering."
-    override val colorFilterImportPreset = "Import preset"
-    override val colorFilterImportError = "Invalid preset — incompatible ABI version or malformed JSON."
     override val close = "Close"
     // Reader settings
     override val settingsWebtoon = "Webtoon"

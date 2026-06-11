@@ -17,6 +17,13 @@ interface ColorProfileRepository {
     /** Löscht ein Custom-Profil. Built-ins werden ignoriert. */
     suspend fun delete(id: Long)
 
+    /**
+     * Löscht ALLE Profile, die von [pkg] (einem deinstallierten Preset-Plugin) stammen.
+     * Built-ins/Custom-Profile (pluginPackage = null) bleiben unberührt. Zeigt der aktive Pointer
+     * danach ins Leere, fällt [observeActive] automatisch auf [ColorProfile.OFF] zurück.
+     */
+    suspend fun deleteByPluginPackage(pkg: String)
+
     /** Markiert das Profil [id] als aktiv. */
     suspend fun setActive(id: Long)
 }

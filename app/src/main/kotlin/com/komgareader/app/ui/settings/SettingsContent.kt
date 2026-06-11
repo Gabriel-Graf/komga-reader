@@ -73,8 +73,11 @@ private const val OVERLAP_MIN = 0
 private const val OVERLAP_MAX = 50
 
 /**
- * Modus des Verbindungs-Modals: ADD (leere Felder) oder EDIT einer bestehenden [ServerConfig].
- * Genau ein Modal gleichzeitig (E-Ink-Regel) → ein einziger nullbarer State steuert beides.
+ * Zustand des Verbindungs-Modals. Genau ein Modal gleichzeitig (E-Ink-Regel) →
+ * ein einziger nullbarer State steuert den gesamten Fluss:
+ *
+ * - [Add]  → Standard-Formular für Komga/OPDS
+ * - [Edit] → Verbindung bearbeiten (Komga/OPDS)
  */
 private sealed interface ConnectionModal {
     data object Add : ConnectionModal
@@ -86,7 +89,7 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val servers by viewModel.serverList.collectAsState()
 
-    // Genau EIN Modal gleichzeitig: null = zu, sonst Add oder Edit (E-Ink-Invariante).
+    // Genau EIN Modal gleichzeitig: null = zu (E-Ink-Invariante).
     var modal by remember { mutableStateOf<ConnectionModal?>(null) }
 
     // Verbundene Server (mehrere gleichzeitig, gemischt) — „+" im Kopf öffnet das Modal,
@@ -126,27 +129,32 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         }
     }
 
-    modal?.let { mode ->
-        ConnectionModal(
-            mode = mode,
+    when (val mode = modal) {
+        is ConnectionModal.Add -> AddConnectionModal(
             onDismiss = { modal = null },
             onSave = { name, url, apiKey, username, password, kind, id ->
                 viewModel.saveServer(name, url, apiKey, username, password, kind, id)
                 modal = null
             },
         )
+        is ConnectionModal.Edit -> EditConnectionModal(
+            config = mode.config,
+            onDismiss = { modal = null },
+            onSave = { name, url, apiKey, username, password, kind, id ->
+                viewModel.saveServer(name, url, apiKey, username, password, kind, id)
+                modal = null
+            },
+        )
+        null -> Unit
     }
 }
 
 /**
- * Verbindungs-Modal für ADD **und** EDIT (eine Composable, kein Duplikat). Hält alle
- * Verbindungseingaben: Quellenart, Name/URL, dann Anmeldung (Benutzer → Passwort → API-Schlüssel,
- * alle optional). Quellen-agnostisch: nur [SourceKind]/[ServerConfig], nie ein Komga-Typ.
+ * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun ConnectionModal(
-    mode: ConnectionModal,
+private fun AddConnectionModal(
     onDismiss: () -> Unit,
     onSave: (
         name: String, url: String, apiKey: String,
@@ -154,28 +162,26 @@ private fun ConnectionModal(
     ) -> Unit,
 ) {
     val s = LocalStrings.current
-    val existing = (mode as? ConnectionModal.Edit)?.config
-    val id = existing?.id ?: 0L
 
-    var nameInput by remember { mutableStateOf(existing?.name.orEmpty()) }
-    var urlInput by remember { mutableStateOf(existing?.baseUrl.orEmpty()) }
-    var apiKeyInput by remember { mutableStateOf(existing?.apiKey.orEmpty()) }
-    var usernameInput by remember { mutableStateOf(existing?.username.orEmpty()) }
-    var passwordInput by remember { mutableStateOf(existing?.password.orEmpty()) }
-    var kindInput by remember { mutableStateOf(existing?.kind ?: SourceKind.KOMGA) }
+    var nameInput by remember { mutableStateOf("") }
+    var urlInput by remember { mutableStateOf("") }
+    var apiKeyInput by remember { mutableStateOf("") }
+    var usernameInput by remember { mutableStateOf("") }
+    var passwordInput by remember { mutableStateOf("") }
+    var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
 
     EinkModal(
-        title = if (existing == null) s.addServer else s.editServer,
+        title = s.addServer,
         onDismiss = onDismiss,
         confirmLabel = s.save,
         onConfirm = {
-            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, id)
+            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, 0L)
         },
         dismissLabel = s.cancel,
         confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
-        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor (App-Standard,
-        // wie alle anderen Auswahlen). Markennamen — kein i18n-Key nötig.
+        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor.
+        // Markennamen — kein i18n-Key nötig.
         SegmentedChoiceRow(
             label = s.serverSectionKind,
             options = listOf(
@@ -209,6 +215,94 @@ private fun ConnectionModal(
         }
 
         // Anmeldung (alle optional): Benutzer → Passwort → API-Schlüssel, schlicht gestapelt.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FieldCaption(s.serverSectionAuth)
+            CredentialsFields(
+                username = usernameInput,
+                password = passwordInput,
+                onUsername = { usernameInput = it },
+                onPassword = { passwordInput = it },
+                usernameLabel = s.serverUsername,
+                passwordLabel = s.serverPassword,
+            )
+            OutlinedTextField(
+                value = apiKeyInput,
+                onValueChange = { apiKeyInput = it },
+                label = { Text(s.serverApiKeyOptional) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
+        }
+    }
+}
+
+/**
+ * Modal „Verbindung bearbeiten" für Komga/OPDS. Plugin-Verbindungen sind in v1 nicht editierbar
+ * (Plugin-Schema kann sich ändern; Signatur-Pin bleibt; Benutzer entfernt und fügt neu hinzu).
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun EditConnectionModal(
+    config: ServerConfig,
+    onDismiss: () -> Unit,
+    onSave: (
+        name: String, url: String, apiKey: String,
+        username: String, password: String, kind: SourceKind, id: Long,
+    ) -> Unit,
+) {
+    val s = LocalStrings.current
+    val id = config.id
+
+    var nameInput by remember { mutableStateOf(config.name) }
+    var urlInput by remember { mutableStateOf(config.baseUrl) }
+    var apiKeyInput by remember { mutableStateOf(config.apiKey.orEmpty()) }
+    var usernameInput by remember { mutableStateOf(config.username.orEmpty()) }
+    var passwordInput by remember { mutableStateOf(config.password.orEmpty()) }
+    var kindInput by remember { mutableStateOf(config.kind) }
+
+    EinkModal(
+        title = s.editServer,
+        onDismiss = onDismiss,
+        confirmLabel = s.save,
+        onConfirm = {
+            onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, id)
+        },
+        dismissLabel = s.cancel,
+        confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
+    ) {
+        SegmentedChoiceRow(
+            label = s.serverSectionKind,
+            options = listOf(
+                SegmentOption(SourceKind.KOMGA.name, "Komga"),
+                SegmentOption(SourceKind.OPDS.name, "OPDS"),
+            ),
+            selectedKey = kindInput.name,
+            onSelect = { kindInput = SourceKind.valueOf(it) },
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FieldCaption(s.serverSectionServer)
+            OutlinedTextField(
+                value = nameInput,
+                onValueChange = { nameInput = it },
+                label = { Text(s.serverDisplayName) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = urlInput,
+                onValueChange = { urlInput = it },
+                label = { Text(s.serverUrl) },
+                placeholder = { Text(s.serverUrlHint) },
+                supportingText = { Text(s.serverUrlHelper) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            )
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FieldCaption(s.serverSectionAuth)
             CredentialsFields(

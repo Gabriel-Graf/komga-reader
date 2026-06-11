@@ -31,6 +31,10 @@ data class ServerEntity(
     val passwordCiphertext: String? = null,
     /** Base64-kodierter IV (Nonce) zum Passwort-Chiffrat. */
     val passwordIv: String? = null,
+    /** Base64-kodiertes AES/GCM-Chiffrat des extras-JSON-Blobs, oder null wenn leer. */
+    val extrasCiphertext: String? = null,
+    /** Base64-kodierter IV (Nonce) zum extras-Chiffrat. */
+    val extrasIv: String? = null,
 )
 
 /** Nutzer-definierte App-Bibliothek. [sources] kodiert (siehe ShelfSourceCodec). */
@@ -115,4 +119,5 @@ data class ColorProfileEntity(
     val ditherMode: String = "NONE",
     val ditherLevels: Int = 16,
     val builtIn: Boolean,
+    val pluginPackage: String? = null,
 )

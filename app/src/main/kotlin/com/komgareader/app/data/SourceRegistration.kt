@@ -4,19 +4,22 @@ import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceManager
+import com.komgareader.plugin.host.PluginHost
 import com.komgareader.source.opds.OpdsSourceFactory
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Registriert die aktive Quelle aus der [ServerConfig] im [SourceManager] — Komga oder OPDS,
- * je nach [ServerConfig.kind]. Die konkreten Quellen-Typen (KomgaSourceProvider, OpdsSourceFactory)
- * leben NUR hier in der Wiring-Schicht; ViewModels sehen nur `BrowsableSource` (über ActiveSource).
+ * Registriert die aktive Quelle aus der [ServerConfig] im [SourceManager] — Komga, OPDS oder
+ * Plugin-APK, je nach [ServerConfig.kind]. Die konkreten Quellen-Typen (KomgaSourceProvider,
+ * OpdsSourceFactory, PluginHost) leben NUR hier in der Wiring-Schicht; ViewModels sehen nur
+ * `BrowsableSource` (über ActiveSource). Naht A gewahrt.
  */
 @Singleton
 class SourceRegistration @Inject constructor(
     private val sources: SourceManager,
     private val komgaProvider: KomgaSourceProvider,
+    private val pluginHost: PluginHost,
 ) {
     private val lock = Any()
     private var activeIds: Set<Long> = emptySet()
@@ -28,6 +31,15 @@ class SourceRegistration @Inject constructor(
             username = config.username,
             password = config.password,
         )
+        SourceKind.PLUGIN -> {
+            // Reservierte Wiring-Keys: __pkg/__entry/__sig steuern den Classloader-Pfad und
+            // werden NICHT ans Plugin weitergereicht — nur die echten Konfigurations-Einträge.
+            val pkg = config.extras["__pkg"] ?: return null
+            val entry = config.extras["__entry"] ?: return null
+            val sig = config.extras["__sig"] ?: return null // ohne Pin nicht laden (TOFU)
+            val pluginConfig = config.extras.filterKeys { !it.startsWith("__") }
+            pluginHost.sourceFor(pkg, entry, sig, pluginConfig)
+        }
         else -> komgaProvider.from(config)
     }
 

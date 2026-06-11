@@ -29,6 +29,9 @@ private class FakeColorProfileDao : ColorProfileDao {
     override suspend fun deleteCustom(id: Long) {
         rows.value = rows.value.filterNot { it.id == id && !it.builtIn }
     }
+    override suspend fun deleteByPluginPackage(pkg: String) {
+        rows.value = rows.value.filterNot { it.pluginPackage == pkg }
+    }
 }
 
 /** Fake der Aktiv-Pointer-Quelle. */

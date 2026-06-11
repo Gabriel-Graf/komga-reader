@@ -3,6 +3,8 @@ package com.komgareader.app.ui.reader
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.app.data.SourceRegistration
+import com.komgareader.plugin.host.PluginHost
+import io.mockk.mockk
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.ReadProgress
@@ -67,7 +69,7 @@ class EpubBytesLoaderTest {
     private class FakeActiveSource(private val source: BrowsableSource?) : ActiveSource(
         sources = SourceManager(),
         servers = FakeServerRepository(),
-        registration = SourceRegistration(SourceManager(), KomgaSourceProvider()),
+        registration = SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true)),
     ) {
         override suspend fun current(): BrowsableSource? = source
         override suspend fun get(sourceId: Long): BrowsableSource? = source?.takeIf { it.id == sourceId }

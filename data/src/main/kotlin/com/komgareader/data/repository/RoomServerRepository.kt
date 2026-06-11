@@ -9,6 +9,8 @@ import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Room-gestützte Implementierung von [ServerRepository]. **Mehrere** Verbindungen gleichzeitig
@@ -32,6 +34,9 @@ class RoomServerRepository(
     override suspend fun save(config: ServerConfig) {
         val apiBlob = config.apiKey?.takeIf { it.isNotBlank() }?.let { credentialStore.encrypt(it) }
         val pwBlob = config.password?.takeIf { it.isNotBlank() }?.let { credentialStore.encrypt(it) }
+        // Leere extras → beide Spalten null; sonst JSON-Blob Keystore-verschlüsselt (wie apiKey).
+        val extrasBlob = if (config.extras.isEmpty()) null
+        else credentialStore.encrypt(Json.encodeToString(config.extras))
         // Neue Verbindung (id == 0) bekommt die nächste freie Rowid; eine bestehende wird ersetzt.
         val id = if (config.id != 0L) config.id else dao.maxId() + 1
         dao.save(
@@ -45,6 +50,8 @@ class RoomServerRepository(
                 apiKeyIv = apiBlob?.iv,
                 passwordCiphertext = pwBlob?.ciphertext,
                 passwordIv = pwBlob?.iv,
+                extrasCiphertext = extrasBlob?.ciphertext,
+                extrasIv = extrasBlob?.iv,
             ),
         )
     }
@@ -65,11 +72,22 @@ class RoomServerRepository(
         username = username,
         password = decryptIfPresent(passwordCiphertext, passwordIv),
         kind = runCatching { SourceKind.valueOf(kind) }.getOrDefault(SourceKind.KOMGA),
+        extras = decryptExtras(extrasCiphertext, extrasIv),
     )
 
     private fun decryptIfPresent(ciphertext: String?, iv: String?): String? {
         if (ciphertext == null || iv == null) return null
         val result = credentialStore.decrypt(CipherBlob(ciphertext, iv))
         return result?.takeIf { it.isNotBlank() }
+    }
+
+    /**
+     * Entschlüsselt den extras-JSON-Blob und deserialisiert ihn zu [Map<String, String>].
+     * Gibt eine leere Map zurück, wenn keine extras vorhanden oder die Entschlüsselung
+     * fehlschlägt (Altbestand hat null in beiden Spalten).
+     */
+    private fun decryptExtras(ciphertext: String?, iv: String?): Map<String, String> {
+        val json = decryptIfPresent(ciphertext, iv) ?: return emptyMap()
+        return runCatching { Json.decodeFromString<Map<String, String>>(json) }.getOrDefault(emptyMap())
     }
 }

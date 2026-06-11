@@ -18,6 +18,9 @@ package com.komgareader.domain.model
  * @param ditherMode  NONE = aus.
  * @param ditherLevels Stufen pro Kanal (2..64), nur wirksam bei ditherMode != NONE.
  * @param builtIn    mitgeliefert → nicht editier-/löschbar.
+ * @param pluginPackage Paketname des Preset-Plugins, das dieses Profil geliefert hat (null = Built-in
+ *   oder vom Nutzer angelegt). Getaggte Profile werden gesperrt behandelt und beim Uninstall des
+ *   Plugins automatisch entfernt. Quellen-/geräteneutral: nur ein Paket-Tag, kein Quellen-Wissen.
  */
 data class ColorProfile(
     val id: Long,
@@ -33,6 +36,7 @@ data class ColorProfile(
     val ditherMode: DitherMode = DitherMode.NONE,
     val ditherLevels: Int = 16,
     val builtIn: Boolean,
+    val pluginPackage: String? = null,
 ) {
     /** True, wenn die linearen Werte nichts verändern (GPU-Matrix-Pfad, Cover). */
     val isLinearNeutral: Boolean get() = saturation == 1f && contrast == 1f && brightness == 0f

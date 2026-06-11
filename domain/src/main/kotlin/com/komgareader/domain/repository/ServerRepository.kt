@@ -17,6 +17,12 @@ data class ServerConfig(
     val password: String? = null,
     val kind: SourceKind = SourceKind.KOMGA,
     /**
+     * Plugin-spezifische Config-Werte (key→value aus dem ConfigSchema des Plugins).
+     * Leer für eingebaute Quellen (Komga/OPDS). SECRET-Felder werden in :data
+     * Keystore-verschlüsselt persistiert (wie apiKey).
+     */
+    val extras: Map<String, String> = emptyMap(),
+    /**
      * Lokale Datenbank-Identität dieser Verbindung (Rowid; 0 = noch nicht gespeichert).
      * **Nicht** die `sourceId` — die leitet jede Quelle aus name/kind/url ab. Dient dem
      * Bearbeiten/Entfernen genau dieser Verbindung, wenn mehrere Server konfiguriert sind.

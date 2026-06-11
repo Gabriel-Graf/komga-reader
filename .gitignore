@@ -17,3 +17,7 @@ guided-view/realpages/
 
 # Icon-Generator (Node) — Deps nicht tracken
 tools/icons/node_modules/
+
+# Plugin-Projekte: eigene Git-Repos unter plugin/, NICHT Teil des Host-Repos
+# Root-anchored, sonst matcht es auch den Package-Pfad com/komgareader/plugin/ in plugin-host/plugin-api.
+/plugin/

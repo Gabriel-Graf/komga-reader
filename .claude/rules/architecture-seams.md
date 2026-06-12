@@ -94,6 +94,13 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   das** `compileOnly`. Die separaten Publishes der drei Module sind entfallen. Kavita-Plugin nutzt es; E2E grün.
   Settings-Seite: Settings „Server hinzufügen" listet entdeckte Plugins, zeigt TOFU-Trust-Dialog
   (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
+- **Data-only Discovery generalisiert (Ist, 2026-06-12):** Die data-only-Mechanik ist jetzt
+  **kategorisiert**: `PluginCategory{COLOR_PRESET,READER_PRESET,LANGUAGE}` (plugin-api, ABI
+  `VERSION=2`/`MIN_SUPPORTED=1`, additiv). Manifest-Keys `DATA_CATEGORY`+`DATA_ASSET` (mit
+  Legacy-Alias `COLOR_PRESETS`). `PluginHost.discoverDataPlugins(category)` ist die generische
+  Discovery (reiner `resolveDataPluginManifest`-Helfer); `discoverColorPresetPlugins()` ist nur
+  noch ein dünner Wrapper darüber (+ `parsePresetSpecs`). Reader-Preset-/Sprach-Plugins (Spec 2)
+  hängen sich als neue Kategorien ein, ohne Discovery-Umbau. Template/Konvention: `/plugins/`.
 
 - **Collections-Sync bidirektional (Ist, 2026-06-10):** Sammlungen synchronisieren jetzt **push UND
   pull**. Der reine, pur-getestete `planCollectionSync` (`domain/usecase/CollectionSyncPlan.kt`)

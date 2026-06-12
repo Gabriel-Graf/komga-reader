@@ -8,53 +8,58 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * **semantisch** (Zweck), nicht nach Glyph benannt: so kann der konkrete Glyph zentral
  * getauscht werden, ohne Aufruf-Stellen anzufassen.
  *
- * Neuer Bedarf: hier einen semantischen Namen ergänzen und auf einen Lucide-Glyph zeigen
- * (fehlt der Glyph, in `tools/icons/icon-set.mjs` ergänzen und `npm run generate`).
+ * Jede Property delegiert über [ActiveIconPack]/[IconKey] an das **aktive Icon-Pack**
+ * (Default = [DefaultIconPack], die heutige Lucide-Zuordnung). Ein Pack kann die Glyphen
+ * app-weit ersetzen, ohne diese Call-Sites zu berühren.
+ *
+ * Neuer Bedarf: einen [IconKey] ergänzen, das Mapping in [DefaultIconPack] hinzufügen und
+ * hier eine delegierende Property anlegen (fehlt der Glyph, in `tools/icons/icon-set.mjs`
+ * ergänzen und `npm run generate`).
  */
 object AppIcons {
-    val Close: ImageVector get() = LucideIcons.X
-    val Back: ImageVector get() = LucideIcons.ArrowLeft
-    val Forward: ImageVector get() = LucideIcons.ArrowRight
-    val Check: ImageVector get() = LucideIcons.Check
-    val Plus: ImageVector get() = LucideIcons.Plus
-    val Minus: ImageVector get() = LucideIcons.Minus
-    val ChevronRight: ImageVector get() = LucideIcons.ChevronRight
-    val ChevronDown: ImageVector get() = LucideIcons.ChevronDown
-    val ChevronUp: ImageVector get() = LucideIcons.ChevronUp
-    val Home: ImageVector get() = LucideIcons.House
-    val Search: ImageVector get() = LucideIcons.Search
-    val Refresh: ImageVector get() = LucideIcons.RefreshCw
-    val Edit: ImageVector get() = LucideIcons.SquarePen
-    val Settings: ImageVector get() = LucideIcons.Settings
-    val Delete: ImageVector get() = LucideIcons.Trash2
-    val Download: ImageVector get() = LucideIcons.CloudDownload
-    val Local: ImageVector get() = LucideIcons.HardDriveDownload
-    val Cloud: ImageVector get() = LucideIcons.Cloud
-    val Info: ImageVector get() = LucideIcons.Info
-    val Filter: ImageVector get() = LucideIcons.ListFilter
-    val Overflow: ImageVector get() = LucideIcons.EllipsisVertical
-    val Stop: ImageVector get() = LucideIcons.CircleStop
-    val GridView: ImageVector get() = LucideIcons.LayoutGrid
+    val Close: ImageVector get() = ActiveIconPack.resolve(IconKey.Close)
+    val Back: ImageVector get() = ActiveIconPack.resolve(IconKey.Back)
+    val Forward: ImageVector get() = ActiveIconPack.resolve(IconKey.Forward)
+    val Check: ImageVector get() = ActiveIconPack.resolve(IconKey.Check)
+    val Plus: ImageVector get() = ActiveIconPack.resolve(IconKey.Plus)
+    val Minus: ImageVector get() = ActiveIconPack.resolve(IconKey.Minus)
+    val ChevronRight: ImageVector get() = ActiveIconPack.resolve(IconKey.ChevronRight)
+    val ChevronDown: ImageVector get() = ActiveIconPack.resolve(IconKey.ChevronDown)
+    val ChevronUp: ImageVector get() = ActiveIconPack.resolve(IconKey.ChevronUp)
+    val Home: ImageVector get() = ActiveIconPack.resolve(IconKey.Home)
+    val Search: ImageVector get() = ActiveIconPack.resolve(IconKey.Search)
+    val Refresh: ImageVector get() = ActiveIconPack.resolve(IconKey.Refresh)
+    val Edit: ImageVector get() = ActiveIconPack.resolve(IconKey.Edit)
+    val Settings: ImageVector get() = ActiveIconPack.resolve(IconKey.Settings)
+    val Delete: ImageVector get() = ActiveIconPack.resolve(IconKey.Delete)
+    val Download: ImageVector get() = ActiveIconPack.resolve(IconKey.Download)
+    val Local: ImageVector get() = ActiveIconPack.resolve(IconKey.Local)
+    val Cloud: ImageVector get() = ActiveIconPack.resolve(IconKey.Cloud)
+    val Info: ImageVector get() = ActiveIconPack.resolve(IconKey.Info)
+    val Filter: ImageVector get() = ActiveIconPack.resolve(IconKey.Filter)
+    val Overflow: ImageVector get() = ActiveIconPack.resolve(IconKey.Overflow)
+    val Stop: ImageVector get() = ActiveIconPack.resolve(IconKey.Stop)
+    val GridView: ImageVector get() = ActiveIconPack.resolve(IconKey.GridView)
 
     /** Größeres Cover-Gitter (3er-Raster) — Drittstufe des Ansichts-Umschalters. */
-    val LargeGridView: ImageVector get() = LucideIcons.Grid2x2
-    val ListView: ImageVector get() = LucideIcons.List
-    val Bookmark: ImageVector get() = LucideIcons.Bookmark
+    val LargeGridView: ImageVector get() = ActiveIconPack.resolve(IconKey.LargeGridView)
+    val ListView: ImageVector get() = ActiveIconPack.resolve(IconKey.ListView)
+    val Bookmark: ImageVector get() = ActiveIconPack.resolve(IconKey.Bookmark)
 
     /** Aktiv-Zustand des Lesezeichens: gefüllt, wenn das Werk in mindestens einer Collection liegt. */
-    val BookmarkFilled: ImageVector get() = LucideIcons.BookmarkFilled
-    val Library: ImageVector get() = LucideIcons.Library
-    val Groups: ImageVector get() = LucideIcons.LayoutDashboard
-    val Plugins: ImageVector get() = LucideIcons.Puzzle
-    val Contrast: ImageVector get() = LucideIcons.Contrast
-    val Palette: ImageVector get() = LucideIcons.Palette
-    val Reader: ImageVector get() = LucideIcons.BookOpen
-    val Language: ImageVector get() = LucideIcons.Languages
-    val Connection: ImageVector get() = LucideIcons.Server
-    val ReaderMode: ImageVector get() = LucideIcons.GalleryVertical
-    val PanelMode: ImageVector get() = LucideIcons.Grid2x2
-    val Typography: ImageVector get() = LucideIcons.Type
-    val TableOfContents: ImageVector get() = LucideIcons.List
-    val AlignLeft: ImageVector get() = LucideIcons.AlignLeft
-    val AlignJustify: ImageVector get() = LucideIcons.AlignJustify
+    val BookmarkFilled: ImageVector get() = ActiveIconPack.resolve(IconKey.BookmarkFilled)
+    val Library: ImageVector get() = ActiveIconPack.resolve(IconKey.Library)
+    val Groups: ImageVector get() = ActiveIconPack.resolve(IconKey.Groups)
+    val Plugins: ImageVector get() = ActiveIconPack.resolve(IconKey.Plugins)
+    val Contrast: ImageVector get() = ActiveIconPack.resolve(IconKey.Contrast)
+    val Palette: ImageVector get() = ActiveIconPack.resolve(IconKey.Palette)
+    val Reader: ImageVector get() = ActiveIconPack.resolve(IconKey.Reader)
+    val Language: ImageVector get() = ActiveIconPack.resolve(IconKey.Language)
+    val Connection: ImageVector get() = ActiveIconPack.resolve(IconKey.Connection)
+    val ReaderMode: ImageVector get() = ActiveIconPack.resolve(IconKey.ReaderMode)
+    val PanelMode: ImageVector get() = ActiveIconPack.resolve(IconKey.PanelMode)
+    val Typography: ImageVector get() = ActiveIconPack.resolve(IconKey.Typography)
+    val TableOfContents: ImageVector get() = ActiveIconPack.resolve(IconKey.TableOfContents)
+    val AlignLeft: ImageVector get() = ActiveIconPack.resolve(IconKey.AlignLeft)
+    val AlignJustify: ImageVector get() = ActiveIconPack.resolve(IconKey.AlignJustify)
 }

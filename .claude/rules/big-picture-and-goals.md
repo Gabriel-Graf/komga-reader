@@ -249,7 +249,11 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   hinter `ReaderChromeSlot`/`ReaderScaffoldState` — Sub-Projekt **C1**; die Reader-Engines + die
   `Viewer`-Naht (Naht B) bleiben Core/draußen, die Surface trägt nur die abgeleiteten
   `chromeVisible`/`onToggleChrome`, nicht den `Viewer`) · **Shell-Pack** für das Home-Skelett
-  (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
+  (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor) · **Icon-Pack-Infra** (`I1`): `AppIcons.*`
+  delegiert über `ActiveIconPack`/`IconKey` ans aktive Icon-Pack (Default = `DefaultIconPack`, die heutige
+  Lucide-Map) — ein Pack ersetzt Glyphen app-weit ohne Call-Site-Änderung (`app/ui/icons/IconPack.kt`).
+  Bewusst **prozess-global** statt `CompositionLocal`, weil `AppIcons.*` auch außerhalb von Composition
+  gelesen wird (Datenklassen-Felder/Default-Args). Eigene Naht, getrennt vom Theme-`UiPack`.
 
 **Noch offen für „komplette UI modular":**
 - Die Chrome-Region-Slot-Reihe (sechs) + die `detail`-Region (D1 vollständig: alle drei Detail-Routen
@@ -265,6 +269,10 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   das *Chrome*-**Gerüst** drumherum (Overlay, Chrome-Buttons, `ReaderScaffold`) ist über die `readerChrome`-
   Region (C1) **austauschbar**. Offen bleibt die **deklarative** Form (A1: Tap-Zone→Aktion-Beschreibung statt
   bespoke `tapModifier`) — daran hängt sich die deklarative UI-Plugin-Form (Plugins (b)) für externe Packs ein.
+- **Icon-Pack extern:** die In-tree-Infra steht (I1); der **externe Icon-Pack als APK** + ein
+  Settings-Umschalter sind **Soll mit L1/L2** (externer UI-Pack-Lader, TOFU/ABI wie plugin-host) — bis
+  dahin wird `ActiveIconPack.current` nur im Prozess gesetzt (Default-Pfad aktiv). Runtime-SVG-Import bleibt
+  YAGNI. `IconKey`/`IconPack` ggf. in **A1**/`ui-api` mit-einfrieren.
 - **`ui-api`-Modul:** der Slot-/Shell-/Theme-Vertrag liegt bewusst **in-tree** (`app/ui/...`), **nicht
   eingefroren**. Komplette Modularität braucht ihn als dünnes, stabiles API-Modul (Kandidat neben
   `plugin-api`), additiv erweiterbar.

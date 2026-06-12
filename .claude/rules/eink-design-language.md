@@ -14,7 +14,12 @@ Notwendigkeit, kein Geschmack**. Jede UI-Arbeit folgt ihr (Spec §8).
   **Keine Akzentfarbe** — Akzent = solides Schwarz bzw. invertiert Weiß. Theme: `app/ui/theme/Theme.kt`.
 - **Icons:** **Lucide** (gleichmäßiger Outline-Strich, als `ImageVector` generiert mit E-Ink-Stroke
   2.5px) — monochrom, E-Ink-kräftig. Zentrale Registry `app/ui/icons/AppIcons.kt` (SSOT), generiert
-  via `tools/icons`; nie Material-Icons, nie Streu-Icons. Details: `komga-eink-ui-polish`-Skill, Sektion „Icon-System".
+  via `tools/icons`; nie Material-Icons, nie Streu-Icons. **Austauschbar (Ist, 2026-06-12, I1):**
+  `AppIcons.*` delegiert über `ActiveIconPack`/`IconKey` ans aktive Icon-Pack (Default =
+  `DefaultIconPack`, die heutige Lucide-Map) — ein Pack ersetzt Glyphen app-weit ohne Call-Site-Änderung
+  (`app/ui/icons/IconPack.kt`). Bewusst **prozess-global** statt `CompositionLocal` (Datenklassen-Felder
+  lesen `AppIcons.*` außerhalb von Composition). Neuer Bedarf = `IconKey` + Mapping in `DefaultIconPack`.
+  Details: `komga-eink-ui-polish`-Skill, Sektion „Icon-System".
 - **Aktions-Icons beschriftet:** im Boox-nativen Look tragen Aktionen Text-Labels, nicht nur Glyphen.
 - **`BaseDialog`:** ein Composable als Basis **aller** Dialoge — sticky Header/Footer, scrollender Body,
   Hardware-Back = abbrechen. **Max. ein Dialog** gleichzeitig über dem Main-View.

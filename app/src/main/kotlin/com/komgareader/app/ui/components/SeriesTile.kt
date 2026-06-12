@@ -58,12 +58,6 @@ fun SeriesTile(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DefaultSeriesTile(state: TileState, modifier: Modifier = Modifier) {
-    val ctx = LocalContext.current
-    val request = remember(state.series.sourceId, state.series.remoteId) {
-        ImageRequest.Builder(ctx)
-            .data(SourceCover(state.series.sourceId, state.series.remoteId, isSeries = true))
-            .crossfade(false).build()
-    }
     Box(
         modifier
             .aspectRatio(2f / 3f)
@@ -71,6 +65,25 @@ fun DefaultSeriesTile(state: TileState, modifier: Modifier = Modifier) {
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
             .combinedClickable(onClick = state.onClick, onLongClick = state.onLongClick),
     ) {
+        TileCoverContent(state)
+    }
+}
+
+/**
+ * Der **invariant geteilte** Inhalt jeder Serien-Kachel: Cover (quellen-agnostisch über [SourceCover],
+ * E-Ink-Filter über [FilteredAsyncImage]), Lokal/Cloud-Badge oben rechts, [TileTitleBand] unten. Nur der
+ * **Rahmen** (Border vs. Card-Schatten) unterscheidet [DefaultSeriesTile] und [AuroraSeriesTile] — der
+ * Inhalt lebt an EINER Stelle (`shared-structure-before-variants`). Füllt seinen Box-Slot (`fillMaxSize`).
+ */
+@Composable
+internal fun TileCoverContent(state: TileState) {
+    val ctx = LocalContext.current
+    val request = remember(state.series.sourceId, state.series.remoteId) {
+        ImageRequest.Builder(ctx)
+            .data(SourceCover(state.series.sourceId, state.series.remoteId, isSeries = true))
+            .crossfade(false).build()
+    }
+    Box(Modifier.fillMaxSize()) {
         FilteredAsyncImage(
             model = request,
             contentDescription = state.series.title,

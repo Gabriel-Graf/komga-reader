@@ -16,31 +16,24 @@ import com.komgareader.app.ui.slots.UiSlotPack
 import com.komgareader.app.ui.slots.UiSlots
 
 /**
- * Swap-Beweis: ein alternatives Reader-Gerüst — der **Status-Fuß wandert nach oben** (über den
- * Inhalt, statt unten als Overlay), die Chrome-Menüleiste bleibt über die `overlay`-Region, und der
- * Inhalt füllt den Rest — dieselbe [ReaderScaffoldState]-Surface anders angeordnet, ohne das
- * [ReaderScaffold] (den Host-Wrapper) oder die Reader anzufassen. Belegt, dass ein UI-Pack das ganze
- * Lese-Chrome über die `readerChrome`-Region neu arrangieren kann, während der Scaffold-Aufruf in den
+ * Swap-Beweis: ein **minimales** alternatives Reader-Gerüst — nur Inhalt + die Chrome-Menüleiste über
+ * die `overlay`-Region, ohne Status-Fuß, Tap-Zonen-Hints und Start-Hinweis — dieselbe
+ * [ReaderScaffoldState]-Surface anders (knapper) angeordnet, ohne das [ReaderScaffold] (den
+ * Host-Wrapper) oder die Reader anzufassen. Belegt, dass ein UI-Pack das ganze Lese-Chrome über die
+ * `readerChrome`-Region neu arrangieren (und Stücke weglassen) kann, während der Scaffold-Aufruf in den
  * fünf Readern unverändert bleibt. NUR Debug/Preview, keine Nutzer-Einstellung.
  *
- * Bewusst **weggelassen** in diesem Swap-Beweis: die Tap-Zonen-Hints und der Start-Hinweis (dieses
- * minimale Gerüst zeigt sie nicht); produktive Packs sollten sie platzieren. Die Tap-Zonen-Navigation
- * ([ReaderScaffoldState.onPrev]/[onNext]/[onToggleChrome] bzw. [tapModifier]) und der E-Ink-Scrim der
- * Menüleiste bleiben über die `overlay`-Region bzw. den Host erzwungen; Refresh/Engine-Navigation
- * (Naht B) sind gar nicht Teil der Surface.
+ * Bewusst **weggelassen** in diesem Swap-Beweis: [ReaderScaffoldState.footer] (der `ReaderStatusBar`
+ * richtet sich selbst `BottomCenter` aus — ein Pack, das ihn anders platzieren will, liefert seinen
+ * eigenen Footer), die Tap-Zonen-Hints und der Start-Hinweis; produktive Packs sollten diese platzieren.
+ * Die Tap-Zonen-Navigation ([ReaderScaffoldState.onPrev]/[onNext]/[onToggleChrome] bzw. [tapModifier])
+ * und der E-Ink-Scrim der Menüleiste bleiben über die `overlay`-Region bzw. den Host erzwungen;
+ * Refresh/Engine-Navigation (Naht B) sind gar nicht Teil der Surface.
  */
 @Composable
 fun AlternativeReaderChrome(state: ReaderScaffoldState) {
     Box(Modifier.fillMaxSize().background(state.background)) {
         state.content()
-
-        // Footer oben statt unten: nur bei sichtbarem Chrome (host-gegatet wie im Default).
-        if (state.footer != null && state.chromeVisible) {
-            val footer = state.footer
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                footer.invoke(this)
-            }
-        }
 
         // Chrome-Menüleiste über die overlay-Region (BoxScope-Extension → expliziter Receiver).
         if (state.chromeVisible) {

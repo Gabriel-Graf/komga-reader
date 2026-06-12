@@ -53,6 +53,12 @@ data class ReaderScaffoldState(
     val tapModifier: Modifier? = null,
     val footer: (@Composable BoxScope.() -> Unit)? = null,
     val persistentBars: (@Composable BoxScope.() -> Unit)? = null,
+    /**
+     * Ob die Tap-Zonen-Hints (Letzte/Nächste-Seite-Chips) bei sichtbarem Chrome erscheinen. Default:
+     * `true` **gdw.** [tapModifier] `== null` (Standard-Drittel-Navigation aktiv); Reader mit bespoke
+     * Tap-Zonen (Comic/Webtoon übergeben ein nicht-`null` [tapModifier], auch ein leeres `Modifier`)
+     * setzen damit implizit `false` — ihre Hints passen nicht zur eigenen Gesten-Logik.
+     */
     val showTapZoneHints: Boolean = tapModifier == null,
     val content: @Composable () -> Unit,
 )

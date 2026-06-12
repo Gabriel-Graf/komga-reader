@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.theme
+package com.komgareader.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme

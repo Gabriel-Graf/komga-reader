@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.icons
+package com.komgareader.ui.icons
 
 import androidx.compose.ui.graphics.vector.ImageVector
 

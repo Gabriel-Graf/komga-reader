@@ -1,6 +1,6 @@
 // GENERIERT von tools/icons/generate.mjs — NICHT von Hand editieren.
 // Quelle: Lucide (ISC), https://github.com/lucide-icons/lucide  ·  Stroke: siehe STROKE.
-package com.komgareader.app.ui.icons
+package com.komgareader.ui.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor

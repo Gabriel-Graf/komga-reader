@@ -193,7 +193,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
 | **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
-| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog — plus das Vollbild-Detail-Gerüst `detail` | vom aktiven Shell-Pack gewählt | **sechs Chrome-Regionen + `detail` gebaut** (header (mit optionaler Such-Capability `HeaderSearch`)+homeHeader+dialog+settings+tiles+overlay+detail; D1 vollständig: SeriesDetail+GroupBrowse+CollectionDetail) |
+| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog — plus das Vollbild-Detail-Gerüst `detail` und das ganze Reader-Gerüst `readerChrome` | vom aktiven Shell-Pack gewählt | **sechs Chrome-Regionen + `detail` + `readerChrome` gebaut** (header (mit optionaler Such-Capability `HeaderSearch`)+homeHeader+dialog+settings+tiles+overlay+detail+readerChrome; D1 vollständig: SeriesDetail+GroupBrowse+CollectionDetail; C1: ganzes `ReaderScaffold` hinter `ReaderChromeSlot`, Naht B/`Viewer` bleibt draußen) |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
 *in* einem festen Skelett — sie können die Bottom-Bar restylen, aber nicht zu einem Drawer/Side-Rail
@@ -245,21 +245,26 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   Region **detail** (das Vollbild-Detail-Gerüst hinter `DetailSlot`/`DetailScaffoldState`, in **allen drei**
   Detail-Routen `SeriesDetail` + `GroupBrowse` + `CollectionDetail` — Sub-Projekt **D1 vollständig**, D1.1
   brachte CollectionDetail rein und baute dafür die `header`-Region um eine optionale Such-Capability
-  `HeaderSearch` aus) · **Shell-Pack** für das Home-Skelett
+  `HeaderSearch` aus) · die achte Region **readerChrome** (das **ganze Reader-Gerüst** `ReaderScaffold`
+  hinter `ReaderChromeSlot`/`ReaderScaffoldState` — Sub-Projekt **C1**; die Reader-Engines + die
+  `Viewer`-Naht (Naht B) bleiben Core/draußen, die Surface trägt nur die abgeleiteten
+  `chromeVisible`/`onToggleChrome`, nicht den `Viewer`) · **Shell-Pack** für das Home-Skelett
   (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
 
 **Noch offen für „komplette UI modular":**
-- Die Chrome-Region-Slot-Reihe (sechs) + die `detail`-Region sind gebaut (D1 vollständig: alle drei
-  Detail-Routen modular). `nav` ist **kein** Region-Slot — das Nav-Skelett gehört dem Shell-Pack. Nächstes
-  Sub-Projekt: **C1** (Reader-Chrome komplett modular: Tap-Zonen/Footer/Scaffold deklarativ). Eine eigene
+- Die Chrome-Region-Slot-Reihe (sechs) + die `detail`-Region (D1 vollständig: alle drei Detail-Routen
+  modular) + die `readerChrome`-Region (C1: ganzes `ReaderScaffold`-Gerüst) sind gebaut. `nav` ist
+  **kein** Region-Slot — das Nav-Skelett gehört dem Shell-Pack. Nächstes Sub-Projekt: **A1** (Reader-Chrome
+  **deklarativ**: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier` pro Reader). Eine eigene
   `member`-tiles-Region (Collection-Member-Kachel) bleibt späteres YAGNI.
 - **Andere Vollbild-Routen:** das Detail-**Gerüst** ist über `detail` swappable für **alle drei**
   Detail-Routen (`SeriesDetail` + `GroupBrowse` + `CollectionDetail`, D1 vollständig). Es ist aber erst das
   *Gerüst* — die *Hero/Grid-Anordnung im Body* (und CollectionDetails `MemberTile`) bleibt Screen-Eigentum
   bis zur späteren `DetailShell`-Stufe (Hero/Grid als arrangierbare Stücke, Master-Detail auf Tablet).
-- **Reader-Chrome modular:** die Reader-**Engines** bleiben Core (Render/Refresh/E-Ink-Garantie, Naht B),
-  aber das *Chrome* drumherum (Overlay, Chrome-Buttons, Tap-Zonen, `ReaderScaffold`) soll austauschbar
-  werden — die deklarative UI-Plugin-Form (Plugins (b), Tap-Zone→Aktion-Beschreibung) hängt sich hier ein.
+- **Reader-Chrome modular:** die Reader-**Engines** bleiben Core (Render/Refresh/E-Ink-Garantie, Naht B);
+  das *Chrome*-**Gerüst** drumherum (Overlay, Chrome-Buttons, `ReaderScaffold`) ist über die `readerChrome`-
+  Region (C1) **austauschbar**. Offen bleibt die **deklarative** Form (A1: Tap-Zone→Aktion-Beschreibung statt
+  bespoke `tapModifier`) — daran hängt sich die deklarative UI-Plugin-Form (Plugins (b)) für externe Packs ein.
 - **`ui-api`-Modul:** der Slot-/Shell-/Theme-Vertrag liegt bewusst **in-tree** (`app/ui/...`), **nicht
   eingefroren**. Komplette Modularität braucht ihn als dünnes, stabiles API-Modul (Kandidat neben
   `plugin-api`), additiv erweiterbar.
@@ -359,8 +364,9 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   (`app/ui/reader/ReaderChrome.kt`: `title` + `onBack`/`onHome`/`onSettings` + reader-spezifische `actions`).
 >   **Kein `visible`-Flag in der Surface:** Sichtbarkeit (chromeVisible) + E-Ink-Scrim (`readerOverlayScrim`)
 >   host-erzwungen — `ReaderScaffold` rendert nur in `if (chromeVisible)` (Compose-Knackpunkt: BoxScope-Receiver
->   explizit via `with(this) { overlay(state) }`). Reader-Engines/`Viewer`/`RefreshScheduler`/Tap-Zonen/Footer
->   unberührt (Footer/Tap-Zonen → C1). Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
+>   explizit via `with(this) { overlay(state) }`). Reader-Engines/`Viewer`/`RefreshScheduler` unberührt; das
+>   ganze umgebende Gerüst (Tap-Zonen/Footer/Scaffold) ist mit C1 (`readerChrome`-Region) gebaut. Swap-Beweis:
+>   `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
 >   (`AlternativeReaderOverlay`: Shortcuts links, Titel zentriert).
 > - **Region `detail` (Ist, 2026-06-12, Sub-Projekt D1 + D1.1):** siebte Slot-Region — das **Vollbild-Detail-Gerüst**
 >   (kein Chrome-Stück, sondern das geteilte Scaffold, das die Detail-Routen über den `header`-Slot komponiert).
@@ -373,6 +379,23 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   unverändert. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/detail/DetailSlotPreview.kt`
 >   (`AlternativeDetailScaffold`: schlanker eigener Titelbalken statt header-Slot, ohne Scaffold/Snackbar/actions).
 >   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail)` · `ResolvedSlots(headerSlot, …, detail)`.
+> - **Region `readerChrome` (Ist, 2026-06-12, Sub-Projekt C1):** achte Slot-Region — das **ganze Reader-Gerüst**
+>   (`ReaderScaffold`: Vollbild-Hintergrund, Tap-Zonen, Hints, Status-Fuß, `persistentBars`, Start-Hinweis und der
+>   schon slot-ifizierte `overlay`). Vertrag: `ReaderChromeSlot` (typealias `@Composable (state: ReaderScaffoldState)
+>   -> Unit`). Capability-Surface `ReaderScaffoldState` (`app/ui/reader/ReaderScaffold.kt`): `chromeVisible` +
+>   `onToggleChrome` + `title` + `onBack`/`onHome`/`onSettings` + `onPrev`/`onNext` + `background` + reader-spezifische
+>   `actions` + `tapModifier` + `footer` + `persistentBars` + `showTapZoneHints` + host-gebauter `content`. **Der
+>   entscheidende Schnitt:** die Surface trägt **NICHT** den `Viewer` (Naht B) — `ReaderScaffold` nutzte ihn nur für
+>   `chromeVisible`/`toggleChrome` (per grep verifiziert: kein `refreshScheduler`/`navigateTo`/`onPageSettled` im
+>   Scaffold), darum die abgeleiteten `chromeVisible: Boolean` + `onToggleChrome: () -> Unit` statt des `Viewer`.
+>   `ReaderScaffold(chrome, …)` bleibt dünner Host-Wrapper (collectAsState + Surface bauen +
+>   `LocalResolvedSlots.current.readerChrome(state)`); **die fünf Reader-Call-Sites unverändert**.
+>   `DefaultReaderScaffold` = verbatim extrahierter Onyx-Renderer (innerer Overlay-Aufruf bleibt über die
+>   `overlay`-Region). E-Ink-Scrim + Animation-Gating host-erzwungen; Reader-Engines/`Viewer.kt`/`RefreshScheduler`/
+>   `ReaderChrome.kt`-Helfer unberührt. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/ReaderChromeSlotPreview.kt`
+>   (`AlternativeReaderChrome`: Status-Fuß oben statt unten, Tap-Hints/Start-Hinweis weggelassen).
+>   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail, readerChrome)` ·
+>   `ResolvedSlots(headerSlot, …, detail, readerChrome)`.
 > - **Header-Such-Capability (Ist, 2026-06-12, D1.1):** `HeaderSlot` ist jetzt `@Composable (HeaderState) -> Unit`;
 >   `HeaderState(title, onBack?, actions, search: HeaderSearch?)` (`UiSlots.kt`) trägt die optionale Such-Capability
 >   `HeaderSearch` (Titel↔Suchfeld). `DefaultHeader` ist der such-fähige Default-Renderer. Abwärtskompatibel über
@@ -387,9 +410,10 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
 > compact→Phone). Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
 > (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. **Die Region-Slot-Reihe
-> ist abgeschlossen** (alle sechs gebaut; `UiSlotPack` trägt `header` + `homeHeader` + `dialog` + `settings`
-> + `tiles` + `overlay`; `nav` ist Shell-Pack-Sache, kein Region-Slot). Ebenfalls Soll: das **Reader-Chrome
-> komplett modular** (C1, Nachfolger von `overlay`), ein eigenes
+> ist abgeschlossen** (alle sechs Chrome-Regionen + `detail` + `readerChrome` gebaut; `UiSlotPack` trägt
+> `header` + `homeHeader` + `dialog` + `settings` + `tiles` + `overlay` + `detail` + `readerChrome`; `nav` ist
+> Shell-Pack-Sache, kein Region-Slot). Ebenfalls Soll: das **Reader-Chrome deklarativ** (A1, Nachfolger von
+> C1: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`), ein eigenes
 > **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen

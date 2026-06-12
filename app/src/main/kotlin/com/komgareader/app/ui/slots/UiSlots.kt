@@ -34,12 +34,14 @@ import com.komgareader.app.ui.home.DefaultHomeHeader
 import com.komgareader.app.ui.home.HomeHeaderState
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.reader.DefaultReaderOverlay
+import com.komgareader.app.ui.reader.DefaultReaderScaffold
 import com.komgareader.app.ui.reader.ReaderOverlayState
+import com.komgareader.app.ui.reader.ReaderScaffoldState
 import com.komgareader.app.ui.settings.DefaultSettings
 import com.komgareader.app.ui.settings.SettingsState
 
 /**
- * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles, Overlay, Detail
+ * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles, Overlay, Detail, ReaderChrome
  *
  * Die [com.komgareader.app.ui.theme.UiPack]-Naht macht den **Look** auswechselbar (Farbe, Typo,
  * Token — „Theme zuerst"). Diese Naht ist das **„Layout danach"** aus `big-picture-and-goals.md`
@@ -55,6 +57,10 @@ import com.komgareader.app.ui.settings.SettingsState
  * tiles · settings · dialog**. Dazu die siebte Region **detail**: das **Vollbild-Detail-Gerüst**
  * (Scaffold + Header über den `header`-Slot + optionaler Snackbar + Body) — keine eigene Chrome-
  * Region, sondern das geteilte Gerüst, das die Detail-Routen über den `header`-Slot **komponiert**.
+ * Und die achte Region **readerChrome**: das **ganze Reader-Gerüst** (`ReaderScaffold` —
+ * Vollbild-Hintergrund, Tap-Zonen, Hints, Status-Fuß, persistentBars, Start-Hinweis und der schon
+ * slot-ifizierte `overlay`). Die Reader-**Engines** + die `Viewer`-Naht (Naht B) bleiben **Core,
+ * draußen** — ein readerChrome-Pack berührt weder Refresh-Scheduler noch Engine-Navigation.
  * Die ursprünglich genannte Region **nav** ist **kein** Region-Slot: das Navigations-Skelett
  * (Bottom-Bar/Drawer/Side-Rail) gehört dem **Shell-Pack** (`AppShellState`/`DefaultShell`/
  * `PhoneShell`, Form-Faktor-Naht, siehe `architecture-seams.md`), eine Ebene **über** den
@@ -168,6 +174,18 @@ typealias OverlaySlot = @Composable BoxScope.(state: ReaderOverlayState) -> Unit
 typealias DetailSlot = @Composable (state: DetailScaffoldState) -> Unit
 
 /**
+ * Vertrag der ReaderChrome-Region: das **ganze Reader-Gerüst** (`ReaderScaffold`). Ein Pack
+ * arrangiert daraus die Lese-Oberfläche aus den host-gebauten Stücken der [ReaderScaffoldState]-
+ * Surface (Vollbild-Hintergrund · Tap-Zonen · Hints · Chrome-Menüleiste über die `overlay`-Region ·
+ * Status-Fuß · persistentBars · Start-Hinweis · der eigentliche Inhalt) — dieselbe Aufrufform,
+ * andere Anordnung (z. B. Footer oben, anderes Gerüst). Die Reader-**Engines** + die `Viewer`-Naht
+ * (Naht B: Refresh-Scheduler, Engine-Navigation) bleiben **Core und außerhalb der Surface** — die
+ * Surface trägt nur die abgeleiteten `chromeVisible`/`onToggleChrome`. Der E-Ink-Scrim + die
+ * Animation-Gating-Pfade bleiben host-erzwungen, nicht Sache des Packs.
+ */
+typealias ReaderChromeSlot = @Composable (state: ReaderScaffoldState) -> Unit
+
+/**
  * Ein Slot-Pack: pro Region ein optionaler Slot. `null` = diese Region nicht überschreiben → Default.
  * Künftige Regionen kommen als weitere **optionale** Felder hinzu, ohne bestehende Packs zu brechen
  * (additiv).
@@ -180,6 +198,7 @@ data class UiSlotPack(
     val tiles: TilesSlot? = null,
     val overlay: OverlaySlot? = null,
     val detail: DetailSlot? = null,
+    val readerChrome: ReaderChromeSlot? = null,
 )
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
@@ -193,6 +212,7 @@ data class ResolvedSlots(
     val tiles: TilesSlot,
     val overlay: OverlaySlot,
     val detail: DetailSlot,
+    val readerChrome: ReaderChromeSlot,
 )
 
 /**
@@ -209,6 +229,7 @@ object UiSlots {
         tiles = pack.tiles ?: DefaultSlots.tiles,
         overlay = pack.overlay ?: DefaultSlots.overlay,
         detail = pack.detail ?: DefaultSlots.detail,
+        readerChrome = pack.readerChrome ?: DefaultSlots.readerChrome,
     )
 }
 
@@ -238,6 +259,9 @@ object DefaultSlots {
     }
     val detail: DetailSlot = { state ->
         DefaultDetailScaffold(state)
+    }
+    val readerChrome: ReaderChromeSlot = { state ->
+        DefaultReaderScaffold(state)
     }
 }
 

@@ -35,4 +35,9 @@ class LanguageSpecParserTest {
     @Test fun nullWhenNotObject() {
         assertNull(parseLanguageSpec("[]", abi))
     }
+
+    @Test fun skipsNonStringValuesInStrings() {
+        val spec = parseLanguageSpec("""{"code":"es","name":"X","strings":{"a":"ok","b":99}}""", abi)!!
+        assertEquals(mapOf("a" to "ok"), spec.strings)
+    }
 }

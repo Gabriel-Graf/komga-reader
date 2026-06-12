@@ -193,7 +193,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
 | **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
-| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader+dialog+settings+tiles **gebaut**, Rest Soll |
+| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | **alle sechs gebaut** (header+homeHeader+dialog+settings+tiles+overlay) — Reihe abgeschlossen |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
 *in* einem festen Skelett — sie können die Bottom-Bar restylen, aber nicht zu einem Drawer/Side-Rail
@@ -237,15 +237,17 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
 **Home-Skelett**. Alle Punkte unten bleiben **offen, bis die komplette UI modular ist**:
 
 **Gebaut (Stand 2026-06-12):**
-- Theme-Pack (`UiPack`, Look nach Geräteklasse) · Region-Slots **header** + **homeHeader** + **dialog**
-  (der eine Onyx-Dialog `EinkModal` hinter `DialogSlot`/`DialogState`) + **settings**
+- Theme-Pack (`UiPack`, Look nach Geräteklasse) · **alle sechs Region-Slots** **header** + **homeHeader**
+  + **dialog** (der eine Onyx-Dialog `EinkModal` hinter `DialogSlot`/`DialogState`) + **settings**
   (das Settings-Skelett hinter `SettingsSlot`/`SettingsState`) + **tiles**
-  (die Serien-Kachel `SeriesTile` hinter `TilesSlot`/`TileState`, in Bibliothek + Gruppen) ·
+  (die Serien-Kachel `SeriesTile` hinter `TilesSlot`/`TileState`, in Bibliothek + Gruppen) + **overlay**
+  (die togglebare Reader-Chrome-Menüleiste hinter `OverlaySlot`/`ReaderOverlayState`) ·
   **Shell-Pack** für das Home-Skelett (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
 
 **Noch offen für „komplette UI modular":**
-- **Übrige Region-Slots:** overlay · nav (2 von 6). `UiSlotPack` trägt heute
-  header+homeHeader+dialog+settings+tiles.
+- **Region-Slot-Reihe abgeschlossen** (alle sechs gebaut). `nav` ist **kein** Region-Slot — das
+  Nav-Skelett gehört dem Shell-Pack. Nächste Sub-Projekte: **D1** (Dialog-Look als eigene Region/Politur)
+  / **C1** (Reader-Chrome komplett modular: Tap-Zonen/Footer/Scaffold deklarativ).
 - **Andere Vollbild-Routen** (`SeriesDetail`/`GroupBrowse`/`CollectionDetail`): heute ist **nur ihr
   Header** swappable (header-Slot), nicht ihr **Layout**. Für einen echten Phone-Formfaktor müssen auch
   sie anders anordbar sein — entweder eigene Shell-Packs oder slot-komponiert.
@@ -286,7 +288,7 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > `UiPackRegistry`, angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware**
 > (LCD volles Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das
 > „Theme zuerst"-Stück.
-> **Die Layout-Slot-Naht wächst — fünf Regionen gebaut:**
+> **Die Layout-Slot-Naht — alle sechs Regionen gebaut (Reihe abgeschlossen):**
 > - **Region `header` (Ist, 2026-06-09):** `app/ui/slots/UiSlots.kt` trägt `HeaderSlot`
 >   (typealias `@Composable (title, onBack?, actions) -> Unit`), `UiSlotPack(header)`, den puren Resolver
 >   `UiSlots.resolve` (fehlender Slot → `DefaultSlots`, nie `null`, analog `StubSource`) und
@@ -341,6 +343,17 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   (`AlternativeTile`: Titel über dem Cover). Andere Kachel-Typen (`ChapterTile`/`CollageTile`/`MemberTile`)
 >   unangetastet. `UiSlotPack(header, homeHeader, dialog, settings, tiles)` ·
 >   `ResolvedSlots(header, homeHeader, dialog, settings, tiles)`.
+> - **Region `overlay` (Ist, 2026-06-12):** sechste/letzte Slot-Region — die Region-Slot-Reihe ist damit
+>   **abgeschlossen**. Vertrag: `OverlaySlot` (typealias `@Composable BoxScope.(state: ReaderOverlayState) -> Unit`,
+>   `BoxScope`-Extension wegen `align(TopCenter)`). Slot-ifiziert die togglebare Reader-Chrome-Menüleiste
+>   (`ReaderChromeOverlay` → ersetzt durch `DefaultReaderOverlay`). Capability-Surface `ReaderOverlayState`
+>   (`app/ui/reader/ReaderChrome.kt`: `title` + `onBack`/`onHome`/`onSettings` + reader-spezifische `actions`).
+>   **Kein `visible`-Flag in der Surface:** Sichtbarkeit (chromeVisible) + E-Ink-Scrim (`readerOverlayScrim`)
+>   host-erzwungen — `ReaderScaffold` rendert nur in `if (chromeVisible)` (Compose-Knackpunkt: BoxScope-Receiver
+>   explizit via `with(this) { overlay(state) }`). Reader-Engines/`Viewer`/`RefreshScheduler`/Tap-Zonen/Footer
+>   unberührt (Footer/Tap-Zonen → C1). Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
+>   (`AlternativeReaderOverlay`: Shortcuts links, Titel zentriert). `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay)` ·
+>   `ResolvedSlots(header, homeHeader, dialog, settings, tiles, overlay)`.
 > **Shell-Pack-Schicht gebaut (Ist, 2026-06-12):** `app/ui/shell/` trägt die Capability-Surface
 > `AppShellState` (benannte Stücke: `destinations` als Nav-Daten + `ShellDestination{icon,label,
 > header:HomeHeaderState?,content}`), den Vertrag `ShellPack`, die pure `formFactorFor(widthDp)` +
@@ -349,8 +362,10 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > baut die Surface, löst nach `screenWidthDp` auf, ruft `pack.Render`. NavHost/Reader unberührt
 > (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
 > compact→Phone). Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
-> (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. Ebenfalls Soll: die **übrigen zwei Slots**
-> (overlay/nav — `UiSlotPack` trägt heute `header` + `homeHeader` + `dialog` + `settings` + `tiles`), ein eigenes
+> (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. **Die Region-Slot-Reihe
+> ist abgeschlossen** (alle sechs gebaut; `UiSlotPack` trägt `header` + `homeHeader` + `dialog` + `settings`
+> + `tiles` + `overlay`; `nav` ist Shell-Pack-Sache, kein Region-Slot). Ebenfalls Soll: das **Reader-Chrome
+> komplett modular** (C1, Nachfolger von `overlay`), ein eigenes
 > **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen

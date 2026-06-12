@@ -204,7 +204,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
-  Region `homeHeader`, dritte Region `dialog`, vierte Region `settings` + fünfte Region `tiles` gebaut):**
+  Region `homeHeader`, dritte Region `dialog`, vierte Region `settings`, fünfte Region `tiles` +
+  sechste/letzte Region `overlay` gebaut — die Region-Slot-Reihe ist damit abgeschlossen):**
   Über den Reader-Engines wird das *Chrome*
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
   modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind fünf Regionen**
@@ -271,13 +272,31 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     (`AlternativeTile`: Titel über dem Cover statt Scrim-Band unten, Badge bewusst weggelassen — nur
     Debug/Preview, keine Nutzer-Einstellung). Die anderen Kachel-Typen (`ChapterTile`/`CollageTile`/
     `MemberTile`) sind eigene spätere Regionen, hier unangetastet.
-  `UiSlotPack(header, homeHeader, dialog, settings, tiles)` ·
-  `ResolvedSlots(header, homeHeader, dialog, settings, tiles)` · `DefaultSlots` mit allen fünf
+  - **Region `overlay` (Ist, 2026-06-12 — sechste/letzte):** In-Tree-Vertrag `OverlaySlot`
+    (`@Composable BoxScope.(state: ReaderOverlayState) -> Unit`). Slot-ifiziert genau die **togglebare
+    Reader-Chrome-Menüleiste** (`ReaderChromeOverlay` → ersetzt durch `DefaultReaderOverlay`). Die
+    **Capability-Surface** `ReaderOverlayState` (`app/ui/reader/ReaderChrome.kt`) trägt `title` +
+    `onBack`/`onHome`/`onSettings` + die reader-spezifischen `actions`. **Besonderheit:** der Slot ist
+    eine **`BoxScope`-Extension** (die Leiste positioniert sich per `Modifier.align(TopCenter)` im
+    Reader-`Box`) — kein zweiter Modifier-Parameter wie bei `tiles`. **Kein `visible`-Flag in der
+    Surface:** die Sichtbarkeit (chromeVisible) **und** der E-Ink-Scrim (`readerOverlayScrim`) sind
+    **host-erzwungen** — `ReaderScaffold` rendert die Leiste nur in `if (chromeVisible) { … }`. **Compose-
+    Knackpunkt:** der implizite `BoxScope`-Receiver greift bei einem Funktionswert nicht; die Call-Site
+    macht ihn explizit (`val overlay = LocalResolvedSlots.current.overlay; with(this) { overlay(state) }`).
+    `ReaderScaffold`/Tap-Zonen/`ReaderStatusBar`/`persistentBars`/Hints + Reader-Engines + `Viewer`-Naht
+    unberührt; nur das *Aussehen* der Leiste ist auswechselbar (NICHT in R4: Footer/Tap-Zonen → C1).
+    Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
+    (`AlternativeReaderOverlay`: Shortcuts links, Titel zentriert, actions weggelassen — nur Debug/Preview).
+  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay)` ·
+  `ResolvedSlots(header, homeHeader, dialog, settings, tiles, overlay)` · `DefaultSlots` mit allen sechs
   Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern
   Inhalt/Struktur, nie die Bewegungs-/Akzent-Policy (die bleibt an
   `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
-  **Weiter Soll:** die übrigen Slots (overlay/nav), die `ui-api`-Modul-Extraktion
-  und der APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
+  **Region-Slot-Reihe abgeschlossen** (alle sechs gebaut). Die ursprünglich genannte Region `nav` ist
+  **kein** Region-Slot — das Nav-Skelett gehört dem **Shell-Pack** (unten). **Weiter Soll:** die
+  `ui-api`-Modul-Extraktion und der APK-Pack-Lader (Skins-Plan P2/P3); das **Reader-Chrome komplett
+  modular** (C1: Tap-Zonen/Footer/Scaffold deklarativ) ist der Nachfolger von `overlay`. Vertrag bewusst
+  in-tree, **nicht** eingefroren.
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots
   liegt jetzt eine Naht, die das **ganze Home-Layout-Skelett** auswechselt (Region-Slots restylen

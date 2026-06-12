@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.slots
 
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -11,11 +12,13 @@ import com.komgareader.app.ui.components.StandardTopAppBar
 import com.komgareader.app.ui.components.TileState
 import com.komgareader.app.ui.home.DefaultHomeHeader
 import com.komgareader.app.ui.home.HomeHeaderState
+import com.komgareader.app.ui.reader.DefaultReaderOverlay
+import com.komgareader.app.ui.reader.ReaderOverlayState
 import com.komgareader.app.ui.settings.DefaultSettings
 import com.komgareader.app.ui.settings.SettingsState
 
 /**
- * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles
+ * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles, Overlay
  *
  * Die [com.komgareader.app.ui.theme.UiPack]-Naht macht den **Look** auswechselbar (Farbe, Typo,
  * Token — „Theme zuerst"). Diese Naht ist das **„Layout danach"** aus `big-picture-and-goals.md`
@@ -27,20 +30,24 @@ import com.komgareader.app.ui.settings.SettingsState
  *
  * ## Vollständige (konzeptionelle) Slot-Liste
  *
- * Die Chrome-Regionen, die langfristig je einzeln auswechselbar werden sollen:
- * **header · homeHeader · overlay · tiles · nav · settings · dialog**.
+ * Die Chrome-Regionen, die je einzeln auswechselbar sind: **header · homeHeader · overlay · tiles ·
+ * settings · dialog**. Die ursprünglich genannte Region **nav** ist **kein** Region-Slot: das
+ * Navigations-Skelett (Bottom-Bar/Drawer/Side-Rail) gehört dem **Shell-Pack** (`AppShellState`/
+ * `DefaultShell`/`PhoneShell`, Form-Faktor-Naht, siehe `architecture-seams.md`), eine Ebene **über**
+ * den Region-Slots — nicht als offener Region-Slot zu behaupten, was dort gelöst ist.
  *
- * ## Stand: header + homeHeader + dialog + settings + tiles gebaut
+ * ## Stand: alle sechs Region-Slots gebaut (Region-Slot-Reihe abgeschlossen)
  *
- * Gebaut sind fünf Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
+ * Gebaut sind alle sechs Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
  * ([HomeHeaderState]-Surface), **dialog** ([DialogState]-Surface, der eine Onyx-Dialog-Rahmen
  * hinter [DialogSlot]), **settings** ([SettingsState]-Surface, das Settings-Skelett — Sidebar-
- * Master-Detail vs. Accordion — hinter [SettingsSlot]) und **tiles** ([TileState]-Surface, die
- * Serien-Kachel hinter [TilesSlot], in Bibliothek + Gruppen). Bewusst je *eine* Region end-to-end
- * statt aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
- * (`shared-structure-before-variants.md`: erst zentralisieren, dann hinter die Naht). Die weiteren
- * Slots (overlay/nav), die `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll
- * (Skins-Plan P2/P3). Der Vertrag ist **in-tree und nicht eingefroren**.
+ * Master-Detail vs. Accordion — hinter [SettingsSlot]), **tiles** ([TileState]-Surface, die
+ * Serien-Kachel hinter [TilesSlot], in Bibliothek + Gruppen) und **overlay** ([ReaderOverlayState]-
+ * Surface, die toggle­bare Reader-Chrome-Menüleiste hinter [OverlaySlot]). Bewusst je *eine* Region
+ * end-to-end statt aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
+ * (`shared-structure-before-variants.md`: erst zentralisieren, dann hinter die Naht). Die
+ * `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3); die Slot-Reihe
+ * selbst ist damit komplett. Der Vertrag ist **in-tree und nicht eingefroren**.
  */
 
 /**
@@ -83,9 +90,19 @@ typealias SettingsSlot = @Composable (state: SettingsState) -> Unit
 typealias TilesSlot = @Composable (state: TileState, modifier: Modifier) -> Unit
 
 /**
+ * Vertrag der Overlay-Region: die toggle­bare Reader-Chrome-Menüleiste. **`BoxScope`-Extension**,
+ * weil die Leiste sich im Reader-`Box` per `Modifier.align(Alignment.TopCenter)` positioniert (anders
+ * als die übrigen Slots). Ein Pack rendert die Leiste aus der [ReaderOverlayState]-Surface (Titel ·
+ * Navigations-/Shortcut-Callbacks · reader-spezifische Aktionen) — dieselbe Aufrufform, andere
+ * Anordnung (z. B. Burger-Menü, Shortcuts links). Die Sichtbarkeit (chromeVisible) + der E-Ink-Scrim
+ * bleiben **host-erzwungen** (das `ReaderScaffold` rendert nur bei `chromeVisible`), nicht Sache des Packs.
+ */
+typealias OverlaySlot = @Composable BoxScope.(state: ReaderOverlayState) -> Unit
+
+/**
  * Ein Slot-Pack: pro Region ein optionaler Slot. `null` = diese Region nicht überschreiben → Default.
- * Weitere Regionen (overlay/nav) kommen später als weitere **optionale** Felder
- * hinzu, ohne bestehende Packs zu brechen (additiv).
+ * Künftige Regionen kommen als weitere **optionale** Felder hinzu, ohne bestehende Packs zu brechen
+ * (additiv).
  */
 data class UiSlotPack(
     val header: HeaderSlot? = null,
@@ -93,6 +110,7 @@ data class UiSlotPack(
     val dialog: DialogSlot? = null,
     val settings: SettingsSlot? = null,
     val tiles: TilesSlot? = null,
+    val overlay: OverlaySlot? = null,
 )
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
@@ -102,6 +120,7 @@ data class ResolvedSlots(
     val dialog: DialogSlot,
     val settings: SettingsSlot,
     val tiles: TilesSlot,
+    val overlay: OverlaySlot,
 )
 
 /**
@@ -116,6 +135,7 @@ object UiSlots {
         dialog = pack.dialog ?: DefaultSlots.dialog,
         settings = pack.settings ?: DefaultSlots.settings,
         tiles = pack.tiles ?: DefaultSlots.tiles,
+        overlay = pack.overlay ?: DefaultSlots.overlay,
     )
 }
 
@@ -138,6 +158,10 @@ object DefaultSlots {
     }
     val tiles: TilesSlot = { state, modifier ->
         DefaultSeriesTile(state, modifier)
+    }
+    val overlay: OverlaySlot = { state ->
+        // Lambda-Receiver ist BoxScope → ruft die BoxScope-Extension mit implizitem Receiver auf.
+        DefaultReaderOverlay(state)
     }
 }
 

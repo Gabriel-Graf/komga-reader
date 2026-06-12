@@ -52,25 +52,38 @@ fun readerOverlayScrim(base: Color, transparentAlpha: Float): Color =
     if (LocalEinkMode.current) base else base.copy(alpha = transparentAlpha)
 
 /**
- * Toggle­bare Reader-Menüleiste, die **über** dem Inhalt schwebt (kein Reflow). Nur
- * sichtbar, wenn [visible]. Zurück-Button links; rechts zuerst die reader-spezifischen
- * [actions] (Inhaltsverzeichnis, Suche, Typografie, …), dann die **geteilten** Shortcuts
- * [onHome] (Bibliothek) und [onSettings] (Einstellungen) ganz rechts. Die geteilten Buttons
- * leben hier an genau **einer** Stelle (`shared-structure-before-variants`) — kein Reader
- * baut sie selbst.
+ * Capability-Surface der toggle­baren Reader-Chrome-Menüleiste: Titel + Navigations-/Shortcut-
+ * Callbacks ([onBack] · [onHome] · [onSettings]) + die reader-spezifischen [actions]
+ * (Inhaltsverzeichnis, Suche, Typografie, …). Ein [com.komgareader.app.ui.slots.OverlaySlot]-Pack
+ * arrangiert daraus die Leiste.
  *
- * Hintergrund über [readerOverlayScrim]: E-Ink deckend schwarz, Smartphone halbtransparent.
+ * **Bewusst kein `visible`-Flag:** die Sichtbarkeit (chromeVisible) **und** der E-Ink-Scrim
+ * ([readerOverlayScrim]) sind **host-erzwungen** (das [ReaderScaffold] rendert die Leiste nur bei
+ * `chromeVisible`) — nicht Teil dieser Surface. So bleibt sie sauber und konsistent mit den anderen
+ * Slot-Surfaces (kein Layout-/Zustands-Flag in der Surface).
+ */
+data class ReaderOverlayState(
+    val title: String,
+    val onBack: () -> Unit,
+    val onHome: () -> Unit,
+    val onSettings: () -> Unit,
+    val actions: @Composable RowScope.() -> Unit,
+)
+
+/**
+ * Default-Onyx-Renderer der Reader-Chrome-Menüleiste, die **über** dem Inhalt schwebt (kein Reflow).
+ * Zurück-Button links; rechts zuerst die reader-spezifischen [ReaderOverlayState.actions]
+ * (Inhaltsverzeichnis, Suche, Typografie, …), dann die **geteilten** Shortcuts
+ * [ReaderOverlayState.onHome] (Bibliothek) und [ReaderOverlayState.onSettings] (Einstellungen) ganz
+ * rechts. Die geteilten Buttons leben hier an genau **einer** Stelle
+ * (`shared-structure-before-variants`) — kein Reader baut sie selbst.
+ *
+ * `BoxScope`-Extension, weil die Leiste sich per `Modifier.align(Alignment.TopCenter)` im
+ * Reader-`Box` positioniert. Die Sichtbarkeit gatet der Host ([ReaderScaffold]). Hintergrund über
+ * [readerOverlayScrim]: E-Ink deckend schwarz, Smartphone halbtransparent.
  */
 @Composable
-fun BoxScope.ReaderChromeOverlay(
-    visible: Boolean,
-    title: String,
-    onBack: () -> Unit,
-    onHome: () -> Unit,
-    onSettings: () -> Unit,
-    actions: @Composable RowScope.() -> Unit = {},
-) {
-    if (!visible) return
+fun BoxScope.DefaultReaderOverlay(state: ReaderOverlayState) {
     val strings = LocalStrings.current
     Row(
         modifier = Modifier
@@ -81,19 +94,19 @@ fun BoxScope.ReaderChromeOverlay(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) {
+        IconButton(onClick = state.onBack) {
             Icon(AppIcons.Back, contentDescription = "Zurück", tint = Color.White)
         }
         Text(
-            text = title,
+            text = state.title,
             color = Color.White,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
         )
         // Erst die reader-spezifischen Aktionen (Inhaltsverzeichnis, Suche, Typografie, …),
         // dann die geteilten Shortcuts Home + Einstellungen ganz rechts — über alle Reader gleich.
-        actions()
-        IconButton(onClick = onHome) {
+        state.actions(this)
+        IconButton(onClick = state.onHome) {
             Icon(
                 AppIcons.Home,
                 contentDescription = strings.readerHome,
@@ -101,7 +114,7 @@ fun BoxScope.ReaderChromeOverlay(
                 modifier = Modifier.size(24.dp),
             )
         }
-        IconButton(onClick = onSettings) {
+        IconButton(onClick = state.onSettings) {
             Icon(
                 AppIcons.Settings,
                 contentDescription = strings.readerSettings,

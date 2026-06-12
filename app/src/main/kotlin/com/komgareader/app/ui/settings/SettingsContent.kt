@@ -96,6 +96,9 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
 
     // Genau EIN Modal gleichzeitig: null = zu (E-Ink-Invariante).
     var modal by remember { mutableStateOf<ConnectionModal?>(null) }
+    // Plugin-Add-Flow: modal wird auf null gesetzt BEVOR pendingPlugin gesetzt wird →
+    // zu keinem Zeitpunkt sind AddConnectionModal und PluginTofuModal gleichzeitig sichtbar.
+    var pendingPlugin by remember { mutableStateOf<DiscoveredPlugin?>(null) }
 
     // Verbundene Server (mehrere gleichzeitig, gemischt) — „+" im Kopf öffnet das Modal,
     // jede Zeile trägt Zahnrad (Bearbeiten) + Papierkorb (Entfernen).
@@ -142,9 +145,11 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
                 modal = null
             },
             sourcePlugins = sourcePlugins,
-            onAddPluginSource = { plugin, values ->
-                viewModel.addPluginSource(plugin, values)
+            onPluginSelected = { plugin ->
+                // AddConnectionModal schließen BEVOR pendingPlugin gesetzt wird:
+                // modal = null → keine Überschneidung mit PluginTofuModal.
                 modal = null
+                pendingPlugin = plugin
             },
         )
         is ConnectionModal.Edit -> EditConnectionModal(
@@ -157,12 +162,24 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         )
         null -> Unit
     }
+
+    // Plugin-TOFU→Config-Flow: läuft erst wenn modal == null, also nie gleichzeitig
+    // mit AddConnectionModal oder EditConnectionModal (E-Ink-Invariante: max. 1 Dialog).
+    AddPluginSourceModals(
+        trigger = pendingPlugin,
+        onDismiss = { pendingPlugin = null },
+        onAdd = { plugin, values ->
+            viewModel.addPluginSource(plugin, values)
+            pendingPlugin = null
+        },
+    )
 }
 
 /**
  * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor) plus „Plugin"-Segment
- * für entdeckte Quellen-Plugins. Im Plugin-Pfad läuft der TOFU→Config-Fluss via
- * [AddPluginSourceModals] — der normale Speichern-Button ist in diesem Pfad deaktiviert.
+ * für entdeckte Quellen-Plugins. Im Plugin-Pfad ruft ein Tap auf eine Plugin-Zeile
+ * [onPluginSelected] — das Modal schließt sich im Elternteil, bevor der TOFU→Config-Dialog
+ * erscheint (E-Ink-Invariante: max. 1 Dialog gleichzeitig).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -173,7 +190,7 @@ private fun AddConnectionModal(
         username: String, password: String, kind: SourceKind, id: Long,
     ) -> Unit,
     sourcePlugins: List<DiscoveredPlugin>,
-    onAddPluginSource: (DiscoveredPlugin, Map<String, String>) -> Unit,
+    onPluginSelected: (DiscoveredPlugin) -> Unit,
 ) {
     val s = LocalStrings.current
 
@@ -183,8 +200,6 @@ private fun AddConnectionModal(
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
     var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
-    // Im Plugin-Pfad: welches Plugin hat der Nutzer gewählt → triggert AddPluginSourceModals.
-    var pluginTrigger by remember { mutableStateOf<DiscoveredPlugin?>(null) }
 
     EinkModal(
         title = s.addServer,
@@ -194,7 +209,7 @@ private fun AddConnectionModal(
             onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, 0L)
         },
         dismissLabel = s.cancel,
-        // Plugin-Pfad: kein Speichern über EinkModal-Button — der Add-Flow übernimmt.
+        // Plugin-Pfad: kein Speichern über EinkModal-Button — onPluginSelected übernimmt.
         confirmEnabled = kindInput != SourceKind.PLUGIN && nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
         // Quellenart: Komga (REST), OPDS (Feed) oder Plugin als Segment-Selektor.
@@ -226,7 +241,7 @@ private fun AddConnectionModal(
                             selected = false,
                             query = "",
                             dense = true,
-                            onSelect = { pluginTrigger = plugin },
+                            onSelect = { onPluginSelected(plugin) },
                         )
                     }
                 }
@@ -279,15 +294,6 @@ private fun AddConnectionModal(
             }
         }
     }
-
-    // TOFU→Config-Flow für das gewählte Plugin — läuft als zweites Modal über dem Add-Modal.
-    // E-Ink-Invariante: EinkModal verwaltet genau einen Dialog gleichzeitig; pluginTrigger
-    // wird erst nach onDismiss/onAdd zurückgesetzt, sodass nie beide Modals sichtbar sind.
-    AddPluginSourceModals(
-        trigger = pluginTrigger,
-        onDismiss = { pluginTrigger = null },
-        onAdd = { plugin, values -> onAddPluginSource(plugin, values) },
-    )
 }
 
 /**

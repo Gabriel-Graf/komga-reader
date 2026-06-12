@@ -20,9 +20,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.komgareader.app.eink.HardwareButtonBus
-import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.i18n.stringsFor
+import com.komgareader.app.i18n.resolveStrings
 import com.komgareader.app.ui.components.LocalColorProfile
 import com.komgareader.app.ui.components.LocalDisplayBehavior
 import com.komgareader.app.ui.components.LocalEinkMode
@@ -105,7 +104,8 @@ class MainActivity : ComponentActivity() {
             val activeColorProfile by settingsViewModel.activeColorProfile.collectAsState()
 
             val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
-            val language = if (languageStr == "en") Language.EN else Language.DE
+            val installedLanguages by settingsViewModel.availableLanguages.collectAsState()
+            val activeStrings = resolveStrings(languageStr, installedLanguages)
             // Geräteklasse auf zwei orthogonalen Achsen ableiten (Bewegung ⟂ Akzentfarbe):
             // Bewegung folgt der User-Wahl, Akzentfarbe der Hardware (Kaleido). LocalEinkMode
             // bleibt die abgeleitete Brücke (!allowsMotion) für bestehende Animations-Gates.
@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
             val displayBehavior = displayBehaviorFor(displayMode, einkController.capabilities)
 
             CompositionLocalProvider(
-                LocalStrings provides stringsFor(language),
+                LocalStrings provides activeStrings,
                 LocalDisplayBehavior provides displayBehavior,
                 LocalEinkMode provides !displayBehavior.allowsMotion,
                 LocalImageFilter provides activeColorProfile.toColorFilterOrNull(),

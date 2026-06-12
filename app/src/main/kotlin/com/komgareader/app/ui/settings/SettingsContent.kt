@@ -699,6 +699,7 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
 fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val languageStr by viewModel.language.collectAsState()
+    val installed by viewModel.availableLanguages.collectAsState()
     SettingsGroup(s.settingsLanguage, query) {
         Language.entries.forEach { lang ->
             val label = when (lang) {
@@ -707,6 +708,11 @@ fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
             }
             ChoiceRow(label, selected = lang.code == languageStr, query = query, dense = true) {
                 viewModel.setLanguage(lang.code)
+            }
+        }
+        installed.forEach { spec ->
+            ChoiceRow(spec.name, selected = spec.code == languageStr, query = query, dense = true) {
+                viewModel.setLanguage(spec.code)
             }
         }
     }

@@ -2,6 +2,7 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.domain.model.ColorProfile
@@ -28,6 +29,7 @@ class SettingsViewModel @Inject constructor(
     private val registration: SourceRegistration,
     private val collections: CollectionRepository,
     private val coordinator: SyncCoordinator,
+    private val catalog: PluginCatalog,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -50,6 +52,9 @@ class SettingsViewModel @Inject constructor(
     val serverList = servers.configs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeColorProfile = colorProfiles.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, ColorProfile.OFF)
+
+    val availableLanguages = catalog.languagePlugins
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}

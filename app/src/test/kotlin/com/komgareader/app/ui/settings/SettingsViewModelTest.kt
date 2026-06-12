@@ -1,6 +1,7 @@
 package com.komgareader.app.ui.settings
 
 import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
 import io.mockk.mockk
@@ -63,6 +64,7 @@ class SettingsViewModelTest {
             registration(),
             collections,
             noOpCoordinator(),
+            mockk(relaxed = true),
         )
     }
 
@@ -75,6 +77,7 @@ class SettingsViewModelTest {
             registration(),
             collections,
             noOpCoordinator(),
+            mockk(relaxed = true),
         )
     }
 

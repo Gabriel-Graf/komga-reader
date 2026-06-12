@@ -19,7 +19,7 @@ import com.komgareader.app.ui.theme.KomgaReaderTheme
  * **Beweis der Slot-Naht — kein Kern-Umbau nötig.** Ein zweites [UiSlotPack] mit einem alternativen
  * Header (zentrierter Titel statt links) wird allein über `KomgaReaderTheme(slotPack = …)` aktiv —
  * der Consumer ([com.komgareader.app.ui.components.SubPageScaffold] u. a.) ruft unverändert
- * `LocalResolvedSlots.current.header(...)` und rendert plötzlich den anderen Header.
+ * `LocalResolvedSlots.current.header(...)` (Kompat-Pfad) und rendert plötzlich den anderen Header.
  *
  * Bewusst nur ein **Debug/Preview-Pfad**, **keine** Nutzer-Einstellung — der Pack-Lader/-Wähler ist
  * Soll (Skins-Plan P2/P3). Die E-Ink-Invarianten bleiben **host-erzwungen**: dieser alternative Slot
@@ -28,17 +28,23 @@ import com.komgareader.app.ui.theme.KomgaReaderTheme
 @OptIn(ExperimentalMaterial3Api::class)
 private val CenteredHeaderPack = UiSlotPack(
     // Zentrierter Titel als Alternativ-Struktur (Swap-Beweis). Verhaltensgleich zum Default-Pack:
-    // onBack und actions werden vollständig übergeben — nur der Titel-Alignment ändert sich.
-    // Bewegung/Akzent bleiben host-erzwungen (LocalDisplayBehavior/LocalEinkMode), nicht hier.
-    header = { title, onBack, actions ->
+    // onBack, actions und die optionale Suche werden vollständig übernommen — nur das Titel-Alignment
+    // ändert sich. Bewegung/Akzent bleiben host-erzwungen (LocalDisplayBehavior/LocalEinkMode).
+    header = { state ->
         TopAppBar(
-            title = { Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+            title = { Text(state.title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
             navigationIcon = {
-                if (onBack != null) {
-                    IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = null) }
+                if (state.onBack != null) {
+                    IconButton(onClick = state.onBack!!) { Icon(AppIcons.Back, contentDescription = null) }
                 }
             },
-            actions = actions,
+            actions = {
+                val search = state.search
+                if (search != null) {
+                    IconButton(onClick = search.onOpen) { Icon(AppIcons.Search, contentDescription = null) }
+                }
+                state.actions(this)
+            },
         )
     },
 )
@@ -55,7 +61,7 @@ private fun HeaderSlotDemo(slotPack: UiSlotPack) {
     }
 }
 
-/** Default-Pack: Header linksbündig (heutiges Verhalten). */
+/** Default-Pack: Header linksbündig (heutiges Verhalten), suchlos. */
 @Preview(name = "Header-Slot · Default (linksbündig)", widthDp = 411, heightDp = 200)
 @Composable
 private fun HeaderSlotDefaultPreview() {
@@ -67,4 +73,35 @@ private fun HeaderSlotDefaultPreview() {
 @Composable
 private fun HeaderSlotCenteredPreview() {
     HeaderSlotDemo(slotPack = CenteredHeaderPack)
+}
+
+/**
+ * Such-Zustand des Default-Headers ([HeaderSearch] mit `active = true`): das Suchfeld tritt an die
+ * Stelle des Titels (Back links). Beweist die optionale Such-Capability der header-Region.
+ */
+@Preview(name = "Header-Slot · Default (Suche aktiv)", widthDp = 411, heightDp = 200)
+@Composable
+private fun HeaderSlotSearchPreview() {
+    KomgaReaderTheme {
+        Scaffold(
+            topBar = {
+                LocalResolvedSlots.current.headerSlot(
+                    HeaderState(
+                        title = "Sammlung",
+                        onBack = {},
+                        search = HeaderSearch(
+                            active = true,
+                            query = "",
+                            onQueryChange = {},
+                            onOpen = {},
+                            onClose = {},
+                            placeholder = "In Sammlung suchen",
+                        ),
+                    ),
+                )
+            },
+        ) { padding ->
+            Text("Body bleibt unverändert.", modifier = Modifier.padding(padding).fillMaxWidth())
+        }
+    }
 }

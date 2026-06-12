@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.slots.LocalResolvedSlots
+import com.komgareader.app.ui.slots.header
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.LocalDesignTokens
 

@@ -210,10 +210,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
   modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind sechs Chrome-Regionen + die
   detail-Region** (`app/ui/slots/UiSlots.kt`):
-  - **Region `header` (Ist, 2026-06-09):** In-Tree-Vertrag `HeaderSlot`
-    (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`). Call-Sites
-    (`SeriesDetailScreen`, `SubPageScaffold`) rendern `LocalResolvedSlots.current.header(...)`.
-    Swap-Beweis: `HeaderSlotPreview.kt` (zentrierter Alternativ-Header, nur Debug/Preview).
+  - **Region `header` (Ist, 2026-06-09; Such-Capability 2026-06-12, D1.1):** In-Tree-Vertrag
+    `HeaderSlot` ist jetzt **`@Composable (state: HeaderState) -> Unit`** — die Capability-Surface
+    `HeaderState(title, onBack?, actions, search: HeaderSearch?)` (in `UiSlots.kt`) trägt zusätzlich
+    eine **optionale Such-Capability** `HeaderSearch(active, query, onQueryChange, onOpen, onClose,
+    placeholder?)` (Titel↔Suchfeld per Lupe, Vorbild `HomeHeaderSearch`). Der Default-Renderer ist
+    `DefaultHeader(state)`: ohne Suche eine `StandardTopAppBar` (mit vorgelagerter Lupe, falls
+    `search != null`), bei `search.active` ein zentriertes Suchfeld statt Titel (verbatim aus dem alten
+    `CollectionDetailHeader`). **Abwärtskompatibel:** die resolved-Property heißt **`headerSlot`** (nicht
+    `header`), und eine dünne **Kompat-Extension** `ResolvedSlots.header(title, onBack, actions)` baut die
+    Surface und ruft `headerSlot` — die suchlosen Call-Sites (`SubPageScaffold`, `SettingsRoute`,
+    `HeaderSlotPreview`) bleiben **textlich unverändert** (nur ein Import der Extension nötig). Der
+    such-fähige Pfad ruft `headerSlot(HeaderState(…, search = …))` direkt (über das `detail`-Gerüst,
+    s. u.). Swap-Beweis: `HeaderSlotPreview.kt` (zentrierter Alternativ-Header + ein Such-Zustands-Preview,
+    nur Debug/Preview).
   - **Region `homeHeader` (Ist, 2026-06-12):** In-Tree-Vertrag `HomeHeaderSlot`
     (`@Composable (state: HomeHeaderState) -> Unit`). Die **Capability-Surface** `HomeHeaderState`
     kapselt Status, Suche (`HomeHeaderSearch`), generischen Filter-Slot (`HomeHeaderFilter`), Menü-Overlay
@@ -300,11 +310,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     `SeriesDetailScreen` (mit Snackbar + Bookmark/Home-Aktionen) + `GroupBrowseRoute` (ohne Snackbar,
     Refresh-Aktion) bauen das Gerüst nicht mehr selbst, sondern über `LocalResolvedSlots.current.detail(...)`;
     `TypeMenu`/`AddToCollectionSheet` bleiben nach dem detail-Aufruf, `SeriesDetailContent`/Hero/Grid/VMs
-    unverändert. **NICHT in D1** (→ Folge-Task D1.1): `CollectionDetailScreen` (eigener Such-Header + eigene
-    `MemberTile`). E-Ink/Header-Look host-erzwungen. Swap-Beweis:
+    unverändert. E-Ink/Header-Look host-erzwungen. Swap-Beweis:
     `app/src/debug/kotlin/com/komgareader/app/ui/detail/DetailSlotPreview.kt`
     (`AlternativeDetailScaffold`: eigener schlanker Titelbalken statt header-Slot, ohne Material-Scaffold,
     Snackbar/actions weggelassen — nur Debug/Preview).
+    **D1.1 (Ist, 2026-06-12) — D1 vollständig:** Die letzte Detail-Route `CollectionDetailScreen` ist
+    umgestellt — `DetailScaffoldState` trägt jetzt zusätzlich ein optionales `search: HeaderSearch?`, das
+    `DefaultDetailScaffold` über `headerSlot(HeaderState(title, onBack, actions, search))` durchreicht
+    (SeriesDetail/GroupBrowse lassen `search = null`, Verhalten unverändert). CollectionDetail baut das
+    Gerüst über `current.detail(...)` mit `actions` (Add nur Serien-Sammlung · Sync mit `onGloballyPositioned`-
+    Anchor · Delete) + `search` (Titel↔Suchfeld) + Body (3-Spalten-`MemberTile`-Grid); das private
+    `CollectionDetailHeader` ist gelöscht (sein Such-/Titel-Verhalten lebt jetzt im `DefaultHeader`). Popups
+    (`showSyncPanel`/`showAdd`/`showDelete`) · `collection==null`-Early-Return · `members`-Filter · `MemberTile`
+    unverändert. **Alle drei Detail-Routen jetzt modular.** `MemberTile` bleibt eine eigene Kachel (eigene
+    spätere `member`-tiles-Region, YAGNI).
   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail)` ·
   `ResolvedSlots(…, detail)` · `DefaultSlots` mit allen sieben Default-Impls. **E-Ink-Invarianten
   host-erzwungen:** Slots liefern

@@ -193,7 +193,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
 | **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
-| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog — plus das Vollbild-Detail-Gerüst `detail` | vom aktiven Shell-Pack gewählt | **sechs Chrome-Regionen + `detail` gebaut** (header+homeHeader+dialog+settings+tiles+overlay+detail; D1 für SeriesDetail+GroupBrowse, CollectionDetail = D1.1 offen) |
+| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog — plus das Vollbild-Detail-Gerüst `detail` | vom aktiven Shell-Pack gewählt | **sechs Chrome-Regionen + `detail` gebaut** (header (mit optionaler Such-Capability `HeaderSearch`)+homeHeader+dialog+settings+tiles+overlay+detail; D1 vollständig: SeriesDetail+GroupBrowse+CollectionDetail) |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
 *in* einem festen Skelett — sie können die Bottom-Bar restylen, aber nicht zu einem Drawer/Side-Rail
@@ -242,19 +242,21 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   (das Settings-Skelett hinter `SettingsSlot`/`SettingsState`) + **tiles**
   (die Serien-Kachel `SeriesTile` hinter `TilesSlot`/`TileState`, in Bibliothek + Gruppen) + **overlay**
   (die togglebare Reader-Chrome-Menüleiste hinter `OverlaySlot`/`ReaderOverlayState`) · die siebte
-  Region **detail** (das Vollbild-Detail-Gerüst hinter `DetailSlot`/`DetailScaffoldState`, in `SeriesDetail`
-  + `GroupBrowse` — Sub-Projekt **D1 teil-erledigt**) · **Shell-Pack** für das Home-Skelett
+  Region **detail** (das Vollbild-Detail-Gerüst hinter `DetailSlot`/`DetailScaffoldState`, in **allen drei**
+  Detail-Routen `SeriesDetail` + `GroupBrowse` + `CollectionDetail` — Sub-Projekt **D1 vollständig**, D1.1
+  brachte CollectionDetail rein und baute dafür die `header`-Region um eine optionale Such-Capability
+  `HeaderSearch` aus) · **Shell-Pack** für das Home-Skelett
   (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
 
 **Noch offen für „komplette UI modular":**
-- Die Chrome-Region-Slot-Reihe (sechs) + die `detail`-Region sind gebaut. `nav` ist **kein** Region-Slot —
-  das Nav-Skelett gehört dem Shell-Pack. Nächste Sub-Projekte: **D1.1** (CollectionDetail in die
-  `detail`-Region: eigener Such-Header + `MemberTile`) / **C1** (Reader-Chrome komplett modular:
-  Tap-Zonen/Footer/Scaffold deklarativ).
-- **Andere Vollbild-Routen:** das Detail-**Gerüst** ist über `detail` swappable, aber nur für `SeriesDetail`
-  + `GroupBrowse` (D1). `CollectionDetail` ist noch nicht umgestellt (→ D1.1). Und es ist erst das *Gerüst* —
-  die *Hero/Grid-Anordnung im Body* bleibt Screen-Eigentum bis zur späteren `DetailShell`-Stufe (Hero/Grid
-  als arrangierbare Stücke, Master-Detail auf Tablet).
+- Die Chrome-Region-Slot-Reihe (sechs) + die `detail`-Region sind gebaut (D1 vollständig: alle drei
+  Detail-Routen modular). `nav` ist **kein** Region-Slot — das Nav-Skelett gehört dem Shell-Pack. Nächstes
+  Sub-Projekt: **C1** (Reader-Chrome komplett modular: Tap-Zonen/Footer/Scaffold deklarativ). Eine eigene
+  `member`-tiles-Region (Collection-Member-Kachel) bleibt späteres YAGNI.
+- **Andere Vollbild-Routen:** das Detail-**Gerüst** ist über `detail` swappable für **alle drei**
+  Detail-Routen (`SeriesDetail` + `GroupBrowse` + `CollectionDetail`, D1 vollständig). Es ist aber erst das
+  *Gerüst* — die *Hero/Grid-Anordnung im Body* (und CollectionDetails `MemberTile`) bleibt Screen-Eigentum
+  bis zur späteren `DetailShell`-Stufe (Hero/Grid als arrangierbare Stücke, Master-Detail auf Tablet).
 - **Reader-Chrome modular:** die Reader-**Engines** bleiben Core (Render/Refresh/E-Ink-Garantie, Naht B),
   aber das *Chrome* drumherum (Overlay, Chrome-Buttons, Tap-Zonen, `ReaderScaffold`) soll austauschbar
   werden — die deklarative UI-Plugin-Form (Plugins (b), Tap-Zone→Aktion-Beschreibung) hängt sich hier ein.
@@ -292,12 +294,16 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > (LCD volles Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das
 > „Theme zuerst"-Stück.
 > **Die Layout-Slot-Naht — alle sechs Regionen gebaut (Reihe abgeschlossen):**
-> - **Region `header` (Ist, 2026-06-09):** `app/ui/slots/UiSlots.kt` trägt `HeaderSlot`
->   (typealias `@Composable (title, onBack?, actions) -> Unit`), `UiSlotPack(header)`, den puren Resolver
->   `UiSlots.resolve` (fehlender Slot → `DefaultSlots`, nie `null`, analog `StubSource`) und
->   `LocalResolvedSlots` (im Host `KomgaReaderTheme`). Die Call-Sites (`SeriesDetailScreen`, `SubPageScaffold`)
->   rendern `LocalResolvedSlots.current.header(...)`. Swap-Beweis: `HeaderSlotPreview.kt` (`@Preview` mit
->   zentriertem Alternativ-Header, nur Debug/Preview, **keine** Nutzer-Einstellung).
+> - **Region `header` (Ist, 2026-06-09; Such-Capability 2026-06-12, D1.1):** `app/ui/slots/UiSlots.kt` trägt
+>   `HeaderSlot` (jetzt `@Composable (state: HeaderState) -> Unit`), die Surface
+>   `HeaderState(title, onBack?, actions, search: HeaderSearch?)` + die optionale `HeaderSearch`, den
+>   such-fähigen `DefaultHeader`, `UiSlotPack(header)`, den puren Resolver `UiSlots.resolve` (fehlender Slot →
+>   `DefaultSlots`, nie `null`, analog `StubSource`) und `LocalResolvedSlots` (im Host `KomgaReaderTheme`).
+>   Abwärtskompatibel: resolved-Property `headerSlot` + Kompat-Extension `ResolvedSlots.header(title, onBack,
+>   actions)` → die suchlosen Call-Sites (`SubPageScaffold`, `SettingsRoute`, `HeaderSlotPreview`) rendern
+>   `LocalResolvedSlots.current.header(...)` **textlich unverändert** (nur Extension-Import). Swap-Beweis:
+>   `HeaderSlotPreview.kt` (`@Preview` zentrierter Alternativ-Header + Such-Zustand, nur Debug/Preview,
+>   **keine** Nutzer-Einstellung).
 > - **Region `homeHeader` (Ist, 2026-06-12):** zweite gebaute Slot-Region. Vertrag: `HomeHeaderSlot`
 >   (typealias `@Composable (state: HomeHeaderState) -> Unit`). Capability-Surface-Prinzip: **„UI neu,
 >   Kernlogik gleich"** — der Host (Core) baut `HomeHeaderState` (Status · `HomeHeaderSearch` · optional
@@ -356,16 +362,22 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   explizit via `with(this) { overlay(state) }`). Reader-Engines/`Viewer`/`RefreshScheduler`/Tap-Zonen/Footer
 >   unberührt (Footer/Tap-Zonen → C1). Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
 >   (`AlternativeReaderOverlay`: Shortcuts links, Titel zentriert).
-> - **Region `detail` (Ist, 2026-06-12, Sub-Projekt D1):** siebte Slot-Region — das **Vollbild-Detail-Gerüst**
+> - **Region `detail` (Ist, 2026-06-12, Sub-Projekt D1 + D1.1):** siebte Slot-Region — das **Vollbild-Detail-Gerüst**
 >   (kein Chrome-Stück, sondern das geteilte Scaffold, das die Detail-Routen über den `header`-Slot komponiert).
 >   Vertrag: `DetailSlot` (typealias `@Composable (state: DetailScaffoldState) -> Unit`). Capability-Surface
->   `DetailScaffoldState` (`app/ui/detail/DetailScaffold.kt`: `title` + `onBack` + Header-`actions` + optionaler
->   `snackbarHost` + host-gebauter `content: @Composable (PaddingValues) -> Unit`). `DefaultDetailScaffold` =
->   verbatim extrahiertes `Scaffold` + header-Slot + Snackbar. Umgestellt: `SeriesDetailScreen` + `GroupBrowseRoute`
->   (CollectionDetail bewusst NICHT → D1.1); Body/Hero/Grid/VMs unverändert. Swap-Beweis:
->   `app/src/debug/kotlin/com/komgareader/app/ui/detail/DetailSlotPreview.kt` (`AlternativeDetailScaffold`:
->   schlanker eigener Titelbalken statt header-Slot, ohne Scaffold/Snackbar/actions).
->   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail)` · `ResolvedSlots(…, detail)`.
+>   `DetailScaffoldState` (`app/ui/detail/DetailScaffold.kt`: `title` + `onBack` + Header-`actions` + optionale
+>   Header-`search: HeaderSearch?` (D1.1) + optionaler `snackbarHost` + host-gebauter `content: @Composable
+>   (PaddingValues) -> Unit`). `DefaultDetailScaffold` = verbatim extrahiertes `Scaffold` + header-Slot
+>   (via `headerSlot(HeaderState(…, search))`) + Snackbar. Umgestellt: **alle drei** Detail-Routen
+>   `SeriesDetailScreen` + `GroupBrowseRoute` + (D1.1) `CollectionDetailScreen`; Body/Hero/Grid/`MemberTile`/VMs
+>   unverändert. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/detail/DetailSlotPreview.kt`
+>   (`AlternativeDetailScaffold`: schlanker eigener Titelbalken statt header-Slot, ohne Scaffold/Snackbar/actions).
+>   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail)` · `ResolvedSlots(headerSlot, …, detail)`.
+> - **Header-Such-Capability (Ist, 2026-06-12, D1.1):** `HeaderSlot` ist jetzt `@Composable (HeaderState) -> Unit`;
+>   `HeaderState(title, onBack?, actions, search: HeaderSearch?)` (`UiSlots.kt`) trägt die optionale Such-Capability
+>   `HeaderSearch` (Titel↔Suchfeld). `DefaultHeader` ist der such-fähige Default-Renderer. Abwärtskompatibel über
+>   `ResolvedSlots.headerSlot` (resolved-Property) + die Kompat-Extension `ResolvedSlots.header(title, onBack, actions)`
+>   — suchlose Call-Sites textlich unverändert.
 > **Shell-Pack-Schicht gebaut (Ist, 2026-06-12):** `app/ui/shell/` trägt die Capability-Surface
 > `AppShellState` (benannte Stücke: `destinations` als Nav-Daten + `ShellDestination{icon,label,
 > header:HomeHeaderState?,content}`), den Vertrag `ShellPack`, die pure `formFactorFor(widthDp)` +

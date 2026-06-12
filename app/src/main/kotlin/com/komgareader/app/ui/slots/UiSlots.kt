@@ -1,19 +1,38 @@
 package com.komgareader.app.ui.slots
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.DefaultDialog
 import com.komgareader.app.ui.components.DefaultSeriesTile
 import com.komgareader.app.ui.components.DialogState
+import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.StandardTopAppBar
 import com.komgareader.app.ui.components.TileState
 import com.komgareader.app.ui.detail.DefaultDetailScaffold
 import com.komgareader.app.ui.detail.DetailScaffoldState
 import com.komgareader.app.ui.home.DefaultHomeHeader
 import com.komgareader.app.ui.home.HomeHeaderState
+import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.reader.DefaultReaderOverlay
 import com.komgareader.app.ui.reader.ReaderOverlayState
 import com.komgareader.app.ui.settings.DefaultSettings
@@ -43,7 +62,9 @@ import com.komgareader.app.ui.settings.SettingsState
  *
  * ## Stand: sechs Chrome-Regionen + die detail-Region gebaut
  *
- * Gebaut sind die sechs Chrome-Regionen — **header** (zentralisierte [StandardTopAppBar]),
+ * Gebaut sind die sechs Chrome-Regionen — **header** ([HeaderState]-Surface über der
+ * zentralisierten [StandardTopAppBar], mit **optionaler** Such-Capability [HeaderSearch]:
+ * Titel↔Suchfeld; suchlose Aufrufer bleiben über den Kompat-Pfad [ResolvedSlots.header] unverändert),
  * **homeHeader** ([HomeHeaderState]-Surface), **dialog** ([DialogState]-Surface, der eine
  * Onyx-Dialog-Rahmen hinter [DialogSlot]), **settings** ([SettingsState]-Surface, das
  * Settings-Skelett — Sidebar-Master-Detail vs. Accordion — hinter [SettingsSlot]), **tiles**
@@ -58,11 +79,40 @@ import com.komgareader.app.ui.settings.SettingsState
  */
 
 /**
- * Vertrag der Header-Region. Spiegelt die **echte** Signatur von [StandardTopAppBar]
- * (Titel · optionaler Zurück-Pfeil · rechte Aktions-Icons) — kein Funktionsverlust gegenüber dem
- * direkten Aufruf. Ein alternatives Pack liefert einen anderen Header mit **derselben** Aufrufform.
+ * Optionale Such-Fähigkeit eines Headers: Lupe-Toggle ([onOpen]/[onClose]) + Suchfeld-Zustand.
+ * Ist [active] gesetzt, zeigt der Header das Suchfeld statt des Titels; sonst eine Lupe vor den
+ * [HeaderState.actions]. Vorbild ist die `HomeHeaderSearch`-Capability der homeHeader-Region —
+ * der Host besitzt die Logik, der Slot arrangiert nur.
  */
-typealias HeaderSlot = @Composable (title: String, onBack: (() -> Unit)?, actions: @Composable RowScope.() -> Unit) -> Unit
+data class HeaderSearch(
+    val active: Boolean,
+    val query: String,
+    val onQueryChange: (String) -> Unit,
+    val onOpen: () -> Unit,
+    val onClose: () -> Unit,
+    val placeholder: String? = null,
+)
+
+/**
+ * Capability-Surface der Header-Region: Titel + optionaler Zurück + Aktionen + optionale Suche
+ * ([search]). Ein Pack rendert daraus die Top-Leiste. Der Look/die E-Ink-Invarianten bleiben
+ * host-erzwungen — der Slot liefert nur Inhalt/Struktur.
+ */
+data class HeaderState(
+    val title: String,
+    val onBack: (() -> Unit)?,
+    val actions: @Composable RowScope.() -> Unit = {},
+    val search: HeaderSearch? = null,
+)
+
+/**
+ * Vertrag der Header-Region. Trägt eine [HeaderState]-Surface (Titel · optionaler Zurück-Pfeil ·
+ * rechte Aktions-Icons · optionale [HeaderSearch]) — kein Funktionsverlust gegenüber dem direkten
+ * [StandardTopAppBar]-Aufruf. Ein alternatives Pack liefert einen anderen Header mit **derselben**
+ * Aufrufform. Die bestehenden suchlosen Aufrufer bleiben über den **Kompat-Pfad**
+ * [ResolvedSlots.header] (Extension) unverändert.
+ */
+typealias HeaderSlot = @Composable (state: HeaderState) -> Unit
 
 /**
  * Vertrag der Home-Header-Region. Breiter als [HeaderSlot]: der Home-Header trägt Status-Cluster,
@@ -132,7 +182,9 @@ data class UiSlotPack(
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
 data class ResolvedSlots(
-    val header: HeaderSlot,
+    /** Header-Renderer. Bewusst `headerSlot` (nicht `header`) — sonst kollidiert die Property mit der
+     *  Kompat-Extension [header], über die die suchlosen Aufrufer verbatim weiterlaufen. */
+    val headerSlot: HeaderSlot,
     val homeHeader: HomeHeaderSlot,
     val dialog: DialogSlot,
     val settings: SettingsSlot,
@@ -148,7 +200,7 @@ data class ResolvedSlots(
  */
 object UiSlots {
     fun resolve(pack: UiSlotPack): ResolvedSlots = ResolvedSlots(
-        header = pack.header ?: DefaultSlots.header,
+        headerSlot = pack.header ?: DefaultSlots.header,
         homeHeader = pack.homeHeader ?: DefaultSlots.homeHeader,
         dialog = pack.dialog ?: DefaultSlots.dialog,
         settings = pack.settings ?: DefaultSlots.settings,
@@ -163,8 +215,8 @@ object UiSlots {
  * direkten Aufrufen. Fehlt einem Community-Pack ein Slot, greift dieser Wert.
  */
 object DefaultSlots {
-    val header: HeaderSlot = { title, onBack, actions ->
-        StandardTopAppBar(title = title, onBack = onBack, actions = actions)
+    val header: HeaderSlot = { state ->
+        DefaultHeader(state)
     }
     val homeHeader: HomeHeaderSlot = { state ->
         DefaultHomeHeader(state)
@@ -194,3 +246,81 @@ object DefaultSlots {
  * statt [StandardTopAppBar] direkt aufzurufen.
  */
 val LocalResolvedSlots = staticCompositionLocalOf { UiSlots.resolve(UiSlotPack()) }
+
+/**
+ * Kompat-Form für Header **ohne** Suche: baut die [HeaderState]-Surface und ruft den
+ * [ResolvedSlots.headerSlot]. Hält die bestehenden `current.header(title, onBack){ actions }`-Aufrufer
+ * (SubPageScaffold, SettingsRoute, DetailScaffold, Preview) **unverändert**. Der such-fähige Pfad ruft
+ * `headerSlot(HeaderState(…, search = …))` direkt (siehe [DefaultDetailScaffold] / `CollectionDetailScreen`).
+ */
+@Composable
+fun ResolvedSlots.header(
+    title: String,
+    onBack: (() -> Unit)?,
+    actions: @Composable RowScope.() -> Unit = {},
+) = headerSlot(HeaderState(title, onBack, actions))
+
+/**
+ * Der mitgelieferte such-fähige Onyx-Renderer der Header-Region. Ohne aktive Suche eine
+ * [StandardTopAppBar] (bei vorhandener [HeaderSearch] mit vorgelagerter Lupe); bei `search.active`
+ * tritt — wie zuvor im Sammlungs-Detail — ein zentriertes Suchfeld an die Stelle des Titels (Back
+ * links, Aktionen rechts). Verhaltensgleich zum früheren `CollectionDetailHeader`. E-Ink-Invarianten
+ * bleiben host-erzwungen (kein Fade, instant).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DefaultHeader(state: HeaderState) {
+    val search = state.search
+    if (search != null && search.active) {
+        val strings = LocalStrings.current
+        TopAppBar(
+            title = {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    if (state.onBack != null) {
+                        IconButton(onClick = state.onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+                            Icon(AppIcons.Back, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                    val focus = remember { FocusRequester() }
+                    // Erst schließen, wenn das Feld den Fokus WIEDER verliert (nicht beim initialen
+                    // Nicht-Fokus, der sonst sofort schließt) und leer ist.
+                    var wasFocused by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { focus.requestFocus() }
+                    EinkSearchBar(
+                        query = search.query,
+                        onQueryChange = search.onQueryChange,
+                        // Action-Icon der Bar (immer sichtbar) = X → schließt die Suche zurück zum Titel.
+                        onSubmit = search.onClose,
+                        actionIcon = AppIcons.Close,
+                        actionLabel = strings.clearSearch,
+                        placeholder = search.placeholder ?: state.title,
+                        modifier = Modifier
+                            .fillMaxWidth(0.74f)
+                            .focusRequester(focus)
+                            .onFocusChanged {
+                                if (it.isFocused) wasFocused = true
+                                else if (wasFocused && search.query.isBlank()) search.onClose()
+                            },
+                    )
+                }
+            },
+        )
+    } else {
+        StandardTopAppBar(
+            title = state.title,
+            onBack = state.onBack,
+            actions = {
+                if (search != null) {
+                    IconButton(onClick = search.onOpen) {
+                        Icon(
+                            AppIcons.Search,
+                            contentDescription = search.placeholder ?: state.title,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+                state.actions(this)
+            },
+        )
+    }
+}

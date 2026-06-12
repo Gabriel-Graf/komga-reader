@@ -35,8 +35,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.LocalEinkMode
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.ReaderOverlayState
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 
@@ -50,25 +51,6 @@ import java.time.LocalTime
 @Composable
 fun readerOverlayScrim(base: Color, transparentAlpha: Float): Color =
     if (LocalEinkMode.current) base else base.copy(alpha = transparentAlpha)
-
-/**
- * Capability-Surface der toggle­baren Reader-Chrome-Menüleiste: Titel + Navigations-/Shortcut-
- * Callbacks ([onBack] · [onHome] · [onSettings]) + die reader-spezifischen [actions]
- * (Inhaltsverzeichnis, Suche, Typografie, …). Ein [com.komgareader.app.ui.slots.OverlaySlot]-Pack
- * arrangiert daraus die Leiste.
- *
- * **Bewusst kein `visible`-Flag:** die Sichtbarkeit (chromeVisible) **und** der E-Ink-Scrim
- * ([readerOverlayScrim]) sind **host-erzwungen** (das [ReaderScaffold] rendert die Leiste nur bei
- * `chromeVisible`) — nicht Teil dieser Surface. So bleibt sie sauber und konsistent mit den anderen
- * Slot-Surfaces (kein Layout-/Zustands-Flag in der Surface).
- */
-data class ReaderOverlayState(
-    val title: String,
-    val onBack: () -> Unit,
-    val onHome: () -> Unit,
-    val onSettings: () -> Unit,
-    val actions: @Composable RowScope.() -> Unit,
-)
 
 /**
  * Default-Onyx-Renderer der Reader-Chrome-Menüleiste, die **über** dem Inhalt schwebt (kein Reflow).

@@ -19,41 +19,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.components.EinkSearchBar
-
-/**
- * Die **Capability-Surface** des Home-Headers: ein benannter Satz Fähigkeiten + Callbacks, den der
- * Host (Core) baut und ein [com.komgareader.app.ui.slots.HomeHeaderSlot] (Pack) **arrangiert** — nie
- * neu implementiert („UI neu, Kernlogik gleich"). ABI-fähig geschnitten; E-Ink-Invarianten bleiben
- * host-erzwungen (`LocalDisplayBehavior`/`LocalDesignTokens`), sind NICHT Teil der Surface.
- */
-data class HomeHeaderState(
-    val status: @Composable () -> Unit,
-    val search: HomeHeaderSearch,
-    val filter: HomeHeaderFilter?,
-    val menu: @Composable () -> Unit,
-    val actions: @Composable RowScope.() -> Unit,
-)
-
-/** Such-Fähigkeit: Text + Callbacks + optionaler `leading`-Inhalt (z. B. Library-Filter-Chips). */
-data class HomeHeaderSearch(
-    val query: String,
-    val onQueryChange: (String) -> Unit,
-    val onSubmit: () -> Unit,
-    val placeholder: String,
-    val actionLabel: String,
-    val clearLabel: String?,
-    val onClear: (() -> Unit)?,
-    val leading: (@Composable RowScope.() -> Unit)?,
-)
-
-/** Generischer Filter-Icon-Slot — Library UND Plugins teilen ihn (DRY). Das zugehörige Menü liefert
- *  der Host über [HomeHeaderState.menu]; hier nur Icon + Anchor + Klick. */
-data class HomeHeaderFilter(
-    val icon: ImageVector,
-    val contentDescription: String,
-    val onClick: () -> Unit,
-    val onAnchor: (IntOffset) -> Unit,
-)
+import com.komgareader.ui.slots.HomeHeaderState
 
 /**
  * Das mitgelieferte Default-Layout (Onyx-Look): StatusCluster links · zentrierte Suche (max 408dp) ·

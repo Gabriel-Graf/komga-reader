@@ -5,9 +5,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import com.komgareader.app.ui.components.LocalDisplayBehavior
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
+import com.komgareader.app.ui.slots.resolveSlots
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.UiSlotPack
+import com.komgareader.ui.theme.LocalDesignTokens
+import com.komgareader.ui.theme.LocalUiPack
+import com.komgareader.ui.theme.UiPackRegistry
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
@@ -41,7 +44,7 @@ fun KomgaReaderTheme(
             // das mitgelieferte Pack; ein alternatives Pack ([slotPack]) ersetzt einzelne Regionen,
             // ohne dass die Consumer (Call-Sites unten) sich ändern. Bewegung/Akzent bleiben über
             // die obigen Locals **host-erzwungen** — ein Slot liefert nur Inhalt, nie die Policy.
-            LocalResolvedSlots provides UiSlots.resolve(slotPack),
+            LocalResolvedSlots provides resolveSlots(slotPack),
             content = content,
         )
     }

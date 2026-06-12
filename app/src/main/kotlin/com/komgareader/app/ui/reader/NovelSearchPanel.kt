@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkSearchBar
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 import com.komgareader.domain.render.SearchHit
 import kotlinx.coroutines.launch
 

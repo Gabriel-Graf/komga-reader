@@ -34,7 +34,7 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.common.label
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.eink.onyx.OnyxRefresher
 

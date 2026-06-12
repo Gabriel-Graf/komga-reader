@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 
 /**
  * Positioniert ein Popup an einem absoluten Fenster-Anker. [alignEnd] = true richtet die

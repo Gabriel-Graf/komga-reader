@@ -6,8 +6,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.header
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.header
 
 /**
  * Settings als **volle Seite über dem Reader** — derselbe [SettingsScreen] wie im

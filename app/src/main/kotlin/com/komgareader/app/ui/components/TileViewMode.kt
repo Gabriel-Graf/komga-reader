@@ -26,8 +26,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.theme.EinkTokens
 
 /**
  * Drei Anzeigemodi für die Sammlungen-/Bibliotheken-Listen — geteilt (DRY), damit beide Tabs

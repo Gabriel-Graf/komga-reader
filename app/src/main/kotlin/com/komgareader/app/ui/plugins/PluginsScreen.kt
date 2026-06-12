@@ -39,8 +39,8 @@ import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.app.ui.components.LoadingIndicator
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginKind

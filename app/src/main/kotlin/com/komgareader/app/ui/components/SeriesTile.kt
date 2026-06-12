@@ -27,22 +27,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.domain.model.Series
-
-/**
- * Capability-Surface der Kachel-Region (`tiles`-Slot): das Werk + sein Lokal-Status + die
- * Navigations-Callbacks. Ein `TilesSlot`-Pack rendert daraus eine Kachel; das Cover-Laden und der
- * E-Ink-Filter ([FilteredAsyncImage], `crossfade(false)`) sind **host-erzwungen** und nicht Teil
- * dieser Surface — ein Pack arrangiert nur Look/Struktur, nicht die Bild-/E-Ink-Policy.
- */
-data class TileState(
-    val series: Series,
-    val isLocal: Boolean,
-    val onClick: () -> Unit,
-    val onLongClick: () -> Unit,
-)
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.TileState
 
 /**
  * Bibliotheks-Kachel für eine Serie: Cover (quellen-agnostisch über [SourceCover]/Coil-Fetcher),

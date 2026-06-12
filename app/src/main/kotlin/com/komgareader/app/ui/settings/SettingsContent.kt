@@ -61,8 +61,8 @@ import com.komgareader.app.ui.components.SettingsGroup
 import com.komgareader.app.ui.components.SettingsGroupIndent
 import com.komgareader.app.ui.components.StepperRow
 import com.komgareader.app.ui.components.SwitchRow
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReaderPreset

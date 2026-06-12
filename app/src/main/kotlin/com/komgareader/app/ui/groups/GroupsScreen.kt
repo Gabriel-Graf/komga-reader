@@ -55,8 +55,8 @@ import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.TileViewMode
 import com.komgareader.app.ui.components.tileViewModeOf
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Shelf
 import com.komgareader.domain.repository.ServerConfig

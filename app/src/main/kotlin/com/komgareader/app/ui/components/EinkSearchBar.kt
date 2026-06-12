@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 
 /**
  * Schlanke Suchzeile im E-Ink-Stil: niedrige (40 dp) gerundete Pille mit

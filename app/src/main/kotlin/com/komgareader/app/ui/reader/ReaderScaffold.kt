@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,7 +50,7 @@ fun ReaderScaffold(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
     background: Color = Color.Black,
-    actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
     tapModifier: Modifier? = null,
     footer: (@Composable BoxScope.() -> Unit)? = null,
     persistentBars: (@Composable BoxScope.() -> Unit)? = null,

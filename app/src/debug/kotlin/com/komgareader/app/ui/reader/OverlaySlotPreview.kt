@@ -90,6 +90,8 @@ private fun AlternativeOverlayPreview() {
         LocalResolvedSlots provides UiSlots.resolve(UiSlotPack(overlay = alternative)),
     ) {
         Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
+            // overlay ist eine BoxScope-Extension; der BoxScope-Receiver (diese Box) wird über
+            // `with(this)` explizit gemacht (der implizite Receiver greift bei Funktionswerten nicht).
             val overlay = LocalResolvedSlots.current.overlay
             with(this) { overlay(state) }
         }

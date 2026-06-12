@@ -1,6 +1,7 @@
 package com.komgareader.app.ui.slots
 
 import com.komgareader.app.ui.detail.DetailScaffoldState
+import com.komgareader.app.ui.reader.ReaderScaffoldState
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
@@ -9,7 +10,7 @@ import org.junit.jupiter.api.Test
  * eine Ebene tiefer: nicht *wie* der Look (Farbe/Typo/Token), sondern *welcher Baustein* eine
  * adressierbare Chrome-Region füllt. Gebaute Regionen: **header** (erste) + **homeHeader** (zweite)
  * + **dialog** (dritte) + **settings** (vierte) + **tiles** (fünfte) + **overlay** (sechste) +
- * **detail** (siebte: das Vollbild-Detail-Gerüst).
+ * **detail** (siebte: das Vollbild-Detail-Gerüst) + **readerChrome** (achte: das ganze Reader-Gerüst).
  *
  * Geprüft wird die **Auflösungs-Logik** [UiSlots.resolve] als pure Funktion über nullbare
  * Referenzen: ein fehlender Slot fällt auf [DefaultSlots] zurück (nie `null`, analog `StubSource`),
@@ -144,5 +145,23 @@ class SlotFallbackTest {
         val resolved = UiSlots.resolve(UiSlotPack(detail = custom))
 
         assertSame(custom, resolved.detail)
+    }
+
+    @Test
+    fun `fehlender readerChrome-slot fällt auf das default-pack zurück`() {
+        val pack = UiSlotPack(readerChrome = null)
+
+        val resolved = UiSlots.resolve(pack)
+
+        assertSame(DefaultSlots.readerChrome, resolved.readerChrome)
+    }
+
+    @Test
+    fun `gelieferter readerChrome-slot überschreibt den default`() {
+        val custom: ReaderChromeSlot = { _: ReaderScaffoldState -> }
+
+        val resolved = UiSlots.resolve(UiSlotPack(readerChrome = custom))
+
+        assertSame(custom, resolved.readerChrome)
     }
 }

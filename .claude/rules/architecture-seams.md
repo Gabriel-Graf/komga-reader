@@ -205,11 +205,11 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
   Region `homeHeader`, dritte Region `dialog`, vierte Region `settings`, fünfte Region `tiles`,
-  sechste Region `overlay` + siebte Region `detail` gebaut):**
+  sechste Region `overlay`, siebte Region `detail` + achte Region `readerChrome` gebaut):**
   Über den Reader-Engines wird das *Chrome*
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
   modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind sechs Chrome-Regionen + die
-  detail-Region** (`app/ui/slots/UiSlots.kt`):
+  detail-Region + die readerChrome-Region** (`app/ui/slots/UiSlots.kt`):
   - **Region `header` (Ist, 2026-06-09; Such-Capability 2026-06-12, D1.1):** In-Tree-Vertrag
     `HeaderSlot` ist jetzt **`@Composable (state: HeaderState) -> Unit`** — die Capability-Surface
     `HeaderState(title, onBack?, actions, search: HeaderSearch?)` (in `UiSlots.kt`) trägt zusätzlich
@@ -324,17 +324,39 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     (`showSyncPanel`/`showAdd`/`showDelete`) · `collection==null`-Early-Return · `members`-Filter · `MemberTile`
     unverändert. **Alle drei Detail-Routen jetzt modular.** `MemberTile` bleibt eine eigene Kachel (eigene
     spätere `member`-tiles-Region, YAGNI).
-  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail)` ·
-  `ResolvedSlots(…, detail)` · `DefaultSlots` mit allen sieben Default-Impls. **E-Ink-Invarianten
+  - **Region `readerChrome` (Ist, 2026-06-12 — achte, Sub-Projekt C1):** In-Tree-Vertrag
+    `ReaderChromeSlot` (`@Composable (state: ReaderScaffoldState) -> Unit`). Slot-ifiziert das **ganze
+    Reader-Gerüst** (`ReaderScaffold` — Vollbild-Hintergrund, Drittel-Tap-Zonen, Tap-Zonen-Hints, die
+    Chrome-Menüleiste über die schon slot-ifizierte `overlay`-Region, optionaler Status-Fuß, `persistentBars`,
+    Start-Hinweis und der eigentliche Inhalt). Die **Capability-Surface** `ReaderScaffoldState`
+    (`app/ui/reader/ReaderScaffold.kt`) trägt `chromeVisible` + `onToggleChrome` + `title` + `onBack`/
+    `onHome`/`onSettings` + `onPrev`/`onNext` + `background` + reader-spezifische `actions` + `tapModifier` +
+    `footer` + `persistentBars` + `showTapZoneHints` + den host-gebauten `content`. **Der entscheidende
+    Schnitt:** die Surface trägt **NICHT** den `Viewer` (Naht B). `ReaderScaffold` benutzte `chrome: Viewer`
+    nur für `chrome.chromeVisible.collectAsState()` + `chrome.toggleChrome()` (Mitte-Tap; per grep verifiziert
+    — `refreshScheduler`/`navigateTo`/`onPageSettled` fasst das Scaffold nie an), darum trägt die Surface die
+    **abgeleiteten** `chromeVisible: Boolean` + `onToggleChrome: () -> Unit` statt des `Viewer`. So bleiben
+    Refresh-Scheduler + Engine-Navigation (Naht B) vollständig aus der austauschbaren Surface — ein Chrome-Pack
+    kann sie nicht berühren. `ReaderScaffold(chrome, …)` bleibt ein **dünner Host-Wrapper** (collectAsState +
+    Surface bauen + `LocalResolvedSlots.current.readerChrome(state)`); **die fünf Reader-Call-Sites bleiben
+    unverändert** (PagedReaderScreen/WebtoonReaderScreen/ComicReaderScreen/NovelReaderScreen/EpubReaderScreen).
+    `DefaultReaderScaffold(state)` ist der verbatim extrahierte Onyx-Renderer; der innere Overlay-Aufruf bleibt
+    über die `overlay`-Region (Komposition). Der E-Ink-Scrim (`readerOverlayScrim`) + die Animation-Gating-Pfade
+    bleiben host-erzwungen. Reader-Engines / `Viewer.kt` / `RefreshScheduler` / die `ReaderChrome.kt`-Helfer
+    unangetastet. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/ReaderChromeSlotPreview.kt`
+    (`AlternativeReaderChrome`: Status-Fuß oben statt unten, Tap-Hints/Start-Hinweis weggelassen — nur
+    Debug/Preview).
+  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail, readerChrome)` ·
+  `ResolvedSlots(…, detail, readerChrome)` · `DefaultSlots` mit allen acht Default-Impls. **E-Ink-Invarianten
   host-erzwungen:** Slots liefern
   Inhalt/Struktur, nie die Bewegungs-/Akzent-Policy (die bleibt an
   `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
   Die ursprünglich genannte Region `nav` ist
   **kein** Region-Slot — das Nav-Skelett gehört dem **Shell-Pack** (unten). **Weiter Soll:** die
   `ui-api`-Modul-Extraktion und der APK-Pack-Lader (Skins-Plan P2/P3); das **Reader-Chrome komplett
-  modular** (C1: Tap-Zonen/Footer/Scaffold deklarativ) ist der Nachfolger von `overlay`; **D1.1**
-  (CollectionDetail in die `detail`-Region) und der spätere `DetailShell` (Hero/Grid als arrangierbare
-  Stücke). Vertrag bewusst in-tree, **nicht** eingefroren.
+  modular** ist mit der `readerChrome`-Region als **Gerüst** gebaut — offen bleibt die **deklarative**
+  Form (A1: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`) + der externe Pack-Lader (L1/L2); der
+  spätere `DetailShell` (Hero/Grid als arrangierbare Stücke). Vertrag bewusst in-tree, **nicht** eingefroren.
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots
   liegt jetzt eine Naht, die das **ganze Home-Layout-Skelett** auswechselt (Region-Slots restylen

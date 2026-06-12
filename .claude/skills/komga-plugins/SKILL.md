@@ -1,6 +1,6 @@
 ---
-name: plugin-domain
-description: Use when building or extending plugins (source/preset/UI), designing the plugin/UI-pack ABI, or making ANY subsystem pluggable in the Komga-Reader. Bündelt die Plugin-Philosophie, wie ein Plugin gebaut wird, und das Rezept für ein neues plugbares Subsystem (Capability-Surface, "UI neu, Kernlogik gleich").
+name: komga-plugins
+description: Use when building or extending plugins (source/preset/UI), designing the plugin/UI-pack/shell-pack ABI, or making ANY subsystem pluggable in the Komga-Reader. Bündelt die Plugin-Philosophie, wie ein Plugin gebaut wird, und das Rezept für ein neues plugbares Subsystem (Capability-Surface, "UI neu, Kernlogik gleich").
 ---
 
 # Plugin-Domäne: Philosophie, Plugin-Bau, plugbares Subsystem
@@ -164,12 +164,28 @@ in **dieser Reihenfolge** — analog dem Naht-A-Kochrezept in [[source-extensibi
 > und kann ein Pack es komplett neu anordnen, ohne eine Zeile Kernlogik zu duplizieren? Wenn nein,
 > ist der Schnitt falsch — die Logik leckt in den Slot.
 
-**Referenz-Implementierung (gebaut + E2E-grün, 2026-06-12):** [[modular-home-header]] — der ganze
-Home-Header als `HomeHeaderState`-Capability-Surface hinter einem `HomeHeaderSlot` (zweite UI-Slot-
-Region nach `header`). Code: `app/ui/home/HomeHeader.kt` (Surface + `DefaultHomeHeader`),
-`app/ui/slots/UiSlots.kt` (`homeHeader`-Region), `app/ui/home/HomeScreen.kt` (Host baut die Surface
-pro Tab), Swap-Beweis `app/src/debug/.../HomeHeaderSlotPreview.kt`. Validiert gegen dieses Rezept
-(alle 5 Schritte + Lackmustest erfüllt; die Erkenntnisse oben stammen aus diesem Bau).
+**Referenz-Implementierungen (gebaut + E2E-grün, 2026-06-12), vom Kleinen zum Ganzen:**
+
+1. **Region-Slot — `modular-home-header`:** der ganze Home-Header als `HomeHeaderState`-Capability-
+   Surface hinter einem `HomeHeaderSlot` (zweite UI-Slot-Region nach `header`). Code:
+   `app/ui/home/HomeHeader.kt` (Surface + `DefaultHomeHeader`), `app/ui/slots/UiSlots.kt`
+   (`homeHeader`-Region), `app/ui/home/HomeScreen.kt` (Host baut die Surface pro Tab), Swap-Beweis
+   `app/src/debug/.../HomeHeaderSlotPreview.kt`.
+2. **Shell-Pack — das ganze Layout-Skelett (Rezept eine Ebene höher angewandt):** der komplette
+   Home-Rahmen als `AppShellState`-Capability-Surface hinter dem Vertrag `ShellPack`. Code:
+   `app/ui/shell/` (`AppShellState`/`ShellDestination`, `ShellPack`, `formFactorFor`/`ShellPackRegistry`,
+   `DefaultShell` = Bottom-Bar + `PhoneShell` = Drawer); Host = `HomeScreen` (`HomeShellHost`).
+   Auswahl nach **Form-Faktor** (`screenWidthDp`), orthogonal zur Geräteklasse. Emulator-Swap bewiesen
+   (expanded→Default, compact→Phone-Drawer). Spec/Plan: `2026-06-12-modular-ui-shell-pack*`.
+   **Die wichtigste Schärfung dieses Baus (Schritt 1+2 des Rezepts):** *reine-Präsentation-über-Daten*-
+   Stücke gehen als **Daten** rein, **nicht** als host-gebautes Composable — wenn die **Widget-Wahl
+   selbst** die Variabilität ist (Nav: Bottom-Bar ⟷ Drawer baut das Pack aus `destinations`-Daten).
+   Logik-gebundene Stücke (content/header) bleiben host-gebaut. Faustregel: *Trägt das Stück
+   Kernlogik? → host-gebautes Composable, Pack platziert. Ist es reines Layout über Daten, und ist
+   gerade das Layout das, was variiert? → Daten, Pack baut das Widget.* Beides bleibt deskriptor-
+   ausdrückbar (1→3-Pfad, siehe [[big-picture-and-goals]] → ui-modularity).
+
+Beide validiert gegen dieses Rezept (alle 5 Schritte + Lackmustest; die Erkenntnisse oben stammen aus diesen Bauten).
 
 ---
 

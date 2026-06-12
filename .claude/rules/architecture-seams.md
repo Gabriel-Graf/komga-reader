@@ -208,6 +208,27 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   **Weiter Soll:** die übrigen vier Slots (overlay/tiles/nav/settings/dialog), die `ui-api`-Modul-Extraktion
   und der APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
 
+- **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots
+  liegt jetzt eine Naht, die das **ganze Home-Layout-Skelett** auswechselt (Region-Slots restylen
+  Regionen *in* einem festen Baum; ein Shell-Pack besitzt den **ganzen Baum** — Nav-Ort, Anordnung).
+  `app/ui/shell/`: die **Capability-Surface** `AppShellState` (benannte Stücke: `destinations` als
+  Nav-**Daten** + `selectedId`/`onSelect`; je `ShellDestination` trägt `icon`/`label` (Daten) und
+  `header: HomeHeaderState?`/`content: @Composable` (host-gebaut)), der Vertrag `ShellPack`
+  (`@Composable Render(AppShellState)`), die pure Auswahl `formFactorFor(widthDp)` (<600dp=compact)
+  über `ShellPackRegistry.forFormFactor`. **Zwei Built-ins:** `DefaultShell` (E-Ink/Tablet-Bottom-Bar,
+  pixelgleich zum alten `HomeScreen`) und `PhoneShell` (compact: Drawer-Nav statt Bottom-Bar). `HomeScreen`
+  ist der **Host** (`HomeShellHost`): baut die Surface pro Tab + besitzt allen State/VMs/Dialoge, löst das
+  Pack nach `screenWidthDp` auf und ruft `pack.Render(...)`. **Der entscheidende Schnitt — Daten vs.
+  host-gebaut:** reine-Präsentation-über-Daten-Stücke (Nav) gehen als **Daten** rein (das Pack baut das
+  Widget — die Widget-Wahl IST die Variabilität); logik-gebundene (content/header) als **host-gebaute**
+  Composables (Pack platziert nur, „UI neu, Kernlogik gleich"). **NavHost + Reader unberührt:** der Reader
+  ist eine Geschwister-Route im NavHost (`MainActivity`), liegt nicht *in* der Shell — der Shell-Pack-Bereich
+  ist exakt das alte `HomeScreen`. **E-Ink host-erzwungen:** `PhoneShell` gatet die Drawer-Bewegung über
+  `LocalEinkMode` (`snapTo` statt Slide). **Form-Faktor (Shell) ⟂ Geräteklasse (Theme)** — orthogonale
+  Achsen. Emulator-verifiziert: expanded→DefaultShell, compact→PhoneShell-Drawer, gleiche `AppShellState`.
+  **Weiter Soll:** deklarativer Shell-Pack (Ansatz 3, externe APK-Packs) + Form-Faktor-User-Override +
+  per-compact-Politur des Headers. Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modular-ui-shell-pack*`.
+
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 
 - `domain` hat **keine** Android-/Netz-/Quellen-Abhängigkeit. Pure Kotlin, pure Unit-Tests.

@@ -32,5 +32,7 @@ data class AppShellState(
     val selectedId: ShellDestinationId,
     val onSelect: (ShellDestinationId) -> Unit,
 ) {
-    val selected: ShellDestination get() = destinations.first { it.id == selectedId }
+    val selected: ShellDestination
+        get() = destinations.firstOrNull { it.id == selectedId }
+            ?: error("ShellDestination $selectedId nicht in destinations (${destinations.map { it.id }})")
 }

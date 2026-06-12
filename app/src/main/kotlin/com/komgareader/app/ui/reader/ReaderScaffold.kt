@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import kotlinx.coroutines.delay
 
 /** Anzeigedauer des Start-Hinweises oben mittig, bevor er wieder verschwindet. */
@@ -24,8 +26,9 @@ private const val START_HINT_MILLIS = 1500L
 /**
  * Geteiltes Reader-Gerüst: kapselt die über alle Reader identische Chrome-Mechanik —
  * den schwarzen Vollbild-Hintergrund, die Drittel-Tap-Zonen (links → [onPrev],
- * rechts → [onNext], Mitte → `chrome.toggleChrome()`), das [ReaderChromeOverlay], die
- * Tap-Zonen-Hints, einen optionalen Status-Fuß ([footer]) und den Start-Hinweis.
+ * rechts → [onNext], Mitte → `chrome.toggleChrome()`), die Chrome-Menüleiste (hinter der
+ * `overlay`-Slot-Region, default [DefaultReaderOverlay]), die Tap-Zonen-Hints, einen optionalen
+ * Status-Fuß ([footer]) und den Start-Hinweis.
  *
  * Das gehört nach `shared-structure-before-variants` an genau **eine** Stelle: alle
  * Reader bauen darauf statt als Parallel-Linie. Reader mit bespoke Gesten (Comic:
@@ -47,7 +50,7 @@ fun ReaderScaffold(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
     background: Color = Color.Black,
-    actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
     tapModifier: Modifier? = null,
     footer: (@Composable BoxScope.() -> Unit)? = null,
     persistentBars: (@Composable BoxScope.() -> Unit)? = null,
@@ -92,14 +95,24 @@ fun ReaderScaffold(
             ReaderTapZoneHints()
         }
 
-        ReaderChromeOverlay(
-            visible = chromeVisible,
-            title = title,
-            onBack = onBack,
-            onHome = onHome,
-            onSettings = onSettings,
-            actions = actions,
-        )
+        // Reader-Chrome-Menüleiste hinter der overlay-Slot-Region (austauschbar). Host-gegatet:
+        // sichtbar gdw. chromeVisible — die Sichtbarkeit gehört dem Host, nicht der Slot-Surface.
+        // overlay ist eine BoxScope-Extension; der BoxScope-Receiver (dieses Box) wird über
+        // `with(this)` explizit gemacht (der implizite Receiver greift bei Funktionswerten nicht).
+        if (chromeVisible) {
+            val overlay = LocalResolvedSlots.current.overlay
+            with(this) {
+                overlay(
+                    ReaderOverlayState(
+                        title = title,
+                        onBack = onBack,
+                        onHome = onHome,
+                        onSettings = onSettings,
+                        actions = actions,
+                    ),
+                )
+            }
+        }
 
         // Der Status-Fuß ist ein Overlay wie die Top-Leiste: nur sichtbar, wenn das
         // Chrome sichtbar ist (überdeckt dann ggf. Inhalt) — nicht dauerhaft.

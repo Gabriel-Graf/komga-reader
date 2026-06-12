@@ -5,6 +5,14 @@
 **Status:** Spec 1 von 2. Dies ist das **Fundament**. Spec 2 baut die drei Features
 (Source-Plugin-in-Settings-Fix, Reader-Preset-Plugins, Sprach-Plugins) darauf.
 
+> **Korrektur (2026-06-12):** Abschnitt E („`/plugins`-Layout + Template") beruhte auf einer
+> falschen Annahme — Plugins werden **nicht** als je eigenes gitignoretes Repo unter
+> `komga-reader/plugins/` verwaltet. Die echte Distribution ist **ein** separates Repo
+> `Gabriel-Graf/KomgaReaderPlugins` (`PluginRepoDefaults.OFFICIAL_URL`) mit `repo.json`-Index +
+> gebauten, debug-signierten APKs; der Repo-Browser lädt von dort. Abschnitt E ist damit
+> hinfällig; der eingeführte `komga-reader/plugins/`-Ordner wurde zurückgebaut. Der Rest des
+> Fundaments (PluginCategory, ABI, `discoverDataPlugins`, Parser) bleibt gültig.
+
 ## Problem & Motivation
 
 Die App hat heute genau **zwei** Plugin-Mechaniken, unterschieden allein durch die Präsenz

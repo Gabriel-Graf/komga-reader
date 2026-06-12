@@ -100,14 +100,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Legacy-Alias `COLOR_PRESETS`). `PluginHost.discoverDataPlugins(category)` ist die generische
   Discovery (reiner `resolveDataPluginManifest`-Helfer); `discoverColorPresetPlugins()` ist nur
   noch ein dünner Wrapper darüber (+ `parsePresetSpecs`). Reader-Preset-/Sprach-Plugins (Spec 2)
-  hängen sich als neue Kategorien ein, ohne Discovery-Umbau. Template/Konvention: `/plugins/`.
+  hängen sich als neue Kategorien ein, ohne Discovery-Umbau. **Distribution:** kein `/plugins/`
+  im App-Repo — alle Plugins (gebaute APKs + `repo.json`-Index) leben im separaten
+  Distributions-Repo `Gabriel-Graf/KomgaReaderPlugins` (`PluginRepoDefaults.OFFICIAL_URL`); der
+  Repo-Browser lädt/verifiziert/installiert von dort. Data-only-APKs sind debug-signiert (Fingerprint
+  im Index).
 - **Reader-Preset- + Sprach-Plugins (Ist, 2026-06-12, Spec 2):** Zwei neue data-only Kategorien über
   `discoverDataPlugins`: `READER_PRESET` (benannte Teil-Snapshots der Reader-Settings → `parseReaderPresetSpecs`
   → `applyReaderPreset` mutiert nur gesetzte Felder, **kein** Room-Table) und `LANGUAGE` (Runtime-i18n-Override
   `MapBackedStrings` mit EN-Fallback, `language`-Setting hält beliebigen Code, `resolveStrings` in MainActivity).
   Quellen-Plugins sind jetzt auch über den „Server hinzufügen"-Selektor („Plugin"-Segment, geteilter
-  `AddPluginSourceModals`-Flow) hinzufügbar, nicht nur im Plugins-Tab. Deliverables: `/plugins/komga-lang-{es,fr,it}`,
-  `/plugins/komga-reader-preset-eink`.
+  `AddPluginSourceModals`-Flow) hinzufügbar, nicht nur im Plugins-Tab. Deliverables liegen im
+  Distributions-Repo `KomgaReaderPlugins` (debug-signierte APKs + `repo.json`-Einträge `type:
+  language|reader_preset`, `abiVersion:2`): `komga-lang-{es,fr,it}` (LANGUAGE) +
+  `komga-reader-preset-eink` (READER_PRESET).
 
 - **Collections-Sync bidirektional (Ist, 2026-06-10):** Sammlungen synchronisieren jetzt **push UND
   pull**. Der reine, pur-getestete `planCollectionSync` (`domain/usecase/CollectionSyncPlan.kt`)

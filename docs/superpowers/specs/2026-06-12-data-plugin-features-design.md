@@ -93,9 +93,10 @@ nicht hier — entgegen der Nutzererwartung „Quelle neben Komga/OPDS".
   hält sie als `StateFlow`. Plugins-Tab-Hub zeigt sie (Deinstall), Typ-Filter-Chip deckt die neuen Kategorien.
 - **Neue UI-Strings** in `StringsDe`/`StringsEn` (Segment „Plugin", „Preset anwenden", Bestätigungstexte,
   Leerzustände). **Wichtig:** `MapBackedStrings` wird **nach** dem Hinzufügen aller neuen Strings generiert.
-- **Deliverables unter `/plugins/`** (eigene Repos, gitignored): `komga-lang-es`, `komga-lang-fr`,
-  `komga-lang-it` (LANGUAGE) + `komga-reader-preset-eink` (READER_PRESET-Sample) — alle aus
-  `_template-data/` abgeleitet.
+- **Deliverables** (Korrektur 2026-06-12: **nicht** unter `komga-reader/plugins/`, sondern als
+  gebaute, debug-signierte APKs + `repo.json`-Einträge im Distributions-Repo
+  `Gabriel-Graf/KomgaReaderPlugins`): `komga-lang-es`, `komga-lang-fr`, `komga-lang-it` (LANGUAGE)
+  + `komga-reader-preset-eink` (READER_PRESET-Sample).
 - **Tests:** Parser-Units (`parseReaderPresetSpecs`, `parseLanguageSpec` — gesetzt **und** leer/fehlend);
   `MapBackedStrings`-Unit (override greift, fehlender Key → Fallback, Template-Interpolation);
   `ReaderPresetOverrides`-Apply-Logik (nur Nicht-Null gesetzt). E2E je Kategorie (Discovery→Parse→

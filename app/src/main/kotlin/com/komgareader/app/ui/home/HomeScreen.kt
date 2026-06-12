@@ -46,9 +46,10 @@ import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
 import com.komgareader.app.ui.settings.SettingsScreen
 import com.komgareader.app.ui.shell.AppShellState
-import com.komgareader.app.ui.shell.DefaultShell
 import com.komgareader.app.ui.shell.ShellDestination
 import com.komgareader.app.ui.shell.ShellDestinationId
+import com.komgareader.app.ui.shell.ShellPackRegistry
+import com.komgareader.app.ui.shell.formFactorFor
 import com.komgareader.app.ui.theme.LocalDesignTokens
 import com.komgareader.data.plugin.repo.PluginTypeFilter
 import com.komgareader.domain.model.ContentType
@@ -338,11 +339,10 @@ fun HomeScreen(
         pluginsVm.setQuery("")
     }
 
-    // Phase A: verhaltens-erhaltend IMMER DefaultShell (auf jeder Breite). Die Form-Faktor-Auswahl
-    // (ShellPackRegistry.forFormFactor(formFactorFor(screenWidthDp))) wird erst in C1 hier verdrahtet,
-    // wenn PhoneShell einen echten Body hat — sonst rendert compact (<600dp) die leere PhoneShell.
-    // StubSource-Prinzip: kein leeres Pack greift, bevor es real ist.
-    val pack = DefaultShell
+    // Form-Faktor wählt das Skelett (compact → PhoneShell/Drawer, sonst DefaultShell/Bottom-Bar);
+    // orthogonal zur Geräteklasse (die das Theme wählt). Beide Packs ordnen DIESELBE AppShellState an.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val pack = ShellPackRegistry.forFormFactor(formFactorFor(configuration.screenWidthDp))
     pack.Render(
         AppShellState(
             destinations = destinations,

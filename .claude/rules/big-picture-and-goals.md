@@ -267,15 +267,22 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   bis zur späteren `DetailShell`-Stufe (Hero/Grid als arrangierbare Stücke, Master-Detail auf Tablet).
 - **Reader-Chrome modular:** die Reader-**Engines** bleiben Core (Render/Refresh/E-Ink-Garantie, Naht B);
   das *Chrome*-**Gerüst** drumherum (Overlay, Chrome-Buttons, `ReaderScaffold`) ist über die `readerChrome`-
-  Region (C1) **austauschbar**. Offen bleibt die **deklarative** Form (A1: Tap-Zone→Aktion-Beschreibung statt
+  Region (C1) **austauschbar**. Offen bleibt die **deklarative** Form (A1b: Tap-Zone→Aktion-Beschreibung statt
   bespoke `tapModifier`) — daran hängt sich die deklarative UI-Plugin-Form (Plugins (b)) für externe Packs ein.
-- **Icon-Pack extern:** die In-tree-Infra steht (I1); der **externe Icon-Pack als APK** + ein
+- **Icon-Pack extern:** die Icon-Stack-Infra steht (I1) und liegt **jetzt im Modul `:ui-api`** (A1,
+  `com.komgareader.ui.icons` — `IconKey`/`IconPack`/`DefaultIconPack`/`ActiveIconPack`/`AppIcons`/
+  `LucideIcons`, `tools/icons`-Generator schreibt dorthin); der **externe Icon-Pack als APK** + ein
   Settings-Umschalter sind **Soll mit L1/L2** (externer UI-Pack-Lader, TOFU/ABI wie plugin-host) — bis
   dahin wird `ActiveIconPack.current` nur im Prozess gesetzt (Default-Pfad aktiv). Runtime-SVG-Import bleibt
-  YAGNI. `IconKey`/`IconPack` ggf. in **A1**/`ui-api` mit-einfrieren.
-- **`ui-api`-Modul:** der Slot-/Shell-/Theme-Vertrag liegt bewusst **in-tree** (`app/ui/...`), **nicht
-  eingefroren**. Komplette Modularität braucht ihn als dünnes, stabiles API-Modul (Kandidat neben
-  `plugin-api`), additiv erweiterbar.
+  YAGNI. `IconKey`/`IconPack` werden mit L1/L2 mit-eingefroren.
+- **`ui-api`-Modul (Ist, A1, 2026-06-12):** der Slot-/Shell-/Theme-/Icon-**Vertrag** liegt **gebaut** im
+  eigenen Modul `:ui-api` (`com.komgareader.ui.*`, android-library Compose, DAG `domain → ui-api → app`) —
+  das UI-Gegenstück zu `source-api`. Es trägt die Capability-Surfaces, Slot-typealias, Pack-Interfaces,
+  reine Resolve-Typen, CompositionLocals **und** die entkoppelten Built-ins (Theme-Packs, Icon-Stack); die
+  **gekoppelten Default-Renderer** (Onyx-Look an app-i18n/-Komponenten: `DefaultSlots`/`DefaultHeader`/
+  `DefaultShell`/`PhoneShell`/`ShellPackRegistry`/`buildSettingsSections`, `Theme.kt`-Host) bleiben in `:app`.
+  **Noch nicht eingefroren** (kein ABI-Gate): das Einfrieren + die `api()`-Re-Exportierung (wie
+  `plugin-api`→`source-api`) kommt mit dem Pack-Lader (L1/L2).
 - **Externer Pack-Lader + `DeclarativeShell`** (Phase 4): das eigentliche „Community **installiert** eine
   UI" — separates APK, ABI-Gate, TOFU (wie Quellen-Plugins), und der deklarative Shell-/Slot-Deskriptor
   (Ansatz 3) statt In-Tree-Compose. Bis dahin sind alle Packs Built-ins im App-Modul.
@@ -424,9 +431,13 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > (Ansatz 3, externe APK-Packs), compact-Header-Politur (S0.2). **Die Region-Slot-Reihe
 > ist abgeschlossen** (alle sechs Chrome-Regionen + `detail` + `readerChrome` gebaut; `UiSlotPack` trägt
 > `header` + `homeHeader` + `dialog` + `settings` + `tiles` + `overlay` + `detail` + `readerChrome`; `nav` ist
-> Shell-Pack-Sache, kein Region-Slot). Ebenfalls Soll: das **Reader-Chrome deklarativ** (A1, Nachfolger von
-> C1: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`), ein eigenes
-> **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
+> Shell-Pack-Sache, kein Region-Slot). **`ui-api`-Modul gebaut (Ist, A1, 2026-06-12):** der Slot-/Shell-/
+> Theme-/Icon-**Vertrag** + die entkoppelten Built-ins (Theme-Packs, Icon-Stack) liegen jetzt im Modul
+> `:ui-api` (`com.komgareader.ui.*`, DAG `domain → ui-api → app`), die gekoppelten Default-Renderer bleiben
+> in `:app`; `UiSlots.resolve` ist 2-arg + `LocalResolvedSlots` Error-Default, der Host speist über
+> app-`resolveSlots`/`DefaultSlots.resolved` ein. Ebenfalls Soll: das **Reader-Chrome deklarativ** (A1b,
+> Nachfolger von C1: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`), das **ABI-Einfrieren** des
+> `ui-api`-Vertrags und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen
 > Typ als real, den `grep` nicht findet.

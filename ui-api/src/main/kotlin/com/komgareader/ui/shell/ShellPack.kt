@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.shell
+package com.komgareader.ui.shell
 
 import androidx.compose.runtime.Composable
 import com.komgareader.domain.model.ShellLayoutMode
@@ -26,16 +26,4 @@ fun resolveFormFactor(mode: ShellLayoutMode, widthDp: Int): ShellFormFactor = wh
     ShellLayoutMode.AUTO -> formFactorFor(widthDp)
     ShellLayoutMode.COMPACT -> ShellFormFactor.COMPACT
     ShellLayoutMode.EXPANDED -> ShellFormFactor.EXPANDED
-}
-
-/**
- * Registry der Shell-Packs — analog [com.komgareader.app.ui.theme.UiPackRegistry], eine Schicht höher.
- * Heute zwei Built-ins, Auswahl nach Form-Faktor. Hier hängt sich später ein externer APK-Pack-Lader
- * (Ansatz 3, Phase 4) und ein manueller User-Override ein.
- */
-object ShellPackRegistry {
-    fun forFormFactor(formFactor: ShellFormFactor): ShellPack = when (formFactor) {
-        ShellFormFactor.COMPACT -> PhoneShell
-        ShellFormFactor.EXPANDED -> DefaultShell
-    }
 }

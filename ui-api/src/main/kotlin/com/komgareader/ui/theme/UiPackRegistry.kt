@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.theme
+package com.komgareader.ui.theme
 
 import com.komgareader.domain.model.DisplayBehavior
 

@@ -18,7 +18,9 @@ import androidx.compose.ui.platform.LocalDensity
 import com.komgareader.app.ui.components.BottomNavItem
 import com.komgareader.app.ui.components.EinkBottomBar
 import com.komgareader.app.ui.components.LocalContentBottomInset
-import com.komgareader.app.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.shell.AppShellState
+import com.komgareader.ui.shell.ShellPack
+import com.komgareader.ui.slots.LocalResolvedSlots
 
 /**
  * Mitgeliefertes E-Ink/Tablet-Skelett: persistenter Home-Header oben (über den homeHeader-Slot, nur

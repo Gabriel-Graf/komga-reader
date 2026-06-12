@@ -16,10 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.komgareader.app.ui.slots.DetailSlot
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
+import com.komgareader.app.ui.slots.resolveSlots
+import com.komgareader.ui.slots.DetailScaffoldState
+import com.komgareader.ui.slots.DetailSlot
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.UiSlotPack
 
 /**
  * Swap-Beweis: ein alternatives Detail-Gerüst — **eigener schlanker Titelbalken** (eine simple
@@ -69,7 +70,7 @@ private fun AlternativeDetailPreview() {
         },
     )
     CompositionLocalProvider(
-        LocalResolvedSlots provides UiSlots.resolve(UiSlotPack(detail = alternative)),
+        LocalResolvedSlots provides resolveSlots(UiSlotPack(detail = alternative)),
     ) {
         LocalResolvedSlots.current.detail(state)
     }

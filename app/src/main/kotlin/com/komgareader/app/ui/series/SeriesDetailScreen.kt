@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -42,8 +42,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import com.komgareader.app.ui.components.LocalOnHome
-import com.komgareader.app.ui.detail.DetailScaffoldState
-import com.komgareader.app.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.DetailScaffoldState
+import com.komgareader.ui.slots.LocalResolvedSlots
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -76,7 +76,7 @@ import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.app.i18n.localizedContentType
 import com.komgareader.app.i18n.localizedSeriesStatus
 import com.komgareader.domain.model.Book

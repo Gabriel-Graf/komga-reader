@@ -34,11 +34,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.header
-import com.komgareader.app.ui.theme.EinkTokens
-import com.komgareader.app.ui.theme.LocalDesignTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.header
+import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.theme.LocalDesignTokens
 
 /**
  * Wiederverwendbare E-Ink-Bausteine im Onyx-Look. Siehe Skill `komga-eink-ui`.

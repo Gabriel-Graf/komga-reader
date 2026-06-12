@@ -34,28 +34,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.theme.EinkTokens
-
-/**
- * Capability-Surface des Dialogs: ein **benannter Satz** der Dialog-Fähigkeiten, den ein
- * [com.komgareader.app.ui.slots.DialogSlot]-Pack arrangiert. Spiegelt die echten [EinkModal]-Parameter
- * 1:1 (kein Funktionsverlust) — bis auf das reine Layout-Detail `modifier`, das nie eine Aufrufstelle
- * setzt und deshalb dem Default-Renderer gehört, nicht der Surface. Die E-Ink-Invarianten
- * (keine Animation, Akzent/Bewegung über `LocalEinkMode` & Co.) sind **host-erzwungen**, nicht Teil
- * dieser Surface — ein Pack liefert nur Inhalt/Struktur.
- */
-data class DialogState(
-    val title: String,
-    val onDismiss: () -> Unit,
-    val confirmLabel: String,
-    val onConfirm: () -> Unit,
-    val dismissLabel: String,
-    val confirmEnabled: Boolean = true,
-    val headerAction: (@Composable () -> Unit)? = null,
-    val content: @Composable ColumnScope.() -> Unit,
-)
+import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.DialogState
+import com.komgareader.ui.slots.LocalResolvedSlots
 
 /**
  * Dünner Host-Wrapper: baut die [DialogState]-Surface aus den Parametern und delegiert an die

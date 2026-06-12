@@ -53,8 +53,8 @@ import com.komgareader.app.ui.components.EntityListRow
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.TileViewMode
 import com.komgareader.app.ui.components.tileViewModeOf
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.SyncStatus
 import com.komgareader.domain.model.UserCollection

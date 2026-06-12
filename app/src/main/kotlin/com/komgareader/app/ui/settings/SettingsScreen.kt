@@ -49,10 +49,13 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.LocalEinkMode
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.theme.EinkTokens
-import com.komgareader.app.ui.theme.LocalDesignTokens
+import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.SettingsSection
+import com.komgareader.ui.slots.SettingsSectionId
+import com.komgareader.ui.slots.SettingsState
+import com.komgareader.ui.theme.LocalDesignTokens
 
 /** Größenklasse abhängig von der verfügbaren Breite — keine Magic-dp verstreut. */
 private data class SettingsSizing(
@@ -64,18 +67,6 @@ private data class SettingsSizing(
 
 private val SizingMedium = SettingsSizing(220.dp, 28.dp, 16.sp, EinkTokens.screenPadding)
 private val SizingExpanded = SettingsSizing(280.dp, 32.dp, 20.sp, 24.dp)
-
-/**
- * Capability-Surface der Settings-Region: die host-gebauten [SettingsSection]s + der Such-[query].
- * Ein [com.komgareader.app.ui.slots.SettingsSlot]-Pack ordnet sie an (Sidebar/Accordion/flach) und
- * besitzt den Navigations-State selbst (welche Sektion aktiv/aufgeklappt). Die Sektions-Inhalte
- * (`section.content`) sind host-gebaut — das Pack platziert sie nur, baut sie nie neu
- * („UI neu, Kernlogik gleich"). E-Ink-Invarianten bleiben host-erzwungen, nicht Teil dieser Surface.
- */
-data class SettingsState(
-    val sections: List<SettingsSection>,
-    val query: String,
-)
 
 /**
  * Adaptiver Settings-Host — dünner Wrapper: baut die [SettingsState]-Surface und delegiert an die

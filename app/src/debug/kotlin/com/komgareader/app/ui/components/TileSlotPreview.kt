@@ -24,10 +24,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
+import com.komgareader.app.ui.slots.resolveSlots
 import com.komgareader.domain.model.Series
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.TileState
+import com.komgareader.ui.slots.UiSlotPack
 
 /**
  * Swap-Beweis: ein alternatives Kachel-Layout — **Titel über dem Cover** (eigene Zeile) statt als
@@ -87,7 +88,7 @@ private fun AlternativeTilePreview() {
     )
     CompositionLocalProvider(
         LocalResolvedSlots provides
-            UiSlots.resolve(UiSlotPack(tiles = { state, modifier -> AlternativeTile(state, modifier) })),
+            resolveSlots(UiSlotPack(tiles = { state, modifier -> AlternativeTile(state, modifier) })),
     ) {
         SeriesTile(
             series = fakeSeries,

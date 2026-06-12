@@ -1,22 +1,16 @@
 package com.komgareader.app.ui.shell
 
-import com.komgareader.domain.model.ShellLayoutMode
-import org.junit.jupiter.api.Assertions.assertEquals
+import com.komgareader.ui.shell.ShellFormFactor
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
+/**
+ * App-seitige Hälfte der Shell-Auswahl: die [ShellPackRegistry] bildet den Form-Faktor auf die
+ * konkreten Built-in-Shells ab. Die Built-ins ([DefaultShell]/[PhoneShell]) koppeln an app-Komponenten
+ * und liegen darum in `:app`; die reine Form-Faktor-Auflösung (`formFactorFor`/`resolveFormFactor`) ist
+ * im Modul `:ui-api` getestet (`ShellFormFactorTest`).
+ */
 class ShellSelectionTest {
-
-    @Test
-    fun `schmale breite ist compact`() {
-        assertEquals(ShellFormFactor.COMPACT, formFactorFor(widthDp = 411))
-    }
-
-    @Test
-    fun `600dp und mehr ist expanded`() {
-        assertEquals(ShellFormFactor.EXPANDED, formFactorFor(widthDp = 600))
-        assertEquals(ShellFormFactor.EXPANDED, formFactorFor(widthDp = 1264))
-    }
 
     @Test
     fun `expanded wählt die default-shell`() {
@@ -26,25 +20,5 @@ class ShellSelectionTest {
     @Test
     fun `compact wählt die phone-shell`() {
         assertSame(PhoneShell, ShellPackRegistry.forFormFactor(ShellFormFactor.COMPACT))
-    }
-
-    @Test
-    fun `AUTO leitet bei schmaler breite compact ab`() {
-        assertEquals(ShellFormFactor.COMPACT, resolveFormFactor(ShellLayoutMode.AUTO, widthDp = 411))
-    }
-
-    @Test
-    fun `AUTO leitet bei breiter breite expanded ab`() {
-        assertEquals(ShellFormFactor.EXPANDED, resolveFormFactor(ShellLayoutMode.AUTO, widthDp = 1264))
-    }
-
-    @Test
-    fun `COMPACT-override erzwingt compact auch bei breitem screen`() {
-        assertEquals(ShellFormFactor.COMPACT, resolveFormFactor(ShellLayoutMode.COMPACT, widthDp = 1264))
-    }
-
-    @Test
-    fun `EXPANDED-override erzwingt expanded auch bei schmalem screen`() {
-        assertEquals(ShellFormFactor.EXPANDED, resolveFormFactor(ShellLayoutMode.EXPANDED, widthDp = 320))
     }
 }

@@ -31,7 +31,7 @@ import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.guidedview.PanelGeometry

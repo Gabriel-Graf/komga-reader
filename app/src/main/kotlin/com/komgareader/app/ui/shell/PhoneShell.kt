@@ -20,9 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.komgareader.app.ui.components.LocalEinkMode
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.theme.LocalDesignTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.shell.AppShellState
+import com.komgareader.ui.shell.ShellPack
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.theme.LocalDesignTokens
 import kotlinx.coroutines.launch
 
 /**

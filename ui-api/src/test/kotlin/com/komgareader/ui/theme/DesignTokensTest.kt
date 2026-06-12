@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.theme
+package com.komgareader.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -20,7 +20,7 @@ class DesignTokensTest {
     private val lcd = DisplayBehavior(allowsMotion = true, allowsAccentColor = true)
 
     @Test
-    fun `mono eink ist schwarz-weiss, flach, ohne elevation`() {
+    fun `mono eink ist schwarz-weiß, flach, ohne elevation`() {
         val light = designTokensFor(mono, dark = false)
         assertEquals(Color.Black, light.accent)
         assertEquals(Color.White, light.onAccent)
@@ -31,7 +31,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun `kaleido traegt gedaempften akzent, bleibt aber flach (e-ink)`() {
+    fun `kaleido trägt gedämpften akzent, bleibt aber flach (e-ink)`() {
         val k = designTokensFor(kaleido, dark = false)
         assertEquals(AccentMuted, k.accent)
         assertEquals(AccentMuted, designTokensFor(kaleido, dark = true).accent)
@@ -44,7 +44,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun `lcd traegt vollen akzent, darf schatten und weichere kanten`() {
+    fun `lcd trägt vollen akzent, darf schatten und weichere kanten`() {
         val light = designTokensFor(lcd, dark = false)
         assertEquals(AccentVividLight, light.accent)
         assertEquals(AccentVividDark, designTokensFor(lcd, dark = true).accent)
@@ -56,7 +56,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun `akzent-achse ist von der bewegungs-achse unabhaengig`() {
+    fun `akzent-achse ist von der bewegungs-achse unabhängig`() {
         // mono und kaleido teilen !motion, unterscheiden sich aber im Akzent → die Achsen sind getrennt.
         val monoAccent = designTokensFor(mono, dark = false).accent
         val kaleidoAccent = designTokensFor(kaleido, dark = false).accent
@@ -64,7 +64,7 @@ class DesignTokensTest {
     }
 
     @Test
-    fun `sinnlose kombi (bewegung, kein akzent) faellt sicher auf mono`() {
+    fun `sinnlose kombi (bewegung, kein akzent) fällt sicher auf mono`() {
         // (motion, !accent) ist keine reale Geräteklasse; DesignTokens dokumentiert den sicheren
         // Fallback auf den mono-Zweig. Schützt die Invariante gegen ein Umordnen der when-Arme.
         val nonsensical = DisplayBehavior(allowsMotion = true, allowsAccentColor = false)

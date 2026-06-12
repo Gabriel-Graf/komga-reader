@@ -32,7 +32,7 @@ import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.SeriesTile
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.Series

@@ -17,51 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.ReaderOverlayState
+import com.komgareader.ui.slots.ReaderScaffoldState
 import kotlinx.coroutines.delay
 
 /** Anzeigedauer des Start-Hinweises oben mittig, bevor er wieder verschwindet. */
 private const val START_HINT_MILLIS = 1500L
-
-/**
- * Capability-Surface des **ganzen Reader-Chrome**: die host-gebauten Stücke, die ein
- * [com.komgareader.app.ui.slots.ReaderChromeSlot]-Pack zur Lese-Oberfläche arrangiert —
- * Vollbild-Hintergrund ([background]), Tap-Zonen (default Drittel-Navigation [onPrev]/[onNext]/
- * [onToggleChrome] **oder** [tapModifier]), Tap-Zonen-Hints ([showTapZoneHints]), die Chrome-
- * Menüleiste (über die `overlay`-Region aus [title]/[onBack]/[onHome]/[onSettings]/[actions]),
- * der optionale Status-Fuß ([footer]), die dauerhaften Info-Leisten ([persistentBars]), der
- * Start-Hinweis und der eigentliche [content].
- *
- * **Trägt NICHT den [Viewer] (Naht B).** [ReaderScaffold] nutzt den Viewer nur, um die abgeleiteten
- * [chromeVisible] (aus `chrome.chromeVisible`) und [onToggleChrome] (`chrome::toggleChrome`) zu
- * bilden — `refreshScheduler`/`navigateTo`/`onPageSettled` fasst das Scaffold nie an. So bleibt
- * Naht B (Refresh-Scheduler, Engine-Navigation) vollständig aus der austauschbaren Surface; ein
- * Chrome-Pack kann sie nicht berühren. Auch der E-Ink-Scrim und die Animation-Gating-Pfade bleiben
- * host-/Core-erzwungen, nicht Teil hiervon.
- */
-data class ReaderScaffoldState(
-    val chromeVisible: Boolean,
-    val onToggleChrome: () -> Unit,
-    val title: String,
-    val onBack: () -> Unit,
-    val onHome: () -> Unit,
-    val onSettings: () -> Unit,
-    val onPrev: () -> Unit,
-    val onNext: () -> Unit,
-    val background: Color = Color.Black,
-    val actions: @Composable RowScope.() -> Unit = {},
-    val tapModifier: Modifier? = null,
-    val footer: (@Composable BoxScope.() -> Unit)? = null,
-    val persistentBars: (@Composable BoxScope.() -> Unit)? = null,
-    /**
-     * Ob die Tap-Zonen-Hints (Letzte/Nächste-Seite-Chips) bei sichtbarem Chrome erscheinen. Default:
-     * `true` **gdw.** [tapModifier] `== null` (Standard-Drittel-Navigation aktiv); Reader mit bespoke
-     * Tap-Zonen (Comic/Webtoon übergeben ein nicht-`null` [tapModifier], auch ein leeres `Modifier`)
-     * setzen damit implizit `false` — ihre Hints passen nicht zur eigenen Gesten-Logik.
-     */
-    val showTapZoneHints: Boolean = tapModifier == null,
-    val content: @Composable () -> Unit,
-)
 
 /**
  * Geteiltes Reader-Gerüst: kapselt die über alle Reader identische Chrome-Mechanik —
@@ -192,8 +154,11 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
 
         // Der Status-Fuß ist ein Overlay wie die Top-Leiste: nur sichtbar, wenn das
         // Chrome sichtbar ist (überdeckt dann ggf. Inhalt) — nicht dauerhaft.
-        if (state.footer != null && state.chromeVisible) {
-            state.footer.invoke(this)
+        // Lokale val: [ReaderScaffoldState] liegt im Modul :ui-api, ein cross-module-Property
+        // ist nicht smart-castbar.
+        val footer = state.footer
+        if (footer != null && state.chromeVisible) {
+            footer.invoke(this)
         }
 
         // Liegt zuoberst, weicht aber dem Chrome (sonst überlappten Top-Leiste und Hinweis).

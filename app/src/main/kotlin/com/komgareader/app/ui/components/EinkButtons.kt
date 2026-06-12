@@ -8,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.theme.EinkTokens
 
 /**
  * Outlined-Button im E-Ink-Look: Rand = [EinkTokens.hairline] (1.5dp, schwarz/outline) statt

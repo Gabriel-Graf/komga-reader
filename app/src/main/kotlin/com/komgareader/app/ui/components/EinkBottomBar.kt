@@ -26,8 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.komgareader.app.ui.theme.EinkTokens
-import com.komgareader.app.ui.theme.LocalDesignTokens
+import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.theme.LocalDesignTokens
 
 /** Ein Tab der Bottom-Menubar. */
 data class BottomNavItem(

@@ -18,7 +18,7 @@ import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.PanelSectionHeader
 import com.komgareader.app.ui.components.StepperRow
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 

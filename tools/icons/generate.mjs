@@ -7,8 +7,8 @@ import { svgToPathData } from "./lib/svg-to-pathdata.mjs";
 const here = dirname(fileURLToPath(import.meta.url));
 const svgDir = join(here, "node_modules", "lucide-static", "icons");
 const outFile = join(
-  here, "..", "..", "app", "src", "main", "kotlin",
-  "com", "komgareader", "app", "ui", "icons", "LucideIcons.kt",
+  here, "..", "..", "ui-api", "src", "main", "kotlin",
+  "com", "komgareader", "ui", "icons", "LucideIcons.kt",
 );
 
 const entries = Object.entries(ICONS).map(([kebab, prop]) => {
@@ -24,7 +24,7 @@ const body = entries
 
 const out = `// GENERIERT von tools/icons/generate.mjs — NICHT von Hand editieren.
 // Quelle: Lucide (ISC), https://github.com/lucide-icons/lucide  ·  Stroke: siehe STROKE.
-package com.komgareader.app.ui.icons
+package com.komgareader.ui.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor

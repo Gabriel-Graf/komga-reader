@@ -7,7 +7,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.ui.icons.AppIcons
 
 /**
  * Einheitliche Titelleiste: Titel links (optional Zurück-Pfeil), Aktions-Icons rechts.

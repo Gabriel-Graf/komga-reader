@@ -12,8 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.KomgaReaderTheme
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.HeaderSearch
+import com.komgareader.ui.slots.HeaderState
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.UiSlotPack
+import com.komgareader.ui.slots.header
 
 /**
  * **Beweis der Slot-Naht — kein Kern-Umbau nötig.** Ein zweites [UiSlotPack] mit einem alternativen

@@ -55,9 +55,9 @@ import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import com.komgareader.app.ui.components.SettingsGroup
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.theme.EinkTokens
-import com.komgareader.app.ui.theme.LocalDesignTokens
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.DitherMode
 

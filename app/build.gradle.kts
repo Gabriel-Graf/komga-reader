@@ -32,6 +32,7 @@ android {
 dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
+    implementation(project(":ui-api"))
     implementation(project(":source-api"))
     implementation(project(":plugin-api"))
     implementation(project(":plugin-host"))

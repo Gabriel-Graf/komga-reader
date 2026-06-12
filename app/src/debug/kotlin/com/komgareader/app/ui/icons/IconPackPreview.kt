@@ -12,6 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.theme.KomgaReaderTheme
+import com.komgareader.ui.icons.ActiveIconPack
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.icons.DefaultIconPack
+import com.komgareader.ui.icons.IconKey
+import com.komgareader.ui.icons.IconPack
+import com.komgareader.ui.icons.LucideIcons
 
 /**
  * **Beweis der Icon-Pack-Naht — kein Kern-Umbau nötig.** Ein [AlternativeIconPack] überschreibt nur

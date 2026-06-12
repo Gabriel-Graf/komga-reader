@@ -47,6 +47,8 @@ fun AlternativeDialog(state: DialogState) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // headerAction wird in diesem Swap-Beweis bewusst weggelassen (kein Bestandteil des
+                // zentrierten Alternativ-Layouts). Produktive Packs müssen headerAction rendern.
                 if (state.title.isNotBlank()) {
                     Text(
                         state.title,

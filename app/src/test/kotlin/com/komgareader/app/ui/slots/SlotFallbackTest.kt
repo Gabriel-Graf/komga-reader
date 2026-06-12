@@ -55,7 +55,7 @@ class SlotFallbackTest {
     }
 
     @Test
-    fun `fehlender dialog-slot faellt auf das default-pack zurueck`() {
+    fun `fehlender dialog-slot fällt auf das default-pack zurück`() {
         val pack = UiSlotPack(dialog = null)
 
         val resolved = UiSlots.resolve(pack)
@@ -64,7 +64,7 @@ class SlotFallbackTest {
     }
 
     @Test
-    fun `gelieferter dialog-slot ueberschreibt den default`() {
+    fun `gelieferter dialog-slot überschreibt den default`() {
         val custom: DialogSlot = { _ -> }
 
         val resolved = UiSlots.resolve(UiSlotPack(dialog = custom))

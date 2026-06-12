@@ -12,6 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +21,8 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.ui.slots.LocalResolvedSlots
 import com.komgareader.ui.slots.ReaderOverlayState
 import com.komgareader.ui.slots.ReaderScaffoldState
+import com.komgareader.ui.slots.ReaderTapZones
+import com.komgareader.ui.slots.dispatch
 import kotlinx.coroutines.delay
 
 /** Anzeigedauer des Start-Hinweises oben mittig, bevor er wieder verschwindet. */
@@ -33,9 +36,10 @@ private const val START_HINT_MILLIS = 1500L
  * Status-Fuß ([footer]) und den Start-Hinweis.
  *
  * Das gehört nach `shared-structure-before-variants` an genau **eine** Stelle: alle
- * Reader bauen darauf statt als Parallel-Linie. Reader mit bespoke Gesten (Comic:
- * Panel-Hit-Test/Zoom; Webtoon: E-Ink-gegatete Frame-Sprünge) liefern ihren eigenen
- * Tap-Handler über [tapModifier] und nutzen das Scaffold nur für Overlay/Footer.
+ * Reader bauen darauf statt als Parallel-Linie. Die Tap-Zonen sind **deklarativ** ([tapZones]):
+ * die Drittel-Geometrie gehört dem Host, der Reader liefert pro Zone nur die Aktion (Webtoon:
+ * E-Ink-gegatete Frame-Sprünge). Reader mit echten Custom-Gesten (Comic: Panel-Hit-Test/Zoom mit
+ * Viewport-Geometrie) übergeben `tapZones = null` und behandeln Taps in der content-Lambda selbst.
  *
  * Dünner **Host-Wrapper** der `readerChrome`-Slot-Region (C1): bildet aus dem [chrome]-[Viewer]
  * (Naht B) die abgeleiteten `chromeVisible`/`onToggleChrome`, baut die [ReaderScaffoldState]-Surface
@@ -54,10 +58,10 @@ fun ReaderScaffold(
     modifier: Modifier = Modifier,
     background: Color = Color.Black,
     actions: @Composable RowScope.() -> Unit = {},
-    tapModifier: Modifier? = null,
+    tapZones: ReaderTapZones? = ReaderTapZones.HorizontalThirds(onPrev, chrome::toggleChrome, onNext),
     footer: (@Composable BoxScope.() -> Unit)? = null,
     persistentBars: (@Composable BoxScope.() -> Unit)? = null,
-    showTapZoneHints: Boolean = tapModifier == null,
+    showTapZoneHints: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val chromeVisible by chrome.chromeVisible.collectAsState()
@@ -72,7 +76,7 @@ fun ReaderScaffold(
         onNext = onNext,
         background = background,
         actions = actions,
-        tapModifier = tapModifier,
+        tapZones = tapZones,
         footer = footer,
         persistentBars = persistentBars,
         showTapZoneHints = showTapZoneHints,
@@ -108,20 +112,26 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
     Box(Modifier.fillMaxSize().background(state.background)) {
         state.content()
 
-        // Tap-Zonen: standardmäßig Drittel-Navigation; bespoke Reader liefern eigene.
-        val taps = state.tapModifier ?: Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    val width = size.width.toFloat()
-                    when {
-                        offset.x < width / 3f -> state.onPrev()
-                        offset.x > width * 2f / 3f -> state.onNext()
-                        else -> state.onToggleChrome()
-                    }
-                }
-            }
-        Box(taps)
+        // Tap-Zonen: die Geometrie (Drittel) gehört dem Host; der Reader liefert pro Zone nur die
+        // Aktion (deklarativ). `null` = der Reader behandelt Taps selbst (Comic: Panel-Hit-Test in
+        // der content-Lambda) → kein Tap-Layer.
+        val zones = state.tapZones
+        if (zones is ReaderTapZones.HorizontalThirds) {
+            // pointerInput auf `Unit` keyen (nie neu starten); die jeweils aktuelle Zonen-Instanz
+            // über rememberUpdatedState lesen. Sonst würde jede neue HorizontalThirds-Instanz
+            // (data class mit Lambda-Feldern → nie `==`, pro Recompose neu) den Gesten-Detektor bei
+            // jedem Seitenwechsel neu starten und könnte einen laufenden Tap verschlucken.
+            val currentZones = rememberUpdatedState(zones)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures { offset ->
+                            currentZones.value.dispatch(offset.x / size.width.toFloat())
+                        }
+                    },
+            )
+        }
 
         // Dauerhafte Info-Leisten (Roman-Page-Header/-Footer): immer sichtbar, liegen unter
         // dem toggle­baren Chrome — die Menüleiste überdeckt bei Bedarf den Page-Header oben.

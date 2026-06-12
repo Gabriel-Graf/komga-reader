@@ -49,7 +49,7 @@ import com.komgareader.guidedview.PanelGeometry
  * bespoke (Panel-Hit-Test, Zoom, Letterbox-normalisierte Koordinaten) und leben
  * daher in der Content-Lambda innerhalb der [BoxWithConstraints], wo die
  * Viewport-Geometrie verfügbar ist. Die Scaffold-Standard-Drittel greifen nicht
- * (leerer `tapModifier`).
+ * (`tapZones = null` → kein Host-Tap-Layer; der Comic ist die Escape-Luke).
  */
 @Composable
 fun ComicReaderScreen(
@@ -112,8 +112,10 @@ fun ComicReaderScreen(
         // Navigation läuft hier komplett über die bespoke Tap-Zonen / das ViewModel.
         onPrev = {},
         onNext = {},
-        // Bespoke Tap-Zonen leben in der Content-Lambda (brauchen Viewport-Geometrie).
-        tapModifier = Modifier,
+        // Bespoke Tap-Zonen leben in der Content-Lambda (Panel-Hit-Test braucht Viewport-Geometrie)
+        // → kein Host-Tap-Layer + keine Standard-Hints.
+        tapZones = null,
+        showTapZoneHints = false,
         actions = {
             IconButton(onClick = { comicVm.toggleGuided() }) {
                 Icon(

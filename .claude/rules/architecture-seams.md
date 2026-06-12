@@ -336,8 +336,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     Chrome-Menüleiste über die schon slot-ifizierte `overlay`-Region, optionaler Status-Fuß, `persistentBars`,
     Start-Hinweis und der eigentliche Inhalt). Die **Capability-Surface** `ReaderScaffoldState`
     (`app/ui/reader/ReaderScaffold.kt`) trägt `chromeVisible` + `onToggleChrome` + `title` + `onBack`/
-    `onHome`/`onSettings` + `onPrev`/`onNext` + `background` + reader-spezifische `actions` + `tapModifier` +
-    `footer` + `persistentBars` + `showTapZoneHints` + den host-gebauten `content`. **Der entscheidende
+    `onHome`/`onSettings` + `onPrev`/`onNext` + `background` + reader-spezifische `actions` + `tapZones`
+    (deklarativ, A1b — s. u.) + `footer` + `persistentBars` + `showTapZoneHints` + den host-gebauten `content`. **Der entscheidende
     Schnitt:** die Surface trägt **NICHT** den `Viewer` (Naht B). `ReaderScaffold` benutzte `chrome: Viewer`
     nur für `chrome.chromeVisible.collectAsState()` + `chrome.toggleChrome()` (Mitte-Tap; per grep verifiziert
     — `refreshScheduler`/`navigateTo`/`onPageSettled` fasst das Scaffold nie an), darum trägt die Surface die
@@ -362,8 +362,13 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   **kein** Region-Slot — das Nav-Skelett gehört dem **Shell-Pack** (unten). **Ist (A1, 2026-06-12):** die
   `ui-api`-Modul-Extraktion ist **gebaut** (Verträge + entkoppelte Built-ins im Modul `:ui-api`).
   **Weiter Soll:** der APK-Pack-Lader (Skins-Plan P2/P3); das **Reader-Chrome komplett
-  modular** ist mit der `readerChrome`-Region als **Gerüst** gebaut — offen bleibt die **deklarative**
-  Form (A1b: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`) + der externe Pack-Lader (L1/L2); der
+  modular** ist mit der `readerChrome`-Region als **Gerüst** gebaut **und seit A1b (Ist, 2026-06-12)
+  deklarativ**: das frühere opake `tapModifier: Modifier?` ist durch den endlichen Daten-Deskriptor
+  `ReaderTapZones` (sealed, `HorizontalThirds(left/center/right)` + pure `dispatch`, in `:ui-api`) ersetzt —
+  die Drittel-**Geometrie** gehört dem Host (`DefaultReaderScaffold` interpretiert sie an *einer* Stelle,
+  `pointerInput(Unit)` + `rememberUpdatedState` gegen Gesten-Neustart), der Reader liefert pro Zone nur die
+  **Aktion**. Comic ist die Escape-Luke (`tapZones = null` → kein Host-Tap-Layer, Panel-Hit-Test in seiner
+  content-Lambda). Offen bleibt nur die **externe/Enum**-Aktionsform + der Pack-Lader (L1/L2); der
   spätere `DetailShell` (Hero/Grid als arrangierbare Stücke). Vertrag im `:ui-api`-Modul, **noch nicht
   eingefroren** (kein ABI-Gate — das kommt mit L1/L2, dann re-exportiert das Lader-Modul `ui-api` via `api()`).
 

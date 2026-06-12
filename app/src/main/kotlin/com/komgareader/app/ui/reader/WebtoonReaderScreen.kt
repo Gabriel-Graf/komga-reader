@@ -1,7 +1,6 @@
 package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
@@ -20,7 +19,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.isSpecified
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +33,7 @@ import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.eink.onyx.OnyxRefresher
+import com.komgareader.ui.slots.ReaderTapZones
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -51,9 +50,9 @@ private const val FRAME_OVERLAP = 0.30f
  *   über die Tap-Zonen **links/rechts** sowie Hardware-/Lautstärke-Tasten ([frameSteps]),
  *   ohne Animation und mit einem GC-Full-Refresh pro Frame.
  *
- * Overlay/Footer laufen über [ReaderScaffold]; die Tap-Zonen sind hier bespoke
- * (E-Ink-gegatete Frame-Sprünge statt Seiten-Navigation) und werden daher über
- * `tapModifier` selbst geliefert — die Scaffold-Standard-Drittel greifen nicht.
+ * Overlay/Footer laufen über [ReaderScaffold]; die Tap-Zonen sind deklarativ über `tapZones`
+ * mit bespoke Aktionen belegt (E-Ink-gegatete Frame-Sprünge statt Seiten-Navigation) — die
+ * Host-Drittel-Geometrie bleibt, nur die Zonen-Aktionen sind hier andere.
  */
 @Composable
 fun WebtoonReaderScreen(
@@ -124,24 +123,26 @@ fun WebtoonReaderScreen(
         onBack = onBack,
         onHome = onHome,
         onSettings = onSettings,
-        // Tap-Navigation läuft hier über jumpFrame (siehe tapModifier), nicht über Seiten.
+        // Tap-Navigation läuft hier über jumpFrame (siehe tapZones), nicht über Seiten.
         onPrev = {},
         onNext = {},
         actions = { ReaderModeAction(onToggleMode, "Zu Paged-Modus wechseln") },
-        tapModifier = Modifier
-            .fillMaxSize()
-            // Tap-Zonen-Overlay. E-Ink: links/rechts = Frame zurück/vor, Mitte = Overlay.
-            // Smartphone: Tap togglet Overlay, Drags gehen an die LazyColumn.
-            .pointerInput(eink, pageCount) {
-                detectTapGestures { offset ->
-                    val width = size.width.toFloat()
-                    when {
-                        eink && offset.x < width / 3f -> scope.launch { jumpFrame(-1) }
-                        eink && offset.x > width * 2f / 3f -> scope.launch { jumpFrame(1) }
-                        else -> chrome.toggleChrome()
-                    }
-                }
-            },
+        // Deklarative Tap-Zonen (Geometrie host-eigen). E-Ink: links/rechts = Frame zurück/vor,
+        // Mitte = Overlay. Smartphone: jede Zone togglet das Overlay, Drags gehen an die LazyColumn.
+        tapZones = if (eink) {
+            ReaderTapZones.HorizontalThirds(
+                left = { scope.launch { jumpFrame(-1) } },
+                center = { chrome.toggleChrome() },
+                right = { scope.launch { jumpFrame(1) } },
+            )
+        } else {
+            ReaderTapZones.HorizontalThirds(
+                left = { chrome.toggleChrome() },
+                center = { chrome.toggleChrome() },
+                right = { chrome.toggleChrome() },
+            )
+        },
+        showTapZoneHints = false,
         footer = { ReaderStatusBar("${listState.firstVisibleItemIndex + 1} / $pageCount", dark = true) },
     ) {
         LazyColumn(

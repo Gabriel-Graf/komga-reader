@@ -258,17 +258,18 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
 **Noch offen für „komplette UI modular":**
 - Die Chrome-Region-Slot-Reihe (sechs) + die `detail`-Region (D1 vollständig: alle drei Detail-Routen
   modular) + die `readerChrome`-Region (C1: ganzes `ReaderScaffold`-Gerüst) sind gebaut. `nav` ist
-  **kein** Region-Slot — das Nav-Skelett gehört dem Shell-Pack. Nächstes Sub-Projekt: **A1** (Reader-Chrome
-  **deklarativ**: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier` pro Reader). Eine eigene
-  `member`-tiles-Region (Collection-Member-Kachel) bleibt späteres YAGNI.
+  **kein** Region-Slot — das Nav-Skelett gehört dem Shell-Pack. **A1** (`ui-api`-Modul) **und A1b**
+  (Reader-Chrome **deklarativ**: `ReaderTapZones`-Deskriptor statt bespoke `tapModifier`) sind **gebaut**
+  (Ist, 2026-06-12). Eine eigene `member`-tiles-Region (Collection-Member-Kachel) bleibt späteres YAGNI.
 - **Andere Vollbild-Routen:** das Detail-**Gerüst** ist über `detail` swappable für **alle drei**
   Detail-Routen (`SeriesDetail` + `GroupBrowse` + `CollectionDetail`, D1 vollständig). Es ist aber erst das
   *Gerüst* — die *Hero/Grid-Anordnung im Body* (und CollectionDetails `MemberTile`) bleibt Screen-Eigentum
   bis zur späteren `DetailShell`-Stufe (Hero/Grid als arrangierbare Stücke, Master-Detail auf Tablet).
 - **Reader-Chrome modular:** die Reader-**Engines** bleiben Core (Render/Refresh/E-Ink-Garantie, Naht B);
   das *Chrome*-**Gerüst** drumherum (Overlay, Chrome-Buttons, `ReaderScaffold`) ist über die `readerChrome`-
-  Region (C1) **austauschbar**. Offen bleibt die **deklarative** Form (A1b: Tap-Zone→Aktion-Beschreibung statt
-  bespoke `tapModifier`) — daran hängt sich die deklarative UI-Plugin-Form (Plugins (b)) für externe Packs ein.
+  Region (C1) **austauschbar** **und seit A1b deklarativ** (Tap-Zonen als `ReaderTapZones`-Daten-Deskriptor
+  statt opakem `tapModifier`; Geometrie host-eigen, Aktion pro Zone als Daten; Comic opt-out via `null`). An
+  diese deklarative Form hängt sich die externe UI-Plugin-Form (Plugins (b)) mit L1/L2 an (Enum-Aktionen + Lader).
 - **Icon-Pack extern:** die Icon-Stack-Infra steht (I1) und liegt **jetzt im Modul `:ui-api`** (A1,
   `com.komgareader.ui.icons` — `IconKey`/`IconPack`/`DefaultIconPack`/`ActiveIconPack`/`AppIcons`/
   `LucideIcons`, `tools/icons`-Generator schreibt dorthin); der **externe Icon-Pack als APK** + ein
@@ -401,7 +402,8 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   schon slot-ifizierte `overlay`). Vertrag: `ReaderChromeSlot` (typealias `@Composable (state: ReaderScaffoldState)
 >   -> Unit`). Capability-Surface `ReaderScaffoldState` (`app/ui/reader/ReaderScaffold.kt`): `chromeVisible` +
 >   `onToggleChrome` + `title` + `onBack`/`onHome`/`onSettings` + `onPrev`/`onNext` + `background` + reader-spezifische
->   `actions` + `tapModifier` + `footer` + `persistentBars` + `showTapZoneHints` + host-gebauter `content`. **Der
+>   `actions` + `tapZones` (deklarativ, A1b — `ReaderTapZones`, ersetzt das alte opake `tapModifier`) + `footer` +
+>   `persistentBars` + `showTapZoneHints` + host-gebauter `content`. **Der
 >   entscheidende Schnitt:** die Surface trägt **NICHT** den `Viewer` (Naht B) — `ReaderScaffold` nutzte ihn nur für
 >   `chromeVisible`/`toggleChrome` (per grep verifiziert: kein `refreshScheduler`/`navigateTo`/`onPageSettled` im
 >   Scaffold), darum die abgeleiteten `chromeVisible: Boolean` + `onToggleChrome: () -> Unit` statt des `Viewer`.
@@ -435,9 +437,10 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > Theme-/Icon-**Vertrag** + die entkoppelten Built-ins (Theme-Packs, Icon-Stack) liegen jetzt im Modul
 > `:ui-api` (`com.komgareader.ui.*`, DAG `domain → ui-api → app`), die gekoppelten Default-Renderer bleiben
 > in `:app`; `UiSlots.resolve` ist 2-arg + `LocalResolvedSlots` Error-Default, der Host speist über
-> app-`resolveSlots`/`DefaultSlots.resolved` ein. Ebenfalls Soll: das **Reader-Chrome deklarativ** (A1b,
-> Nachfolger von C1: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`), das **ABI-Einfrieren** des
-> `ui-api`-Vertrags und der **externe Pack-Lader**
+> app-`resolveSlots`/`DefaultSlots.resolved` ein. **Reader-Chrome deklarativ gebaut (Ist, A1b, 2026-06-12):**
+> `ReaderTapZones` (sealed, `HorizontalThirds` + pure `dispatch`, `:ui-api`) ersetzt das opake `tapModifier`;
+> Geometrie host-eigen, Aktion pro Zone als Daten, Comic opt-out via `null`. Ebenfalls Soll: das **ABI-Einfrieren** des
+> `ui-api`-Vertrags (inkl. Enum-Aktionsform der Tap-Zonen) und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen
 > Typ als real, den `grep` nicht findet.

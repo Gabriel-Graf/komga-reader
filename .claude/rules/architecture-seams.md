@@ -380,18 +380,26 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Nav-**Daten** + `selectedId`/`onSelect`; je `ShellDestination` trägt `icon`/`label` (Daten) und
   `header: HomeHeaderState?`/`content: @Composable` (host-gebaut)), der Vertrag `ShellPack`
   (`@Composable Render(AppShellState)`), die pure Auswahl `formFactorFor(widthDp)` (<600dp=compact) +
-  `resolveFormFactor`. Die **gekoppelten Built-ins** `DefaultShell`/`PhoneShell` und die `ShellPackRegistry`
-  (`forFormFactor`) bleiben in `:app` (`com.komgareader.app.ui.shell`). **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
+  `resolveFormFactor`. **L1 (Ist, 2026-06-12): die zwei bespoke Built-ins sind durch EINE
+  deskriptor-getriebene `DeclarativeShell` ersetzt.** Statt `DefaultShell`/`PhoneShell` als getrennte
+  `object … : ShellPack` trägt `:ui-api` jetzt den **Daten-Deskriptor** `ShellDescriptor(navStyle)` +
+  das endliche Vokabular `ShellNavStyle{BOTTOM_BAR,DRAWER}` + die pure `descriptorFor(formFactor)`
+  (EXPANDED→BOTTOM_BAR, COMPACT→DRAWER; **Compose-frei**, für L2-Serialisierung). Die **eine**
+  `DeclarativeShell(descriptor): ShellPack` (`:app`, `com.komgareader.app.ui.shell`) interpretiert den
+  Deskriptor und rendert die zwei Skelette als **deskriptor-geschaltete private Composables**
+  (`BottomBarShell`/`DrawerShell` — die verbatim Bodies der alten Objekte). `ShellPackRegistry.forFormFactor`
+  liefert `DeclarativeShell(descriptorFor(ff))`. Das ist der In-Tree-Beleg des 1→3-Pfads: ein externer
+  APK-Pack (L2) liefert später nur den `ShellDescriptor`, dieser Renderer bleibt. **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
   pure `resolveFormFactor(mode: ShellLayoutMode, widthDp)` (neben `formFactorFor`, unit-getestet) lässt
   den Nutzer den Form-Faktor überschreiben — Domain-Enum `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
   persistiert wie `displayMode` (`SettingsRepository.shellLayoutMode`/`setShellLayoutMode`, Room-Key
   `shell_layout_mode`, **keine Migration**), Picker in `AppearanceSettingsContent`/`GeneralScope`
   (i18n `settingsShellLayout`/`shellLayout{Auto,Compact,Expanded}`, de+en). Default `AUTO` =
   verhaltensgleich zu vorher (aus Breite ableiten). **Achse bleibt orthogonal zum `displayMode`** (Theme).
-  **Zwei Built-ins:** `DefaultShell` (E-Ink/Tablet-Bottom-Bar,
-  pixelgleich zum alten `HomeScreen`) und `PhoneShell` (compact: Drawer-Nav statt Bottom-Bar; die aktive
-  Drawer-Zeile folgt seit S0.3 den Host-Mono-Tokens `LocalDesignTokens.accent`/`onAccent` über
-  `NavigationDrawerItemDefaults.colors`, konsistent mit `EinkBottomBar` — kein Material3-Default-Akzent mehr).
+  **Zwei deskriptor-geschaltete Skelette (private Composables in `DeclarativeShell`):** `BottomBarShell`
+  (E-Ink/Tablet-Bottom-Bar, pixelgleich zum alten `HomeScreen`) und `DrawerShell` (compact: Drawer-Nav statt
+  Bottom-Bar; die aktive Drawer-Zeile folgt seit S0.3 den Host-Mono-Tokens `LocalDesignTokens.accent`/`onAccent`
+  über `NavigationDrawerItemDefaults.colors`, konsistent mit `EinkBottomBar` — kein Material3-Default-Akzent mehr).
   `HomeScreen`
   ist der **Host** (`HomeShellHost`): baut die Surface pro Tab + besitzt allen State/VMs/Dialoge, löst das
   Pack über `resolveFormFactor(shellLayoutMode, screenWidthDp)` (Override schlägt Auto) auf und ruft
@@ -400,10 +408,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Widget — die Widget-Wahl IST die Variabilität); logik-gebundene (content/header) als **host-gebaute**
   Composables (Pack platziert nur, „UI neu, Kernlogik gleich"). **NavHost + Reader unberührt:** der Reader
   ist eine Geschwister-Route im NavHost (`MainActivity`), liegt nicht *in* der Shell — der Shell-Pack-Bereich
-  ist exakt das alte `HomeScreen`. **E-Ink host-erzwungen:** `PhoneShell` gatet die Drawer-Bewegung über
+  ist exakt das alte `HomeScreen`. **E-Ink host-erzwungen:** `DrawerShell` gatet die Drawer-Bewegung über
   `LocalEinkMode` (`snapTo` statt Slide). **Form-Faktor (Shell) ⟂ Geräteklasse (Theme)** — orthogonale
-  Achsen. Emulator-verifiziert: expanded→DefaultShell, compact→PhoneShell-Drawer, gleiche `AppShellState`.
-  **Weiter Soll:** deklarativer Shell-Pack (Ansatz 3, externe APK-Packs) +
+  Achsen. Emulator-verifiziert: expanded→Bottom-Bar-Skelett, compact→Drawer-Skelett, gleiche `AppShellState`.
+  Swap-Beweis: `app/src/debug/.../ui/shell/DeclarativeShellPreview.kt` (dieselbe `AppShellState`, nur der
+  `ShellDescriptor` schaltet das Skelett). **Weiter Soll:** der **externe** deklarative Shell-Pack-Lader
+  (L2: separates APK / ABI-Gate / TOFU; liefert den `ShellDescriptor` extern, `DeclarativeShell` bleibt) +
   per-compact-Politur des Headers (S0.2 — auf Emulator verifizieren, nur fixen wenn real kaputt).
   Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modular-ui-shell-pack*` · `2026-06-12-shell-restposten-S0.md`.
 

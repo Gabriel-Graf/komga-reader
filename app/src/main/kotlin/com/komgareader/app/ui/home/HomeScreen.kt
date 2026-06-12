@@ -345,8 +345,8 @@ fun HomeScreen(
         pluginsVm.setQuery("")
     }
 
-    // Form-Faktor wählt das Skelett (compact → PhoneShell/Drawer, sonst DefaultShell/Bottom-Bar);
-    // orthogonal zur Geräteklasse (die das Theme wählt). Beide Packs ordnen DIESELBE AppShellState an.
+    // Form-Faktor wählt das Skelett (compact → Drawer-Deskriptor, sonst Bottom-Bar-Deskriptor);
+    // orthogonal zur Geräteklasse (die das Theme wählt). Die DeclarativeShell ordnet DIESELBE AppShellState an.
     // Der User-Override (ShellLayoutMode) schlägt die breitenbasierte Ableitung (AUTO).
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val shellLayoutModeStr by settingsVm.shellLayoutMode.collectAsState()

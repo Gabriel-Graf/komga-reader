@@ -28,8 +28,8 @@ import androidx.compose.ui.Modifier
  * slot-ifizierte `overlay`). Die Reader-**Engines** + die `Viewer`-Naht (Naht B) bleiben **Core,
  * draußen** — ein readerChrome-Pack berührt weder Refresh-Scheduler noch Engine-Navigation.
  * Die ursprünglich genannte Region **nav** ist **kein** Region-Slot: das Navigations-Skelett
- * (Bottom-Bar/Drawer/Side-Rail) gehört dem **Shell-Pack** (`AppShellState`/`DefaultShell`/
- * `PhoneShell`, Form-Faktor-Naht, siehe `architecture-seams.md`), eine Ebene **über** den
+ * (Bottom-Bar/Drawer/Side-Rail) gehört dem **Shell-Pack** (`AppShellState`/`DeclarativeShell`
+ * + `ShellDescriptor`, Form-Faktor-Naht, siehe `architecture-seams.md`), eine Ebene **über** den
  * Region-Slots — nicht als offener Region-Slot zu behaupten, was dort gelöst ist.
  *
  * ## Stand: sechs Chrome-Regionen + die detail- + readerChrome-Region gebaut, als `:ui-api`-Modul-Vertrag

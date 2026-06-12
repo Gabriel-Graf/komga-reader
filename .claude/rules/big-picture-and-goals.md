@@ -192,7 +192,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 | Schicht | Was sie tauscht | Trigger der Auswahl | Status |
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
-| **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
+| **Shell-Pack** (`AppShellState`/`DeclarativeShell`+`ShellDescriptor`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (L1: eine deskriptor-getriebene `DeclarativeShell` statt zwei bespoke Built-ins, 2026-06-12) |
 | **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog — plus das Vollbild-Detail-Gerüst `detail` und das ganze Reader-Gerüst `readerChrome` | vom aktiven Shell-Pack gewählt | **sechs Chrome-Regionen + `detail` + `readerChrome` gebaut** (header (mit optionaler Such-Capability `HeaderSearch`)+homeHeader+dialog+settings+tiles+overlay+detail+readerChrome; D1 vollständig: SeriesDetail+GroupBrowse+CollectionDetail; C1: ganzes `ReaderScaffold` hinter `ReaderChromeSlot`, Naht B/`Viewer` bleibt draußen) |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
@@ -203,21 +203,24 @@ Layout-Baum besitzt. Der **Core** liefert genau **eine Capability-Surface** `App
 **Shell-Pack** ordnet frei an. Default-Shell = heutiges E-Ink/Tablet-Bottom-Bar-Layout (aus `HomeScreen`
 extrahiert). Phone-Shell = zweites Built-in (Drawer/anders), beweist den Skelett-Tausch — exakt wie
 Mono/Kaleido/Lcd den Theme-Tausch beweisen. Es ist das **`homeHeader`-Muster eine Ebene höher**:
-`DefaultHomeHeader(state)` → `DefaultShell(appShellState)`. Form-Faktor (Shell) und Geräteklasse (Theme)
+`DefaultHomeHeader(state)` → `DeclarativeShell(descriptor).Render(appShellState)`. Form-Faktor (Shell) und Geräteklasse (Theme)
 bleiben **orthogonale Achsen** (konsistent mit „Geräteklassen sind nicht binär"): eine Boox = großer
 E-Ink → Tablet-Shell + Mono-Theme; ein Phone = klein-LCD → Phone-Shell + Lcd-Theme.
 
 **Bauweg 1 jetzt, 3 als Endform — und 1 wächst sauber zu 3:** Wie bei Quellen-Plugins und Theme gibt es
 zwei Vertragsformen, gestaffelt vom Einfachen zum Schweren:
 
-1. **In-Tree-Compose-Shell-Packs (jetzt):** der Shell-Pack ist eine `@Composable (AppShellState) -> Unit`
-   und ordnet mit voller Compose-Freiheit an. Built-ins (Default-/Phone-Shell) sind Compose — wie
-   `DefaultHomeHeader`.
-3. **Deklarativer Shell-Pack (Endform, externe APK-Packs, Phase 4):** der externe Pack liefert **kein**
+1. **In-Tree-Compose-Shell-Packs (Vorstufe):** der Shell-Pack ist eine `@Composable (AppShellState) -> Unit`
+   und ordnet mit voller Compose-Freiheit an — wie `DefaultHomeHeader`. Die ursprünglichen zwei bespoke
+   Built-ins (Default-/Phone-Shell) waren genau das.
+3. **Deklarativer Shell-Pack (Ist in-tree seit L1; externe APK-Packs sind L2):** der Pack liefert **kein**
    arbiträres Compose mit Host-Rechten (Crash/E-Ink-Invarianten, dieselbe Regel wie Plugins (b)), sondern
    einen **Daten-Deskriptor** (Nav-Stil-Enum, welche Destination an welchem Anker, welche Region wohin).
    Der Host shippt **eine** `DeclarativeShell` — selbst ein Ansatz-1-Compose-Built-in, parametrisiert per
-   Deskriptor — und rendert **dieselben** `AppShellState`-Stücke an die genannten Plätze.
+   Deskriptor — und rendert **dieselben** `AppShellState`-Stücke an die genannten Plätze. **L1 (Ist, 2026-06-12)
+   hat genau das in-tree gebaut:** `DeclarativeShell(ShellDescriptor)` ersetzt die zwei bespoke Built-ins;
+   `descriptorFor(formFactor)` liefert den Deskriptor, die Registry treibt damit die echte App. Offen bleibt
+   nur, dass ein **externer** APK-Pack den `ShellDescriptor` liefert (L2) — derselbe Renderer.
 
 **Der 1→3-Pfad ist Evolution, kein Rewrite:** beide Formen konsumieren **dieselbe** `AppShellState`. Form 3
 ist nur Form 1, bei der die Anordnungs-Logik von Daten statt Code getrieben ist; In-Tree-Packs (1) sind
@@ -249,7 +252,8 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   hinter `ReaderChromeSlot`/`ReaderScaffoldState` — Sub-Projekt **C1**; die Reader-Engines + die
   `Viewer`-Naht (Naht B) bleiben Core/draußen, die Surface trägt nur die abgeleiteten
   `chromeVisible`/`onToggleChrome`, nicht den `Viewer`) · **Shell-Pack** für das Home-Skelett
-  (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor) · **Icon-Pack-Infra** (`I1`): `AppIcons.*`
+  (`AppShellState`/`DeclarativeShell`+`ShellDescriptor`, Form-Faktor; L1: eine deskriptor-getriebene
+  `DeclarativeShell` statt zwei bespoke Built-ins) · **Icon-Pack-Infra** (`I1`): `AppIcons.*`
   delegiert über `ActiveIconPack`/`IconKey` ans aktive Icon-Pack (Default = `DefaultIconPack`, die heutige
   Lucide-Map) — ein Pack ersetzt Glyphen app-weit ohne Call-Site-Änderung (`app/ui/icons/IconPack.kt`).
   Bewusst **prozess-global** statt `CompositionLocal`, weil `AppIcons.*` auch außerhalb von Composition
@@ -281,14 +285,17 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   das UI-Gegenstück zu `source-api`. Es trägt die Capability-Surfaces, Slot-typealias, Pack-Interfaces,
   reine Resolve-Typen, CompositionLocals **und** die entkoppelten Built-ins (Theme-Packs, Icon-Stack); die
   **gekoppelten Default-Renderer** (Onyx-Look an app-i18n/-Komponenten: `DefaultSlots`/`DefaultHeader`/
-  `DefaultShell`/`PhoneShell`/`ShellPackRegistry`/`buildSettingsSections`, `Theme.kt`-Host) bleiben in `:app`.
+  `DeclarativeShell`/`ShellPackRegistry`/`buildSettingsSections`, `Theme.kt`-Host) bleiben in `:app`.
   **Noch nicht eingefroren** (kein ABI-Gate): das Einfrieren + die `api()`-Re-Exportierung (wie
   `plugin-api`→`source-api`) kommt mit dem Pack-Lader (L1/L2).
-- **Externer Pack-Lader + `DeclarativeShell`** (Phase 4): das eigentliche „Community **installiert** eine
-  UI" — separates APK, ABI-Gate, TOFU (wie Quellen-Plugins), und der deklarative Shell-/Slot-Deskriptor
-  (Ansatz 3) statt In-Tree-Compose. Bis dahin sind alle Packs Built-ins im App-Modul.
+- **`DeclarativeShell` (Ist, L1, 2026-06-12):** die deskriptor-getriebene Shell ist **in-tree gebaut** —
+  `DeclarativeShell(ShellDescriptor)` (`:app`) interpretiert den compose-freien `ShellDescriptor`
+  (`:ui-api`, `navStyle: ShellNavStyle{BOTTOM_BAR,DRAWER}`) und treibt die echte App über
+  `descriptorFor(formFactor)`. **Offen bleibt der externe Pack-Lader L2:** das eigentliche „Community
+  **installiert** eine UI" — separates APK, ABI-Gate, TOFU (wie Quellen-Plugins), das nur den
+  `ShellDescriptor` extern liefert; `DeclarativeShell` bleibt. Bis dahin sind alle Packs Built-ins im App-Modul.
 - **Shell-Pack-Restposten:** Form-Faktor-User-Override (Ist, S0.1: `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
-  Settings-Picker, `resolveFormFactor`) · PhoneShell-Drawer-Auswahlfarbe auf Host-Mono-Tokens (Ist, S0.3) ·
+  Settings-Picker, `resolveFormFactor`) · `DrawerShell`-Auswahlfarbe auf Host-Mono-Tokens (Ist, S0.3) ·
   compact-Header-Politur (S0.2 — empirisch verifizieren, nur fixen wenn real kaputt) · Form-Faktor-User-Override
   bleibt orthogonal zu `displayMode`.
 
@@ -423,14 +430,18 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > **Shell-Pack-Schicht gebaut (Ist, 2026-06-12):** `app/ui/shell/` trägt die Capability-Surface
 > `AppShellState` (benannte Stücke: `destinations` als Nav-Daten + `ShellDestination{icon,label,
 > header:HomeHeaderState?,content}`), den Vertrag `ShellPack`, die pure `formFactorFor(widthDp)` +
-> `ShellPackRegistry.forFormFactor`, und **zwei Built-ins** `DefaultShell` (Bottom-Bar, pixelgleich)
-> + `PhoneShell` (compact: Drawer-Nav, E-Ink-gegatet). `HomeScreen` ist der Host (`HomeShellHost`):
+> `ShellPackRegistry.forFormFactor`. **L1 (Ist, 2026-06-12): eine deskriptor-getriebene
+> `DeclarativeShell(ShellDescriptor)`** statt zwei bespoke Built-ins — `:ui-api` trägt den compose-freien
+> `ShellDescriptor(navStyle: ShellNavStyle{BOTTOM_BAR,DRAWER})` + `descriptorFor(formFactor)`; `:app`
+> die `DeclarativeShell`, die per Deskriptor die zwei verbatim Skelette (`BottomBarShell`/`DrawerShell`,
+> compact: Drawer-Nav, E-Ink-gegatet) schaltet; die Registry liefert `DeclarativeShell(descriptorFor(ff))`.
+> `HomeScreen` ist der Host (`HomeShellHost`):
 > baut die Surface, löst nach `screenWidthDp` auf, ruft `pack.Render`. NavHost/Reader unberührt
-> (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
-> compact→Phone). **Form-Faktor jetzt user-überschreibbar (Ist, S0.1):** `resolveFormFactor(ShellLayoutMode,
+> (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Bottom-Bar,
+> compact→Drawer). **Form-Faktor jetzt user-überschreibbar (Ist, S0.1):** `resolveFormFactor(ShellLayoutMode,
 > widthDp)` pur+getestet, Settings-Picker (Auto/Kompakt/Breit), orthogonal zu `displayMode`. Drawer-Akzent
-> seit S0.3 token-getrieben. Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
-> (Ansatz 3, externe APK-Packs), compact-Header-Politur (S0.2). **Die Region-Slot-Reihe
+> seit S0.3 token-getrieben. Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** der **externe**
+> deklarative Shell-Pack-Lader (L2: APK/ABI-Gate/TOFU, liefert den `ShellDescriptor` extern), compact-Header-Politur (S0.2). **Die Region-Slot-Reihe
 > ist abgeschlossen** (alle sechs Chrome-Regionen + `detail` + `readerChrome` gebaut; `UiSlotPack` trägt
 > `header` + `homeHeader` + `dialog` + `settings` + `tiles` + `overlay` + `detail` + `readerChrome`; `nav` ist
 > Shell-Pack-Sache, kein Region-Slot). **`ui-api`-Modul gebaut (Ist, A1, 2026-06-12):** der Slot-/Shell-/

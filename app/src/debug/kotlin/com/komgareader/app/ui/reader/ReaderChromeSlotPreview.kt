@@ -10,10 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.ReaderChromeSlot
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
+import com.komgareader.app.ui.slots.resolveSlots
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.ReaderChromeSlot
+import com.komgareader.ui.slots.ReaderOverlayState
+import com.komgareader.ui.slots.ReaderScaffoldState
+import com.komgareader.ui.slots.UiSlotPack
 
 /**
  * Swap-Beweis: ein **minimales** alternatives Reader-Gerüst — nur Inhalt + die Chrome-Menüleiste über
@@ -77,7 +79,7 @@ private fun AlternativeReaderChromePreview() {
         },
     )
     CompositionLocalProvider(
-        LocalResolvedSlots provides UiSlots.resolve(UiSlotPack(readerChrome = alternative)),
+        LocalResolvedSlots provides resolveSlots(UiSlotPack(readerChrome = alternative)),
     ) {
         LocalResolvedSlots.current.readerChrome(state)
     }

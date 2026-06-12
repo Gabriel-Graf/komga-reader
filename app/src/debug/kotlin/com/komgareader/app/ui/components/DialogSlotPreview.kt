@@ -17,10 +17,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.app.ui.slots.resolveSlots
+import com.komgareader.ui.slots.DialogState
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.UiSlotPack
+import com.komgareader.ui.theme.EinkTokens
 
 /**
  * Swap-Beweis: ein alternatives Dialog-Layout (Titel zentriert, Aktionen vertikal gestapelt,
@@ -80,7 +81,7 @@ fun AlternativeDialog(state: DialogState) {
 private fun AlternativeDialogPreview() {
     CompositionLocalProvider(
         LocalResolvedSlots provides
-            UiSlots.resolve(UiSlotPack(dialog = { state -> AlternativeDialog(state) })),
+            resolveSlots(UiSlotPack(dialog = { state -> AlternativeDialog(state) })),
     ) {
         EinkModal(
             title = "Beispiel-Dialog",

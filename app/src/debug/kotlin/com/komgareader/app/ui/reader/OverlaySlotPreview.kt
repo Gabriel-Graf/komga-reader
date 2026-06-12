@@ -21,11 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.OverlaySlot
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
+import com.komgareader.app.ui.slots.resolveSlots
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.OverlaySlot
+import com.komgareader.ui.slots.ReaderOverlayState
+import com.komgareader.ui.slots.UiSlotPack
 
 /**
  * Swap-Beweis: eine alternative Reader-Chrome-Menüleiste — **Shortcuts (Home/Einstellungen) links**,
@@ -87,7 +88,7 @@ private fun AlternativeOverlayPreview() {
         actions = {},
     )
     CompositionLocalProvider(
-        LocalResolvedSlots provides UiSlots.resolve(UiSlotPack(overlay = alternative)),
+        LocalResolvedSlots provides resolveSlots(UiSlotPack(overlay = alternative)),
     ) {
         Box(Modifier.fillMaxSize().background(Color.DarkGray)) {
             // overlay ist eine BoxScope-Extension; der BoxScope-Receiver (diese Box) wird über

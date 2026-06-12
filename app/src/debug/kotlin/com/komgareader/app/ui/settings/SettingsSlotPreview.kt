@@ -13,12 +13,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.komgareader.app.ui.icons.AppIcons
-import com.komgareader.app.ui.slots.LocalResolvedSlots
-import com.komgareader.app.ui.slots.SettingsSlot
-import com.komgareader.app.ui.slots.UiSlotPack
-import com.komgareader.app.ui.slots.UiSlots
-import com.komgareader.app.ui.theme.EinkTokens
+import com.komgareader.app.ui.slots.resolveSlots
+import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.SettingsSection
+import com.komgareader.ui.slots.SettingsSectionId
+import com.komgareader.ui.slots.SettingsSlot
+import com.komgareader.ui.slots.SettingsState
+import com.komgareader.ui.slots.UiSlotPack
+import com.komgareader.ui.theme.EinkTokens
 
 /**
  * Swap-Beweis: ein alternatives Settings-Skelett — eine **flache Einzel-Scroll-Liste** aller
@@ -80,7 +83,7 @@ private fun AlternativeSettingsPreview() {
         query = "",
     )
     CompositionLocalProvider(
-        LocalResolvedSlots provides UiSlots.resolve(UiSlotPack(settings = alternative)),
+        LocalResolvedSlots provides resolveSlots(UiSlotPack(settings = alternative)),
     ) {
         LocalResolvedSlots.current.settings(fakeState)
     }

@@ -204,10 +204,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
-  Region `homeHeader`, dritte Region `dialog` + vierte Region `settings` gebaut):** Über den
-  Reader-Engines wird das *Chrome*
+  Region `homeHeader`, dritte Region `dialog`, vierte Region `settings` + fünfte Region `tiles` gebaut):**
+  Über den Reader-Engines wird das *Chrome*
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
-  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind vier Regionen**
+  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind fünf Regionen**
   (`app/ui/slots/UiSlots.kt`):
   - **Region `header` (Ist, 2026-06-09):** In-Tree-Vertrag `HeaderSlot`
     (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`). Call-Sites
@@ -252,11 +252,31 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     `app/src/debug/kotlin/com/komgareader/app/ui/settings/SettingsSlotPreview.kt`
     (`AlternativeSettings`: flache Einzel-Scroll-Liste statt Sidebar/Accordion — nur Debug/Preview, keine
     Nutzer-Einstellung). `SettingsSections.kt`/`SettingsViewModel`/die Sektions-Inhalte bleiben unangetastet.
-  `UiSlotPack(header, homeHeader, dialog, settings)` · `ResolvedSlots(header, homeHeader, dialog, settings)`
-  · `DefaultSlots` mit allen vier Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern
+  - **Region `tiles` (Ist, 2026-06-12):** In-Tree-Vertrag `TilesSlot`
+    (`@Composable (state: TileState, modifier: Modifier) -> Unit`). Die **Capability-Surface** `TileState`
+    (`app/ui/components/SeriesTile.kt`) trägt das Werk (`series`) + den Lokal-Status (`isLocal`) + die
+    Navigations-Callbacks (`onClick`/`onLongClick`). Der Slot tauscht **die einzelne Serien-Kachel, nicht
+    das Grid** — `LazyVerticalGrid`/Spaltenzahl/welche-Items bleiben Screen-Eigentum (analog: der
+    Dialog-Aufrufer entscheidet *wann* ein Dialog erscheint, der Slot nur *wie*). Der `modifier` ist hier
+    **zweiter Slot-Parameter** (anders als dialog/settings): eine Grid-Kachel trägt einen Layout-Modifier.
+    `SeriesTile(series, isLocal, onClick, onLongClick, modifier)` ist jetzt ein **dünner Host-Wrapper**:
+    ruft `LocalResolvedSlots.current.tiles(TileState(...), modifier)`; **beide** Call-Sites unverändert
+    (`LibraryScreen`, `GroupBrowseRoute`). **Vorgelagerter DRY-Schritt** (`shared-structure-before-variants`):
+    der ~95%-Klon `GroupSeriesCover` in `GroupBrowseRoute` wurde **vor** dem Slot durch `SeriesTile`
+    (`onLongClick = {}`) ersetzt — sonst träfe ein tiles-Pack nur die Bibliothek, nicht die Gruppen.
+    `DefaultSeriesTile` ist der verbatim extrahierte Onyx-Renderer (Cover via `SourceCover`,
+    Lokal/Cloud-Badge, `TileTitleBand`); Cover-Laden + E-Ink-Filter (`FilteredAsyncImage`,
+    `crossfade(false)`) bleiben **host-erzwungen**. Swap-Beweis:
+    `app/src/debug/kotlin/com/komgareader/app/ui/components/TileSlotPreview.kt`
+    (`AlternativeTile`: Titel über dem Cover statt Scrim-Band unten, Badge bewusst weggelassen — nur
+    Debug/Preview, keine Nutzer-Einstellung). Die anderen Kachel-Typen (`ChapterTile`/`CollageTile`/
+    `MemberTile`) sind eigene spätere Regionen, hier unangetastet.
+  `UiSlotPack(header, homeHeader, dialog, settings, tiles)` ·
+  `ResolvedSlots(header, homeHeader, dialog, settings, tiles)` · `DefaultSlots` mit allen fünf
+  Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern
   Inhalt/Struktur, nie die Bewegungs-/Akzent-Policy (die bleibt an
   `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
-  **Weiter Soll:** die übrigen Slots (overlay/tiles/nav), die `ui-api`-Modul-Extraktion
+  **Weiter Soll:** die übrigen Slots (overlay/nav), die `ui-api`-Modul-Extraktion
   und der APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots

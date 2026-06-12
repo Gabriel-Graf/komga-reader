@@ -28,18 +28,29 @@ import androidx.compose.ui.unit.dp
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.domain.model.Series
 
 /**
- * Bibliotheks-Kachel für eine Serie: Cover (quellen-agnostisch über [SourceCover]/Coil-Fetcher),
- * Lokal/Cloud-Badge oben rechts, Titel-Band unten. **Adressierbarer Chrome-Baustein** — eine Stelle
- * für den Tile-Look über alle Screens (Bibliothek, Gruppen), damit ein späteres UI-Pack genau diese
- * Region ersetzen kann statt jeden Grid-Aufrufer (Ziel modulare UI, `big-picture-and-goals.md`).
- *
- * Cover-dominiert → der Rahmen bleibt geräteübergreifend ein Border (frasst das Bild ein); Farbe
- * trägt der Akzent im restlichen Chrome, nicht die Kachel.
+ * Capability-Surface der Kachel-Region (`tiles`-Slot): das Werk + sein Lokal-Status + die
+ * Navigations-Callbacks. Ein `TilesSlot`-Pack rendert daraus eine Kachel; das Cover-Laden und der
+ * E-Ink-Filter ([FilteredAsyncImage], `crossfade(false)`) sind **host-erzwungen** und nicht Teil
+ * dieser Surface — ein Pack arrangiert nur Look/Struktur, nicht die Bild-/E-Ink-Policy.
  */
-@OptIn(ExperimentalFoundationApi::class)
+data class TileState(
+    val series: Series,
+    val isLocal: Boolean,
+    val onClick: () -> Unit,
+    val onLongClick: () -> Unit,
+)
+
+/**
+ * Bibliotheks-Kachel für eine Serie: Cover (quellen-agnostisch über [SourceCover]/Coil-Fetcher),
+ * Lokal/Cloud-Badge oben rechts, Titel-Band unten. **Adressierbarer Chrome-Baustein** — der Aufruf
+ * läuft über die `tiles`-Region der UI-Slot-Naht ([LocalResolvedSlots]), damit ein UI-Pack genau
+ * diese Kachel ersetzen kann statt jeden Grid-Aufrufer (Ziel modulare UI, `big-picture-and-goals.md`).
+ * Die Signatur bleibt unverändert; beide Call-Sites (Bibliothek, Gruppen) sind unberührt.
+ */
 @Composable
 fun SeriesTile(
     series: Series,
@@ -48,10 +59,21 @@ fun SeriesTile(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    LocalResolvedSlots.current.tiles(TileState(series, isLocal, onClick, onLongClick), modifier)
+}
+
+/**
+ * Der mitgelieferte Onyx-Renderer der Kachel (Default des `tiles`-Slots), verbatim aus der bisherigen
+ * [SeriesTile] extrahiert. Cover-dominiert → der Rahmen bleibt geräteübergreifend ein Border (frasst
+ * das Bild ein); Farbe trägt der Akzent im restlichen Chrome, nicht die Kachel.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DefaultSeriesTile(state: TileState, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
-    val request = remember(series.sourceId, series.remoteId) {
+    val request = remember(state.series.sourceId, state.series.remoteId) {
         ImageRequest.Builder(ctx)
-            .data(SourceCover(series.sourceId, series.remoteId, isSeries = true))
+            .data(SourceCover(state.series.sourceId, state.series.remoteId, isSeries = true))
             .crossfade(false).build()
     }
     Box(
@@ -59,11 +81,11 @@ fun SeriesTile(
             .aspectRatio(2f / 3f)
             .clip(RoundedCornerShape(4.dp))
             .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .combinedClickable(onClick = state.onClick, onLongClick = state.onLongClick),
     ) {
         FilteredAsyncImage(
             model = request,
-            contentDescription = series.title,
+            contentDescription = state.series.title,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
@@ -79,14 +101,14 @@ fun SeriesTile(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                if (isLocal) AppIcons.Local else AppIcons.Cloud,
+                if (state.isLocal) AppIcons.Local else AppIcons.Cloud,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }
 
-        TileTitleBand(series.title, Modifier.align(Alignment.BottomStart))
+        TileTitleBand(state.series.title, Modifier.align(Alignment.BottomStart))
     }
 }
 

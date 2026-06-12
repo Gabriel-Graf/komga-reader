@@ -230,6 +230,39 @@ Diese Bedingung ist **keine Mehrarbeit**: es ist dieselbe „UI neu, Kernlogik g
 `homeHeader` (`menu`/`actions` sind host-gebaute Felder, das Pack platziert nur), nur schon zur **Design-Zeit**
 angewandt — wodurch auch die In-Tree-Compose-Packs automatisch deskriptor-ausdrückbar bleiben.
 
+### Weg zur kompletten Modularität — was noch fehlt (Stand 2026-06-12)
+
+Das **Endziel ist die *ganze* Oberfläche modular** (eine komplett von der Community gebaute UI). Was
+bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der Shell-Pack deckt nur das
+**Home-Skelett**. Alle Punkte unten bleiben **offen, bis die komplette UI modular ist**:
+
+**Gebaut (Stand 2026-06-12):**
+- Theme-Pack (`UiPack`, Look nach Geräteklasse) · Region-Slots **header** + **homeHeader** ·
+  **Shell-Pack** für das Home-Skelett (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
+
+**Noch offen für „komplette UI modular":**
+- **Übrige Region-Slots:** overlay · tiles · settings · dialog (4 von 6). `UiSlotPack` trägt heute nur
+  header+homeHeader.
+- **Andere Vollbild-Routen** (`SeriesDetail`/`GroupBrowse`/`CollectionDetail`): heute ist **nur ihr
+  Header** swappable (header-Slot), nicht ihr **Layout**. Für einen echten Phone-Formfaktor müssen auch
+  sie anders anordbar sein — entweder eigene Shell-Packs oder slot-komponiert.
+- **Reader-Chrome modular:** die Reader-**Engines** bleiben Core (Render/Refresh/E-Ink-Garantie, Naht B),
+  aber das *Chrome* drumherum (Overlay, Chrome-Buttons, Tap-Zonen, `ReaderScaffold`) soll austauschbar
+  werden — die deklarative UI-Plugin-Form (Plugins (b), Tap-Zone→Aktion-Beschreibung) hängt sich hier ein.
+- **Dialog-Look** (`BaseDialog`) hinter einen `dialog`-Slot. **Settings** als eigene Region/Slot.
+- **`ui-api`-Modul:** der Slot-/Shell-/Theme-Vertrag liegt bewusst **in-tree** (`app/ui/...`), **nicht
+  eingefroren**. Komplette Modularität braucht ihn als dünnes, stabiles API-Modul (Kandidat neben
+  `plugin-api`), additiv erweiterbar.
+- **Externer Pack-Lader + `DeclarativeShell`** (Phase 4): das eigentliche „Community **installiert** eine
+  UI" — separates APK, ABI-Gate, TOFU (wie Quellen-Plugins), und der deklarative Shell-/Slot-Deskriptor
+  (Ansatz 3) statt In-Tree-Compose. Bis dahin sind alle Packs Built-ins im App-Modul.
+- **Shell-Pack-Restposten:** Form-Faktor-User-Override · compact-Header-Politur · PhoneShell-Drawer-
+  Auswahlfarbe auf Host-Mono-Tokens.
+
+**Reihenfolge bleibt „Theme zuerst, Layout danach, Lader zuletzt"** (analog Plugin-Reihenfolge
+(c)→(a)→(b)) und **risikoärmstes Stück zuerst**. Jede weitere UI-Arbeit baut auf dieses Ziel hin
+(Chrome als eigenständige, gegen eine Alternative austauschbare Composables), statt es zuzumauern.
+
 ### Was das schon heute heißt (auch bevor irgendein Plugin existiert)
 
 Auch ohne den Plugin-Mechanismus baut **jede UI-Arbeit ab jetzt auf diese Modularität hin**, statt

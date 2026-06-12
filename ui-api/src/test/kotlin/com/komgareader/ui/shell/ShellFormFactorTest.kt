@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test
 /**
  * Reine Form-Faktor-Auflösung der Shell-Naht (Vertrag im Modul `:ui-api`): [formFactorFor] (aus der
  * Breite) und [resolveFormFactor] (mit User-Override über [ShellLayoutMode]). Compose-frei,
- * unit-testbar. Die Auswahl der konkreten Built-in-Shells (`DefaultShell`/`PhoneShell` über
- * `ShellPackRegistry`) ist app-seitig getestet — die Built-ins koppeln an app-Komponenten und liegen
- * darum in `:app`.
+ * unit-testbar. Die Deskriptor-Auflösung (`descriptorFor`) ist separat getestet (`ShellDescriptorTest`);
+ * die Auswahl der konkreten host-eigenen `DeclarativeShell` über `ShellPackRegistry` ist app-seitig
+ * getestet — sie koppelt an app-Komponenten und liegt darum in `:app`.
  */
 class ShellFormFactorTest {
 

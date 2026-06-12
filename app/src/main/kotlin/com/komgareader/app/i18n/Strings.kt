@@ -178,9 +178,13 @@ interface Strings {
     val pluginPresetImported: String      // Status „Importiert"
     // Plugin-Tab Suche + Typ-Filter-Chip
     val pluginSearchHint: String          // Placeholder in der Suchleiste auf dem Plugins-Tab
+    val pluginTabLanguageLabel: String     // Typ-Label „Sprache"
+    val pluginTabReaderPresetLabel: String // Typ-Label „Reader-Preset"
     val pluginFilterAll: String           // Chip-Label „Alle"
     val pluginFilterSources: String       // Chip-Label „Quellen"
     val pluginFilterPresets: String       // Chip-Label „Presets"
+    val pluginFilterLanguages: String     // Chip-Label „Sprachen"
+    val pluginFilterReaderPresets: String // Chip-Label „Reader-Presets"
     // Plugin-Repo-Browser (P2)
     val repoBrowserTitle: String
     val repoBrowserOpen: String
@@ -491,9 +495,13 @@ object StringsDe : Strings {
     override val pluginPresetRemove = "Entfernen"
     override val pluginPresetImported = "Importiert"
     override val pluginSearchHint = "Plugins suchen"
+    override val pluginTabLanguageLabel = "Sprache"
+    override val pluginTabReaderPresetLabel = "Reader-Preset"
     override val pluginFilterAll = "Alle"
     override val pluginFilterSources = "Quellen"
     override val pluginFilterPresets = "Presets"
+    override val pluginFilterLanguages = "Sprachen"
+    override val pluginFilterReaderPresets = "Reader-Presets"
     // Plugin-Repo-Browser (P2)
     override val repoBrowserTitle = "Plugins entdecken"
     override val repoBrowserOpen = "Plugins entdecken"
@@ -792,9 +800,13 @@ object StringsEn : Strings {
     override val pluginPresetRemove = "Remove"
     override val pluginPresetImported = "Imported"
     override val pluginSearchHint = "Search plugins"
+    override val pluginTabLanguageLabel = "Language"
+    override val pluginTabReaderPresetLabel = "Reader preset"
     override val pluginFilterAll = "All"
     override val pluginFilterSources = "Sources"
     override val pluginFilterPresets = "Presets"
+    override val pluginFilterLanguages = "Languages"
+    override val pluginFilterReaderPresets = "Reader presets"
     // Plugin repo browser (P2)
     override val repoBrowserTitle = "Discover plugins"
     override val repoBrowserOpen = "Discover plugins"

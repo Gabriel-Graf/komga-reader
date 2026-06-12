@@ -46,6 +46,7 @@ import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginKind
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
 
@@ -69,6 +70,8 @@ fun PluginsScreen(
     val profiles by viewModel.profiles.collectAsState()
     val sources by viewModel.sources.collectAsState()
     val presets by viewModel.presetPlugins.collectAsState()
+    val languageDataPlugins by viewModel.languageDataPlugins.collectAsState()
+    val readerPresetDataPlugins by viewModel.readerPresetDataPlugins.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val repos by viewModel.repos.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -93,6 +96,8 @@ fun PluginsScreen(
     // Schneller Lookup vom InstalledEntry zurück auf das Discovered-Plugin (für ⚙-Aktionen).
     fun sourceFor(pkg: String): DiscoveredPlugin? = sources.firstOrNull { it.packageName == pkg }
     fun presetFor(pkg: String): DiscoveredPresetPlugin? = presets.firstOrNull { it.packageName == pkg }
+    fun languageFor(pkg: String): DiscoveredDataPlugin? = languageDataPlugins.firstOrNull { it.packageName == pkg }
+    fun readerPresetFor(pkg: String): DiscoveredDataPlugin? = readerPresetDataPlugins.firstOrNull { it.packageName == pkg }
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -130,6 +135,26 @@ fun PluginsScreen(
                         uninstallLabel = s.pluginUninstall,
                         onConfigure = { presetDetailFor = p },
                         onUninstall = { uninstall(p.packageName) },
+                    )
+                }
+                PluginKind.LANGUAGE -> languageFor(item.packageName)?.let { lang ->
+                    DataPluginRow(
+                        title = lang.displayName,
+                        typeLabel = s.pluginTabLanguageLabel,
+                        abiLabel = s.pluginAbiLabel,
+                        abiVersion = lang.abiVersion,
+                        uninstallLabel = s.pluginUninstall,
+                        onUninstall = { uninstall(lang.packageName) },
+                    )
+                }
+                PluginKind.READER_PRESET -> readerPresetFor(item.packageName)?.let { rp ->
+                    DataPluginRow(
+                        title = rp.displayName,
+                        typeLabel = s.pluginTabReaderPresetLabel,
+                        abiLabel = s.pluginAbiLabel,
+                        abiVersion = rp.abiVersion,
+                        uninstallLabel = s.pluginUninstall,
+                        onUninstall = { uninstall(rp.packageName) },
                     )
                 }
             }
@@ -228,6 +253,40 @@ private fun PluginRow(
     }
 }
 
+/**
+ * Plugin-Zeile für data-only Plugins (Sprache, Reader-Preset): Name + Typ-Label + ABI links,
+ * nur 🗑 rechts — kein ⚙ (keine konfigurierbaren Werte). Flach, 1.5px-Border, keine Animation.
+ */
+@Composable
+private fun DataPluginRow(
+    title: String,
+    typeLabel: String,
+    abiLabel: String,
+    abiVersion: Int,
+    uninstallLabel: String,
+    onUninstall: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "$typeLabel · $abiLabel $abiVersion",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onUninstall) {
+            Icon(AppIcons.Delete, contentDescription = uninstallLabel, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
 /** Ein Preset im Detail-Modal: Name links, Import-/Entfernen-Aktion rechts. */
 @Composable
 private fun PresetImportRow(
@@ -266,7 +325,12 @@ private fun PresetImportRow(
 @Composable
 private fun RepoRow(row: BrowserRow, onInstall: () -> Unit) {
     val s = LocalStrings.current
-    val typeLabel = if (row.item.kind == PluginKind.PRESET) s.pluginTabPresetLabel else s.pluginTabSourceLabel
+    val typeLabel = when (row.item.kind) {
+        PluginKind.SOURCE -> s.pluginTabSourceLabel
+        PluginKind.PRESET -> s.pluginTabPresetLabel
+        PluginKind.LANGUAGE -> s.pluginTabLanguageLabel
+        PluginKind.READER_PRESET -> s.pluginTabReaderPresetLabel
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()

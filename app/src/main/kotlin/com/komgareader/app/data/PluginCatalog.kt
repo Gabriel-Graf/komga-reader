@@ -28,6 +28,7 @@ import com.komgareader.plugin.PluginCategory
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.plugin.PluginAbi
+import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
 import com.komgareader.plugin.host.PluginHost
@@ -49,9 +50,13 @@ import javax.inject.Singleton
 fun installedEntriesOf(
     sources: List<DiscoveredPlugin>,
     presets: List<DiscoveredPresetPlugin>,
+    languages: List<DiscoveredDataPlugin> = emptyList(),
+    readerPresets: List<DiscoveredDataPlugin> = emptyList(),
 ): List<InstalledEntry> =
     sources.map { InstalledEntry(it.packageName, it.metadata.displayName, PluginKind.SOURCE) } +
-        presets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PRESET) }
+        presets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PRESET) } +
+        languages.map { InstalledEntry(it.packageName, it.displayName, PluginKind.LANGUAGE) } +
+        readerPresets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.READER_PRESET) }
 
 /**
  * Einziger Halter des Plugin-Discovery-Zustands (installierte APK-Quellen/-Presets + entdeckte
@@ -82,6 +87,14 @@ class PluginCatalog @Inject constructor(
     private val _readerPresetPlugins = MutableStateFlow<List<ReaderPreset>>(emptyList())
     val readerPresetPlugins: StateFlow<List<ReaderPreset>> = _readerPresetPlugins.asStateFlow()
 
+    /** Rohe [DiscoveredDataPlugin]-Sicht der Sprach-Plugins (für den Hub: packageName + displayName). */
+    private val _languageDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
+    val languageDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _languageDataPlugins.asStateFlow()
+
+    /** Rohe [DiscoveredDataPlugin]-Sicht der Reader-Preset-Plugins (für den Hub: packageName + displayName). */
+    private val _readerPresetDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
+    val readerPresetDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _readerPresetDataPlugins.asStateFlow()
+
     private val _discovered = MutableStateFlow<List<BrowserRow>>(emptyList())
     val discovered: StateFlow<List<BrowserRow>> = _discovered.asStateFlow()
 
@@ -100,7 +113,7 @@ class PluginCatalog @Inject constructor(
 
     /** Installierte als quellen-agnostische [InstalledEntry] (für die pure `visibleRows`-Filterung). */
     fun installedEntries(): List<InstalledEntry> =
-        installedEntriesOf(_sources.value, _presetPlugins.value)
+        installedEntriesOf(_sources.value, _presetPlugins.value, _languageDataPlugins.value, _readerPresetDataPlugins.value)
 
     /**
      * Lokaler APK-Scan (kein Netz): Quellen + Presets neu entdecken, danach Verwaistes prunen
@@ -117,24 +130,22 @@ class PluginCatalog @Inject constructor(
                 .onFailure { Log.w("PluginCatalog", "discoverColorPresetPlugins failed", it) }
                 .getOrDefault(emptyList())
         }
-        val languages = withContext(Dispatchers.IO) {
-            runCatching {
-                pluginHost.discoverDataPlugins(PluginCategory.LANGUAGE)
-                    .mapNotNull { parseLanguageSpec(it.assetJson, it.abiVersion) }
-            }.onFailure { Log.w("PluginCatalog", "discoverLanguagePlugins failed", it) }
+        val rawLanguages = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverDataPlugins(PluginCategory.LANGUAGE) }
+                .onFailure { Log.w("PluginCatalog", "discoverLanguagePlugins failed", it) }
                 .getOrDefault(emptyList())
         }
-        val readerPresets = withContext(Dispatchers.IO) {
-            runCatching {
-                pluginHost.discoverDataPlugins(PluginCategory.READER_PRESET)
-                    .flatMap { parseReaderPresetSpecs(it.assetJson, it.abiVersion).orEmpty() }
-            }.onFailure { Log.w("PluginCatalog", "discoverReaderPresetPlugins failed", it) }
+        val rawReaderPresets = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverDataPlugins(PluginCategory.READER_PRESET) }
+                .onFailure { Log.w("PluginCatalog", "discoverReaderPresetPlugins failed", it) }
                 .getOrDefault(emptyList())
         }
         _sources.value = srcs
         _presetPlugins.value = presets
-        _languagePlugins.value = languages
-        _readerPresetPlugins.value = readerPresets
+        _languageDataPlugins.value = rawLanguages
+        _readerPresetDataPlugins.value = rawReaderPresets
+        _languagePlugins.value = rawLanguages.mapNotNull { parseLanguageSpec(it.assetJson, it.abiVersion) }
+        _readerPresetPlugins.value = rawReaderPresets.flatMap { parseReaderPresetSpecs(it.assetJson, it.abiVersion).orEmpty() }
 
         val installed = (srcs.map { it.packageName } + presets.map { it.packageName }).toSet()
         val taggedPkgs = colorProfiles.observeAll().first().mapNotNull { it.pluginPackage }

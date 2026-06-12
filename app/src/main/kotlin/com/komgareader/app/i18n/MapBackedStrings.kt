@@ -171,6 +171,8 @@ class MapBackedStrings(
     override val pluginTrustConfirm: String get() = overrides["pluginTrustConfirm"] ?: fallback.pluginTrustConfirm
     override val pluginTabSourceLabel: String get() = overrides["pluginTabSourceLabel"] ?: fallback.pluginTabSourceLabel
     override val pluginTabPresetLabel: String get() = overrides["pluginTabPresetLabel"] ?: fallback.pluginTabPresetLabel
+    override val pluginTabLanguageLabel: String get() = overrides["pluginTabLanguageLabel"] ?: fallback.pluginTabLanguageLabel
+    override val pluginTabReaderPresetLabel: String get() = overrides["pluginTabReaderPresetLabel"] ?: fallback.pluginTabReaderPresetLabel
     override val pluginTabEmpty: String get() = overrides["pluginTabEmpty"] ?: fallback.pluginTabEmpty
     override val pluginAbiLabel: String get() = overrides["pluginAbiLabel"] ?: fallback.pluginAbiLabel
     override val pluginConfigure: String get() = overrides["pluginConfigure"] ?: fallback.pluginConfigure
@@ -183,6 +185,8 @@ class MapBackedStrings(
     override val pluginFilterAll: String get() = overrides["pluginFilterAll"] ?: fallback.pluginFilterAll
     override val pluginFilterSources: String get() = overrides["pluginFilterSources"] ?: fallback.pluginFilterSources
     override val pluginFilterPresets: String get() = overrides["pluginFilterPresets"] ?: fallback.pluginFilterPresets
+    override val pluginFilterLanguages: String get() = overrides["pluginFilterLanguages"] ?: fallback.pluginFilterLanguages
+    override val pluginFilterReaderPresets: String get() = overrides["pluginFilterReaderPresets"] ?: fallback.pluginFilterReaderPresets
     override val repoBrowserTitle: String get() = overrides["repoBrowserTitle"] ?: fallback.repoBrowserTitle
     override val repoBrowserOpen: String get() = overrides["repoBrowserOpen"] ?: fallback.repoBrowserOpen
     override val repoBrowserSearch: String get() = overrides["repoBrowserSearch"] ?: fallback.repoBrowserSearch

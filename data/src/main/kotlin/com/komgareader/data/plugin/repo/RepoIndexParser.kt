@@ -22,8 +22,12 @@ fun resolveApkUrl(repoUrl: String, apkUrl: String): String {
 }
 
 /** Mappt den Index-`type` auf [PluginKind]; Unbekanntes → SOURCE (konservativ). */
-fun pluginKindOf(type: String): PluginKind =
-    if (type.equals("preset", ignoreCase = true)) PluginKind.PRESET else PluginKind.SOURCE
+fun pluginKindOf(type: String): PluginKind = when {
+    type.equals("preset", ignoreCase = true) -> PluginKind.PRESET
+    type.equals("language", ignoreCase = true) -> PluginKind.LANGUAGE
+    type.equals("reader_preset", ignoreCase = true) -> PluginKind.READER_PRESET
+    else -> PluginKind.SOURCE
+}
 
 /** Dedupt nach packageName, behält den Eintrag mit der höchsten versionCode (inkl. Repo-Herkunft). */
 fun mergeRepoEntries(all: List<BrowsableEntry>): List<BrowsableEntry> =

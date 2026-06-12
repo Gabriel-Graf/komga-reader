@@ -710,7 +710,8 @@ fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
                 viewModel.setLanguage(lang.code)
             }
         }
-        installed.forEach { spec ->
+        // Built-in-Codes nicht doppelt zeigen, falls ein Plugin de/en shadowt.
+        installed.filterNot { it.code == Language.DE.code || it.code == Language.EN.code }.forEach { spec ->
             ChoiceRow(spec.name, selected = spec.code == languageStr, query = query, dense = true) {
                 viewModel.setLanguage(spec.code)
             }

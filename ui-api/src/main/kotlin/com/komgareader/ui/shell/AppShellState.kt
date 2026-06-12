@@ -1,8 +1,8 @@
-package com.komgareader.app.ui.shell
+package com.komgareader.ui.shell
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.komgareader.app.ui.home.HomeHeaderState
+import com.komgareader.ui.slots.HomeHeaderState
 
 /** Stabile, geräteunabhängige Identität einer Home-Destination. Die Reihenfolge in [AppShellState.destinations]
  *  bestimmt die Anzeige-Reihenfolge; ein Pack ordnet sie an, ändert die Menge aber nie. */

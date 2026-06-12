@@ -1,24 +1,28 @@
 package com.komgareader.app.ui.shell
 
 import com.komgareader.ui.shell.ShellFormFactor
-import org.junit.jupiter.api.Assertions.assertSame
+import com.komgareader.ui.shell.ShellNavStyle
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
- * App-seitige Hälfte der Shell-Auswahl: die [ShellPackRegistry] bildet den Form-Faktor auf die
- * konkreten Built-in-Shells ab. Die Built-ins ([DefaultShell]/[PhoneShell]) koppeln an app-Komponenten
- * und liegen darum in `:app`; die reine Form-Faktor-Auflösung (`formFactorFor`/`resolveFormFactor`) ist
- * im Modul `:ui-api` getestet (`ShellFormFactorTest`).
+ * App-seitige Hälfte der Shell-Auswahl: die [ShellPackRegistry] bildet den Form-Faktor auf die EINE
+ * host-eigene [DeclarativeShell] ab, deskriptor-geschaltet. Die [DeclarativeShell] koppelt an
+ * app-Komponenten und liegt darum in `:app`; die reine Form-Faktor-/Deskriptor-Auflösung
+ * (`formFactorFor`/`resolveFormFactor`/`descriptorFor`) ist im Modul `:ui-api` getestet
+ * (`ShellFormFactorTest`/`ShellDescriptorTest`).
  */
 class ShellSelectionTest {
 
     @Test
-    fun `expanded wählt die default-shell`() {
-        assertSame(DefaultShell, ShellPackRegistry.forFormFactor(ShellFormFactor.EXPANDED))
+    fun `expanded liefert eine Bottom-Bar-DeclarativeShell`() {
+        val pack = ShellPackRegistry.forFormFactor(ShellFormFactor.EXPANDED) as DeclarativeShell
+        assertEquals(ShellNavStyle.BOTTOM_BAR, pack.descriptor.navStyle)
     }
 
     @Test
-    fun `compact wählt die phone-shell`() {
-        assertSame(PhoneShell, ShellPackRegistry.forFormFactor(ShellFormFactor.COMPACT))
+    fun `compact liefert eine Drawer-DeclarativeShell`() {
+        val pack = ShellPackRegistry.forFormFactor(ShellFormFactor.COMPACT) as DeclarativeShell
+        assertEquals(ShellNavStyle.DRAWER, pack.descriptor.navStyle)
     }
 }

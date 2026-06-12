@@ -81,7 +81,6 @@ import com.komgareader.app.i18n.localizedContentType
 import com.komgareader.app.i18n.localizedSeriesStatus
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.ContentType
-import com.komgareader.domain.repository.ServerConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,7 +168,6 @@ fun SeriesDetailScreen(
                             books = current.books,
                             seriesTitle = current.seriesTitle,
                             seriesRemoteId = current.seriesRemoteId,
-                            serverConfig = current.serverConfig,
                             seriesSummary = current.seriesSummary,
                             seriesStatus = current.seriesStatus,
                             seriesGenres = current.seriesGenres,
@@ -233,7 +231,6 @@ private fun SeriesDetailContent(
     books: List<Book>,
     seriesTitle: String,
     seriesRemoteId: String,
-    serverConfig: ServerConfig?,
     seriesSummary: String?,
     seriesStatus: String?,
     seriesGenres: List<String>,
@@ -291,7 +288,6 @@ private fun SeriesDetailContent(
             if (info != null) {
                 ChapterInfoHero(
                     book = info,
-                    serverConfig = serverConfig,
                     genres = seriesGenres,
                     contentType = contentType,
                     isLocal = info.remoteId in localIds,
@@ -354,7 +350,6 @@ private fun SeriesDetailContent(
             items(books, key = { it.remoteId }) { book ->
                 ChapterTile(
                     book = book,
-                    serverConfig = serverConfig,
                     isSelected = book.remoteId == heroBook?.remoteId,
                     showBookmark = book.remoteId == bookmarkBookId,
                     isLocal = book.remoteId in localIds,
@@ -725,7 +720,6 @@ private fun ChaptersSectionHeader(
 @Composable
 private fun ChapterInfoHero(
     book: Book,
-    serverConfig: ServerConfig?,
     genres: List<String>,
     contentType: ContentType?,
     isLocal: Boolean,
@@ -1023,7 +1017,6 @@ private fun ChapterRow(
 @Composable
 private fun ChapterTile(
     book: Book,
-    serverConfig: ServerConfig?,
     isSelected: Boolean,
     showBookmark: Boolean,
     isLocal: Boolean,

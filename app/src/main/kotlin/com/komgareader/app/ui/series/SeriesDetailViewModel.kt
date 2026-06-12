@@ -19,7 +19,6 @@ import com.komgareader.domain.model.ViewerType
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ReadProgressRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.ShelfRepository
@@ -54,7 +53,6 @@ sealed interface SeriesDetailUiState {
         val books: List<Book>,
         val seriesTitle: String,
         val seriesRemoteId: String,
-        val serverConfig: ServerConfig?,
         val seriesSummary: String? = null,
         val seriesStatus: String? = null,
         val seriesGenres: List<String> = emptyList(),
@@ -162,7 +160,6 @@ class SeriesDetailViewModel @Inject constructor(
                                 books = books,
                                 seriesTitle = resolvedTitle,
                                 seriesRemoteId = seriesId,
-                                serverConfig = config,
                                 seriesSummary = detail?.summary,
                                 seriesStatus = detail?.status,
                                 seriesGenres = detail?.genres ?: emptyList(),

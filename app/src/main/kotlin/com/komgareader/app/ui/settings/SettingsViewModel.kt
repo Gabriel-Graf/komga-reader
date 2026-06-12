@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
+import com.komgareader.app.data.pluginServerConfig
+import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
@@ -61,6 +63,20 @@ class SettingsViewModel @Inject constructor(
 
     val readerPresets = catalog.readerPresetPlugins
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Entdeckte Quellen-Plugins (für den „Plugin"-Segment im Add-Server-Modal). */
+    val sourcePlugins = catalog.sources
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Persistiert eine bestätigte Plugin-Quelle als [ServerConfig] (kind = PLUGIN).
+     * Spiegelt [PluginsViewModel.addPluginSource] — beide nutzen [pluginServerConfig] (DRY).
+     */
+    fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) =
+        viewModelScope.launch {
+            servers.save(pluginServerConfig(plugin, values))
+            coordinator.onServerChanged()
+        }.let {}
 
     fun applyReaderPreset(preset: ReaderPreset) {
         applyReaderPreset(

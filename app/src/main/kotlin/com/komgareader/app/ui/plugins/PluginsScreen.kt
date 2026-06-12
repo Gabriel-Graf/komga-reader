@@ -84,7 +84,6 @@ fun PluginsScreen(
     }
 
     var tofuFor by remember { mutableStateOf<DiscoveredPlugin?>(null) }
-    var configFor by remember { mutableStateOf<DiscoveredPlugin?>(null) }
     var presetDetailFor by remember { mutableStateOf<DiscoveredPresetPlugin?>(null) }
 
     fun uninstall(pkg: String) {
@@ -168,12 +167,11 @@ fun PluginsScreen(
         }
     }
 
-    tofuFor?.let { plugin ->
-        PluginTofuModal(plugin = plugin, onDismiss = { tofuFor = null }, onConfirm = { tofuFor = null; configFor = plugin })
-    }
-    configFor?.let { plugin ->
-        PluginConfigModal(plugin = plugin, onDismiss = { configFor = null }, onSubmit = { values -> viewModel.addPluginSource(plugin, values); configFor = null })
-    }
+    AddPluginSourceModals(
+        trigger = tofuFor,
+        onDismiss = { tofuFor = null },
+        onAdd = { plugin, values -> viewModel.addPluginSource(plugin, values) },
+    )
     presetDetailFor?.let { p ->
         EinkInfoDialog(title = s.pluginPresetsTitle, onDismiss = { presetDetailFor = null }, closeLabel = s.close) {
             p.presets.forEach { spec ->

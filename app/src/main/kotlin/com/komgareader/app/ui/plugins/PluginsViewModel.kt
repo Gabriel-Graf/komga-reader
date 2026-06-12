@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.installedEntriesOf
 import com.komgareader.app.data.SyncCoordinator
+import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.data.plugin.ColorPresetImporter
 import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.PluginTypeFilter
@@ -12,9 +13,7 @@ import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.data.plugin.repo.VisibleRows
 import com.komgareader.data.plugin.repo.visibleRows
 import com.komgareader.domain.model.ColorProfile
-import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ColorProfileRepository
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.plugin.ColorPresetSpec
 import com.komgareader.plugin.host.DiscoveredPlugin
@@ -81,18 +80,7 @@ class PluginsViewModel @Inject constructor(
      * Nach dem Speichern Sync anstoßen (neue Sammlungen pullen).
      */
     fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) = viewModelScope.launch {
-        servers.save(
-            ServerConfig(
-                name = plugin.metadata.displayName,
-                baseUrl = values["url"]?.trim() ?: "",
-                kind = SourceKind.PLUGIN,
-                extras = values + mapOf(
-                    "__pkg" to plugin.packageName,
-                    "__entry" to plugin.entryClass,
-                    "__sig" to plugin.signatureSha256,
-                ),
-            )
-        )
+        servers.save(pluginServerConfig(plugin, values))
         coordinator.onServerChanged()
     }.let {}
 

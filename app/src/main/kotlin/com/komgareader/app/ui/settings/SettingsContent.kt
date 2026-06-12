@@ -47,6 +47,8 @@ import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.CompactStepperRow
 import com.komgareader.app.ui.components.SettingsRow
 import com.komgareader.app.ui.components.EinkModal
+import com.komgareader.app.ui.plugins.AddPluginSourceModals
+import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.HighlightText
@@ -90,6 +92,7 @@ private sealed interface ConnectionModal {
 fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val servers by viewModel.serverList.collectAsState()
+    val sourcePlugins by viewModel.sourcePlugins.collectAsState()
 
     // Genau EIN Modal gleichzeitig: null = zu (E-Ink-Invariante).
     var modal by remember { mutableStateOf<ConnectionModal?>(null) }
@@ -138,6 +141,11 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
                 viewModel.saveServer(name, url, apiKey, username, password, kind, id)
                 modal = null
             },
+            sourcePlugins = sourcePlugins,
+            onAddPluginSource = { plugin, values ->
+                viewModel.addPluginSource(plugin, values)
+                modal = null
+            },
         )
         is ConnectionModal.Edit -> EditConnectionModal(
             config = mode.config,
@@ -152,7 +160,9 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
 }
 
 /**
- * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor).
+ * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor) plus „Plugin"-Segment
+ * für entdeckte Quellen-Plugins. Im Plugin-Pfad läuft der TOFU→Config-Fluss via
+ * [AddPluginSourceModals] — der normale Speichern-Button ist in diesem Pfad deaktiviert.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -162,6 +172,8 @@ private fun AddConnectionModal(
         name: String, url: String, apiKey: String,
         username: String, password: String, kind: SourceKind, id: Long,
     ) -> Unit,
+    sourcePlugins: List<DiscoveredPlugin>,
+    onAddPluginSource: (DiscoveredPlugin, Map<String, String>) -> Unit,
 ) {
     val s = LocalStrings.current
 
@@ -171,6 +183,8 @@ private fun AddConnectionModal(
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
     var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
+    // Im Plugin-Pfad: welches Plugin hat der Nutzer gewählt → triggert AddPluginSourceModals.
+    var pluginTrigger by remember { mutableStateOf<DiscoveredPlugin?>(null) }
 
     EinkModal(
         title = s.addServer,
@@ -180,64 +194,100 @@ private fun AddConnectionModal(
             onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, 0L)
         },
         dismissLabel = s.cancel,
-        confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
+        // Plugin-Pfad: kein Speichern über EinkModal-Button — der Add-Flow übernimmt.
+        confirmEnabled = kindInput != SourceKind.PLUGIN && nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
-        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor.
-        // Markennamen — kein i18n-Key nötig.
+        // Quellenart: Komga (REST), OPDS (Feed) oder Plugin als Segment-Selektor.
         SegmentedChoiceRow(
             label = s.serverSectionKind,
             options = listOf(
                 SegmentOption(SourceKind.KOMGA.name, "Komga"),
                 SegmentOption(SourceKind.OPDS.name, "OPDS"),
+                SegmentOption(SourceKind.PLUGIN.name, s.serverKindPlugin),
             ),
             selectedKey = kindInput.name,
             onSelect = { kindInput = SourceKind.valueOf(it) },
         )
 
-        // Server-Identität: Name + URL gehören zusammen.
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldCaption(s.serverSectionServer)
-            OutlinedTextField(
-                value = nameInput,
-                onValueChange = { nameInput = it },
-                label = { Text(s.serverDisplayName) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-            OutlinedTextField(
-                value = urlInput,
-                onValueChange = { urlInput = it },
-                label = { Text(s.serverUrl) },
-                placeholder = { Text(s.serverUrlHint) },
-                supportingText = { Text(s.serverUrlHelper) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            )
-        }
+        if (kindInput == SourceKind.PLUGIN) {
+            // Plugin-Pfad: Liste entdeckter Quellen-Plugins; leer → Hinweis.
+            if (sourcePlugins.isEmpty()) {
+                Text(
+                    s.addServerNoSourcePlugins,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FieldCaption(s.addServerSelectPlugin)
+                    sourcePlugins.forEach { plugin ->
+                        ChoiceRow(
+                            label = plugin.metadata.displayName,
+                            selected = false,
+                            query = "",
+                            dense = true,
+                            onSelect = { pluginTrigger = plugin },
+                        )
+                    }
+                }
+            }
+        } else {
+            // Komga/OPDS-Pfad: normales Formular.
 
-        // Anmeldung (alle optional): Benutzer → Passwort → API-Schlüssel, schlicht gestapelt.
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldCaption(s.serverSectionAuth)
-            CredentialsFields(
-                username = usernameInput,
-                password = passwordInput,
-                onUsername = { usernameInput = it },
-                onPassword = { passwordInput = it },
-                usernameLabel = s.serverUsername,
-                passwordLabel = s.serverPassword,
-            )
-            OutlinedTextField(
-                value = apiKeyInput,
-                onValueChange = { apiKeyInput = it },
-                label = { Text(s.serverApiKeyOptional) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            )
+            // Server-Identität: Name + URL gehören zusammen.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FieldCaption(s.serverSectionServer)
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { nameInput = it },
+                    label = { Text(s.serverDisplayName) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
+                    label = { Text(s.serverUrl) },
+                    placeholder = { Text(s.serverUrlHint) },
+                    supportingText = { Text(s.serverUrlHelper) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                )
+            }
+
+            // Anmeldung (alle optional): Benutzer → Passwort → API-Schlüssel, schlicht gestapelt.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FieldCaption(s.serverSectionAuth)
+                CredentialsFields(
+                    username = usernameInput,
+                    password = passwordInput,
+                    onUsername = { usernameInput = it },
+                    onPassword = { passwordInput = it },
+                    usernameLabel = s.serverUsername,
+                    passwordLabel = s.serverPassword,
+                )
+                OutlinedTextField(
+                    value = apiKeyInput,
+                    onValueChange = { apiKeyInput = it },
+                    label = { Text(s.serverApiKeyOptional) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+            }
         }
     }
+
+    // TOFU→Config-Flow für das gewählte Plugin — läuft als zweites Modal über dem Add-Modal.
+    // E-Ink-Invariante: EinkModal verwaltet genau einen Dialog gleichzeitig; pluginTrigger
+    // wird erst nach onDismiss/onAdd zurückgesetzt, sodass nie beide Modals sichtbar sind.
+    AddPluginSourceModals(
+        trigger = pluginTrigger,
+        onDismiss = { pluginTrigger = null },
+        onAdd = { plugin, values -> onAddPluginSource(plugin, values) },
+    )
 }
 
 /**

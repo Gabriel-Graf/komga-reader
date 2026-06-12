@@ -185,14 +185,14 @@ Ein Community-UI darf den Rahmen neu erfinden, aber nicht die Engine, die Pixel 
   *Umbauen* von Layout/Slots ist das schwere Ende und kommt zuletzt — analog zur Plugin-Reihenfolge
   (c)→(a)→(b).
 
-### Die drei Schichten + der Shell-Pack (die Form-Faktor-Naht) — Soll, noch nicht gebaut
+### Die drei Schichten + der Shell-Pack (die Form-Faktor-Naht) — Shell-Pack gebaut (2026-06-12)
 
 Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit Default + Built-in-Varianten:
 
 | Schicht | Was sie tauscht | Trigger der Auswahl | Status |
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
-| **Shell-Pack** (`AppShellState`/`DefaultShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **Soll** (existiert NICHT) |
+| **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
 | **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader **gebaut**, Rest Soll |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
@@ -270,11 +270,15 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   (`AlternativeHomeHeader`: Status oben, Aktionen darunter — nur Debug/Preview, **keine** Nutzer-Einstellung).
 >   Bewegung/Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) —
 >   ein Slot liefert nur Inhalt/Struktur. `UiSlotPack(header, homeHeader)` · `ResolvedSlots(header, homeHeader)`.
-> **Noch Soll/Richtung (existiert NICHT):** die **Shell-Pack-Schicht** als Ganzes — `AppShellState`
-> (die Capability-Surface aus benannten Stücken), `DefaultShell`/Phone-Shell, `DeclarativeShell` und die
-> Form-Faktor-Auswahl sind **geplant, nicht gebaut** (User-Entscheidung 2026-06-12, siehe Subsektion „Die
-> drei Schichten + der Shell-Pack" oben); das heutige Skelett ist noch hart in `MainActivity` (NavHost) +
-> `HomeScreen` (Scaffold + `EinkBottomBar`) verdrahtet. Ebenfalls Soll: die **übrigen vier Slots**
+> **Shell-Pack-Schicht gebaut (Ist, 2026-06-12):** `app/ui/shell/` trägt die Capability-Surface
+> `AppShellState` (benannte Stücke: `destinations` als Nav-Daten + `ShellDestination{icon,label,
+> header:HomeHeaderState?,content}`), den Vertrag `ShellPack`, die pure `formFactorFor(widthDp)` +
+> `ShellPackRegistry.forFormFactor`, und **zwei Built-ins** `DefaultShell` (Bottom-Bar, pixelgleich)
+> + `PhoneShell` (compact: Drawer-Nav, E-Ink-gegatet). `HomeScreen` ist der Host (`HomeShellHost`):
+> baut die Surface, löst nach `screenWidthDp` auf, ruft `pack.Render`. NavHost/Reader unberührt
+> (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
+> compact→Phone). Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
+> (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. Ebenfalls Soll: die **übrigen vier Slots**
 > (overlay/tiles/settings/dialog — `UiSlotPack` trägt heute `header` + `homeHeader`), ein eigenes
 > **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier

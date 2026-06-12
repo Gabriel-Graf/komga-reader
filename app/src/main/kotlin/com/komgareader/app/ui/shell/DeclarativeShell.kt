@@ -52,18 +52,24 @@ class DeclarativeShell(val descriptor: ShellDescriptor) : ShellPack {
     override fun Render(state: AppShellState) = when (descriptor.navStyle) {
         ShellNavStyle.BOTTOM_BAR -> BottomBarShell(state)
         ShellNavStyle.DRAWER -> DrawerShell(state)
+        ShellNavStyle.FLOATING_NAV -> FloatingNavShell(state)
     }
 }
 
 /**
- * Mitgeliefertes E-Ink/Tablet-Skelett: persistenter Home-Header oben (über den homeHeader-Slot, nur
- * wenn die aktive Destination einen liefert), Inhalt der aktiven Destination dahinter, schwebende
- * [EinkBottomBar] als Overlay unten. Verhaltens- und pixelgleich zum bisherigen HomeScreen-Scaffold.
- * Ordnet NUR an — keine Tab-/VM-/Dialog-Logik (die besitzt der Host HomeShellHost).
+ * Geteiltes Overlay-Bar-Skelett: persistenter Home-Header oben (homeHeader-Slot, nur wenn die aktive
+ * Destination einen liefert), Inhalt der aktiven Destination dahinter, eine schwebende Bar als Overlay
+ * unten. Die konkrete Bar kommt als [bar]-Slot — so teilen sich [BottomBarShell] und [FloatingNavShell]
+ * das Gerüst (Inset-Mechanik via `onSizeChanged`/[LocalContentBottomInset]) an EINER Stelle
+ * (`shared-structure-before-variants`). Ordnet NUR an — keine Tab-/VM-/Dialog-Logik (die besitzt der
+ * Host HomeShellHost).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BottomBarShell(state: AppShellState) {
+private fun OverlayBarShell(
+    state: AppShellState,
+    bar: @Composable (items: List<BottomNavItem>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier) -> Unit,
+) {
     val slots = LocalResolvedSlots.current
     Scaffold(
         topBar = { state.selected.header?.let { slots.homeHeader(it) } },
@@ -74,17 +80,29 @@ private fun BottomBarShell(state: AppShellState) {
             CompositionLocalProvider(LocalContentBottomInset provides barInset) {
                 Box(Modifier.fillMaxSize()) { state.selected.content() }
             }
-            EinkBottomBar(
-                items = state.destinations.map { BottomNavItem(it.icon, it.label) },
-                selectedIndex = state.destinations.indexOfFirst { it.id == state.selectedId },
-                onSelect = { idx -> state.onSelect(state.destinations[idx].id) },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .onSizeChanged { barHeightPx = it.height },
+            bar(
+                state.destinations.map { BottomNavItem(it.icon, it.label) },
+                state.destinations.indexOfFirst { it.id == state.selectedId },
+                { idx -> state.onSelect(state.destinations[idx].id) },
+                Modifier.align(Alignment.BottomCenter).onSizeChanged { barHeightPx = it.height },
             )
         }
     }
 }
+
+/** Mitgeliefertes E-Ink/Tablet-Skelett: schwebende [EinkBottomBar] als Overlay-Bar (s. [OverlayBarShell]). */
+@Composable
+private fun BottomBarShell(state: AppShellState) =
+    OverlayBarShell(state) { items, selected, onSelect, modifier ->
+        EinkBottomBar(items = items, selectedIndex = selected, onSelect = onSelect, modifier = modifier)
+    }
+
+/** FLOATING_NAV-Skelett: schwebende Pill-Nav [FloatingNavBar] als Overlay-Bar (s. [OverlayBarShell]). */
+@Composable
+private fun FloatingNavShell(state: AppShellState) =
+    OverlayBarShell(state) { items, selected, onSelect, modifier ->
+        FloatingNavBar(items = items, selectedIndex = selected, onSelect = onSelect, modifier = modifier)
+    }
 
 /**
  * Swap-Beweis-Skelett für den compact Form-Faktor: dasselbe Können, fundamental andere Anordnung —

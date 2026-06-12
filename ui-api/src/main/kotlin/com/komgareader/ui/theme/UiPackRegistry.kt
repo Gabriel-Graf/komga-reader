@@ -19,7 +19,7 @@ import com.komgareader.domain.model.DisplayBehavior
  */
 object UiPackRegistry {
 
-    private val builtIns: List<UiPack> = listOf(MonoEinkPack, KaleidoPack, LcdPack)
+    private val builtIns: List<UiPack> = listOf(MonoEinkPack, KaleidoPack, AuroraPack, LcdPack)
 
     /** Alle aktuell verfügbaren Packs (heute die drei Built-ins). */
     fun all(): List<UiPack> = builtIns

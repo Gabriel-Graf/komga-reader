@@ -23,7 +23,7 @@ class UiPackTest {
     fun `jede geräteklasse bekommt ihr eigenes pack`() {
         assertSame(MonoEinkPack, packFor(mono))
         assertSame(KaleidoPack, packFor(kaleido))
-        assertSame(LcdPack, packFor(lcd))
+        assertSame(AuroraPack, packFor(lcd))
     }
 
     @Test
@@ -34,7 +34,9 @@ class UiPackTest {
 
     @Test
     fun `packs tragen das designToken-mapping ihrer klasse`() {
-        // Das Pack delegiert Tokens an designTokensFor der eigenen Klasse — Look bleibt konsistent.
+        // Mono/Kaleido/Lcd delegieren ihre Tokens an designTokensFor der eigenen Klasse (direkt getestet).
+        // Die LCD-Klasse wird zur Laufzeit von AuroraPack bedient (eigene Cobalt-Tokens) — s. packFor-Test;
+        // LcdPack bleibt hier als eigenständiges Pack mit konsistentem Mapping geprüft.
         assertEquals(designTokensFor(mono, dark = false), MonoEinkPack.designTokens(false))
         assertEquals(designTokensFor(kaleido, dark = false), KaleidoPack.designTokens(false))
         assertEquals(designTokensFor(lcd, dark = true), LcdPack.designTokens(true))
@@ -44,6 +46,7 @@ class UiPackTest {
     fun `registry löst packs per id auf und kennt unbekannte nicht`() {
         assertSame(MonoEinkPack, UiPackRegistry.byId("mono-eink"))
         assertSame(KaleidoPack, UiPackRegistry.byId("kaleido"))
+        assertSame(AuroraPack, UiPackRegistry.byId("aurora"))
         assertSame(LcdPack, UiPackRegistry.byId("lcd"))
         assertEquals(null, UiPackRegistry.byId("does-not-exist"))
     }
@@ -57,8 +60,8 @@ class UiPackTest {
     }
 
     @Test
-    fun `registry all listet genau die drei built-in packs`() {
-        assertEquals(listOf("mono-eink", "kaleido", "lcd"), UiPackRegistry.all().map { it.id })
+    fun `registry all listet genau die vier built-in packs`() {
+        assertEquals(listOf("mono-eink", "kaleido", "aurora", "lcd"), UiPackRegistry.all().map { it.id })
     }
 
     @Test

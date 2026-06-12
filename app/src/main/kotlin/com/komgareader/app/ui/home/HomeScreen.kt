@@ -58,7 +58,9 @@ import com.komgareader.ui.slots.HomeHeaderState
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.data.plugin.repo.PluginTypeFilter
+import com.komgareader.app.ui.shell.auroraShellOverride
 import com.komgareader.domain.model.ContentType
+import com.komgareader.domain.model.DisplayMode
 
 private const val TAB_LIBRARY = 0
 private const val TAB_COLLECTIONS = 1
@@ -360,9 +362,13 @@ fun HomeScreen(
     val shellOverride = remember(activeUiPackId, uiPacks) {
         uiPacks.firstOrNull { it.packageName == activeUiPackId }?.shellOverride()
     }
+    val displayModeStr by settingsVm.displayMode.collectAsState()
+    val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
+    // L2-UI-Pack-Override schlägt den Aurora-Default; ohne beides → Form-Faktor-Default.
+    val effectiveOverride = shellOverride ?: auroraShellOverride(displayMode)
     val pack = ShellPackRegistry.forFormFactor(
         resolveFormFactor(layoutMode, configuration.screenWidthDp),
-        shellOverride,
+        effectiveOverride,
     )
     pack.Render(
         AppShellState(

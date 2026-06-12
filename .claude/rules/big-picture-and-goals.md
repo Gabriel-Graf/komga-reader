@@ -191,7 +191,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 
 | Schicht | Was sie tauscht | Trigger der Auswahl | Status |
 |---|---|---|---|
-| **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
+| **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd · **Aurora** = Modern-Mobile-LCD-Look, Phase 1) |
 | **Shell-Pack** (`AppShellState`/`DeclarativeShell`+`ShellDescriptor`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (L1: eine deskriptor-getriebene `DeclarativeShell` statt zwei bespoke Built-ins, 2026-06-12) |
 | **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog — plus das Vollbild-Detail-Gerüst `detail` und das ganze Reader-Gerüst `readerChrome` | vom aktiven Shell-Pack gewählt | **sechs Chrome-Regionen + `detail` + `readerChrome` gebaut** (header (mit optionaler Such-Capability `HeaderSearch`)+homeHeader+dialog+settings+tiles+overlay+detail+readerChrome; D1 vollständig: SeriesDetail+GroupBrowse+CollectionDetail; C1: ganzes `ReaderScaffold` hinter `ReaderChromeSlot`, Naht B/`Viewer` bleibt draußen) |
 
@@ -341,7 +341,14 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > Built-ins `MonoEinkPack`/`KaleidoPack`/`LcdPack`, ausgewählt über `packFor(behavior)` bzw. die
 > `UiPackRegistry`, angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware**
 > (LCD volles Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das
-> „Theme zuerst"-Stück.
+> „Theme zuerst"-Stück. **Aurora (Ist, 2026-06-12, Phase 1):** vierter Built-in `AuroraPack` (`:ui-api`) — ein
+> distinktiver **Modern-Mobile-Look** (Slate/Deeper-Grey + Cobalt `#3D5AFE`, dark+light, SoftShapes, getunte
+> System-Typo); `packFor(LCD)→AuroraPack` (`LcdPack` bleibt Fallback). Dazu im Smartphone-Modus die schwebende
+> Pill-Nav `ShellNavStyle.FLOATING_NAV` (`FloatingNavShell`, host-erzwungen via `auroraShellOverride`) + die
+> Card-Kachel `AuroraSeriesTile` (`tiles`-Slot). Emulator-verifiziert; E-Ink unberührt. Das ist der **Referenz-
+> Look**, aus dem **Phase 2** das deklarative `ui_pack.json`-`theme` auf **volle Tokens** ableitet (Daten,
+> host-gerendert, E-Ink-gegated) — damit Aurora als externes Daten-APK lieferbar wird (eigener Plan, **Soll**).
+> Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modern-mobile-ui-pack-aurora*`.
 > **Die Layout-Slot-Naht — alle sechs Regionen gebaut (Reihe abgeschlossen):**
 > - **Region `header` (Ist, 2026-06-09; Such-Capability 2026-06-12, D1.1):** `app/ui/slots/UiSlots.kt` trägt
 >   `HeaderSlot` (jetzt `@Composable (state: HeaderState) -> Unit`), die Surface

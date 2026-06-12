@@ -20,14 +20,14 @@ class UiPackTest {
     private val lcd = DisplayBehavior(allowsMotion = true, allowsAccentColor = true)
 
     @Test
-    fun `jede geraeteklasse bekommt ihr eigenes pack`() {
+    fun `jede geräteklasse bekommt ihr eigenes pack`() {
         assertSame(MonoEinkPack, packFor(mono))
         assertSame(KaleidoPack, packFor(kaleido))
         assertSame(LcdPack, packFor(lcd))
     }
 
     @Test
-    fun `sinnlose kombi (bewegung, kein akzent) faellt sicher auf mono`() {
+    fun `sinnlose kombi (bewegung, kein akzent) fällt sicher auf mono`() {
         val nonsensical = DisplayBehavior(allowsMotion = true, allowsAccentColor = false)
         assertSame(MonoEinkPack, packFor(nonsensical))
     }
@@ -41,7 +41,7 @@ class UiPackTest {
     }
 
     @Test
-    fun `registry loest packs per id auf und kennt unbekannte nicht`() {
+    fun `registry löst packs per id auf und kennt unbekannte nicht`() {
         assertSame(MonoEinkPack, UiPackRegistry.byId("mono-eink"))
         assertSame(KaleidoPack, UiPackRegistry.byId("kaleido"))
         assertSame(LcdPack, UiPackRegistry.byId("lcd"))
@@ -62,7 +62,7 @@ class UiPackTest {
     }
 
     @Test
-    fun `colorScheme-primary trennt die drei klassen (mono S-W, kaleido gedaempft, lcd voll)`() {
+    fun `colorScheme-primary trennt die drei klassen (mono S-W, kaleido gedämpft, lcd voll)`() {
         assertEquals(Color.Black, MonoEinkPack.colorScheme(dark = false).primary)
         assertEquals(Color.White, MonoEinkPack.colorScheme(dark = true).primary)
         assertEquals(AccentMuted, KaleidoPack.colorScheme(dark = false).primary)
@@ -71,7 +71,7 @@ class UiPackTest {
     }
 
     @Test
-    fun `look-traeger trennen e-ink von lcd (shapes flach-knapp vs weich, typo schwer vs leicht)`() {
+    fun `look-träger trennen e-ink von lcd (shapes flach-knapp vs weich, typo schwer vs leicht)`() {
         // Beide E-Ink-Packs teilen knappe Kanten; LCD ist weicher.
         assertSame(MonoEinkPack.shapes, KaleidoPack.shapes)
         assertNotSame(MonoEinkPack.shapes, LcdPack.shapes)

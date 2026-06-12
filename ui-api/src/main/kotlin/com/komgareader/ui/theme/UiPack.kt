@@ -20,8 +20,8 @@ import com.komgareader.domain.model.DisplayBehavior
  * implementiert genau dieses Interface; der Host ([KomgaReaderTheme]) wählt und rendert — die
  * E-Ink-Invarianten (Bewegung/Schatten) bleiben **host-erzwungen**, nie pack-bestimmt.
  *
- * Der Vertrag ist bewusst **in-tree und noch nicht eingefroren** (kein `ui-api`-Modul) — er wird
- * erst aus drei echten Kunden (den Built-in-Packs) extrahiert, dann stabilisiert.
+ * Der Vertrag lebt jetzt im Modul `:ui-api` (A1), ist aber **noch nicht ABI-eingefroren/versioniert** —
+ * das Einfrieren (Gegenstück zu `plugin-api`) kommt mit dem externen Pack-Lader (L1/L2).
  */
 interface UiPack {
     /** Stabile Kennung (für Auswahl/Registry; später Pack-Identität). */

@@ -279,8 +279,10 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
 - **Externer Pack-Lader + `DeclarativeShell`** (Phase 4): das eigentliche „Community **installiert** eine
   UI" — separates APK, ABI-Gate, TOFU (wie Quellen-Plugins), und der deklarative Shell-/Slot-Deskriptor
   (Ansatz 3) statt In-Tree-Compose. Bis dahin sind alle Packs Built-ins im App-Modul.
-- **Shell-Pack-Restposten:** Form-Faktor-User-Override · compact-Header-Politur · PhoneShell-Drawer-
-  Auswahlfarbe auf Host-Mono-Tokens.
+- **Shell-Pack-Restposten:** Form-Faktor-User-Override (Ist, S0.1: `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
+  Settings-Picker, `resolveFormFactor`) · PhoneShell-Drawer-Auswahlfarbe auf Host-Mono-Tokens (Ist, S0.3) ·
+  compact-Header-Politur (S0.2 — empirisch verifizieren, nur fixen wenn real kaputt) · Form-Faktor-User-Override
+  bleibt orthogonal zu `displayMode`.
 
 **Reihenfolge bleibt „Theme zuerst, Layout danach, Lader zuletzt"** (analog Plugin-Reihenfolge
 (c)→(a)→(b)) und **risikoärmstes Stück zuerst**. Jede weitere UI-Arbeit baut auf dieses Ziel hin
@@ -416,8 +418,10 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > + `PhoneShell` (compact: Drawer-Nav, E-Ink-gegatet). `HomeScreen` ist der Host (`HomeShellHost`):
 > baut die Surface, löst nach `screenWidthDp` auf, ruft `pack.Render`. NavHost/Reader unberührt
 > (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
-> compact→Phone). Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
-> (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. **Die Region-Slot-Reihe
+> compact→Phone). **Form-Faktor jetzt user-überschreibbar (Ist, S0.1):** `resolveFormFactor(ShellLayoutMode,
+> widthDp)` pur+getestet, Settings-Picker (Auto/Kompakt/Breit), orthogonal zu `displayMode`. Drawer-Akzent
+> seit S0.3 token-getrieben. Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
+> (Ansatz 3, externe APK-Packs), compact-Header-Politur (S0.2). **Die Region-Slot-Reihe
 > ist abgeschlossen** (alle sechs Chrome-Regionen + `detail` + `readerChrome` gebaut; `UiSlotPack` trägt
 > `header` + `homeHeader` + `dialog` + `settings` + `tiles` + `overlay` + `detail` + `readerChrome`; `nav` ist
 > Shell-Pack-Sache, kein Region-Slot). Ebenfalls Soll: das **Reader-Chrome deklarativ** (A1, Nachfolger von

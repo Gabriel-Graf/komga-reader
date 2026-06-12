@@ -66,6 +66,7 @@ import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReaderPreset
+import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
@@ -533,16 +534,26 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val displayModeStr by viewModel.displayMode.collectAsState()
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
+    val shellLayoutModeStr by viewModel.shellLayoutMode.collectAsState()
+    val shellLayoutMode = runCatching { ShellLayoutMode.valueOf(shellLayoutModeStr) }.getOrDefault(ShellLayoutMode.AUTO)
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
     val presets by viewModel.readerPresets.collectAsState()
 
     // Genau EIN Modal gleichzeitig (E-Ink-Invariante): null = zu.
     var showDisplayPicker by remember { mutableStateOf(false) }
+    var showShellLayoutPicker by remember { mutableStateOf(false) }
     var confirmPreset by remember { mutableStateOf<ReaderPreset?>(null) }
     val displayLabel: (DisplayMode) -> String = { dm ->
         when (dm) {
             DisplayMode.EINK -> s.displayEink
             DisplayMode.SMARTPHONE -> s.displaySmartphone
+        }
+    }
+    val shellLayoutLabel: (ShellLayoutMode) -> String = { mode ->
+        when (mode) {
+            ShellLayoutMode.AUTO -> s.shellLayoutAuto
+            ShellLayoutMode.COMPACT -> s.shellLayoutCompact
+            ShellLayoutMode.EXPANDED -> s.shellLayoutExpanded
         }
     }
 
@@ -554,6 +565,13 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
                 label = s.settingsDisplayMode,
                 value = displayLabel(displayMode),
                 onClick = { showDisplayPicker = true },
+                query = query,
+            )
+            // Form-Faktor des Home-Skeletts (Override), orthogonal zum Anzeige-Modus.
+            PickerRow(
+                label = s.settingsShellLayout,
+                value = shellLayoutLabel(shellLayoutMode),
+                onClick = { showShellLayoutPicker = true },
                 query = query,
             )
             SwitchRow(
@@ -590,6 +608,19 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
             labelOf = displayLabel,
             onSelect = { viewModel.setDisplayMode(it) },
             onDismiss = { showDisplayPicker = false },
+            closeLabel = s.close,
+        )
+    }
+
+    if (showShellLayoutPicker) {
+        PickerModal(
+            title = s.settingsShellLayout,
+            options = ShellLayoutMode.entries,
+            selectedKey = shellLayoutMode.name,
+            keyOf = { it.name },
+            labelOf = shellLayoutLabel,
+            onSelect = { viewModel.setShellLayoutMode(it) },
+            onDismiss = { showShellLayoutPicker = false },
             closeLabel = s.close,
         )
     }

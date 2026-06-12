@@ -45,11 +45,13 @@ import com.komgareader.app.ui.library.LibraryScreen
 import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
 import com.komgareader.app.ui.settings.SettingsScreen
+import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.app.ui.shell.AppShellState
 import com.komgareader.app.ui.shell.ShellDestination
 import com.komgareader.app.ui.shell.ShellDestinationId
 import com.komgareader.app.ui.shell.ShellPackRegistry
-import com.komgareader.app.ui.shell.formFactorFor
+import com.komgareader.app.ui.shell.resolveFormFactor
+import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.app.ui.theme.LocalDesignTokens
 import com.komgareader.data.plugin.repo.PluginTypeFilter
 import com.komgareader.domain.model.ContentType
@@ -97,6 +99,7 @@ fun HomeScreen(
     val groupsVm: com.komgareader.app.ui.groups.GroupsViewModel = hiltViewModel()
     val collectionsVm: com.komgareader.app.ui.collections.CollectionsViewModel = hiltViewModel()
     val pluginsVm: com.komgareader.app.ui.plugins.PluginsViewModel = hiltViewModel()
+    val settingsVm: SettingsViewModel = hiltViewModel()
     val pluginTypeFilter by pluginsVm.typeFilter.collectAsState()
     var showRepoMgmt by remember { mutableStateOf(false) }
     val groupsViewMode = tileViewModeOf(groupsVm.viewMode.collectAsState().value, TileViewMode.LIST)
@@ -341,8 +344,12 @@ fun HomeScreen(
 
     // Form-Faktor wählt das Skelett (compact → PhoneShell/Drawer, sonst DefaultShell/Bottom-Bar);
     // orthogonal zur Geräteklasse (die das Theme wählt). Beide Packs ordnen DIESELBE AppShellState an.
+    // Der User-Override (ShellLayoutMode) schlägt die breitenbasierte Ableitung (AUTO).
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-    val pack = ShellPackRegistry.forFormFactor(formFactorFor(configuration.screenWidthDp))
+    val shellLayoutModeStr by settingsVm.shellLayoutMode.collectAsState()
+    // `layoutMode` statt `shellLayoutMode`, um Shadowing des Enum-Typs [ShellLayoutMode] zu vermeiden.
+    val layoutMode = runCatching { ShellLayoutMode.valueOf(shellLayoutModeStr) }.getOrDefault(ShellLayoutMode.AUTO)
+    val pack = ShellPackRegistry.forFormFactor(resolveFormFactor(layoutMode, configuration.screenWidthDp))
     pack.Render(
         AppShellState(
             destinations = destinations,

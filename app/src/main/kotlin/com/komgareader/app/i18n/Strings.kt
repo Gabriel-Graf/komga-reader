@@ -15,6 +15,10 @@ interface Strings {
     val displayModeHelper: String
     val displayEink: String
     val displaySmartphone: String
+    val settingsShellLayout: String
+    val shellLayoutAuto: String
+    val shellLayoutCompact: String
+    val shellLayoutExpanded: String
     val settingsServer: String
     val serverDisplayName: String
     val serverUrl: String
@@ -327,6 +331,10 @@ object StringsDe : Strings {
     override val displayModeHelper = "Optimiert die App für E-Ink (Frame-Sprünge, keine Animationen) oder Smartphone."
     override val displayEink = "E-Ink"
     override val displaySmartphone = "Smartphone"
+    override val settingsShellLayout = "Layout-Modus"
+    override val shellLayoutAuto = "Automatisch"
+    override val shellLayoutCompact = "Kompakt (Telefon)"
+    override val shellLayoutExpanded = "Breit (Tablet)"
     override val settingsServer = "Komga-Server"
     override val serverDisplayName = "Anzeigename"
     override val serverUrl = "Server-URL"
@@ -632,6 +640,10 @@ object StringsEn : Strings {
     override val displayModeHelper = "Optimises the app for E-Ink (frame jumps, no animations) or smartphone."
     override val displayEink = "E-Ink"
     override val displaySmartphone = "Smartphone"
+    override val settingsShellLayout = "Layout mode"
+    override val shellLayoutAuto = "Automatic"
+    override val shellLayoutCompact = "Compact (phone)"
+    override val shellLayoutExpanded = "Wide (tablet)"
     override val settingsServer = "Komga Server"
     override val serverDisplayName = "Display Name"
     override val serverUrl = "Server URL"

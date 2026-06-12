@@ -70,6 +70,7 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
             s.settingsScopeGeneral, s.settingsScopeNovel, s.settingsScopeWebtoon, s.settingsScopeComic,
             s.settingsWebtoon, s.webtoonOverlap, s.webtoonOverlapHelper,
             s.settingsDisplayMode, s.displayModeHelper, s.displayEink, s.displaySmartphone,
+            s.settingsShellLayout, s.shellLayoutAuto, s.shellLayoutCompact, s.shellLayoutExpanded,
             s.settingsEinkRefresh, s.deviceManagedRefresh, s.deviceManagedRefreshHelper,
             s.novelTypography, s.novelTextHeading, s.novelFontSize, s.novelLineHeight, s.novelFontWeight,
             s.novelMargin, s.novelTextAlign, s.novelHyphenation, s.novelFontFamily,

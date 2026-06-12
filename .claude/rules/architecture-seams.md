@@ -365,10 +365,21 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Nav-**Daten** + `selectedId`/`onSelect`; je `ShellDestination` trägt `icon`/`label` (Daten) und
   `header: HomeHeaderState?`/`content: @Composable` (host-gebaut)), der Vertrag `ShellPack`
   (`@Composable Render(AppShellState)`), die pure Auswahl `formFactorFor(widthDp)` (<600dp=compact)
-  über `ShellPackRegistry.forFormFactor`. **Zwei Built-ins:** `DefaultShell` (E-Ink/Tablet-Bottom-Bar,
-  pixelgleich zum alten `HomeScreen`) und `PhoneShell` (compact: Drawer-Nav statt Bottom-Bar). `HomeScreen`
+  über `ShellPackRegistry.forFormFactor`. **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
+  pure `resolveFormFactor(mode: ShellLayoutMode, widthDp)` (neben `formFactorFor`, unit-getestet) lässt
+  den Nutzer den Form-Faktor überschreiben — Domain-Enum `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
+  persistiert wie `displayMode` (`SettingsRepository.shellLayoutMode`/`setShellLayoutMode`, Room-Key
+  `shell_layout_mode`, **keine Migration**), Picker in `AppearanceSettingsContent`/`GeneralScope`
+  (i18n `settingsShellLayout`/`shellLayout{Auto,Compact,Expanded}`, de+en). Default `AUTO` =
+  verhaltensgleich zu vorher (aus Breite ableiten). **Achse bleibt orthogonal zum `displayMode`** (Theme).
+  **Zwei Built-ins:** `DefaultShell` (E-Ink/Tablet-Bottom-Bar,
+  pixelgleich zum alten `HomeScreen`) und `PhoneShell` (compact: Drawer-Nav statt Bottom-Bar; die aktive
+  Drawer-Zeile folgt seit S0.3 den Host-Mono-Tokens `LocalDesignTokens.accent`/`onAccent` über
+  `NavigationDrawerItemDefaults.colors`, konsistent mit `EinkBottomBar` — kein Material3-Default-Akzent mehr).
+  `HomeScreen`
   ist der **Host** (`HomeShellHost`): baut die Surface pro Tab + besitzt allen State/VMs/Dialoge, löst das
-  Pack nach `screenWidthDp` auf und ruft `pack.Render(...)`. **Der entscheidende Schnitt — Daten vs.
+  Pack über `resolveFormFactor(shellLayoutMode, screenWidthDp)` (Override schlägt Auto) auf und ruft
+  `pack.Render(...)`. **Der entscheidende Schnitt — Daten vs.
   host-gebaut:** reine-Präsentation-über-Daten-Stücke (Nav) gehen als **Daten** rein (das Pack baut das
   Widget — die Widget-Wahl IST die Variabilität); logik-gebundene (content/header) als **host-gebaute**
   Composables (Pack platziert nur, „UI neu, Kernlogik gleich"). **NavHost + Reader unberührt:** der Reader
@@ -376,8 +387,9 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   ist exakt das alte `HomeScreen`. **E-Ink host-erzwungen:** `PhoneShell` gatet die Drawer-Bewegung über
   `LocalEinkMode` (`snapTo` statt Slide). **Form-Faktor (Shell) ⟂ Geräteklasse (Theme)** — orthogonale
   Achsen. Emulator-verifiziert: expanded→DefaultShell, compact→PhoneShell-Drawer, gleiche `AppShellState`.
-  **Weiter Soll:** deklarativer Shell-Pack (Ansatz 3, externe APK-Packs) + Form-Faktor-User-Override +
-  per-compact-Politur des Headers. Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modular-ui-shell-pack*`.
+  **Weiter Soll:** deklarativer Shell-Pack (Ansatz 3, externe APK-Packs) +
+  per-compact-Politur des Headers (S0.2 — auf Emulator verifizieren, nur fixen wenn real kaputt).
+  Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modular-ui-shell-pack*` · `2026-06-12-shell-restposten-S0.md`.
 
 ## Modulgrenzen (Gradle-Schnitt = erzwungene Architektur)
 

@@ -411,14 +411,27 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Deskriptor und rendert die zwei Skelette als **deskriptor-geschaltete private Composables**
   (`BottomBarShell`/`DrawerShell` — die verbatim Bodies der alten Objekte). `ShellPackRegistry.forFormFactor`
   liefert `DeclarativeShell(descriptorFor(ff))`. Das ist der In-Tree-Beleg des 1→3-Pfads: ein externer
-  APK-Pack (L2) liefert später nur den `ShellDescriptor`, dieser Renderer bleibt. **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
+  APK-Pack (L2) liefert später nur den `ShellDescriptor`, dieser Renderer bleibt. **Aurora / Modern-Mobile-Look
+  (Ist, 2026-06-12, Phase 1):** dritter `ShellNavStyle` **`FLOATING_NAV`** (schwebende Pill-Bottom-Nav,
+  `FloatingNavBar`/`FloatingNavShell` in `:app`) + vierter Theme-`UiPack` **`AuroraPack`** (`:ui-api`, Slate/
+  Deeper-Grey + Cobalt `#3D5AFE`, dark+light, SoftShapes, getunte System-Typo); `packFor(LCD)→AuroraPack`
+  (`LcdPack` bleibt registrierter Fallback). **Aktiv NUR im Smartphone-Modus** (`DisplayMode.SMARTPHONE`): die
+  pure `auroraShellOverride(DisplayMode)` setzt `FLOATING_NAV` (ein L2-UI-Pack-`shellOverride()` **schlägt** ihn:
+  `shellOverride ?: auroraShellOverride(...)`), und der Host speist die Card-Kachel `AuroraSeriesTile` über den
+  `tiles`-Slot ein. `BottomBarShell`/`FloatingNavShell` teilen das Gerüst (Inset-Mechanik) über das geteilte
+  `OverlayBarShell` (Bar als `@Composable`-Slot, `shared-structure-before-variants`); die Kachel-Varianten teilen
+  `TileCoverContent`. E-Ink-Modus unverändert (Default-Kachel + `EinkBottomBar`). Emulator-verifiziert (dark+light
+  + E-Ink-Regression). **Phase 2 — das deklarative `ui_pack.json`-`theme` auf volle Tokens/Typo/Shapes (Daten,
+  host-gerendert, E-Ink-gegated) — bleibt Soll** (eigener Plan, leitet das Schema aus diesem Referenz-Look ab).
+  **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
   pure `resolveFormFactor(mode: ShellLayoutMode, widthDp)` (neben `formFactorFor`, unit-getestet) lässt
   den Nutzer den Form-Faktor überschreiben — Domain-Enum `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
   persistiert wie `displayMode` (`SettingsRepository.shellLayoutMode`/`setShellLayoutMode`, Room-Key
   `shell_layout_mode`, **keine Migration**), Picker in `AppearanceSettingsContent`/`GeneralScope`
   (i18n `settingsShellLayout`/`shellLayout{Auto,Compact,Expanded}`, de+en). Default `AUTO` =
   verhaltensgleich zu vorher (aus Breite ableiten). **Achse bleibt orthogonal zum `displayMode`** (Theme).
-  **Zwei deskriptor-geschaltete Skelette (private Composables in `DeclarativeShell`):** `BottomBarShell`
+  **Drei deskriptor-geschaltete Skelette (private Composables in `DeclarativeShell`, Gerüst geteilt über
+  `OverlayBarShell`; `FLOATING_NAV`→`FloatingNavShell` kam mit Aurora/Phase 1):** `BottomBarShell`
   (E-Ink/Tablet-Bottom-Bar, pixelgleich zum alten `HomeScreen`) und `DrawerShell` (compact: Drawer-Nav statt
   Bottom-Bar; die aktive Drawer-Zeile folgt seit S0.3 den Host-Mono-Tokens `LocalDesignTokens.accent`/`onAccent`
   über `NavigationDrawerItemDefaults.colors`, konsistent mit `EinkBottomBar` — kein Material3-Default-Akzent mehr).

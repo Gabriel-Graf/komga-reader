@@ -26,16 +26,16 @@ class SlotFallbackTest {
 
         val resolved = UiSlots.resolve(pack)
 
-        assertSame(DefaultSlots.header, resolved.header)
+        assertSame(DefaultSlots.header, resolved.headerSlot)
     }
 
     @Test
     fun `gelieferter slot überschreibt den default`() {
-        val custom: HeaderSlot = { _, _, _ -> }
+        val custom: HeaderSlot = { _ -> }
 
         val resolved = UiSlots.resolve(UiSlotPack(header = custom))
 
-        assertSame(custom, resolved.header)
+        assertSame(custom, resolved.headerSlot)
     }
 
     @Test

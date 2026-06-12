@@ -21,14 +21,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -38,15 +35,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -62,9 +54,12 @@ import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.TileTitleBand
+import com.komgareader.app.ui.detail.DetailScaffoldState
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.library.LibraryUiState
 import com.komgareader.app.ui.library.LibraryViewModel
+import com.komgareader.app.ui.slots.HeaderSearch
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.LocalDesignTokens
 import com.komgareader.domain.model.CollectionKind
@@ -72,9 +67,10 @@ import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.Series
 
 /**
- * Detail einer Sammlung. Eigene TopBar (die Home-TopBar tritt zurück): links Zurück, mittig der
- * Sammlungs-Titel (groß) — per Lupe gegen ein Suchfeld tauschbar —, rechts Lupe · „+" (Werke aus
- * der Bibliothek) · Sync · Löschen. Die Werke liegen als Cover-Gitter (3 Spalten).
+ * Detail einer Sammlung — über den `detail`-Slot gerahmt, der Header über den `header`-Slot mit
+ * dessen optionaler Such-Capability (Titel ↔ Suchfeld per Lupe). Rechts im Header: „+" (Werke aus
+ * der Bibliothek, nur Serien-Sammlungen) · Sync · Löschen. Die Werke liegen als Cover-Gitter
+ * (3 Spalten) im Body.
  */
 @Composable
 fun CollectionDetailScreen(
@@ -104,38 +100,58 @@ fun CollectionDetailScreen(
     val members = if (query.isBlank()) collection.members
     else collection.members.filter { it.title.contains(query, ignoreCase = true) }
 
-    Column(Modifier.fillMaxSize()) {
-        CollectionDetailHeader(
+    LocalResolvedSlots.current.detail(
+        DetailScaffoldState(
             title = collection.name,
-            searchActive = searchActive,
-            query = query,
-            onQueryChange = { query = it },
-            onOpenSearch = { searchActive = true },
-            onCloseSearch = { searchActive = false; query = "" },
             onBack = onBack,
-            showAdd = isSeries,
-            onAdd = { showAdd = true },
-            onSyncAnchor = { syncAnchor = it },
-            onSync = { showSyncPanel = true },
-            onDelete = { showDelete = true },
-        )
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.fillMaxSize().padding(horizontal = EinkTokens.tileGap),
-            contentPadding = PaddingValues(top = EinkTokens.tileGap, bottom = LocalContentBottomInset.current + 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
-            verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
-        ) {
-            items(members, key = { it.sourceId.toString() + it.remoteId }) { member ->
-                MemberTile(
-                    member = member,
-                    isSeries = isSeries,
-                    onOpen = if (isSeries) ({ onOpenSeries(member.remoteId, member.sourceId) }) else null,
-                    onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
-                )
-            }
-        }
-    }
+            actions = {
+                if (isSeries) {
+                    IconButton(onClick = { showAdd = true }) {
+                        Icon(AppIcons.Plus, contentDescription = s.addWorks, tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+                IconButton(
+                    onClick = { showSyncPanel = true },
+                    modifier = Modifier.onGloballyPositioned {
+                        val p = it.positionInWindow()
+                        syncAnchor = IntOffset((p.x + it.size.width).toInt(), (p.y + it.size.height).toInt())
+                    },
+                ) {
+                    Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow, tint = MaterialTheme.colorScheme.onSurface)
+                }
+                IconButton(onClick = { showDelete = true }) {
+                    Icon(AppIcons.Delete, contentDescription = s.deleteCollection, tint = MaterialTheme.colorScheme.onSurface)
+                }
+            },
+            search = HeaderSearch(
+                active = searchActive,
+                query = query,
+                onQueryChange = { query = it },
+                onOpen = { searchActive = true },
+                onClose = { searchActive = false; query = "" },
+                placeholder = s.searchInCollection(collection.name),
+                actionLabel = s.searchAction,
+            ),
+            content = { padding ->
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = EinkTokens.tileGap),
+                    contentPadding = PaddingValues(top = EinkTokens.tileGap, bottom = LocalContentBottomInset.current + 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                    verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                ) {
+                    items(members, key = { it.sourceId.toString() + it.remoteId }) { member ->
+                        MemberTile(
+                            member = member,
+                            isSeries = isSeries,
+                            onOpen = if (isSeries) ({ onOpenSeries(member.remoteId, member.sourceId) }) else null,
+                            onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
+                        )
+                    }
+                }
+            },
+        ),
+    )
 
     // Sync-Status als Kontextfeld direkt unter dem Sync-Icon (outside-tap schließt = „blur").
     if (showSyncPanel) {
@@ -203,95 +219,6 @@ fun CollectionDetailScreen(
             ChoiceRow(label = s.deleteCollectionServerToo, selected = serverToo, onSelect = { serverToo = !serverToo })
         }
     }
-}
-
-/**
- * Eigene TopBar des Sammlungs-Details — **dieselbe `TopAppBar` wie der Hauptscreen** (kein eigener
- * Unterstrich, gleiche Chrome): Zurück (links), Titel groß+zentriert bzw. Suchfeld (Lupe), rechts
- * die Aktionen. Verlässt das Suchfeld den Fokus ohne Eingabe, klappt es wieder zum Titel.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CollectionDetailHeader(
-    title: String,
-    searchActive: Boolean,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onOpenSearch: () -> Unit,
-    onCloseSearch: () -> Unit,
-    onBack: () -> Unit,
-    showAdd: Boolean,
-    onAdd: () -> Unit,
-    onSyncAnchor: (IntOffset) -> Unit,
-    onSync: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    val s = LocalStrings.current
-    TopAppBar(
-        title = {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
-                    Icon(AppIcons.Back, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-                }
-
-                if (searchActive) {
-                    val focus = remember { FocusRequester() }
-                    // Erst schließen, wenn das Feld den Fokus WIEDER verliert (nicht beim initialen
-                    // Nicht-Fokus, der sonst sofort schließt) und leer ist.
-                    var wasFocused by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) { focus.requestFocus() }
-                    EinkSearchBar(
-                        query = query,
-                        onQueryChange = onQueryChange,
-                        // Action-Icon der Bar (immer sichtbar) = X → schließt die Suche zurück zum Titel.
-                        onSubmit = onCloseSearch,
-                        actionIcon = AppIcons.Close,
-                        actionLabel = s.clearSearch,
-                        placeholder = s.searchInCollection(title),
-                        modifier = Modifier
-                            .fillMaxWidth(0.74f)
-                            .focusRequester(focus)
-                            .onFocusChanged {
-                                if (it.isFocused) wasFocused = true
-                                else if (wasFocused && query.isBlank()) onCloseSearch()
-                            },
-                    )
-                } else {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(0.5f),
-                    )
-                    Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onOpenSearch) {
-                            Icon(AppIcons.Search, contentDescription = s.searchInCollection(title), tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                        if (showAdd) {
-                            IconButton(onClick = onAdd) {
-                                Icon(AppIcons.Plus, contentDescription = s.addWorks, tint = MaterialTheme.colorScheme.onSurface)
-                            }
-                        }
-                        IconButton(
-                            onClick = onSync,
-                            modifier = Modifier.onGloballyPositioned {
-                                val p = it.positionInWindow()
-                                onSyncAnchor(IntOffset((p.x + it.size.width).toInt(), (p.y + it.size.height).toInt()))
-                            },
-                        ) {
-                            Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow, tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                        IconButton(onClick = onDelete) {
-                            Icon(AppIcons.Delete, contentDescription = s.deleteCollection, tint = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                }
-            }
-        },
-    )
 }
 
 /** Eine Quellen-Zeile im Sync-Kontextfeld: Quelle links, Status-Dot (gefüllt = synchron) + Label rechts. */

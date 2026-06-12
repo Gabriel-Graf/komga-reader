@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -21,8 +22,10 @@ import com.komgareader.app.ui.theme.KomgaReaderTheme
  *
  * Bewusst nur ein **Debug/Preview-Pfad**, **keine** Nutzer-Einstellung (der Pack-Lader/-Wähler ist
  * Soll, L1/L2). Anders als die UI-Slot-Previews wird das Pack **prozess-global** gesetzt (Spec §2:
- * Icons sind app-weiter Look, kein CompositionLocal). Jede Preview-Funktion setzt das Pack vor dem
- * Render und reicht es an [IconRaster] — der globale Zustand bleibt sichtbar an der Call-Site.
+ * Icons sind app-weiter Look, kein CompositionLocal). Da [ActiveIconPack] globaler Zustand ist, setzt
+ * [IconRaster] das Pack in einem [DisposableEffect] und **stellt im `onDispose` den vorherigen Wert
+ * wieder her** — sonst leckte ein gerendertes Alternativ-Preview den Glyph in andere Previews
+ * desselben Prozesses.
  */
 private val AlternativeIconPack = IconPack { key ->
     if (key == IconKey.Home) LucideIcons.Library else null
@@ -30,7 +33,14 @@ private val AlternativeIconPack = IconPack { key ->
 
 @Composable
 private fun IconRaster(pack: IconPack) {
+    // Im Body setzen, damit die unten gelesenen `AppIcons.*` im selben Composition-Pass den Pack-Glyph
+    // zeigen (ein globaler `var` triggert keine Recomposition — Setzen in einem Effect käme zu spät).
     ActiveIconPack.current = pack
+    // …und beim Verlassen der Preview zurücksetzen, damit der globale Zustand nicht in andere Previews
+    // desselben Prozesses leckt.
+    DisposableEffect(pack) {
+        onDispose { ActiveIconPack.current = DefaultIconPack }
+    }
     KomgaReaderTheme {
         Column(
             modifier = Modifier.padding(16.dp),

@@ -57,7 +57,7 @@ object DefaultIconPack : IconPack {
         IconKey.Overflow -> LucideIcons.EllipsisVertical
         IconKey.Stop -> LucideIcons.CircleStop
         IconKey.GridView -> LucideIcons.LayoutGrid
-        IconKey.LargeGridView -> LucideIcons.Grid2x2
+        IconKey.LargeGridView -> LucideIcons.Grid2x2 // bewusst derselbe Glyph wie PanelMode (2×2-Gitter)
         IconKey.ListView -> LucideIcons.List
         IconKey.Bookmark -> LucideIcons.Bookmark
         IconKey.BookmarkFilled -> LucideIcons.BookmarkFilled
@@ -70,9 +70,9 @@ object DefaultIconPack : IconPack {
         IconKey.Language -> LucideIcons.Languages
         IconKey.Connection -> LucideIcons.Server
         IconKey.ReaderMode -> LucideIcons.GalleryVertical
-        IconKey.PanelMode -> LucideIcons.Grid2x2
+        IconKey.PanelMode -> LucideIcons.Grid2x2 // bewusst derselbe Glyph wie LargeGridView
         IconKey.Typography -> LucideIcons.Type
-        IconKey.TableOfContents -> LucideIcons.List
+        IconKey.TableOfContents -> LucideIcons.List // bewusst derselbe Glyph wie ListView
         IconKey.AlignLeft -> LucideIcons.AlignLeft
         IconKey.AlignJustify -> LucideIcons.AlignJustify
     }
@@ -84,6 +84,11 @@ object DefaultIconPack : IconPack {
  * weil [AppIcons] auch außerhalb von Composition gelesen wird (Datenklassen-Felder, Default-Argumente)
  * — Spec §2. [resolve] fällt pro Key sauber auf [DefaultIconPack] zurück, sodass ein Teil-Pack nie
  * ein Loch lässt.
+ *
+ * **Einschränkung:** Ein Wechsel von [current] löst **keine** Recomposition aus (globaler `var`, kein
+ * `MutableState`). Für einmaliges Setzen am App-Start ist das unerheblich; ein Laufzeit-Tausch (mit dem
+ * späteren Pack-Lader, L1/L2) muss die Re-Composition selbst anstoßen — z. B. `MutableState`-Wrapper
+ * oder Activity-Neustart.
  */
 object ActiveIconPack {
     @Volatile

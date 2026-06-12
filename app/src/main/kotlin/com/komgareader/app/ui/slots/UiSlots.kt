@@ -3,16 +3,19 @@ package com.komgareader.app.ui.slots
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
 import com.komgareader.app.ui.components.DefaultDialog
+import com.komgareader.app.ui.components.DefaultSeriesTile
 import com.komgareader.app.ui.components.DialogState
 import com.komgareader.app.ui.components.StandardTopAppBar
+import com.komgareader.app.ui.components.TileState
 import com.komgareader.app.ui.home.DefaultHomeHeader
 import com.komgareader.app.ui.home.HomeHeaderState
 import com.komgareader.app.ui.settings.DefaultSettings
 import com.komgareader.app.ui.settings.SettingsState
 
 /**
- * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings
+ * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles
  *
  * Die [com.komgareader.app.ui.theme.UiPack]-Naht macht den **Look** auswechselbar (Farbe, Typo,
  * Token — „Theme zuerst"). Diese Naht ist das **„Layout danach"** aus `big-picture-and-goals.md`
@@ -27,15 +30,16 @@ import com.komgareader.app.ui.settings.SettingsState
  * Die Chrome-Regionen, die langfristig je einzeln auswechselbar werden sollen:
  * **header · homeHeader · overlay · tiles · nav · settings · dialog**.
  *
- * ## Stand: header + homeHeader + dialog + settings gebaut
+ * ## Stand: header + homeHeader + dialog + settings + tiles gebaut
  *
- * Gebaut sind vier Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
+ * Gebaut sind fünf Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
  * ([HomeHeaderState]-Surface), **dialog** ([DialogState]-Surface, der eine Onyx-Dialog-Rahmen
- * hinter [DialogSlot]) und **settings** ([SettingsState]-Surface, das Settings-Skelett — Sidebar-
- * Master-Detail vs. Accordion — hinter [SettingsSlot]). Bewusst je *eine* Region end-to-end statt
- * aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
+ * hinter [DialogSlot]), **settings** ([SettingsState]-Surface, das Settings-Skelett — Sidebar-
+ * Master-Detail vs. Accordion — hinter [SettingsSlot]) und **tiles** ([TileState]-Surface, die
+ * Serien-Kachel hinter [TilesSlot], in Bibliothek + Gruppen). Bewusst je *eine* Region end-to-end
+ * statt aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
  * (`shared-structure-before-variants.md`: erst zentralisieren, dann hinter die Naht). Die weiteren
- * Slots (overlay/tiles/nav), die `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll
+ * Slots (overlay/nav), die `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll
  * (Skins-Plan P2/P3). Der Vertrag ist **in-tree und nicht eingefroren**.
  */
 
@@ -70,8 +74,17 @@ typealias DialogSlot = @Composable (state: DialogState) -> Unit
 typealias SettingsSlot = @Composable (state: SettingsState) -> Unit
 
 /**
+ * Vertrag der Tiles-Region. Ein Pack rendert aus der [TileState]-Surface (Werk + Lokal-Status +
+ * Navigations-Callbacks) eine **einzelne** Serien-Kachel — dieselbe Aufrufform, anderer Kachel-Look
+ * (Badge, Titel-Stil, Rahmen). Das Grid/die Spaltenzahl bleibt Screen-Eigentum; der Slot tauscht nur
+ * die Kachel. Der `modifier` trägt den Grid-Item-Layout-Modifier des Aufrufers (anders als
+ * dialog/settings, die ganzflächig sind). Das Cover-Laden + der E-Ink-Filter bleiben host-erzwungen.
+ */
+typealias TilesSlot = @Composable (state: TileState, modifier: Modifier) -> Unit
+
+/**
  * Ein Slot-Pack: pro Region ein optionaler Slot. `null` = diese Region nicht überschreiben → Default.
- * Weitere Regionen (overlay/tiles/nav) kommen später als weitere **optionale** Felder
+ * Weitere Regionen (overlay/nav) kommen später als weitere **optionale** Felder
  * hinzu, ohne bestehende Packs zu brechen (additiv).
  */
 data class UiSlotPack(
@@ -79,6 +92,7 @@ data class UiSlotPack(
     val homeHeader: HomeHeaderSlot? = null,
     val dialog: DialogSlot? = null,
     val settings: SettingsSlot? = null,
+    val tiles: TilesSlot? = null,
 )
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
@@ -87,6 +101,7 @@ data class ResolvedSlots(
     val homeHeader: HomeHeaderSlot,
     val dialog: DialogSlot,
     val settings: SettingsSlot,
+    val tiles: TilesSlot,
 )
 
 /**
@@ -100,6 +115,7 @@ object UiSlots {
         homeHeader = pack.homeHeader ?: DefaultSlots.homeHeader,
         dialog = pack.dialog ?: DefaultSlots.dialog,
         settings = pack.settings ?: DefaultSlots.settings,
+        tiles = pack.tiles ?: DefaultSlots.tiles,
     )
 }
 
@@ -119,6 +135,9 @@ object DefaultSlots {
     }
     val settings: SettingsSlot = { state ->
         DefaultSettings(state)
+    }
+    val tiles: TilesSlot = { state, modifier ->
+        DefaultSeriesTile(state, modifier)
     }
 }
 

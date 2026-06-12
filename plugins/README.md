@@ -25,3 +25,12 @@ liest das Asset via `createPackageContext(pkg, 0)` (nur Ressourcen, kein Classlo
 5. In der App: Plugins-Tab → entdeckt das Plugin automatisch (Kategorie-spezifische Heimat-UI).
 
 ABI: aktuell `2` (`PluginAbi.VERSION`). Plugin muss `ABI_VERSION` in `[1, 2]` deklarieren.
+
+## Lieferbare Plugin-Repos
+
+| Repo | Kategorie | applicationId | Inhalt |
+|---|---|---|---|
+| `komga-reader-preset-eink` | READER_PRESET | com.komgareader.preset.reader.eink | 3 E-Ink-Reader-Presets |
+| `komga-lang-es` | LANGUAGE | com.komgareader.lang.es | Spanische UI-Übersetzung |
+| `komga-lang-fr` | LANGUAGE | com.komgareader.lang.fr | Französische UI-Übersetzung |
+| `komga-lang-it` | LANGUAGE | com.komgareader.lang.it | Italienische UI-Übersetzung |

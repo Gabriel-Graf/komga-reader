@@ -130,6 +130,7 @@ fun CollectionDetailScreen(
                 onOpen = { searchActive = true },
                 onClose = { searchActive = false; query = "" },
                 placeholder = s.searchInCollection(collection.name),
+                actionLabel = s.searchAction,
             ),
             content = { padding ->
                 LazyVerticalGrid(

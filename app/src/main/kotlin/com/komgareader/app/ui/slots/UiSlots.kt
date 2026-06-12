@@ -91,6 +91,8 @@ data class HeaderSearch(
     val onOpen: () -> Unit,
     val onClose: () -> Unit,
     val placeholder: String? = null,
+    /** Beschreibt die **Aktion** der Lupe (a11y), nicht das Feld. Fällt sonst auf `searchAction` zurück. */
+    val actionLabel: String? = null,
 )
 
 /**
@@ -273,6 +275,14 @@ fun DefaultHeader(state: HeaderState) {
     val search = state.search
     if (search != null && search.active) {
         val strings = LocalStrings.current
+        // Such-Focus-State auf dieser Ebene halten (nicht im title-Lambda) — so hängt seine
+        // Lebensdauer am DefaultHeader-Knoten, nicht am title-Slot, der bei Recomposition neu
+        // entstehen könnte (State-Verlust / erneutes onClose).
+        val focus = remember { FocusRequester() }
+        // Erst schließen, wenn das Feld den Fokus WIEDER verliert (nicht beim initialen
+        // Nicht-Fokus, der sonst sofort schließt) und leer ist.
+        var wasFocused by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { focus.requestFocus() }
         TopAppBar(
             title = {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -281,11 +291,6 @@ fun DefaultHeader(state: HeaderState) {
                             Icon(AppIcons.Back, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                         }
                     }
-                    val focus = remember { FocusRequester() }
-                    // Erst schließen, wenn das Feld den Fokus WIEDER verliert (nicht beim initialen
-                    // Nicht-Fokus, der sonst sofort schließt) und leer ist.
-                    var wasFocused by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) { focus.requestFocus() }
                     EinkSearchBar(
                         query = search.query,
                         onQueryChange = search.onQueryChange,
@@ -314,7 +319,7 @@ fun DefaultHeader(state: HeaderState) {
                     IconButton(onClick = search.onOpen) {
                         Icon(
                             AppIcons.Search,
-                            contentDescription = search.placeholder ?: state.title,
+                            contentDescription = search.actionLabel ?: LocalStrings.current.searchAction,
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }

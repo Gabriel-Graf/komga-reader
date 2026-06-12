@@ -29,6 +29,8 @@ interface SettingsRepository {
     val deviceManagedRefresh: Flow<Boolean>
     /** Ob das offizielle Plugin-Repo im Browser geladen wird (Default true). */
     val officialRepoEnabled: Flow<Boolean>
+    /** packageName des aktiven UI-Packs (data-only Plugin-Kategorie UI_PACK); "" = keiner (Host-Default). */
+    val activeUiPack: Flow<String>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -49,4 +51,5 @@ interface SettingsRepository {
     suspend fun setNovelFontWeight(value: Int)
     suspend fun setDeviceManagedRefresh(value: Boolean)
     suspend fun setOfficialRepoEnabled(enabled: Boolean)
+    suspend fun setActiveUiPack(packageName: String)
 }

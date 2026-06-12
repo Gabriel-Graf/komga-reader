@@ -51,6 +51,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     // Default true: das offizielle Plugin-Repo wird im Browser standardmäßig geladen.
     override val officialRepoEnabled: Flow<Boolean> =
         dao.observe(KEY_OFFICIAL_REPO_ENABLED).map { it?.toBooleanStrictOrNull() ?: true }
+    override val activeUiPack: Flow<String> = dao.observe(KEY_ACTIVE_UI_PACK).map { it ?: "" }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -87,6 +88,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_DEVICE_MANAGED_REFRESH, value.toString()))
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) =
         dao.put(SettingEntity(KEY_OFFICIAL_REPO_ENABLED, enabled.toString()))
+    override suspend fun setActiveUiPack(packageName: String) =
+        dao.put(SettingEntity(KEY_ACTIVE_UI_PACK, packageName))
 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
@@ -112,5 +115,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_NOVEL_FONT_WEIGHT = "novel_font_weight"
         const val KEY_DEVICE_MANAGED_REFRESH = "device_managed_refresh"
         const val KEY_OFFICIAL_REPO_ENABLED = "official_repo_enabled"
+        const val KEY_ACTIVE_UI_PACK = "active_ui_pack"
     }
 }

@@ -67,6 +67,10 @@ class SettingsViewModel @Inject constructor(
     val readerPresets = catalog.readerPresetPlugins
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** Aktiver UI-Pack (packageName, "" = keiner) + die installierten UI-Packs für den Picker. */
+    val activeUiPack = settings.activeUiPack.stateIn(viewModelScope, SharingStarted.Eagerly, "")
+    val availableUiPacks = catalog.uiPackPlugins.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     /** Entdeckte Quellen-Plugins (für den „Plugin"-Segment im Add-Server-Modal). */
     val sourcePlugins = catalog.sources
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -105,6 +109,8 @@ class SettingsViewModel @Inject constructor(
     fun setDisplayMode(value: String) = viewModelScope.launch { settings.setDisplayMode(value) }.let {}
     fun setShellLayoutMode(value: String) =
         viewModelScope.launch { settings.setShellLayoutMode(value) }.let {}
+    fun setActiveUiPack(packageName: String) =
+        viewModelScope.launch { settings.setActiveUiPack(packageName) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
     fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
     fun setDeviceManagedRefresh(value: Boolean) =

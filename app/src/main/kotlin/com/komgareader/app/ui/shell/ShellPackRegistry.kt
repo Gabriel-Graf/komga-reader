@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.shell
 
+import com.komgareader.ui.shell.ShellDescriptor
 import com.komgareader.ui.shell.ShellFormFactor
 import com.komgareader.ui.shell.ShellPack
 import com.komgareader.ui.shell.descriptorFor
@@ -13,5 +14,11 @@ import com.komgareader.ui.shell.descriptorFor
  * [ShellPack]-Vertrag selbst liegt im Modul `:ui-api` (A1).
  */
 object ShellPackRegistry {
-    fun forFormFactor(formFactor: ShellFormFactor): ShellPack = DeclarativeShell(descriptorFor(formFactor))
+    /**
+     * Wählt das Shell-Pack. [override] (ein externer UI-Pack, L2) **schlägt** den Form-Faktor-Default:
+     * ist ein navStyle-Override gesetzt, gewinnt dessen [ShellDescriptor], sonst der breitenbasierte
+     * [descriptorFor]. So erzwingt ein installierter UI-Pack z. B. den Drawer auch auf Boox-Breite.
+     */
+    fun forFormFactor(formFactor: ShellFormFactor, override: ShellDescriptor? = null): ShellPack =
+        DeclarativeShell(override ?: descriptorFor(formFactor))
 }

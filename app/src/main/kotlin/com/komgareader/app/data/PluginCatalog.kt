@@ -21,12 +21,15 @@ import com.komgareader.data.plugin.repo.resolveApkUrl
 import com.komgareader.data.plugin.LanguageSpec
 import com.komgareader.data.plugin.parseLanguageSpec
 import com.komgareader.data.plugin.parseReaderPresetSpecs
+import com.komgareader.data.plugin.parseUiPackSpec
 import com.komgareader.domain.model.ReaderPreset
+import com.komgareader.domain.model.UiPackSpec
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.plugin.PluginCategory
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.plugin.PluginAbi
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
@@ -52,11 +55,13 @@ fun installedEntriesOf(
     presets: List<DiscoveredPresetPlugin>,
     languages: List<DiscoveredDataPlugin> = emptyList(),
     readerPresets: List<DiscoveredDataPlugin> = emptyList(),
+    uiPacks: List<DiscoveredDataPlugin> = emptyList(),
 ): List<InstalledEntry> =
     sources.map { InstalledEntry(it.packageName, it.metadata.displayName, PluginKind.SOURCE) } +
         presets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PRESET) } +
         languages.map { InstalledEntry(it.packageName, it.displayName, PluginKind.LANGUAGE) } +
-        readerPresets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.READER_PRESET) }
+        readerPresets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.READER_PRESET) } +
+        uiPacks.map { InstalledEntry(it.packageName, it.displayName, PluginKind.UI_PACK) }
 
 /**
  * Einziger Halter des Plugin-Discovery-Zustands (installierte APK-Quellen/-Presets + entdeckte
@@ -71,6 +76,7 @@ class PluginCatalog @Inject constructor(
     private val registration: SourceRegistration,
     private val collections: CollectionRepository,
     private val colorProfiles: ColorProfileRepository,
+    private val settings: SettingsRepository,
     private val repoStore: RepoStore,
     private val client: PluginRepoClient,
     private val installer: PluginInstaller,
@@ -95,6 +101,14 @@ class PluginCatalog @Inject constructor(
     private val _readerPresetDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
     val readerPresetDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _readerPresetDataPlugins.asStateFlow()
 
+    /** Geparste UI-Pack-Specs (nur wirksame, `hasAnyOverride`) — für Settings-Picker + Anwendung. */
+    private val _uiPackPlugins = MutableStateFlow<List<UiPackSpec>>(emptyList())
+    val uiPackPlugins: StateFlow<List<UiPackSpec>> = _uiPackPlugins.asStateFlow()
+
+    /** Rohe [DiscoveredDataPlugin]-Sicht der UI-Pack-Plugins (für den Plugins-Tab: packageName + displayName). */
+    private val _uiPackDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
+    val uiPackDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _uiPackDataPlugins.asStateFlow()
+
     private val _discovered = MutableStateFlow<List<BrowserRow>>(emptyList())
     val discovered: StateFlow<List<BrowserRow>> = _discovered.asStateFlow()
 
@@ -113,7 +127,13 @@ class PluginCatalog @Inject constructor(
 
     /** Installierte als quellen-agnostische [InstalledEntry] (für die pure `visibleRows`-Filterung). */
     fun installedEntries(): List<InstalledEntry> =
-        installedEntriesOf(_sources.value, _presetPlugins.value, _languageDataPlugins.value, _readerPresetDataPlugins.value)
+        installedEntriesOf(
+            _sources.value,
+            _presetPlugins.value,
+            _languageDataPlugins.value,
+            _readerPresetDataPlugins.value,
+            _uiPackDataPlugins.value,
+        )
 
     /**
      * Lokaler APK-Scan (kein Netz): Quellen + Presets neu entdecken, danach Verwaistes prunen
@@ -140,12 +160,27 @@ class PluginCatalog @Inject constructor(
                 .onFailure { Log.w("PluginCatalog", "discoverReaderPresetPlugins failed", it) }
                 .getOrDefault(emptyList())
         }
+        val rawUiPacks = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverDataPlugins(PluginCategory.UI_PACK) }
+                .onFailure { Log.w("PluginCatalog", "discoverUiPackPlugins failed", it) }
+                .getOrDefault(emptyList())
+        }
         _sources.value = srcs
         _presetPlugins.value = presets
         _languageDataPlugins.value = rawLanguages
         _readerPresetDataPlugins.value = rawReaderPresets
+        _uiPackDataPlugins.value = rawUiPacks
         _languagePlugins.value = rawLanguages.mapNotNull { parseLanguageSpec(it.assetJson, it.abiVersion) }
         _readerPresetPlugins.value = rawReaderPresets.flatMap { parseReaderPresetSpecs(it.assetJson, it.abiVersion).orEmpty() }
+        _uiPackPlugins.value = rawUiPacks
+            .mapNotNull { parseUiPackSpec(it.assetJson, it.packageName, it.displayName, it.abiVersion) }
+            .filter { it.hasAnyOverride }
+
+        // Aktiver UI-Pack-Zeiger fällt auf "" zurück, wenn das Paket nicht mehr installiert/wirksam ist.
+        val activeUiPack = settings.activeUiPack.first()
+        if (activeUiPack.isNotBlank() && _uiPackPlugins.value.none { it.packageName == activeUiPack }) {
+            settings.setActiveUiPack("")
+        }
 
         val installed = (srcs.map { it.packageName } + presets.map { it.packageName }).toSet()
         val taggedPkgs = colorProfiles.observeAll().first().mapNotNull { it.pluginPackage }

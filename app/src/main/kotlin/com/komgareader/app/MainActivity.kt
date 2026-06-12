@@ -31,6 +31,8 @@ import com.komgareader.app.ui.components.LocalOnHome
 import com.komgareader.app.ui.components.toColorFilterOrNull
 import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
+import com.komgareader.app.ui.pack.toIconPack
+import com.komgareader.app.ui.pack.tokenOverride
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
 import com.komgareader.app.ui.settings.SettingsRoute
@@ -42,6 +44,8 @@ import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.displayBehaviorFor
+import com.komgareader.ui.icons.ActiveIconPack
+import com.komgareader.ui.icons.DefaultIconPack
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -106,6 +110,21 @@ class MainActivity : ComponentActivity() {
 
             val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
             val installedLanguages by settingsViewModel.availableLanguages.collectAsState()
+
+            // Externer UI-Pack (L2): aktives Paket auflösen. Icons (prozess-global) + Theme-Token
+            // werden hier zentral angewandt (wie resolveStrings); Shell-Override macht HomeScreen selbst.
+            val activeUiPackId by settingsViewModel.activeUiPack.collectAsState()
+            val uiPacks by settingsViewModel.availableUiPacks.collectAsState()
+            val activeUiPack = remember(activeUiPackId, uiPacks) {
+                uiPacks.firstOrNull { it.packageName == activeUiPackId }
+            }
+            // ActiveIconPack ist prozess-global (I1) und NICHT recompose-reaktiv: beim App-Start mit
+            // persistiertem Pack greift es, bevor die Screens komponieren; ein LIVE gewechselter Pack
+            // greift erst, wenn die icon-lesenden Screens neu komponieren (Tab-Wechsel) bzw. nach Neustart.
+            LaunchedEffect(activeUiPack) {
+                ActiveIconPack.current = activeUiPack?.toIconPack() ?: DefaultIconPack
+            }
+            val tokenOverride = remember(activeUiPack) { activeUiPack?.tokenOverride() }
             // remember: LocalStrings ist ein staticCompositionLocalOf (kein Gleichheits-Check) — ohne
             // remember alloziert resolveStrings bei jeder Recomposition (z.B. Color-Profile-Wechsel) eine
             // neue MapBackedStrings-Instanz und recomposed bei aktivem Sprach-Plugin den ganzen Baum.
@@ -125,7 +144,7 @@ class MainActivity : ComponentActivity() {
                 LocalImageFilter provides activeColorProfile.toColorFilterOrNull(),
                 LocalColorProfile provides activeColorProfile,
             ) {
-                KomgaReaderTheme(themeMode = themeMode) {
+                KomgaReaderTheme(themeMode = themeMode, tokenOverride = tokenOverride) {
                     val nav = rememberNavController()
                     LaunchedEffect(Unit) { syncCoordinator.onAppStart() }
                     // „Zur Bibliothek" app-weit verfügbar (Home-Button im Detail-Header u. a.):

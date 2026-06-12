@@ -44,8 +44,10 @@ import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.displayBehaviorFor
+import com.komgareader.app.ui.components.AuroraSeriesTile
 import com.komgareader.ui.icons.ActiveIconPack
 import com.komgareader.ui.icons.DefaultIconPack
+import com.komgareader.ui.slots.UiSlotPack
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -144,7 +146,15 @@ class MainActivity : ComponentActivity() {
                 LocalImageFilter provides activeColorProfile.toColorFilterOrNull(),
                 LocalColorProfile provides activeColorProfile,
             ) {
-                KomgaReaderTheme(themeMode = themeMode, tokenOverride = tokenOverride) {
+                // Aurora-Card-Kacheln nur im Smartphone-Modus (LCD); E-Ink behält die Default-Kachel.
+                val slotPack = remember(displayMode) {
+                    if (displayMode == DisplayMode.SMARTPHONE) {
+                        UiSlotPack(tiles = { s, m -> AuroraSeriesTile(s, m) })
+                    } else {
+                        UiSlotPack()
+                    }
+                }
+                KomgaReaderTheme(themeMode = themeMode, slotPack = slotPack, tokenOverride = tokenOverride) {
                     val nav = rememberNavController()
                     LaunchedEffect(Unit) { syncCoordinator.onAppStart() }
                     // „Zur Bibliothek" app-weit verfügbar (Home-Button im Detail-Header u. a.):

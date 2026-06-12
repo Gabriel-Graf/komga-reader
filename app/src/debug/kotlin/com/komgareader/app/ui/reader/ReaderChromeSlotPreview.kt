@@ -28,7 +28,7 @@ import com.komgareader.ui.slots.UiSlotPack
  * Bewusst **weggelassen** in diesem Swap-Beweis: [ReaderScaffoldState.footer] (der `ReaderStatusBar`
  * richtet sich selbst `BottomCenter` aus — ein Pack, das ihn anders platzieren will, liefert seinen
  * eigenen Footer), die Tap-Zonen-Hints und der Start-Hinweis; produktive Packs sollten diese platzieren.
- * Die Tap-Zonen-Navigation ([ReaderScaffoldState.onPrev]/[onNext]/[onToggleChrome] bzw. [tapModifier])
+ * Die Tap-Zonen-Navigation ([ReaderScaffoldState.onPrev]/[onNext]/[onToggleChrome] bzw. [ReaderScaffoldState.tapZones])
  * und der E-Ink-Scrim der Menüleiste bleiben über die `overlay`-Region bzw. den Host erzwungen;
  * Refresh/Engine-Navigation (Naht B) sind gar nicht Teil der Surface.
  */

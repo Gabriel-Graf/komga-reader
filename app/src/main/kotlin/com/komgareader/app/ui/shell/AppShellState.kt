@@ -18,7 +18,8 @@ data class ShellDestination(
     val id: ShellDestinationId,
     val icon: ImageVector,
     val label: String,
-    val header: HomeHeaderState,
+    /** null = diese Destination bringt eigene Bar / will keinen Shell-Header (z. B. Collections-Detail). */
+    val header: HomeHeaderState?,
     val content: @Composable () -> Unit,
 )
 

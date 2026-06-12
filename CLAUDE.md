@@ -41,8 +41,9 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 | `render-core` | `Document`/`DocumentFactory` + MuPDF-JNI (Naht B) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx-SDK, HW-gated) | UI, Quellen |
 | `guided-view` | Panel-Erkennung (pure Kotlin XY-Cut) | Engine, UI |
+| `ui-api` | UI-Pack/Slot/Shell/Theme/Icon-**Verträge** (Capability-Surfaces, Slot-typealias, `UiSlotPack`/`ResolvedSlots`/`UiSlots`, `AppShellState`/`ShellPack`, `UiPack` + Theme-Packs + `DesignTokens`, Icon-Stack) + die **entkoppelten Built-ins** (Theme-Packs, Icon-Glyphen). DAG `domain → ui-api → app` (A1) | ViewModels, Netz, Quellen; hängt nur an `domain` + Compose |
 | `data` | Room-Impls, Sync-Queue, Download-Manager | UI |
-| `app` | Compose-UI, ViewModels, DI, Reader-Host | — (oberste Schicht) |
+| `app` | Compose-UI, ViewModels, DI, Reader-Host, **gekoppelte Default-Renderer** (`DefaultSlots`/`DefaultHeader`/`DefaultShell`/`PhoneShell`/`buildSettingsSections`, `Theme.kt`-Host) | — (oberste Schicht) |
 
 ## Detailregeln
 

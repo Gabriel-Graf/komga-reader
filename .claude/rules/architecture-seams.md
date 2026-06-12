@@ -209,7 +209,13 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Über den Reader-Engines wird das *Chrome*
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
   modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind sechs Chrome-Regionen + die
-  detail-Region + die readerChrome-Region** (`app/ui/slots/UiSlots.kt`):
+  detail-Region + die readerChrome-Region.** **Ist (2026-06-12, A1): die Verträge + entkoppelten
+  Surfaces leben jetzt im eigenen Modul `:ui-api`** (`ui-api/…/com/komgareader/ui/slots/UiSlots.kt`
+  u. a.), nicht mehr in-tree in `app/ui/...`. Die **gekoppelten Default-Renderer** (`DefaultSlots`/
+  `DefaultHeader`/`DefaultDialog`/… — der Onyx-Look an app-i18n/-Komponenten) bleiben in `:app`. Eine
+  Folge: `UiSlots.resolve` ist **2-arg** (`resolve(pack, defaults)`, pur), `LocalResolvedSlots` hat
+  einen **Error-Default**, und der Host speist über die app-`resolveSlots`/`DefaultSlots.resolved` ein.
+  Vertrag **noch nicht eingefroren** (kein ABI-Gate — kommt mit dem Pack-Lader L1/L2):
   - **Region `header` (Ist, 2026-06-09; Such-Capability 2026-06-12, D1.1):** In-Tree-Vertrag
     `HeaderSlot` ist jetzt **`@Composable (state: HeaderState) -> Unit`** — die Capability-Surface
     `HeaderState(title, onBack?, actions, search: HeaderSearch?)` (in `UiSlots.kt`) trägt zusätzlich
@@ -346,26 +352,31 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     unangetastet. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/ReaderChromeSlotPreview.kt`
     (`AlternativeReaderChrome`: Status-Fuß oben statt unten, Tap-Hints/Start-Hinweis weggelassen — nur
     Debug/Preview).
-  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail, readerChrome)` ·
-  `ResolvedSlots(…, detail, readerChrome)` · `DefaultSlots` mit allen acht Default-Impls. **E-Ink-Invarianten
-  host-erzwungen:** Slots liefern
+  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail, readerChrome)` (Vertrag
+  jetzt im Modul `:ui-api`, `com.komgareader.ui.slots`) · `ResolvedSlots(…, detail, readerChrome)` (ui-api) ·
+  **app-`DefaultSlots`** mit allen acht gekoppelten Default-Impls (Onyx-Look, bleibt in `:app`).
+  **E-Ink-Invarianten host-erzwungen:** Slots liefern
   Inhalt/Struktur, nie die Bewegungs-/Akzent-Policy (die bleibt an
   `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
   Die ursprünglich genannte Region `nav` ist
-  **kein** Region-Slot — das Nav-Skelett gehört dem **Shell-Pack** (unten). **Weiter Soll:** die
-  `ui-api`-Modul-Extraktion und der APK-Pack-Lader (Skins-Plan P2/P3); das **Reader-Chrome komplett
+  **kein** Region-Slot — das Nav-Skelett gehört dem **Shell-Pack** (unten). **Ist (A1, 2026-06-12):** die
+  `ui-api`-Modul-Extraktion ist **gebaut** (Verträge + entkoppelte Built-ins im Modul `:ui-api`).
+  **Weiter Soll:** der APK-Pack-Lader (Skins-Plan P2/P3); das **Reader-Chrome komplett
   modular** ist mit der `readerChrome`-Region als **Gerüst** gebaut — offen bleibt die **deklarative**
-  Form (A1: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`) + der externe Pack-Lader (L1/L2); der
-  spätere `DetailShell` (Hero/Grid als arrangierbare Stücke). Vertrag bewusst in-tree, **nicht** eingefroren.
+  Form (A1b: Tap-Zone→Aktion-Deskriptor statt bespoke `tapModifier`) + der externe Pack-Lader (L1/L2); der
+  spätere `DetailShell` (Hero/Grid als arrangierbare Stücke). Vertrag im `:ui-api`-Modul, **noch nicht
+  eingefroren** (kein ABI-Gate — das kommt mit L1/L2, dann re-exportiert das Lader-Modul `ui-api` via `api()`).
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots
   liegt jetzt eine Naht, die das **ganze Home-Layout-Skelett** auswechselt (Region-Slots restylen
   Regionen *in* einem festen Baum; ein Shell-Pack besitzt den **ganzen Baum** — Nav-Ort, Anordnung).
-  `app/ui/shell/`: die **Capability-Surface** `AppShellState` (benannte Stücke: `destinations` als
+  **Vertrag im Modul `:ui-api`** (`com.komgareader.ui.shell`, A1): die **Capability-Surface** `AppShellState`
+  (benannte Stücke: `destinations` als
   Nav-**Daten** + `selectedId`/`onSelect`; je `ShellDestination` trägt `icon`/`label` (Daten) und
   `header: HomeHeaderState?`/`content: @Composable` (host-gebaut)), der Vertrag `ShellPack`
-  (`@Composable Render(AppShellState)`), die pure Auswahl `formFactorFor(widthDp)` (<600dp=compact)
-  über `ShellPackRegistry.forFormFactor`. **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
+  (`@Composable Render(AppShellState)`), die pure Auswahl `formFactorFor(widthDp)` (<600dp=compact) +
+  `resolveFormFactor`. Die **gekoppelten Built-ins** `DefaultShell`/`PhoneShell` und die `ShellPackRegistry`
+  (`forFormFactor`) bleiben in `:app` (`com.komgareader.app.ui.shell`). **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
   pure `resolveFormFactor(mode: ShellLayoutMode, widthDp)` (neben `formFactorFor`, unit-getestet) lässt
   den Nutzer den Form-Faktor überschreiben — Domain-Enum `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
   persistiert wie `displayMode` (`SettingsRepository.shellLayoutMode`/`setShellLayoutMode`, Room-Key

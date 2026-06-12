@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import coil.Coil
 import coil.ImageLoader
@@ -105,7 +106,12 @@ class MainActivity : ComponentActivity() {
 
             val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
             val installedLanguages by settingsViewModel.availableLanguages.collectAsState()
-            val activeStrings = resolveStrings(languageStr, installedLanguages)
+            // remember: LocalStrings ist ein staticCompositionLocalOf (kein Gleichheits-Check) — ohne
+            // remember alloziert resolveStrings bei jeder Recomposition (z.B. Color-Profile-Wechsel) eine
+            // neue MapBackedStrings-Instanz und recomposed bei aktivem Sprach-Plugin den ganzen Baum.
+            val activeStrings = remember(languageStr, installedLanguages) {
+                resolveStrings(languageStr, installedLanguages)
+            }
             // Geräteklasse auf zwei orthogonalen Achsen ableiten (Bewegung ⟂ Akzentfarbe):
             // Bewegung folgt der User-Wahl, Akzentfarbe der Hardware (Kaleido). LocalEinkMode
             // bleibt die abgeleitete Brücke (!allowsMotion) für bestehende Animations-Gates.

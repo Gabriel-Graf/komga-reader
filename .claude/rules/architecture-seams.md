@@ -184,9 +184,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
-  Region `homeHeader` gebaut):** Über den Reader-Engines wird das *Chrome* (Header/Overlay/Tiles/Nav/
-  Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der modularen UI
-  (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind zwei Regionen** (`app/ui/slots/UiSlots.kt`):
+  Region `homeHeader` + dritte Region `dialog` gebaut):** Über den Reader-Engines wird das *Chrome*
+  (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
+  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind drei Regionen**
+  (`app/ui/slots/UiSlots.kt`):
   - **Region `header` (Ist, 2026-06-09):** In-Tree-Vertrag `HeaderSlot`
     (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`). Call-Sites
     (`SeriesDetailScreen`, `SubPageScaffold`) rendern `LocalResolvedSlots.current.header(...)`.
@@ -202,10 +203,22 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     `HomeScreen` ist vollständig in die Slot-Naht integriert. Swap-Beweis:
     `app/src/debug/kotlin/com/komgareader/app/ui/home/HomeHeaderSlotPreview.kt`
     (`AlternativeHomeHeader`: Status oben, Aktionen darunter — nur Debug/Preview, keine Nutzer-Einstellung).
-  `UiSlotPack(header, homeHeader)` · `ResolvedSlots(header, homeHeader)` · `DefaultSlots` mit beiden
-  Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern Inhalt/Struktur, nie die
-  Bewegungs-/Akzent-Policy (die bleibt an `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
-  **Weiter Soll:** die übrigen vier Slots (overlay/tiles/nav/settings/dialog), die `ui-api`-Modul-Extraktion
+  - **Region `dialog` (Ist, 2026-06-12):** In-Tree-Vertrag `DialogSlot`
+    (`@Composable (state: DialogState) -> Unit`). Die **Capability-Surface** `DialogState`
+    (`app/ui/components/EinkModal.kt`) spiegelt die `EinkModal`-Parameter 1:1 (Titel · `onDismiss`/
+    `onConfirm` · confirm/dismiss-Label · `confirmEnabled` · optionale `headerAction` · `content`) —
+    das reine Layout-Detail `modifier` gehört dem Default-Renderer, nicht der Surface (keine Call-Site
+    setzt es → Parameter ersatzlos entfernt). `EinkModal(...)` ist jetzt ein **dünner Host-Wrapper**:
+    baut die Surface und ruft `LocalResolvedSlots.current.dialog(state)`; **keine** der ~9 Aufrufstellen
+    ändert sich. `DefaultDialog` ist der verbatim aus dem alten `EinkModal`-Body extrahierte Onyx-Renderer
+    (schwarzer Rand, Titel/Body/Aktionen). Swap-Beweis:
+    `app/src/debug/kotlin/com/komgareader/app/ui/components/DialogSlotPreview.kt`
+    (`AlternativeDialog`: Titel zentriert, Aktionen vertikal gestapelt — nur Debug/Preview, keine
+    Nutzer-Einstellung). `EinkInfoDialog`/Scroll-Helfer bleiben unangetastet.
+  `UiSlotPack(header, homeHeader, dialog)` · `ResolvedSlots(header, homeHeader, dialog)` · `DefaultSlots`
+  mit allen drei Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern Inhalt/Struktur, nie
+  die Bewegungs-/Akzent-Policy (die bleibt an `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
+  **Weiter Soll:** die übrigen Slots (overlay/tiles/nav/settings), die `ui-api`-Modul-Extraktion
   und der APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots

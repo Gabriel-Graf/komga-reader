@@ -35,12 +35,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.app.ui.theme.EinkTokens
 
 /**
- * Modal im Onyx-Look: **immer schwarzer Rand** (strongBorder/outline), weiße Surface,
- * großer Radius. Ersetzt das nackte Material `AlertDialog`. Titel oben, Inhalt mittig,
- * Aktionen unten, voll-breit geteilt (Abbrechen links, Bestätigen rechts). Genau ein Modal gleichzeitig.
+ * Capability-Surface des Dialogs: ein **benannter Satz** der Dialog-Fähigkeiten, den ein
+ * [com.komgareader.app.ui.slots.DialogSlot]-Pack arrangiert. Spiegelt die echten [EinkModal]-Parameter
+ * 1:1 (kein Funktionsverlust) — bis auf das reine Layout-Detail `modifier`, das nie eine Aufrufstelle
+ * setzt und deshalb dem Default-Renderer gehört, nicht der Surface. Die E-Ink-Invarianten
+ * (keine Animation, Akzent/Bewegung über `LocalEinkMode` & Co.) sind **host-erzwungen**, nicht Teil
+ * dieser Surface — ein Pack liefert nur Inhalt/Struktur.
+ */
+data class DialogState(
+    val title: String,
+    val onDismiss: () -> Unit,
+    val confirmLabel: String,
+    val onConfirm: () -> Unit,
+    val dismissLabel: String,
+    val confirmEnabled: Boolean = true,
+    val headerAction: (@Composable () -> Unit)? = null,
+    val content: @Composable ColumnScope.() -> Unit,
+)
+
+/**
+ * Dünner Host-Wrapper: baut die [DialogState]-Surface aus den Parametern und delegiert an die
+ * aufgelöste `dialog`-Region ([LocalResolvedSlots]). Fehlt im aktiven Pack ein Dialog-Slot, rendert
+ * der Default ([DefaultDialog], der heutige Onyx-Look). So bleibt **jede** Aufrufstelle unverändert,
+ * während der Dialog-Look über die Slot-Naht auswechselbar wird (DRY, analog `DefaultHomeHeader`).
  */
 @Composable
 fun EinkModal(
@@ -49,14 +70,34 @@ fun EinkModal(
     confirmLabel: String,
     onConfirm: () -> Unit,
     dismissLabel: String,
-    modifier: Modifier = Modifier,
     confirmEnabled: Boolean = true,
     headerAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    val state = DialogState(
+        title = title,
+        onDismiss = onDismiss,
+        confirmLabel = confirmLabel,
+        onConfirm = onConfirm,
+        dismissLabel = dismissLabel,
+        confirmEnabled = confirmEnabled,
+        headerAction = headerAction,
+        content = content,
+    )
+    LocalResolvedSlots.current.dialog(state)
+}
+
+/**
+ * Mitgeliefertes Default-Rendering der `dialog`-Region im Onyx-Look: **immer schwarzer Rand**
+ * (strongBorder/outline), weiße Surface, großer Radius. Ersetzt das nackte Material `AlertDialog`.
+ * Titel oben, Inhalt mittig, Aktionen unten, voll-breit geteilt (Abbrechen links, Bestätigen rechts).
+ * Genau ein Modal gleichzeitig. Keine Animation (host-erzwungene E-Ink-Invariante).
+ */
+@Composable
+fun DefaultDialog(state: DialogState) {
+    Dialog(onDismissRequest = state.onDismiss) {
         Surface(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .border(
                     EinkTokens.strongBorder,
@@ -72,16 +113,16 @@ fun EinkModal(
             ) {
                 // Sticky-Titel; optionale Header-Aktion (z. B. „+") rechts. Leerer Titel ohne Aktion
                 // → Kopfzeile entfällt ganz (kompaktes Modal).
-                if (title.isNotBlank() || headerAction != null) {
+                if (state.title.isNotBlank() || state.headerAction != null) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                        headerAction?.invoke()
+                        Text(state.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        state.headerAction?.invoke()
                     }
                 }
-                content()
+                state.content(this)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    EinkOutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(dismissLabel) }
-                    Button(onClick = onConfirm, enabled = confirmEnabled, modifier = Modifier.weight(1f)) { Text(confirmLabel) }
+                    EinkOutlinedButton(onClick = state.onDismiss, modifier = Modifier.weight(1f)) { Text(state.dismissLabel) }
+                    Button(onClick = state.onConfirm, enabled = state.confirmEnabled, modifier = Modifier.weight(1f)) { Text(state.confirmLabel) }
                 }
             }
         }

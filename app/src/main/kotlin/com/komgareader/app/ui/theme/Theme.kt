@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import com.komgareader.app.ui.components.LocalDisplayBehavior
+import com.komgareader.app.ui.pack.TokenOverride
 import com.komgareader.app.ui.slots.resolveSlots
 import com.komgareader.ui.slots.LocalResolvedSlots
 import com.komgareader.ui.slots.UiSlotPack
@@ -24,6 +25,7 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
 fun KomgaReaderTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     slotPack: UiSlotPack = UiSlotPack(),
+    tokenOverride: TokenOverride? = null,
     content: @Composable () -> Unit,
 ) {
     val dark = when (themeMode) {
@@ -31,7 +33,18 @@ fun KomgaReaderTheme(
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
-    val pack = UiPackRegistry.forBehavior(LocalDisplayBehavior.current)
+    val behavior = LocalDisplayBehavior.current
+    val pack = UiPackRegistry.forBehavior(behavior)
+    // Token-Override eines externen UI-Packs (L2) auf die geräteklassen-gewählten Tokens anwenden:
+    // Eckradius gilt immer (invariant-neutral); der **Akzent** ist E-Ink-host-erzwungen — nur wenn die
+    // Geräteklasse Akzentfarbe erlaubt (mono E-Ink ignoriert ihn, bleibt Schwarz). onAccent bleibt vom Pack.
+    val baseTokens = pack.designTokens(dark)
+    val tokens = tokenOverride?.let { o ->
+        baseTokens.copy(
+            accent = if (behavior.allowsAccentColor) o.accent ?: baseTokens.accent else baseTokens.accent,
+            cornerRadius = o.cornerRadius ?: baseTokens.cornerRadius,
+        )
+    } ?: baseTokens
     MaterialTheme(
         colorScheme = pack.colorScheme(dark),
         shapes = pack.shapes,
@@ -39,7 +52,7 @@ fun KomgaReaderTheme(
     ) {
         CompositionLocalProvider(
             LocalUiPack provides pack,
-            LocalDesignTokens provides pack.designTokens(dark),
+            LocalDesignTokens provides tokens,
             // Slot-Naht: das aktive Slot-Pack auflösen (fehlende Regionen → Default). Standard ist
             // das mitgelieferte Pack; ein alternatives Pack ([slotPack]) ersetzt einzelne Regionen,
             // ohne dass die Consumer (Call-Sites unten) sich ändern. Bewegung/Akzent bleiben über

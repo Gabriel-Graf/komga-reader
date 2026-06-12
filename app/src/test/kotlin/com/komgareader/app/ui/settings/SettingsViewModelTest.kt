@@ -189,6 +189,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val novelFontWeight: Flow<Int> = flowOf(400)
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
+    override val activeUiPack: Flow<String> = flowOf("")
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -209,6 +210,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setNovelFontWeight(value: Int) {}
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
+    override suspend fun setActiveUiPack(packageName: String) {}
 }
 
 /**
@@ -252,6 +254,7 @@ private class CapturingSettingsRepository(
     override val novelFontWeight: Flow<Int> = flowOf(fontWeight)
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
+    override val activeUiPack: Flow<String> = flowOf("")
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -272,6 +275,7 @@ private class CapturingSettingsRepository(
     override suspend fun setNovelFontWeight(value: Int) { novelFontWeightValue = value }
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
+    override suspend fun setActiveUiPack(packageName: String) {}
 }
 
 /** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */

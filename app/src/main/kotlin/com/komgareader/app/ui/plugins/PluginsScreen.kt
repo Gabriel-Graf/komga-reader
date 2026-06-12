@@ -72,6 +72,7 @@ fun PluginsScreen(
     val presets by viewModel.presetPlugins.collectAsState()
     val languageDataPlugins by viewModel.languageDataPlugins.collectAsState()
     val readerPresetDataPlugins by viewModel.readerPresetDataPlugins.collectAsState()
+    val uiPackDataPlugins by viewModel.uiPackDataPlugins.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val repos by viewModel.repos.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -98,6 +99,7 @@ fun PluginsScreen(
     fun presetFor(pkg: String): DiscoveredPresetPlugin? = presets.firstOrNull { it.packageName == pkg }
     fun languageFor(pkg: String): DiscoveredDataPlugin? = languageDataPlugins.firstOrNull { it.packageName == pkg }
     fun readerPresetFor(pkg: String): DiscoveredDataPlugin? = readerPresetDataPlugins.firstOrNull { it.packageName == pkg }
+    fun uiPackFor(pkg: String): DiscoveredDataPlugin? = uiPackDataPlugins.firstOrNull { it.packageName == pkg }
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -155,6 +157,16 @@ fun PluginsScreen(
                         abiVersion = rp.abiVersion,
                         uninstallLabel = s.pluginUninstall,
                         onUninstall = { uninstall(rp.packageName) },
+                    )
+                }
+                PluginKind.UI_PACK -> uiPackFor(item.packageName)?.let { up ->
+                    DataPluginRow(
+                        title = up.displayName,
+                        typeLabel = s.pluginTabUiPackLabel,
+                        abiLabel = s.pluginAbiLabel,
+                        abiVersion = up.abiVersion,
+                        uninstallLabel = s.pluginUninstall,
+                        onUninstall = { uninstall(up.packageName) },
                     )
                 }
             }
@@ -330,6 +342,7 @@ private fun RepoRow(row: BrowserRow, onInstall: () -> Unit) {
         PluginKind.PRESET -> s.pluginTabPresetLabel
         PluginKind.LANGUAGE -> s.pluginTabLanguageLabel
         PluginKind.READER_PRESET -> s.pluginTabReaderPresetLabel
+        PluginKind.UI_PACK -> s.pluginTabUiPackLabel
     }
     Row(
         modifier = Modifier

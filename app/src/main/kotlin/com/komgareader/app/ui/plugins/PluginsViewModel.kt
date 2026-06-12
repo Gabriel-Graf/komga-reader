@@ -41,6 +41,7 @@ class PluginsViewModel @Inject constructor(
     val presetPlugins = catalog.presetPlugins
     val languageDataPlugins = catalog.languageDataPlugins
     val readerPresetDataPlugins = catalog.readerPresetDataPlugins
+    val uiPackDataPlugins = catalog.uiPackDataPlugins
     val loading = catalog.loading
     val error = catalog.error
 
@@ -66,6 +67,7 @@ class PluginsViewModel @Inject constructor(
             catalog.presetPlugins,
             catalog.languageDataPlugins,
             catalog.readerPresetDataPlugins,
+            catalog.uiPackDataPlugins,
             catalog.discovered,
             _query,
             _typeFilter,
@@ -74,10 +76,11 @@ class PluginsViewModel @Inject constructor(
             val presets = arr[1] as List<DiscoveredPresetPlugin>
             val langs = arr[2] as List<DiscoveredDataPlugin>
             val rPresets = arr[3] as List<DiscoveredDataPlugin>
-            val disc = arr[4] as List<BrowserRow>
-            val q = arr[5] as String
-            val f = arr[6] as PluginTypeFilter
-            visibleRows(installedEntriesOf(srcs, presets, langs, rPresets), disc, q, f)
+            val uiPacks = arr[4] as List<DiscoveredDataPlugin>
+            val disc = arr[5] as List<BrowserRow>
+            val q = arr[6] as String
+            val f = arr[7] as PluginTypeFilter
+            visibleRows(installedEntriesOf(srcs, presets, langs, rPresets, uiPacks), disc, q, f)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VisibleRows(emptyList(), emptyList(), false))
 
     /** Tab-`onResume`: lokaler Re-Scan über den Koordinator (kein Netz) — entdeckt Install/Uninstall,

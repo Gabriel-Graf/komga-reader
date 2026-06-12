@@ -30,6 +30,8 @@ class MapBackedStrings(
     override val shellLayoutAuto: String get() = overrides["shellLayoutAuto"] ?: fallback.shellLayoutAuto
     override val shellLayoutCompact: String get() = overrides["shellLayoutCompact"] ?: fallback.shellLayoutCompact
     override val shellLayoutExpanded: String get() = overrides["shellLayoutExpanded"] ?: fallback.shellLayoutExpanded
+    override val settingsUiPack: String get() = overrides["settingsUiPack"] ?: fallback.settingsUiPack
+    override val uiPackDefault: String get() = overrides["uiPackDefault"] ?: fallback.uiPackDefault
     override val settingsServer: String get() = overrides["settingsServer"] ?: fallback.settingsServer
     override val serverDisplayName: String get() = overrides["serverDisplayName"] ?: fallback.serverDisplayName
     override val serverUrl: String get() = overrides["serverUrl"] ?: fallback.serverUrl
@@ -177,6 +179,7 @@ class MapBackedStrings(
     override val pluginTabPresetLabel: String get() = overrides["pluginTabPresetLabel"] ?: fallback.pluginTabPresetLabel
     override val pluginTabLanguageLabel: String get() = overrides["pluginTabLanguageLabel"] ?: fallback.pluginTabLanguageLabel
     override val pluginTabReaderPresetLabel: String get() = overrides["pluginTabReaderPresetLabel"] ?: fallback.pluginTabReaderPresetLabel
+    override val pluginTabUiPackLabel: String get() = overrides["pluginTabUiPackLabel"] ?: fallback.pluginTabUiPackLabel
     override val pluginTabEmpty: String get() = overrides["pluginTabEmpty"] ?: fallback.pluginTabEmpty
     override val pluginAbiLabel: String get() = overrides["pluginAbiLabel"] ?: fallback.pluginAbiLabel
     override val pluginConfigure: String get() = overrides["pluginConfigure"] ?: fallback.pluginConfigure
@@ -191,6 +194,7 @@ class MapBackedStrings(
     override val pluginFilterPresets: String get() = overrides["pluginFilterPresets"] ?: fallback.pluginFilterPresets
     override val pluginFilterLanguages: String get() = overrides["pluginFilterLanguages"] ?: fallback.pluginFilterLanguages
     override val pluginFilterReaderPresets: String get() = overrides["pluginFilterReaderPresets"] ?: fallback.pluginFilterReaderPresets
+    override val pluginFilterUiPacks: String get() = overrides["pluginFilterUiPacks"] ?: fallback.pluginFilterUiPacks
     override val repoBrowserTitle: String get() = overrides["repoBrowserTitle"] ?: fallback.repoBrowserTitle
     override val repoBrowserOpen: String get() = overrides["repoBrowserOpen"] ?: fallback.repoBrowserOpen
     override val repoBrowserSearch: String get() = overrides["repoBrowserSearch"] ?: fallback.repoBrowserSearch

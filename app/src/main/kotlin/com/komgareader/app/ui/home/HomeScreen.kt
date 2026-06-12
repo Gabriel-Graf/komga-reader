@@ -49,6 +49,7 @@ import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.ui.shell.AppShellState
 import com.komgareader.ui.shell.ShellDestination
 import com.komgareader.ui.shell.ShellDestinationId
+import com.komgareader.app.ui.pack.shellOverride
 import com.komgareader.app.ui.shell.ShellPackRegistry
 import com.komgareader.ui.shell.resolveFormFactor
 import com.komgareader.ui.slots.HomeHeaderFilter
@@ -352,7 +353,17 @@ fun HomeScreen(
     val shellLayoutModeStr by settingsVm.shellLayoutMode.collectAsState()
     // `layoutMode` statt `shellLayoutMode`, um Shadowing des Enum-Typs [ShellLayoutMode] zu vermeiden.
     val layoutMode = runCatching { ShellLayoutMode.valueOf(shellLayoutModeStr) }.getOrDefault(ShellLayoutMode.AUTO)
-    val pack = ShellPackRegistry.forFormFactor(resolveFormFactor(layoutMode, configuration.screenWidthDp))
+    // Externer UI-Pack (L2): ein gesetzter navStyle-Override SCHLÄGT den Form-Faktor-Default
+    // (z. B. Drawer auch auf Boox-Breite). Fehlt der Pack/navStyle → Form-Faktor-Default.
+    val activeUiPackId by settingsVm.activeUiPack.collectAsState()
+    val uiPacks by settingsVm.availableUiPacks.collectAsState()
+    val shellOverride = remember(activeUiPackId, uiPacks) {
+        uiPacks.firstOrNull { it.packageName == activeUiPackId }?.shellOverride()
+    }
+    val pack = ShellPackRegistry.forFormFactor(
+        resolveFormFactor(layoutMode, configuration.screenWidthDp),
+        shellOverride,
+    )
     pack.Render(
         AppShellState(
             destinations = destinations,

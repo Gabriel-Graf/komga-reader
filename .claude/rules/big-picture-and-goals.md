@@ -185,6 +185,51 @@ Ein Community-UI darf den Rahmen neu erfinden, aber nicht die Engine, die Pixel 
   *Umbauen* von Layout/Slots ist das schwere Ende und kommt zuletzt — analog zur Plugin-Reihenfolge
   (c)→(a)→(b).
 
+### Die drei Schichten + der Shell-Pack (die Form-Faktor-Naht) — Soll, noch nicht gebaut
+
+Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit Default + Built-in-Varianten:
+
+| Schicht | Was sie tauscht | Trigger der Auswahl | Status |
+|---|---|---|---|
+| **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
+| **Shell-Pack** (`AppShellState`/`DefaultShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **Soll** (existiert NICHT) |
+| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader **gebaut**, Rest Soll |
+
+**Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
+*in* einem festen Skelett — sie können die Bottom-Bar restylen, aber nicht zu einem Drawer/Side-Rail
+machen. Ein echter **Phone-Formfaktor** unterscheidet sich aber im **Skelett selbst** (Nav woanders,
+andere Anordnung, Buttons an anderen Orten). Darum: eine Schicht **über** den Regionen, die den ganzen
+Layout-Baum besitzt. Der **Core** liefert genau **eine Capability-Surface** `AppShellState`; der
+**Shell-Pack** ordnet frei an. Default-Shell = heutiges E-Ink/Tablet-Bottom-Bar-Layout (aus `HomeScreen`
+extrahiert). Phone-Shell = zweites Built-in (Drawer/anders), beweist den Skelett-Tausch — exakt wie
+Mono/Kaleido/Lcd den Theme-Tausch beweisen. Es ist das **`homeHeader`-Muster eine Ebene höher**:
+`DefaultHomeHeader(state)` → `DefaultShell(appShellState)`. Form-Faktor (Shell) und Geräteklasse (Theme)
+bleiben **orthogonale Achsen** (konsistent mit „Geräteklassen sind nicht binär"): eine Boox = großer
+E-Ink → Tablet-Shell + Mono-Theme; ein Phone = klein-LCD → Phone-Shell + Lcd-Theme.
+
+**Bauweg 1 jetzt, 3 als Endform — und 1 wächst sauber zu 3:** Wie bei Quellen-Plugins und Theme gibt es
+zwei Vertragsformen, gestaffelt vom Einfachen zum Schweren:
+
+1. **In-Tree-Compose-Shell-Packs (jetzt):** der Shell-Pack ist eine `@Composable (AppShellState) -> Unit`
+   und ordnet mit voller Compose-Freiheit an. Built-ins (Default-/Phone-Shell) sind Compose — wie
+   `DefaultHomeHeader`.
+3. **Deklarativer Shell-Pack (Endform, externe APK-Packs, Phase 4):** der externe Pack liefert **kein**
+   arbiträres Compose mit Host-Rechten (Crash/E-Ink-Invarianten, dieselbe Regel wie Plugins (b)), sondern
+   einen **Daten-Deskriptor** (Nav-Stil-Enum, welche Destination an welchem Anker, welche Region wohin).
+   Der Host shippt **eine** `DeclarativeShell` — selbst ein Ansatz-1-Compose-Built-in, parametrisiert per
+   Deskriptor — und rendert **dieselben** `AppShellState`-Stücke an die genannten Plätze.
+
+**Der 1→3-Pfad ist Evolution, kein Rewrite:** beide Formen konsumieren **dieselbe** `AppShellState`. Form 3
+ist nur Form 1, bei der die Anordnungs-Logik von Daten statt Code getrieben ist; In-Tree-Packs (1) sind
+das reichere Superset, externe Deskriptor-Packs (3) die beschränkte Teilmenge derselben Surface. **Die eine
+Bedingung, die das trägt** (sonst bricht die Evolution): `AppShellState` muss von Anfang an ein **Satz
+benannter, host-gebauter, einzeln renderbarer Stücke** sein (`nav`, `content`, `header`, `status`, `search`,
+`filter`, `actions`, `overlay` …) mit **endlichem Anordnungs-Vokabular** (Nav-Stil-Enum, Anker-Positionen) —
+**nie** ein opaker „hier ist ein Content-Lambda, mach was"-Blob. Opak = ein Deskriptor kann es nie nachbauen.
+Diese Bedingung ist **keine Mehrarbeit**: es ist dieselbe „UI neu, Kernlogik gleich"-Disziplin wie bei
+`homeHeader` (`menu`/`actions` sind host-gebaute Felder, das Pack platziert nur), nur schon zur **Design-Zeit**
+angewandt — wodurch auch die In-Tree-Compose-Packs automatisch deskriptor-ausdrückbar bleiben.
+
 ### Was das schon heute heißt (auch bevor irgendein Plugin existiert)
 
 Auch ohne den Plugin-Mechanismus baut **jede UI-Arbeit ab jetzt auf diese Modularität hin**, statt
@@ -225,11 +270,16 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   (`AlternativeHomeHeader`: Status oben, Aktionen darunter — nur Debug/Preview, **keine** Nutzer-Einstellung).
 >   Bewegung/Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) —
 >   ein Slot liefert nur Inhalt/Struktur. `UiSlotPack(header, homeHeader)` · `ResolvedSlots(header, homeHeader)`.
-> **Noch Soll/Richtung (existiert NICHT):** die **übrigen vier Slots** (overlay/tiles/nav/settings/dialog —
-> `UiSlotPack` trägt heute `header` + `homeHeader`), ein eigenes **`ui-api`-Modul** (Vertrag bewusst in-tree,
-> noch nicht eingefroren) und der **externe Pack-Lader** (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry`
-> ist nur der In-Tree-Einhängepunkt). Wer hier weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md`
-> im selben Commit nach und behauptet keinen Typ als real, den `grep` nicht findet.
+> **Noch Soll/Richtung (existiert NICHT):** die **Shell-Pack-Schicht** als Ganzes — `AppShellState`
+> (die Capability-Surface aus benannten Stücken), `DefaultShell`/Phone-Shell, `DeclarativeShell` und die
+> Form-Faktor-Auswahl sind **geplant, nicht gebaut** (User-Entscheidung 2026-06-12, siehe Subsektion „Die
+> drei Schichten + der Shell-Pack" oben); das heutige Skelett ist noch hart in `MainActivity` (NavHost) +
+> `HomeScreen` (Scaffold + `EinkBottomBar`) verdrahtet. Ebenfalls Soll: die **übrigen vier Slots**
+> (overlay/tiles/settings/dialog — `UiSlotPack` trägt heute `header` + `homeHeader`), ein eigenes
+> **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
+> (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
+> weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen
+> Typ als real, den `grep` nicht findet.
 
 ## docs-match-code
 

@@ -95,7 +95,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Settings-Seite: Settings „Server hinzufügen" listet entdeckte Plugins, zeigt TOFU-Trust-Dialog
   (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
 - **Data-only Discovery generalisiert (Ist, 2026-06-12):** Die data-only-Mechanik ist jetzt
-  **kategorisiert**: `PluginCategory{COLOR_PRESET,READER_PRESET,LANGUAGE}` (plugin-api, ABI
+  **kategorisiert**: `PluginCategory{COLOR_PRESET,READER_PRESET,LANGUAGE,UI_PACK}` (plugin-api, ABI
   `VERSION=2`/`MIN_SUPPORTED=1`, additiv). Manifest-Keys `DATA_CATEGORY`+`DATA_ASSET` (mit
   Legacy-Alias `COLOR_PRESETS`). `PluginHost.discoverDataPlugins(category)` ist die generische
   Discovery (reiner `resolveDataPluginManifest`-Helfer); `discoverColorPresetPlugins()` ist nur
@@ -114,6 +114,28 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Distributions-Repo `KomgaReaderPlugins` (debug-signierte APKs + `repo.json`-Einträge `type:
   language|reader_preset`, `abiVersion:2`): `komga-lang-{es,fr,it}` (LANGUAGE) +
   `komga-reader-preset-eink` (READER_PRESET).
+- **Externer UI-Pack (Ist, 2026-06-12, L2 — Schlussstein der UI-Modularität):** vierte data-only Kategorie
+  `UI_PACK` über `discoverDataPlugins` — ein **extern installierbarer** APK liefert ein reines JSON-Asset
+  `ui_pack.json` (Manifest `DATA_CATEGORY=UI_PACK`/`DATA_ASSET`/`ABI_VERSION=2`, `android:hasCode="false"`),
+  das **deklarativ** Teile der Oberfläche ersetzt (kein Plugin-Compose, kein Host-Rechte-Risiko). **Drei
+  Sektionen, alle optional** (Subset-Packs, fehlend → Host-Default): `shell.navStyle` (BOTTOM_BAR/DRAWER) ·
+  `icons` (IconKey-Name→IconKey-Name-Remap unter den bestehenden Lucide-Glyphen, I1) · `theme`
+  (`accent`-Hex + `cornerRadius`-dp). Der pure Pfad bleibt rein: `UiPackSpec` (domain, **nur Primitive**),
+  `parseUiPackSpec` (data, `org.json`, ABI-Range-Check); die Übersetzung in ui-api/Compose-Typen
+  (`toIconPack`/`shellOverride`/`tokenOverride`, `app/ui/pack/UiPackApply.kt`) passiert **nur in `:app`**.
+  **Drei Apply-Pfade:** Icons → `ActiveIconPack.current` per `LaunchedEffect` in `MainActivity` (prozess-global,
+  I1: live erst nach Recompose/Neustart) · Shell → `ShellPackRegistry.forFormFactor(ff, override)` (der
+  navStyle-Override **schlägt** den Form-Faktor-Default, durchgereicht in `HomeScreen`) · Theme →
+  `KomgaReaderTheme(tokenOverride = …)`. **E-Ink-Invariante host-erzwungen:** der **Akzent-Override** gilt
+  NUR, wenn `LocalDisplayBehavior.current.allowsAccentColor` (mono E-Ink ignoriert ihn → bleibt Schwarz);
+  Eckradius/Shell/Icons sind invariant-neutral und gelten immer. Aktive Auswahl persistiert wie LANGUAGE
+  (Setting-Key `active_ui_pack`, `Flow<String>`, **keine** Migration; Picker „UI-Pack" in
+  `AppearanceSettingsContent`, „Standard" = keiner). Discovery+Prune in `PluginCatalog`
+  (`uiPackPlugins`/`uiPackDataPlugins`; aktiver Zeiger fällt auf `""`, wenn das Paket verschwindet);
+  Plugins-Tab-Filter `UI_PACKS`; Repo-Index-Typ `ui_pack`→`PluginKind.UI_PACK` (Install/Fingerprint-Pfad
+  unverändert). Sample-APK `plugin/komga-ui-pack-sample/` (Standalone, gitignored). **Kein** ui-api-Code-ABI-
+  Freeze in L2 (data-Packs linken kein ui-api — der Vertrag ist das JSON-Schema); Code-UI-Packs/externe
+  per-Slot-Packs bleiben additives Soll.
 
 - **Collections-Sync bidirektional (Ist, 2026-06-10):** Sammlungen synchronisieren jetzt **push UND
   pull**. Der reine, pur-getestete `planCollectionSync` (`domain/usecase/CollectionSyncPlan.kt`)

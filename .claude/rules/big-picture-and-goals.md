@@ -219,8 +219,10 @@ zwei Vertragsformen, gestaffelt vom Einfachen zum Schweren:
    Der Host shippt **eine** `DeclarativeShell` — selbst ein Ansatz-1-Compose-Built-in, parametrisiert per
    Deskriptor — und rendert **dieselben** `AppShellState`-Stücke an die genannten Plätze. **L1 (Ist, 2026-06-12)
    hat genau das in-tree gebaut:** `DeclarativeShell(ShellDescriptor)` ersetzt die zwei bespoke Built-ins;
-   `descriptorFor(formFactor)` liefert den Deskriptor, die Registry treibt damit die echte App. Offen bleibt
-   nur, dass ein **externer** APK-Pack den `ShellDescriptor` liefert (L2) — derselbe Renderer.
+   `descriptorFor(formFactor)` liefert den Deskriptor, die Registry treibt damit die echte App. **L2 (Ist,
+   2026-06-12) schließt den Kreis:** ein **externer** data-only UI-Pack-APK liefert den `ShellDescriptor`
+   (`shell.navStyle`) extern (`ShellPackRegistry.forFormFactor(ff, override)`, Override schlägt Form-Faktor) —
+   derselbe Renderer; offen bleibt nur der ABI-Freeze für künftige **Code**-Packs.
 
 **Der 1→3-Pfad ist Evolution, kein Rewrite:** beide Formen konsumieren **dieselbe** `AppShellState`. Form 3
 ist nur Form 1, bei der die Anordnungs-Logik von Daten statt Code getrieben ist; In-Tree-Packs (1) sind
@@ -274,12 +276,16 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   Region (C1) **austauschbar** **und seit A1b deklarativ** (Tap-Zonen als `ReaderTapZones`-Daten-Deskriptor
   statt opakem `tapModifier`; Geometrie host-eigen, Aktion pro Zone als Daten; Comic opt-out via `null`). An
   diese deklarative Form hängt sich die externe UI-Plugin-Form (Plugins (b)) mit L1/L2 an (Enum-Aktionen + Lader).
-- **Icon-Pack extern:** die Icon-Stack-Infra steht (I1) und liegt **jetzt im Modul `:ui-api`** (A1,
+- **Icon-Pack extern (Ist, L2, 2026-06-12):** die Icon-Stack-Infra (I1) liegt im Modul `:ui-api` (A1,
   `com.komgareader.ui.icons` — `IconKey`/`IconPack`/`DefaultIconPack`/`ActiveIconPack`/`AppIcons`/
-  `LucideIcons`, `tools/icons`-Generator schreibt dorthin); der **externe Icon-Pack als APK** + ein
-  Settings-Umschalter sind **Soll mit L1/L2** (externer UI-Pack-Lader, TOFU/ABI wie plugin-host) — bis
-  dahin wird `ActiveIconPack.current` nur im Prozess gesetzt (Default-Pfad aktiv). Runtime-SVG-Import bleibt
-  YAGNI. `IconKey`/`IconPack` werden mit L1/L2 mit-eingefroren.
+  `LucideIcons`, `tools/icons`-Generator schreibt dorthin); der **externe Icon-Pack als installierbarer
+  Pack** ist mit **L2 gebaut** — die `icons`-Sektion eines data-only UI-Pack-APKs (Kategorie `UI_PACK`)
+  remappt IconKey→IconKey **unter den bestehenden Glyphen** (`UiPackSpec.toIconPack` → `ActiveIconPack.current`
+  per `LaunchedEffect` in `MainActivity`). **I1-Limit dokumentiert:** prozess-global, nicht recompose-reaktiv
+  — beim App-Start mit persistiertem Pack greift es vor der ersten Composition; ein **live** gewechselter
+  Pack greift erst nach Recompose (Tab-Wechsel) bzw. Neustart. Runtime-SVG-Import bleibt YAGNI.
+  `IconKey`/`IconPack` werden mit dem ui-api-Code-ABI-Freeze (künftige Code-Packs) mit-eingefroren — nicht Teil
+  von L2 (data-Packs linken kein ui-api).
 - **`ui-api`-Modul (Ist, A1, 2026-06-12):** der Slot-/Shell-/Theme-/Icon-**Vertrag** liegt **gebaut** im
   eigenen Modul `:ui-api` (`com.komgareader.ui.*`, android-library Compose, DAG `domain → ui-api → app`) —
   das UI-Gegenstück zu `source-api`. Es trägt die Capability-Surfaces, Slot-typealias, Pack-Interfaces,
@@ -291,9 +297,22 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
 - **`DeclarativeShell` (Ist, L1, 2026-06-12):** die deskriptor-getriebene Shell ist **in-tree gebaut** —
   `DeclarativeShell(ShellDescriptor)` (`:app`) interpretiert den compose-freien `ShellDescriptor`
   (`:ui-api`, `navStyle: ShellNavStyle{BOTTOM_BAR,DRAWER}`) und treibt die echte App über
-  `descriptorFor(formFactor)`. **Offen bleibt der externe Pack-Lader L2:** das eigentliche „Community
-  **installiert** eine UI" — separates APK, ABI-Gate, TOFU (wie Quellen-Plugins), das nur den
-  `ShellDescriptor` extern liefert; `DeclarativeShell` bleibt. Bis dahin sind alle Packs Built-ins im App-Modul.
+  `descriptorFor(formFactor)`.
+- **Externer Pack-Lader (Ist, L2, 2026-06-12 — Schlussstein):** das „Community **installiert** eine UI" ist
+  als **data-only UI-Pack** gebaut — ein separates APK (Kategorie `UI_PACK`, ABI-Gate `VERSION=2`, Repo-
+  Browser + Fingerprint-Install wie Quellen-/Preset-Plugins) liefert einen **deklarativen JSON-Deskriptor**
+  `ui_pack.json` mit drei optionalen Sektionen (Subset-Packs, fehlend → Host-Default): `shell.navStyle`
+  (überschreibt den Form-Faktor-Default — `ShellPackRegistry.forFormFactor(ff, override)`, Override schlägt
+  Form-Faktor), `icons` (IconKey-Remap, s. o.) und `theme` (`accent`-Hex + `cornerRadius` →
+  `KomgaReaderTheme(tokenOverride)`). **Streng deklarativ** (kein Plugin-Compose, kein Host-Rechte-Crash);
+  der pure Pfad bleibt rein (`UiPackSpec` domain-Primitive, `parseUiPackSpec` data), die Compose-Übersetzung
+  liegt nur in `:app` (`UiPackApply.kt`). **E-Ink host-erzwungen:** der **Akzent-Override** gilt NUR bei
+  `LocalDisplayBehavior.allowsAccentColor` (mono E-Ink ignoriert ihn → bleibt Schwarz); Eckradius/Shell/Icons
+  immer. Aktive Auswahl persistiert wie LANGUAGE (`active_ui_pack`, keine Migration), Picker „UI-Pack" in der
+  Darstellung, Plugins-Tab-Filter `UI_PACKS`, Sample `plugin/komga-ui-pack-sample/`. **Offen bleibt nur das
+  additive Soll:** der **ui-api-Code-ABI-Freeze** (nur für künftige **Code**-UI-Packs nötig — data-Packs
+  linken kein ui-api) und **externe per-Slot-Packs** (header/overlay/… einzeln). Bis dahin sind alle
+  Code-Packs Built-ins im App-Modul; der externe **Daten**-Pack-Lader ist gebaut.
 - **Shell-Pack-Restposten:** Form-Faktor-User-Override (Ist, S0.1: `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,
   Settings-Picker, `resolveFormFactor`) · `DrawerShell`-Auswahlfarbe auf Host-Mono-Tokens (Ist, S0.3) ·
   compact-Header-Politur (S0.2 — empirisch verifizieren, nur fixen wenn real kaputt) · Form-Faktor-User-Override
@@ -440,8 +459,11 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Bottom-Bar,
 > compact→Drawer). **Form-Faktor jetzt user-überschreibbar (Ist, S0.1):** `resolveFormFactor(ShellLayoutMode,
 > widthDp)` pur+getestet, Settings-Picker (Auto/Kompakt/Breit), orthogonal zu `displayMode`. Drawer-Akzent
-> seit S0.3 token-getrieben. Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** der **externe**
-> deklarative Shell-Pack-Lader (L2: APK/ABI-Gate/TOFU, liefert den `ShellDescriptor` extern), compact-Header-Politur (S0.2). **Die Region-Slot-Reihe
+> seit S0.3 token-getrieben. Details: `architecture-seams.md` (Shell-Pack-Naht). **Externer Pack-Lader gebaut
+> (Ist, L2, 2026-06-12):** ein data-only UI-Pack-APK (Kategorie `UI_PACK`, JSON-Deskriptor) liefert
+> `shell.navStyle`/`icons`/`theme` extern und schlägt damit den Form-Faktor-Default (`ShellPackRegistry.
+> forFormFactor(ff, override)`); E-Ink-Akzent-Gate host-erzwungen. **Noch Soll:** der ui-api-Code-ABI-Freeze
+> + externe Code-/per-Slot-Packs (data-Packs linken kein ui-api), compact-Header-Politur (S0.2). **Die Region-Slot-Reihe
 > ist abgeschlossen** (alle sechs Chrome-Regionen + `detail` + `readerChrome` gebaut; `UiSlotPack` trägt
 > `header` + `homeHeader` + `dialog` + `settings` + `tiles` + `overlay` + `detail` + `readerChrome`; `nav` ist
 > Shell-Pack-Sache, kein Region-Slot). **`ui-api`-Modul gebaut (Ist, A1, 2026-06-12):** der Slot-/Shell-/
@@ -451,8 +473,8 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > app-`resolveSlots`/`DefaultSlots.resolved` ein. **Reader-Chrome deklarativ gebaut (Ist, A1b, 2026-06-12):**
 > `ReaderTapZones` (sealed, `HorizontalThirds` + pure `dispatch`, `:ui-api`) ersetzt das opake `tapModifier`;
 > Geometrie host-eigen, Aktion pro Zone als Daten, Comic opt-out via `null`. Ebenfalls Soll: das **ABI-Einfrieren** des
-> `ui-api`-Vertrags (inkl. Enum-Aktionsform der Tap-Zonen) und der **externe Pack-Lader**
-> (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
+> `ui-api`-Vertrags (inkl. Enum-Aktionsform der Tap-Zonen) — nötig erst für künftige externe **Code**-Packs;
+> der externe **Daten**-Pack-Lader (data-only UI-Pack) ist mit L2 **gebaut**. Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen
 > Typ als real, den `grep` nicht findet.
 

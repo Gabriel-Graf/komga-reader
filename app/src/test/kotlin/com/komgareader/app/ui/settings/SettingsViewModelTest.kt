@@ -172,6 +172,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val themeMode: Flow<String> = flowOf("SYSTEM")
     override val language: Flow<String> = flowOf("de")
     override val displayMode: Flow<String> = flowOf("EINK")
+    override val shellLayoutMode: Flow<String> = flowOf("AUTO")
     override val downloadDir: Flow<String?> = flowOf(null)
     override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
@@ -191,6 +192,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
+    override suspend fun setShellLayoutMode(value: String) {}
     override suspend fun setDownloadDir(uri: String?) {}
     override suspend fun setGuidedPanelOverlay(value: Boolean) {}
     override suspend fun setActiveColorProfileId(id: Long) {}
@@ -233,6 +235,7 @@ private class CapturingSettingsRepository(
     override val themeMode: Flow<String> = flowOf("SYSTEM")
     override val language: Flow<String> = flowOf("de")
     override val displayMode: Flow<String> = flowOf("EINK")
+    override val shellLayoutMode: Flow<String> = flowOf("AUTO")
     override val downloadDir: Flow<String?> = flowOf(null)
     override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
@@ -252,6 +255,7 @@ private class CapturingSettingsRepository(
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
+    override suspend fun setShellLayoutMode(value: String) {}
     override suspend fun setDownloadDir(uri: String?) {}
     override suspend fun setGuidedPanelOverlay(value: Boolean) {}
     override suspend fun setActiveColorProfileId(id: Long) {}

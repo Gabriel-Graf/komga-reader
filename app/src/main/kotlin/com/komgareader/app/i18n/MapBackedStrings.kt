@@ -26,6 +26,10 @@ class MapBackedStrings(
     override val displayModeHelper: String get() = overrides["displayModeHelper"] ?: fallback.displayModeHelper
     override val displayEink: String get() = overrides["displayEink"] ?: fallback.displayEink
     override val displaySmartphone: String get() = overrides["displaySmartphone"] ?: fallback.displaySmartphone
+    override val settingsShellLayout: String get() = overrides["settingsShellLayout"] ?: fallback.settingsShellLayout
+    override val shellLayoutAuto: String get() = overrides["shellLayoutAuto"] ?: fallback.shellLayoutAuto
+    override val shellLayoutCompact: String get() = overrides["shellLayoutCompact"] ?: fallback.shellLayoutCompact
+    override val shellLayoutExpanded: String get() = overrides["shellLayoutExpanded"] ?: fallback.shellLayoutExpanded
     override val settingsServer: String get() = overrides["settingsServer"] ?: fallback.settingsServer
     override val serverDisplayName: String get() = overrides["serverDisplayName"] ?: fallback.serverDisplayName
     override val serverUrl: String get() = overrides["serverUrl"] ?: fallback.serverUrl

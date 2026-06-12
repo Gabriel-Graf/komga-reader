@@ -8,6 +8,7 @@ import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.CollectionRepository
@@ -39,6 +40,8 @@ class SettingsViewModel @Inject constructor(
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
     val displayMode = settings.displayMode.stateIn(viewModelScope, SharingStarted.Eagerly, "EINK")
+    val shellLayoutMode =
+        settings.shellLayoutMode.stateIn(viewModelScope, SharingStarted.Eagerly, ShellLayoutMode.AUTO.name)
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val deviceManagedRefresh = settings.deviceManagedRefresh.stateIn(viewModelScope, SharingStarted.Eagerly, true)
@@ -100,6 +103,8 @@ class SettingsViewModel @Inject constructor(
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
     fun setDisplayMode(value: String) = viewModelScope.launch { settings.setDisplayMode(value) }.let {}
+    fun setShellLayoutMode(value: String) =
+        viewModelScope.launch { settings.setShellLayoutMode(value) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
     fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
     fun setDeviceManagedRefresh(value: Boolean) =

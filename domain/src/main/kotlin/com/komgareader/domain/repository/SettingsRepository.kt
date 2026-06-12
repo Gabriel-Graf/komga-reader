@@ -7,6 +7,7 @@ interface SettingsRepository {
     val themeMode: Flow<String>      // "LIGHT" | "DARK" | "SYSTEM"
     val language: Flow<String>       // "de" | "en"
     val displayMode: Flow<String>    // "EINK" | "SMARTPHONE"
+    val shellLayoutMode: Flow<String>  // "AUTO" | "COMPACT" | "EXPANDED" — Home-Skelett-Form-Faktor (Override)
     val downloadDir: Flow<String?>   // SAF-Tree-URI oder null (= interner App-Speicher)
     val guidedPanelOverlay: Flow<Boolean>   // Debug: erkannte Panel-Rahmen im Comic-Reader einblenden
     val activeColorProfileId: Flow<Long?>  // id des aktiven Farbfilter-Profils, null = noch keines gesetzt
@@ -31,6 +32,7 @@ interface SettingsRepository {
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
+    suspend fun setShellLayoutMode(value: String)
     suspend fun setDownloadDir(uri: String?)
     suspend fun setGuidedPanelOverlay(value: Boolean)
     suspend fun setActiveColorProfileId(id: Long)

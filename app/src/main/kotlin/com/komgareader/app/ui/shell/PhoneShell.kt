@@ -11,6 +11,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.slots.LocalResolvedSlots
+import com.komgareader.app.ui.theme.LocalDesignTokens
 import kotlinx.coroutines.launch
 
 /**
@@ -35,6 +37,7 @@ object PhoneShell : ShellPack {
     @Composable
     override fun Render(state: AppShellState) {
         val slots = LocalResolvedSlots.current
+        val tokens = LocalDesignTokens.current
         val drawer = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
         // Animation-Gating: auf E-Ink kein Slide — sofortiger Zustandswechsel (snapTo).
@@ -48,6 +51,13 @@ object PhoneShell : ShellPack {
                             icon = { Icon(d.icon, contentDescription = null) },
                             label = { Text(d.label) },
                             selected = d.id == state.selectedId,
+                            // Aktive Zeile folgt den Host-Mono-Tokens (konsistent mit EinkBottomBar) —
+                            // E-Ink: schwarzer Hintergrund/weißer Text; Kaleido/LCD: Akzent.
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = tokens.accent,
+                                selectedIconColor = tokens.onAccent,
+                                selectedTextColor = tokens.onAccent,
+                            ),
                             onClick = {
                                 state.onSelect(d.id)
                                 scope.launch { if (eink) drawer.snapTo(DrawerValue.Closed) else drawer.close() }

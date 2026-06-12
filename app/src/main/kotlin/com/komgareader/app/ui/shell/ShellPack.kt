@@ -1,6 +1,7 @@
 package com.komgareader.app.ui.shell
 
 import androidx.compose.runtime.Composable
+import com.komgareader.domain.model.ShellLayoutMode
 
 /** Vertrag: ein Pack ordnet die [AppShellState]-Stücke zu einem ganzen Home-Skelett an. Built-ins sind
  *  Compose (Ansatz 1); externe deklarative Packs (Ansatz 3) interpretiert später eine `DeclarativeShell`
@@ -15,6 +16,17 @@ enum class ShellFormFactor { COMPACT, EXPANDED }
 /** Pure Auflösung: <600dp = compact (Phone), sonst expanded (Tablet/E-Ink). Unit-testbar, Compose-frei. */
 fun formFactorFor(widthDp: Int): ShellFormFactor =
     if (widthDp < 600) ShellFormFactor.COMPACT else ShellFormFactor.EXPANDED
+
+/**
+ * Pure Auflösung des effektiven Form-Faktors unter Berücksichtigung des User-Overrides
+ * ([ShellLayoutMode]): AUTO leitet aus der Breite ab, COMPACT/EXPANDED erzwingen. Compose-frei,
+ * unit-testbar — hält die Host-Auswahl dünn.
+ */
+fun resolveFormFactor(mode: ShellLayoutMode, widthDp: Int): ShellFormFactor = when (mode) {
+    ShellLayoutMode.AUTO -> formFactorFor(widthDp)
+    ShellLayoutMode.COMPACT -> ShellFormFactor.COMPACT
+    ShellLayoutMode.EXPANDED -> ShellFormFactor.EXPANDED
+}
 
 /**
  * Registry der Shell-Packs — analog [com.komgareader.app.ui.theme.UiPackRegistry], eine Schicht höher.

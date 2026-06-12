@@ -2,6 +2,7 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.SettingEntity
 import com.komgareader.data.db.SettingsDao
+import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,9 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val language: Flow<String> = dao.observe(KEY_LANG).map { it ?: "de" }
     // Default EINK: Ziel-Gerät ist ein Onyx-Boox.
     override val displayMode: Flow<String> = dao.observe(KEY_DISPLAY).map { it ?: "EINK" }
+    // Default AUTO: Form-Faktor aus der Bildschirmbreite ableiten (verhaltensgleich zu vorher).
+    override val shellLayoutMode: Flow<String> =
+        dao.observe(KEY_SHELL_LAYOUT).map { it ?: ShellLayoutMode.AUTO.name }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)
     override val guidedPanelOverlay: Flow<Boolean> = dao.observe(KEY_PANEL_OVERLAY).map { it == "true" }
     override val activeColorProfileId: Flow<Long?> = dao.observe(KEY_ACTIVE_COLOR_PROFILE)
@@ -51,6 +55,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
     override suspend fun setDisplayMode(value: String) = dao.put(SettingEntity(KEY_DISPLAY, value))
+    override suspend fun setShellLayoutMode(value: String) = dao.put(SettingEntity(KEY_SHELL_LAYOUT, value))
     override suspend fun setDownloadDir(uri: String?) {
         if (uri == null) dao.delete(KEY_DOWNLOAD_DIR)
         else dao.put(SettingEntity(KEY_DOWNLOAD_DIR, uri))
@@ -90,6 +95,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_THEME = "theme_mode"
         const val KEY_LANG = "language"
         const val KEY_DISPLAY = "display_mode"
+        const val KEY_SHELL_LAYOUT = "shell_layout_mode"
         const val KEY_DOWNLOAD_DIR = "download_dir"
         const val KEY_PANEL_OVERLAY = "guided_panel_overlay"
         const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"

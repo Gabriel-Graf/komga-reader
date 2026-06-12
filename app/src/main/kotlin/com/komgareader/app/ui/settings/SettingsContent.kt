@@ -45,6 +45,7 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.CompactStepperRow
+import com.komgareader.app.ui.components.SettingsRow
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.FieldCaption
@@ -62,6 +63,7 @@ import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
@@ -469,16 +471,18 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     }
 }
 
-/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal) und der E-Ink-Refresh-Schalter. */
+/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal), E-Ink-Refresh-Schalter und Reader-Presets. */
 @Composable
 private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val displayModeStr by viewModel.displayMode.collectAsState()
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
+    val presets by viewModel.readerPresets.collectAsState()
 
     // Genau EIN Modal gleichzeitig (E-Ink-Invariante): null = zu.
     var showDisplayPicker by remember { mutableStateOf(false) }
+    var confirmPreset by remember { mutableStateOf<ReaderPreset?>(null) }
     val displayLabel: (DisplayMode) -> String = { dm ->
         when (dm) {
             DisplayMode.EINK -> s.displayEink
@@ -503,6 +507,21 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
                 onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
                 query = query,
             )
+            // Reader-Presets: je installierten Preset eine ChoiceRow (analog Sprach-Picker).
+            // Auswahl setzt confirmPreset → Bestätigungs-Modal → applyReaderPreset.
+            if (presets.isEmpty()) {
+                SettingsRow(label = s.readerPresetApply, query = query, helper = s.readerPresetNone) {}
+            } else {
+                presets.forEach { preset ->
+                    ChoiceRow(
+                        label = "${s.readerPresetApply}: ${preset.name}",
+                        selected = false,
+                        query = query,
+                        dense = true,
+                        onSelect = { confirmPreset = preset },
+                    )
+                }
+            }
         }
     }
 
@@ -517,6 +536,18 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
             onDismiss = { showDisplayPicker = false },
             closeLabel = s.close,
         )
+    }
+
+    confirmPreset?.let { p ->
+        EinkModal(
+            title = s.readerPresetConfirmTitle,
+            onDismiss = { confirmPreset = null },
+            confirmLabel = s.readerPresetApply,
+            onConfirm = { viewModel.applyReaderPreset(p); confirmPreset = null },
+            dismissLabel = s.cancel,
+        ) {
+            Text(s.readerPresetConfirmBody(p.name), style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 

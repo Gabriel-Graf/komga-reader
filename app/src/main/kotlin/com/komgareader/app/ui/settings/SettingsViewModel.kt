@@ -14,6 +14,9 @@ import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.model.ReaderPreset
+import com.komgareader.domain.usecase.ReaderPresetSink
+import com.komgareader.domain.usecase.applyReaderPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
@@ -55,6 +58,28 @@ class SettingsViewModel @Inject constructor(
 
     val availableLanguages = catalog.languagePlugins
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val readerPresets = catalog.readerPresetPlugins
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    fun applyReaderPreset(preset: ReaderPreset) {
+        applyReaderPreset(
+            preset.overrides,
+            ReaderPresetSink(
+                setDisplayMode = ::setDisplayMode,
+                setDeviceManagedRefresh = ::setDeviceManagedRefresh,
+                setWebtoonOverlapPercent = ::setWebtoonOverlap,
+                setNovelFontSizeEm = ::setNovelFontSizeEm,
+                setNovelLineHeight = ::setNovelLineHeight,
+                setNovelMarginPreset = ::setNovelMarginPreset,
+                setNovelFontFamily = ::setNovelFontFamily,
+                setNovelTextAlign = ::setNovelTextAlign,
+                setNovelHyphenationLang = ::setNovelHyphenationLang,
+                setNovelFontWeight = ::setNovelFontWeight,
+                setGuidedPanelOverlay = ::setGuidedPanelOverlay,
+            ),
+        )
+    }
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}

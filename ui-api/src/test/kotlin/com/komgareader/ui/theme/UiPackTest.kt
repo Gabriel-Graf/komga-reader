@@ -34,7 +34,9 @@ class UiPackTest {
 
     @Test
     fun `packs tragen das designToken-mapping ihrer klasse`() {
-        // Das Pack delegiert Tokens an designTokensFor der eigenen Klasse — Look bleibt konsistent.
+        // Mono/Kaleido/Lcd delegieren ihre Tokens an designTokensFor der eigenen Klasse (direkt getestet).
+        // Die LCD-Klasse wird zur Laufzeit von AuroraPack bedient (eigene Cobalt-Tokens) — s. packFor-Test;
+        // LcdPack bleibt hier als eigenständiges Pack mit konsistentem Mapping geprüft.
         assertEquals(designTokensFor(mono, dark = false), MonoEinkPack.designTokens(false))
         assertEquals(designTokensFor(kaleido, dark = false), KaleidoPack.designTokens(false))
         assertEquals(designTokensFor(lcd, dark = true), LcdPack.designTokens(true))

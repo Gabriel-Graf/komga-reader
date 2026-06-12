@@ -225,7 +225,7 @@ val LcdPack: UiPack = object : UiPack {
 fun packFor(behavior: DisplayBehavior): UiPack = when {
     !behavior.allowsAccentColor -> MonoEinkPack
     !behavior.allowsMotion -> KaleidoPack
-    else -> LcdPack
+    else -> AuroraPack // Aurora ist der moderne Mobile-Look für LCD; LcdPack bleibt als Fallback in der Registry
 }
 
 /** Aktives Pack, app-weit. Default = mono E-Ink (sicherster Fall vor Auflösung). */

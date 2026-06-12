@@ -23,7 +23,7 @@ class UiPackTest {
     fun `jede geräteklasse bekommt ihr eigenes pack`() {
         assertSame(MonoEinkPack, packFor(mono))
         assertSame(KaleidoPack, packFor(kaleido))
-        assertSame(LcdPack, packFor(lcd))
+        assertSame(AuroraPack, packFor(lcd))
     }
 
     @Test
@@ -44,6 +44,7 @@ class UiPackTest {
     fun `registry löst packs per id auf und kennt unbekannte nicht`() {
         assertSame(MonoEinkPack, UiPackRegistry.byId("mono-eink"))
         assertSame(KaleidoPack, UiPackRegistry.byId("kaleido"))
+        assertSame(AuroraPack, UiPackRegistry.byId("aurora"))
         assertSame(LcdPack, UiPackRegistry.byId("lcd"))
         assertEquals(null, UiPackRegistry.byId("does-not-exist"))
     }
@@ -57,8 +58,8 @@ class UiPackTest {
     }
 
     @Test
-    fun `registry all listet genau die drei built-in packs`() {
-        assertEquals(listOf("mono-eink", "kaleido", "lcd"), UiPackRegistry.all().map { it.id })
+    fun `registry all listet genau die vier built-in packs`() {
+        assertEquals(listOf("mono-eink", "kaleido", "aurora", "lcd"), UiPackRegistry.all().map { it.id })
     }
 
     @Test

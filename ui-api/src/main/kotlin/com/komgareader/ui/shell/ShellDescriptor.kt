@@ -4,7 +4,7 @@ package com.komgareader.ui.shell
  * Endliches Nav-Anordnungs-Vokabular des Home-Skeletts. Die einzige reale Variabilität zwischen den
  * heutigen Built-ins. Additiv erweiterbar (SIDE_RAIL etc.), ohne bestehende Deskriptoren zu brechen.
  */
-enum class ShellNavStyle { BOTTOM_BAR, DRAWER }
+enum class ShellNavStyle { BOTTOM_BAR, DRAWER, FLOATING_NAV }
 
 /**
  * Daten-Deskriptor eines Home-Skeletts: **was wohin**, nicht **wie** (das `wie` rendert die host-eigene

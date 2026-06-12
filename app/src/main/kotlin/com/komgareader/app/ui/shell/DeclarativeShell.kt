@@ -52,6 +52,7 @@ class DeclarativeShell(val descriptor: ShellDescriptor) : ShellPack {
     override fun Render(state: AppShellState) = when (descriptor.navStyle) {
         ShellNavStyle.BOTTOM_BAR -> BottomBarShell(state)
         ShellNavStyle.DRAWER -> DrawerShell(state)
+        ShellNavStyle.FLOATING_NAV -> BottomBarShell(state) // TODO Task 4: FloatingNavShell
     }
 }
 

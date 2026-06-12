@@ -43,6 +43,8 @@ fun AlternativeSettings(state: SettingsState) {
     ) {
         visible.forEach { section ->
             Text(section.title, style = MaterialTheme.typography.titleLarge)
+            // section.scrollable wird in diesem Swap-Beweis bewusst ignoriert (kein scrollable=false-
+            // Abschnitt im Fake-State). Produktive Packs müssen scrollable auswerten (vgl. DefaultSettings).
             section.content(state.query)
         }
     }

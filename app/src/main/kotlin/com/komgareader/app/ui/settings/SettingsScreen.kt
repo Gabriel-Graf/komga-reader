@@ -38,8 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.komgareader.app.ui.components.LocalContentBottomInset
-import com.komgareader.app.ui.components.LocalEinkMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -49,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.HighlightText
+import com.komgareader.app.ui.components.LocalContentBottomInset
+import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.app.ui.theme.EinkTokens

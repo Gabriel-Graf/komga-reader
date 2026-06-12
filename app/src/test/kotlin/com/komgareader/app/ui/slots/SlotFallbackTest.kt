@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 class SlotFallbackTest {
 
     @Test
-    fun `fehlender header-slot faellt auf das default-pack zurueck`() {
+    fun `fehlender header-slot fällt auf das default-pack zurück`() {
         val pack = UiSlotPack(header = null)
 
         val resolved = UiSlots.resolve(pack)
@@ -28,7 +28,7 @@ class SlotFallbackTest {
     }
 
     @Test
-    fun `gelieferter slot ueberschreibt den default`() {
+    fun `gelieferter slot überschreibt den default`() {
         val custom: HeaderSlot = { _, _, _ -> }
 
         val resolved = UiSlots.resolve(UiSlotPack(header = custom))
@@ -37,7 +37,7 @@ class SlotFallbackTest {
     }
 
     @Test
-    fun `fehlender homeHeader-slot faellt auf das default-pack zurueck`() {
+    fun `fehlender homeHeader-slot fällt auf das default-pack zurück`() {
         val pack = UiSlotPack(homeHeader = null)
 
         val resolved = UiSlots.resolve(pack)
@@ -46,7 +46,7 @@ class SlotFallbackTest {
     }
 
     @Test
-    fun `gelieferter homeHeader-slot ueberschreibt den default`() {
+    fun `gelieferter homeHeader-slot überschreibt den default`() {
         val custom: HomeHeaderSlot = { _ -> }
 
         val resolved = UiSlots.resolve(UiSlotPack(homeHeader = custom))

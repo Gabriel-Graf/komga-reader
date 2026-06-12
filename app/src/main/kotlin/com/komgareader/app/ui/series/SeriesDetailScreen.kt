@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -39,11 +38,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import com.komgareader.app.ui.components.EinkOutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import com.komgareader.app.ui.components.LocalOnHome
+import com.komgareader.app.ui.detail.DetailScaffoldState
 import com.komgareader.app.ui.slots.LocalResolvedSlots
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -117,16 +116,18 @@ fun SeriesDetailScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            val title = when (val c = state) {
-                is SeriesDetailUiState.Content -> c.seriesTitle
-                else -> "Serie"
-            }
-            // Header über die Slot-Naht (austauschbar durch UI-Packs); Actions im Trailing-Lambda
-            // (RowScope): Collections-Bookmark + „Zur Bibliothek" (springt über LocalOnHome bis zur
-            // Graph-Wurzel, von jedem Detail-Screen aus). Zurück-Navigation trägt onBack.
-            LocalResolvedSlots.current.header(title, onBack) {
+    val title = when (val c = state) {
+        is SeriesDetailUiState.Content -> c.seriesTitle
+        else -> "Serie"
+    }
+    // Detail-Gerüst über die Slot-Naht (austauschbar durch UI-Packs): Scaffold + Header + Snackbar +
+    // Body. Header-Aktionen (RowScope): Collections-Bookmark + „Zur Bibliothek" (springt über
+    // LocalOnHome bis zur Graph-Wurzel, von jedem Detail-Screen aus). Zurück-Navigation trägt onBack.
+    LocalResolvedSlots.current.detail(
+        DetailScaffoldState(
+            title = title,
+            onBack = onBack,
+            actions = {
                 (state as? SeriesDetailUiState.Content)?.let { c ->
                     val seriesSourceId = c.books.firstOrNull()?.sourceId
                     val inAnyCollection = seriesSourceId != null && collections.any { col ->
@@ -144,63 +145,64 @@ fun SeriesDetailScreen(
                 IconButton(onClick = onHome) {
                     Icon(AppIcons.Home, contentDescription = s.readerHome)
                 }
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { padding ->
-        when (val current = state) {
-            is SeriesDetailUiState.Loading -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    LoadingIndicator()
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            content = { padding ->
+                when (val current = state) {
+                    is SeriesDetailUiState.Loading -> {
+                        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                            LoadingIndicator()
+                        }
+                    }
+                    is SeriesDetailUiState.NoServer -> {
+                        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                            Text("Kein Server verbunden.")
+                        }
+                    }
+                    is SeriesDetailUiState.Error -> {
+                        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                            UiErrorText(current.error)
+                        }
+                    }
+                    is SeriesDetailUiState.Content -> {
+                        SeriesDetailContent(
+                            books = current.books,
+                            seriesTitle = current.seriesTitle,
+                            seriesRemoteId = current.seriesRemoteId,
+                            serverConfig = current.serverConfig,
+                            seriesSummary = current.seriesSummary,
+                            seriesStatus = current.seriesStatus,
+                            seriesGenres = current.seriesGenres,
+                            contentType = current.effectiveContentType,
+                            viewerModes = current.viewerModes,
+                            localIds = localIds,
+                            downloadingIds = downloadingIds,
+                            downloadPercents = downloadPercents,
+                            downloadProgress = downloadProgress,
+                            cancelling = cancelling,
+                            onOpenBook = onOpenBook,
+                            onOpenChapter = viewModel::onOpenChapter,
+                            onDownload = viewModel::download,
+                            onRemoveDownload = viewModel::removeDownload,
+                            onDownloadAll = { viewModel.downloadAll(current.books) },
+                            onCancelDownload = viewModel::cancelDownloadAll,
+                            onRemoveAll = { viewModel.removeAll(current.books) },
+                            onSetRead = viewModel::setRead,
+                            onOpenTypeMenu = { typeMenuOpen = true },
+                            onTypeMenuAnchor = { burgerAnchor = it },
+                            gridMode = chapterViewMode == "GRID",
+                            onToggleViewMode = {
+                                viewModel.setChapterViewMode(if (chapterViewMode == "GRID") "LIST" else "GRID")
+                            },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                        )
+                    }
                 }
-            }
-            is SeriesDetailUiState.NoServer -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text("Kein Server verbunden.")
-                }
-            }
-            is SeriesDetailUiState.Error -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    UiErrorText(current.error)
-                }
-            }
-            is SeriesDetailUiState.Content -> {
-                SeriesDetailContent(
-                    books = current.books,
-                    seriesTitle = current.seriesTitle,
-                    seriesRemoteId = current.seriesRemoteId,
-                    serverConfig = current.serverConfig,
-                    seriesSummary = current.seriesSummary,
-                    seriesStatus = current.seriesStatus,
-                    seriesGenres = current.seriesGenres,
-                    contentType = current.effectiveContentType,
-                    viewerModes = current.viewerModes,
-                    localIds = localIds,
-                    downloadingIds = downloadingIds,
-                    downloadPercents = downloadPercents,
-                    downloadProgress = downloadProgress,
-                    cancelling = cancelling,
-                    onOpenBook = onOpenBook,
-                    onOpenChapter = viewModel::onOpenChapter,
-                    onDownload = viewModel::download,
-                    onRemoveDownload = viewModel::removeDownload,
-                    onDownloadAll = { viewModel.downloadAll(current.books) },
-                    onCancelDownload = viewModel::cancelDownloadAll,
-                    onRemoveAll = { viewModel.removeAll(current.books) },
-                    onSetRead = viewModel::setRead,
-                    onOpenTypeMenu = { typeMenuOpen = true },
-                    onTypeMenuAnchor = { burgerAnchor = it },
-                    gridMode = chapterViewMode == "GRID",
-                    onToggleViewMode = {
-                        viewModel.setChapterViewMode(if (chapterViewMode == "GRID") "LIST" else "GRID")
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                )
-            }
-        }
-    }
+            },
+        ),
+    )
 
     val content = state as? SeriesDetailUiState.Content
     if (typeMenuOpen && content != null) {

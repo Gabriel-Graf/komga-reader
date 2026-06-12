@@ -10,6 +10,8 @@ import com.komgareader.app.ui.components.DefaultSeriesTile
 import com.komgareader.app.ui.components.DialogState
 import com.komgareader.app.ui.components.StandardTopAppBar
 import com.komgareader.app.ui.components.TileState
+import com.komgareader.app.ui.detail.DefaultDetailScaffold
+import com.komgareader.app.ui.detail.DetailScaffoldState
 import com.komgareader.app.ui.home.DefaultHomeHeader
 import com.komgareader.app.ui.home.HomeHeaderState
 import com.komgareader.app.ui.reader.DefaultReaderOverlay
@@ -18,7 +20,7 @@ import com.komgareader.app.ui.settings.DefaultSettings
 import com.komgareader.app.ui.settings.SettingsState
 
 /**
- * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles, Overlay
+ * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings, Tiles, Overlay, Detail
  *
  * Die [com.komgareader.app.ui.theme.UiPack]-Naht macht den **Look** auswechselbar (Farbe, Typo,
  * Token — „Theme zuerst"). Diese Naht ist das **„Layout danach"** aus `big-picture-and-goals.md`
@@ -30,24 +32,29 @@ import com.komgareader.app.ui.settings.SettingsState
  *
  * ## Vollständige (konzeptionelle) Slot-Liste
  *
- * Die Chrome-Regionen, die je einzeln auswechselbar sind: **header · homeHeader · overlay · tiles ·
- * settings · dialog**. Die ursprünglich genannte Region **nav** ist **kein** Region-Slot: das
- * Navigations-Skelett (Bottom-Bar/Drawer/Side-Rail) gehört dem **Shell-Pack** (`AppShellState`/
- * `DefaultShell`/`PhoneShell`, Form-Faktor-Naht, siehe `architecture-seams.md`), eine Ebene **über**
- * den Region-Slots — nicht als offener Region-Slot zu behaupten, was dort gelöst ist.
+ * Die sechs Chrome-Regionen, die je einzeln auswechselbar sind: **header · homeHeader · overlay ·
+ * tiles · settings · dialog**. Dazu die siebte Region **detail**: das **Vollbild-Detail-Gerüst**
+ * (Scaffold + Header über den `header`-Slot + optionaler Snackbar + Body) — keine eigene Chrome-
+ * Region, sondern das geteilte Gerüst, das die Detail-Routen über den `header`-Slot **komponiert**.
+ * Die ursprünglich genannte Region **nav** ist **kein** Region-Slot: das Navigations-Skelett
+ * (Bottom-Bar/Drawer/Side-Rail) gehört dem **Shell-Pack** (`AppShellState`/`DefaultShell`/
+ * `PhoneShell`, Form-Faktor-Naht, siehe `architecture-seams.md`), eine Ebene **über** den
+ * Region-Slots — nicht als offener Region-Slot zu behaupten, was dort gelöst ist.
  *
- * ## Stand: alle sechs Region-Slots gebaut (Region-Slot-Reihe abgeschlossen)
+ * ## Stand: sechs Chrome-Regionen + die detail-Region gebaut
  *
- * Gebaut sind alle sechs Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
- * ([HomeHeaderState]-Surface), **dialog** ([DialogState]-Surface, der eine Onyx-Dialog-Rahmen
- * hinter [DialogSlot]), **settings** ([SettingsState]-Surface, das Settings-Skelett — Sidebar-
- * Master-Detail vs. Accordion — hinter [SettingsSlot]), **tiles** ([TileState]-Surface, die
- * Serien-Kachel hinter [TilesSlot], in Bibliothek + Gruppen) und **overlay** ([ReaderOverlayState]-
- * Surface, die toggle­bare Reader-Chrome-Menüleiste hinter [OverlaySlot]). Bewusst je *eine* Region
- * end-to-end statt aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
+ * Gebaut sind die sechs Chrome-Regionen — **header** (zentralisierte [StandardTopAppBar]),
+ * **homeHeader** ([HomeHeaderState]-Surface), **dialog** ([DialogState]-Surface, der eine
+ * Onyx-Dialog-Rahmen hinter [DialogSlot]), **settings** ([SettingsState]-Surface, das
+ * Settings-Skelett — Sidebar-Master-Detail vs. Accordion — hinter [SettingsSlot]), **tiles**
+ * ([TileState]-Surface, die Serien-Kachel hinter [TilesSlot], in Bibliothek + Gruppen) und
+ * **overlay** ([ReaderOverlayState]-Surface, die toggle­bare Reader-Chrome-Menüleiste hinter
+ * [OverlaySlot]) — sowie **detail** ([DetailScaffoldState]-Surface, das Vollbild-Detail-Gerüst
+ * hinter [DetailSlot], in SeriesDetail + GroupBrowse). Bewusst je *eine* Region end-to-end statt
+ * aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
  * (`shared-structure-before-variants.md`: erst zentralisieren, dann hinter die Naht). Die
- * `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3); die Slot-Reihe
- * selbst ist damit komplett. Der Vertrag ist **in-tree und nicht eingefroren**.
+ * `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Der Vertrag ist
+ * **in-tree und nicht eingefroren**.
  */
 
 /**
@@ -100,6 +107,15 @@ typealias TilesSlot = @Composable (state: TileState, modifier: Modifier) -> Unit
 typealias OverlaySlot = @Composable BoxScope.(state: ReaderOverlayState) -> Unit
 
 /**
+ * Vertrag der Detail-Region: das **Vollbild-Detail-Gerüst**. Ein Pack rahmt die host-gebauten Stücke
+ * der [DetailScaffoldState]-Surface (Titel + Zurück + Header-Aktionen → header-Slot · optionaler
+ * Snackbar-Host · padding-durchgereichter Body) — dieselbe Aufrufform, andere Rahmung (z. B. später
+ * Master-Detail auf Tablet). Den Body baut der Host, das Pack platziert ihn nur. Der Header-Look + die
+ * E-Ink-Invarianten bleiben über den header-Slot bzw. den Host erzwungen, nicht Sache des Packs.
+ */
+typealias DetailSlot = @Composable (state: DetailScaffoldState) -> Unit
+
+/**
  * Ein Slot-Pack: pro Region ein optionaler Slot. `null` = diese Region nicht überschreiben → Default.
  * Künftige Regionen kommen als weitere **optionale** Felder hinzu, ohne bestehende Packs zu brechen
  * (additiv).
@@ -111,6 +127,7 @@ data class UiSlotPack(
     val settings: SettingsSlot? = null,
     val tiles: TilesSlot? = null,
     val overlay: OverlaySlot? = null,
+    val detail: DetailSlot? = null,
 )
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
@@ -121,6 +138,7 @@ data class ResolvedSlots(
     val settings: SettingsSlot,
     val tiles: TilesSlot,
     val overlay: OverlaySlot,
+    val detail: DetailSlot,
 )
 
 /**
@@ -136,6 +154,7 @@ object UiSlots {
         settings = pack.settings ?: DefaultSlots.settings,
         tiles = pack.tiles ?: DefaultSlots.tiles,
         overlay = pack.overlay ?: DefaultSlots.overlay,
+        detail = pack.detail ?: DefaultSlots.detail,
     )
 }
 
@@ -162,6 +181,9 @@ object DefaultSlots {
     val overlay: OverlaySlot = { state ->
         // Lambda-Receiver ist BoxScope → ruft die BoxScope-Extension mit implizitem Receiver auf.
         DefaultReaderOverlay(state)
+    }
+    val detail: DetailSlot = { state ->
+        DefaultDetailScaffold(state)
     }
 }
 

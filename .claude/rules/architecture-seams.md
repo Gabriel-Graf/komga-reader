@@ -204,12 +204,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
-  Region `homeHeader`, dritte Region `dialog`, vierte Region `settings`, fünfte Region `tiles` +
-  sechste/letzte Region `overlay` gebaut — die Region-Slot-Reihe ist damit abgeschlossen):**
+  Region `homeHeader`, dritte Region `dialog`, vierte Region `settings`, fünfte Region `tiles`,
+  sechste Region `overlay` + siebte Region `detail` gebaut):**
   Über den Reader-Engines wird das *Chrome*
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
-  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind fünf Regionen**
-  (`app/ui/slots/UiSlots.kt`):
+  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind sechs Chrome-Regionen + die
+  detail-Region** (`app/ui/slots/UiSlots.kt`):
   - **Region `header` (Ist, 2026-06-09):** In-Tree-Vertrag `HeaderSlot`
     (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`). Call-Sites
     (`SeriesDetailScreen`, `SubPageScaffold`) rendern `LocalResolvedSlots.current.header(...)`.
@@ -287,16 +287,35 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     unberührt; nur das *Aussehen* der Leiste ist auswechselbar (NICHT in R4: Footer/Tap-Zonen → C1).
     Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
     (`AlternativeReaderOverlay`: Shortcuts links, Titel zentriert, actions weggelassen — nur Debug/Preview).
-  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay)` ·
-  `ResolvedSlots(header, homeHeader, dialog, settings, tiles, overlay)` · `DefaultSlots` mit allen sechs
-  Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern
+  - **Region `detail` (Ist, 2026-06-12 — siebte, Sub-Projekt D1):** In-Tree-Vertrag `DetailSlot`
+    (`@Composable (state: DetailScaffoldState) -> Unit`). Slot-ifiziert das **Vollbild-Detail-Gerüst**
+    (Scaffold + Header über den `header`-Slot + optionaler Snackbar + padding-durchgereichter Body) —
+    keine eigene Chrome-Region, sondern das geteilte Gerüst, das die Detail-Routen über den `header`-Slot
+    **komponiert** (`shared-structure-before-variants`: es war zuvor in jeder Detail-Route dupliziert). Die
+    **Capability-Surface** `DetailScaffoldState` (`app/ui/detail/DetailScaffold.kt`) trägt `title` +
+    `onBack` + Header-`actions` (→ header-Slot) + optionalen `snackbarHost` + den **host-gebauten** `content`
+    (`@Composable (PaddingValues) -> Unit`). Der Body (Hero/Grid/Dialoge/State) bleibt Screen-Eigentum; das
+    Pack platziert ihn nur, baut ihn nie neu („UI neu, Kernlogik gleich"). `DefaultDetailScaffold` ist der
+    verbatim extrahierte Onyx-Renderer (Material-`Scaffold` + header-Slot + Snackbar). **Umgestellt:**
+    `SeriesDetailScreen` (mit Snackbar + Bookmark/Home-Aktionen) + `GroupBrowseRoute` (ohne Snackbar,
+    Refresh-Aktion) bauen das Gerüst nicht mehr selbst, sondern über `LocalResolvedSlots.current.detail(...)`;
+    `TypeMenu`/`AddToCollectionSheet` bleiben nach dem detail-Aufruf, `SeriesDetailContent`/Hero/Grid/VMs
+    unverändert. **NICHT in D1** (→ Folge-Task D1.1): `CollectionDetailScreen` (eigener Such-Header + eigene
+    `MemberTile`). E-Ink/Header-Look host-erzwungen. Swap-Beweis:
+    `app/src/debug/kotlin/com/komgareader/app/ui/detail/DetailSlotPreview.kt`
+    (`AlternativeDetailScaffold`: eigener schlanker Titelbalken statt header-Slot, ohne Material-Scaffold,
+    Snackbar/actions weggelassen — nur Debug/Preview).
+  `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail)` ·
+  `ResolvedSlots(…, detail)` · `DefaultSlots` mit allen sieben Default-Impls. **E-Ink-Invarianten
+  host-erzwungen:** Slots liefern
   Inhalt/Struktur, nie die Bewegungs-/Akzent-Policy (die bleibt an
   `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
-  **Region-Slot-Reihe abgeschlossen** (alle sechs gebaut). Die ursprünglich genannte Region `nav` ist
+  Die ursprünglich genannte Region `nav` ist
   **kein** Region-Slot — das Nav-Skelett gehört dem **Shell-Pack** (unten). **Weiter Soll:** die
   `ui-api`-Modul-Extraktion und der APK-Pack-Lader (Skins-Plan P2/P3); das **Reader-Chrome komplett
-  modular** (C1: Tap-Zonen/Footer/Scaffold deklarativ) ist der Nachfolger von `overlay`. Vertrag bewusst
-  in-tree, **nicht** eingefroren.
+  modular** (C1: Tap-Zonen/Footer/Scaffold deklarativ) ist der Nachfolger von `overlay`; **D1.1**
+  (CollectionDetail in die `detail`-Region) und der spätere `DetailShell` (Hero/Grid als arrangierbare
+  Stücke). Vertrag bewusst in-tree, **nicht** eingefroren.
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots
   liegt jetzt eine Naht, die das **ganze Home-Layout-Skelett** auswechselt (Region-Slots restylen

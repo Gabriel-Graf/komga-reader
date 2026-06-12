@@ -41,7 +41,9 @@ fun parseUiPackSpec(
 
     val theme = obj.optJSONObject("theme")
     val accentHex = theme?.optString("accent")?.takeIf { it.isNotBlank() }
-    val cornerRadiusDp = theme?.takeIf { it.has("cornerRadius") }?.optInt("cornerRadius")
+    // optInt(key) gäbe bei einem nicht-parsebaren String (z. B. "vier") still 0 zurück → falscher
+    // Eckradius ohne Nutzerabsicht. Sentinel-Default trennt „fehlt/unparsebar" sauber von einer echten 0.
+    val cornerRadiusDp = theme?.optInt("cornerRadius", Int.MIN_VALUE)?.takeIf { it != Int.MIN_VALUE }
 
     return UiPackSpec(
         packageName = packageName,

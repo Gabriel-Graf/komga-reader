@@ -46,6 +46,18 @@ class PluginCatalogFilterTest {
     }
 
     @Test
+    fun `type filter UI_PACKS keeps only ui-packs in both sections`() {
+        val out = visibleRows(
+            installed = listOf(installed("MeinSkin", PluginKind.UI_PACK), installed("Kavita", PluginKind.SOURCE)),
+            discovered = listOf(discovered("DarkPack", PluginKind.UI_PACK), discovered("Warm", PluginKind.PRESET)),
+            query = "",
+            typeFilter = PluginTypeFilter.UI_PACKS,
+        )
+        assertEquals(listOf("MeinSkin"), out.installed.map { it.displayName })
+        assertEquals(listOf("DarkPack"), out.discovered.map { it.item.entry.name })
+    }
+
+    @Test
     fun `query matches name and description, case-insensitive, both sections`() {
         val out = visibleRows(
             installed = listOf(installed("Kavita", PluginKind.SOURCE), installed("Comick", PluginKind.SOURCE)),

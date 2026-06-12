@@ -82,4 +82,18 @@ class UiPackParserTest {
         )!!
         assertEquals(mapOf("Home" to "Library"), spec.iconRemap)
     }
+
+    @Test fun unparsebarerCornerRadiusGibtKeinenOverride() {
+        // "vier" ist kein Int → kein stiller 0-Eckradius (sonst eckige Ecken ohne Nutzerabsicht).
+        val spec = parseUiPackSpec("""{"theme":{"cornerRadius":"vier"}}""", pkg, name, abi)!!
+        assertNull(spec.cornerRadiusDp)
+        assertFalse(spec.hasAnyOverride)
+    }
+
+    @Test fun echterCornerRadiusNullWirdUebernommen() {
+        // Eine echte 0 (knappste Ecken) ist ein gültiger Override, kein „fehlt".
+        val spec = parseUiPackSpec("""{"theme":{"cornerRadius":0}}""", pkg, name, abi)!!
+        assertEquals(0, spec.cornerRadiusDp)
+        assertTrue(spec.hasAnyOverride)
+    }
 }

@@ -19,12 +19,12 @@ class ShellSelectionTest {
     }
 
     @Test
-    fun `expanded waehlt die default-shell`() {
+    fun `expanded wählt die default-shell`() {
         assertSame(DefaultShell, ShellPackRegistry.forFormFactor(ShellFormFactor.EXPANDED))
     }
 
     @Test
-    fun `compact waehlt die phone-shell`() {
+    fun `compact wählt die phone-shell`() {
         assertSame(PhoneShell, ShellPackRegistry.forFormFactor(ShellFormFactor.COMPACT))
     }
 

@@ -347,6 +347,7 @@ fun HomeScreen(
     // Der User-Override (ShellLayoutMode) schlägt die breitenbasierte Ableitung (AUTO).
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val shellLayoutModeStr by settingsVm.shellLayoutMode.collectAsState()
+    // `layoutMode` statt `shellLayoutMode`, um Shadowing des Enum-Typs [ShellLayoutMode] zu vermeiden.
     val layoutMode = runCatching { ShellLayoutMode.valueOf(shellLayoutModeStr) }.getOrDefault(ShellLayoutMode.AUTO)
     val pack = ShellPackRegistry.forFormFactor(resolveFormFactor(layoutMode, configuration.screenWidthDp))
     pack.Render(

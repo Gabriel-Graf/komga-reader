@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test
 /**
  * Die UI-Slot-Naht ist das Gegenstück zur Theme-Pack-Naht ([com.komgareader.app.ui.theme.UiPack]),
  * eine Ebene tiefer: nicht *wie* der Look (Farbe/Typo/Token), sondern *welcher Baustein* eine
- * adressierbare Chrome-Region füllt. Gebaute Regionen: **header** (erste) + **homeHeader** (zweite).
+ * adressierbare Chrome-Region füllt. Gebaute Regionen: **header** (erste) + **homeHeader** (zweite)
+ * + **dialog** (dritte).
  *
  * Geprüft wird die **Auflösungs-Logik** [UiSlots.resolve] als pure Funktion über nullbare
  * Referenzen: ein fehlender Slot fällt auf [DefaultSlots] zurück (nie `null`, analog `StubSource`),
@@ -51,5 +52,23 @@ class SlotFallbackTest {
         val resolved = UiSlots.resolve(UiSlotPack(homeHeader = custom))
 
         assertSame(custom, resolved.homeHeader)
+    }
+
+    @Test
+    fun `fehlender dialog-slot faellt auf das default-pack zurueck`() {
+        val pack = UiSlotPack(dialog = null)
+
+        val resolved = UiSlots.resolve(pack)
+
+        assertSame(DefaultSlots.dialog, resolved.dialog)
+    }
+
+    @Test
+    fun `gelieferter dialog-slot ueberschreibt den default`() {
+        val custom: DialogSlot = { _ -> }
+
+        val resolved = UiSlots.resolve(UiSlotPack(dialog = custom))
+
+        assertSame(custom, resolved.dialog)
     }
 }

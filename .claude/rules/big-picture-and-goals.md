@@ -193,7 +193,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
 | **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
-| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader **gebaut**, Rest Soll |
+| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader+dialog **gebaut**, Rest Soll |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
 *in* einem festen Skelett — sie können die Bottom-Bar restylen, aber nicht zu einem Drawer/Side-Rail
@@ -237,12 +237,13 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
 **Home-Skelett**. Alle Punkte unten bleiben **offen, bis die komplette UI modular ist**:
 
 **Gebaut (Stand 2026-06-12):**
-- Theme-Pack (`UiPack`, Look nach Geräteklasse) · Region-Slots **header** + **homeHeader** ·
+- Theme-Pack (`UiPack`, Look nach Geräteklasse) · Region-Slots **header** + **homeHeader** + **dialog**
+  (der eine Onyx-Dialog `EinkModal` hinter `DialogSlot`/`DialogState`) ·
   **Shell-Pack** für das Home-Skelett (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
 
 **Noch offen für „komplette UI modular":**
-- **Übrige Region-Slots:** overlay · tiles · settings · dialog (4 von 6). `UiSlotPack` trägt heute nur
-  header+homeHeader.
+- **Übrige Region-Slots:** overlay · tiles · settings (3 von 6). `UiSlotPack` trägt heute
+  header+homeHeader+dialog.
 - **Andere Vollbild-Routen** (`SeriesDetail`/`GroupBrowse`/`CollectionDetail`): heute ist **nur ihr
   Header** swappable (header-Slot), nicht ihr **Layout**. Für einen echten Phone-Formfaktor müssen auch
   sie anders anordbar sein — entweder eigene Shell-Packs oder slot-komponiert.
@@ -302,7 +303,16 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   `app/src/debug/kotlin/com/komgareader/app/ui/home/HomeHeaderSlotPreview.kt`
 >   (`AlternativeHomeHeader`: Status oben, Aktionen darunter — nur Debug/Preview, **keine** Nutzer-Einstellung).
 >   Bewegung/Akzent bleiben **host-erzwungen** (`LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`) —
->   ein Slot liefert nur Inhalt/Struktur. `UiSlotPack(header, homeHeader)` · `ResolvedSlots(header, homeHeader)`.
+>   ein Slot liefert nur Inhalt/Struktur.
+> - **Region `dialog` (Ist, 2026-06-12):** dritte gebaute Slot-Region. Vertrag: `DialogSlot`
+>   (typealias `@Composable (state: DialogState) -> Unit`). Capability-Surface `DialogState`
+>   (`app/ui/components/EinkModal.kt`) spiegelt die `EinkModal`-Parameter 1:1; `EinkModal(...)` ist ein
+>   dünner Host-Wrapper, der `LocalResolvedSlots.current.dialog(state)` ruft — **keine** der ~9 Aufrufstellen
+>   ändert sich. `DefaultDialog` ist der verbatim extrahierte Onyx-Renderer; das reine Layout-Detail
+>   `modifier` (keine Call-Site setzt es) ist ersatzlos entfallen. Swap-Beweis:
+>   `app/src/debug/kotlin/com/komgareader/app/ui/components/DialogSlotPreview.kt`. `EinkInfoDialog`/
+>   Scroll-Helfer bleiben unangetastet.
+>   `UiSlotPack(header, homeHeader, dialog)` · `ResolvedSlots(header, homeHeader, dialog)`.
 > **Shell-Pack-Schicht gebaut (Ist, 2026-06-12):** `app/ui/shell/` trägt die Capability-Surface
 > `AppShellState` (benannte Stücke: `destinations` als Nav-Daten + `ShellDestination{icon,label,
 > header:HomeHeaderState?,content}`), den Vertrag `ShellPack`, die pure `formFactorFor(widthDp)` +
@@ -311,8 +321,8 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > baut die Surface, löst nach `screenWidthDp` auf, ruft `pack.Render`. NavHost/Reader unberührt
 > (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
 > compact→Phone). Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
-> (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. Ebenfalls Soll: die **übrigen vier Slots**
-> (overlay/tiles/settings/dialog — `UiSlotPack` trägt heute `header` + `homeHeader`), ein eigenes
+> (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. Ebenfalls Soll: die **übrigen drei Slots**
+> (overlay/tiles/settings — `UiSlotPack` trägt heute `header` + `homeHeader` + `dialog`), ein eigenes
 > **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen

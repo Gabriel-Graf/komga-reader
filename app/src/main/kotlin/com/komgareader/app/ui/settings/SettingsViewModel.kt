@@ -2,8 +2,11 @@ package com.komgareader.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
+import com.komgareader.app.data.pluginServerConfig
+import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
@@ -13,6 +16,9 @@ import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.model.ReaderPreset
+import com.komgareader.domain.usecase.ReaderPresetSink
+import com.komgareader.domain.usecase.applyReaderPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
@@ -28,6 +34,7 @@ class SettingsViewModel @Inject constructor(
     private val registration: SourceRegistration,
     private val collections: CollectionRepository,
     private val coordinator: SyncCoordinator,
+    private val catalog: PluginCatalog,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -50,6 +57,45 @@ class SettingsViewModel @Inject constructor(
     val serverList = servers.configs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeColorProfile = colorProfiles.observeActive()
         .stateIn(viewModelScope, SharingStarted.Eagerly, ColorProfile.OFF)
+
+    val availableLanguages = catalog.languagePlugins
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val readerPresets = catalog.readerPresetPlugins
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Entdeckte Quellen-Plugins (für den „Plugin"-Segment im Add-Server-Modal). */
+    val sourcePlugins = catalog.sources
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Persistiert eine bestätigte Plugin-Quelle als [ServerConfig] (kind = PLUGIN).
+     * Spiegelt [PluginsViewModel.addPluginSource] — beide nutzen [pluginServerConfig] (DRY).
+     */
+    fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) =
+        viewModelScope.launch {
+            servers.save(pluginServerConfig(plugin, values))
+            coordinator.onServerChanged()
+        }.let {}
+
+    fun applyReaderPreset(preset: ReaderPreset) {
+        applyReaderPreset(
+            preset.overrides,
+            ReaderPresetSink(
+                setDisplayMode = ::setDisplayMode,
+                setDeviceManagedRefresh = ::setDeviceManagedRefresh,
+                setWebtoonOverlapPercent = ::setWebtoonOverlap,
+                setNovelFontSizeEm = ::setNovelFontSizeEm,
+                setNovelLineHeight = ::setNovelLineHeight,
+                setNovelMarginPreset = ::setNovelMarginPreset,
+                setNovelFontFamily = ::setNovelFontFamily,
+                setNovelTextAlign = ::setNovelTextAlign,
+                setNovelHyphenationLang = ::setNovelHyphenationLang,
+                setNovelFontWeight = ::setNovelFontWeight,
+                setGuidedPanelOverlay = ::setGuidedPanelOverlay,
+            ),
+        )
+    }
 
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}

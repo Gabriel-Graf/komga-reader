@@ -7,6 +7,7 @@ import dalvik.system.PathClassLoader
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceId
+import com.komgareader.plugin.PluginCategory
 import com.komgareader.plugin.SourcePlugin
 
 /**
@@ -39,32 +40,50 @@ class PluginHost(private val context: Context) {
     }
 
     /**
-     * Alle installierten, ABI-kompatiblen **data-only** Color-Preset-Plugins (Typ c). Liest pro Paket
-     * das im Manifest unter [PluginManifestKeys.COLOR_PRESETS] deklarierte Asset über
+     * Generische Discovery aller installierten, ABI-kompatiblen **data-only** Plugins einer
+     * [category]. Liest pro Paket die Kategorie+Asset aus den Manifest-Metadaten (über den reinen
+     * [resolveDataPluginManifest], legacy-`COLOR_PRESETS`-fähig) und das Asset via
      * `createPackageContext(pkg, 0)` — **Flags 0 = nur Ressourcen, KEIN Code**: kein PathClassLoader,
-     * keine Signatur-Prüfung, kein Multidex-Thema. Es wird ausschließlich eine Datei gelesen und
-     * geparst, niemals Plugin-Code ausgeführt. Paket-Sicht via app-Manifest-`QUERY_ALL_PACKAGES`.
+     * keine Signatur-Prüfung, kein Multidex. Es wird ausschließlich eine Datei gelesen, nie
+     * Plugin-Code ausgeführt. Paket-Sicht via app-Manifest-`QUERY_ALL_PACKAGES`. Die JSON-Interpretation
+     * macht der Aufrufer (z.B. [discoverColorPresetPlugins] → [parsePresetSpecs]).
      */
-    fun discoverColorPresetPlugins(): List<DiscoveredPresetPlugin> {
+    fun discoverDataPlugins(category: PluginCategory): List<DiscoveredDataPlugin> {
         val pm = context.packageManager
         val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
         return packages.mapNotNull { pkg ->
             val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
-            val assetName = meta.getString(PluginManifestKeys.COLOR_PRESETS) ?: return@mapNotNull null
+            val resolved = resolveDataPluginManifest(
+                dataCategory = meta.getString(PluginManifestKeys.DATA_CATEGORY),
+                dataAsset = meta.getString(PluginManifestKeys.DATA_ASSET),
+                legacyColorPresets = meta.getString(PluginManifestKeys.COLOR_PRESETS),
+            ) ?: return@mapNotNull null
+            val (resolvedCategory, assetName) = resolved
+            if (resolvedCategory != category) return@mapNotNull null
             val abi = readAbiVersion(meta) ?: return@mapNotNull null
             if (!AbiGate.isCompatible(abi)) return@mapNotNull null
             val json = runCatching {
                 context.createPackageContext(pkg.packageName, 0)
                     .assets.open(assetName).bufferedReader().use { it.readText() }
             }.getOrNull() ?: return@mapNotNull null
-            val specs = parsePresetSpecs(json, abi) ?: return@mapNotNull null
-            if (specs.isEmpty()) return@mapNotNull null   // leeres Asset → kein nutzbares Preset-Plugin
             val label = pkg.applicationInfo?.let { appInfo ->
                 runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrNull()?.ifBlank { null }
             } ?: pkg.packageName
-            DiscoveredPresetPlugin(pkg.packageName, label, abi, specs)
+            DiscoveredDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, json)
         }
     }
+
+    /**
+     * Alle installierten, ABI-kompatiblen **data-only** Color-Preset-Plugins (Typ c) — dünner Wrapper
+     * über [discoverDataPlugins] für [com.komgareader.plugin.PluginCategory.COLOR_PRESET]. Parst den
+     * Asset-JSON via [parsePresetSpecs]; leere/kaputte Assets werden verworfen.
+     */
+    fun discoverColorPresetPlugins(): List<DiscoveredPresetPlugin> =
+        discoverDataPlugins(PluginCategory.COLOR_PRESET).mapNotNull { d ->
+            val specs = parsePresetSpecs(d.assetJson, d.abiVersion)?.takeIf { it.isNotEmpty() }
+                ?: return@mapNotNull null
+            DiscoveredPresetPlugin(d.packageName, d.displayName, d.abiVersion, specs)
+        }
 
     /**
      * Erzeugt die laufende BrowsableSource für eine konfigurierte Plugin-Quelle — NUR wenn die

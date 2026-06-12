@@ -1,7 +1,7 @@
 package com.komgareader.data.plugin.repo
 
-/** Typ-Filter des Plugins-Tabs (Chip „Alle/Quellen/Presets"). */
-enum class PluginTypeFilter { ALL, SOURCES, PRESETS }
+/** Typ-Filter des Plugins-Tabs (Chip „Alle/Quellen/Presets/Sprachen/Reader-Presets"). */
+enum class PluginTypeFilter { ALL, SOURCES, PRESETS, LANGUAGES, READER_PRESETS }
 
 /** Eine Browser-Zeile: gemergter Eintrag + abgeleiteter Install-Zustand + ABI-Kompatibilität. */
 data class BrowserRow(
@@ -28,6 +28,8 @@ private fun PluginKind.matches(filter: PluginTypeFilter): Boolean = when (filter
     PluginTypeFilter.ALL -> true
     PluginTypeFilter.SOURCES -> this == PluginKind.SOURCE
     PluginTypeFilter.PRESETS -> this == PluginKind.PRESET
+    PluginTypeFilter.LANGUAGES -> this == PluginKind.LANGUAGE
+    PluginTypeFilter.READER_PRESETS -> this == PluginKind.READER_PRESET
 }
 
 /**

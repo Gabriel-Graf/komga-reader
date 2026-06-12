@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.installedEntriesOf
 import com.komgareader.app.data.SyncCoordinator
+import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.data.plugin.ColorPresetImporter
 import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.PluginTypeFilter
@@ -12,12 +13,12 @@ import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.data.plugin.repo.VisibleRows
 import com.komgareader.data.plugin.repo.visibleRows
 import com.komgareader.domain.model.ColorProfile
-import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ColorProfileRepository
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
+import com.komgareader.plugin.host.DiscoveredPresetPlugin
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +39,8 @@ class PluginsViewModel @Inject constructor(
 
     val sources = catalog.sources
     val presetPlugins = catalog.presetPlugins
+    val languageDataPlugins = catalog.languageDataPlugins
+    val readerPresetDataPlugins = catalog.readerPresetDataPlugins
     val loading = catalog.loading
     val error = catalog.error
 
@@ -56,9 +59,25 @@ class PluginsViewModel @Inject constructor(
     fun setTypeFilter(f: PluginTypeFilter) { _typeFilter.value = f }
 
     /** Gefilterte, anzeigefertige Sicht: installiert oben, entdeckt unten, Divider-Flag. */
+    @Suppress("UNCHECKED_CAST")
     val visible: StateFlow<VisibleRows> =
-        combine(catalog.sources, catalog.presetPlugins, catalog.discovered, _query, _typeFilter) { srcs, presets, disc, q, f ->
-            visibleRows(installedEntriesOf(srcs, presets), disc, q, f)
+        combine(
+            catalog.sources,
+            catalog.presetPlugins,
+            catalog.languageDataPlugins,
+            catalog.readerPresetDataPlugins,
+            catalog.discovered,
+            _query,
+            _typeFilter,
+        ) { arr ->
+            val srcs = arr[0] as List<DiscoveredPlugin>
+            val presets = arr[1] as List<DiscoveredPresetPlugin>
+            val langs = arr[2] as List<DiscoveredDataPlugin>
+            val rPresets = arr[3] as List<DiscoveredDataPlugin>
+            val disc = arr[4] as List<BrowserRow>
+            val q = arr[5] as String
+            val f = arr[6] as PluginTypeFilter
+            visibleRows(installedEntriesOf(srcs, presets, langs, rPresets), disc, q, f)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VisibleRows(emptyList(), emptyList(), false))
 
     /** Tab-`onResume`: lokaler Re-Scan über den Koordinator (kein Netz) — entdeckt Install/Uninstall,
@@ -81,18 +100,7 @@ class PluginsViewModel @Inject constructor(
      * Nach dem Speichern Sync anstoßen (neue Sammlungen pullen).
      */
     fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) = viewModelScope.launch {
-        servers.save(
-            ServerConfig(
-                name = plugin.metadata.displayName,
-                baseUrl = values["url"]?.trim() ?: "",
-                kind = SourceKind.PLUGIN,
-                extras = values + mapOf(
-                    "__pkg" to plugin.packageName,
-                    "__entry" to plugin.entryClass,
-                    "__sig" to plugin.signatureSha256,
-                ),
-            )
-        )
+        servers.save(pluginServerConfig(plugin, values))
         coordinator.onServerChanged()
     }.let {}
 

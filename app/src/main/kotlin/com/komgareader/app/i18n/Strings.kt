@@ -178,9 +178,13 @@ interface Strings {
     val pluginPresetImported: String      // Status „Importiert"
     // Plugin-Tab Suche + Typ-Filter-Chip
     val pluginSearchHint: String          // Placeholder in der Suchleiste auf dem Plugins-Tab
+    val pluginTabLanguageLabel: String     // Typ-Label „Sprache"
+    val pluginTabReaderPresetLabel: String // Typ-Label „Reader-Preset"
     val pluginFilterAll: String           // Chip-Label „Alle"
     val pluginFilterSources: String       // Chip-Label „Quellen"
     val pluginFilterPresets: String       // Chip-Label „Presets"
+    val pluginFilterLanguages: String     // Chip-Label „Sprachen"
+    val pluginFilterReaderPresets: String // Chip-Label „Reader-Presets"
     // Plugin-Repo-Browser (P2)
     val repoBrowserTitle: String
     val repoBrowserOpen: String
@@ -296,6 +300,17 @@ interface Strings {
     val novelGoToPlaceholder: String
     /** Beschriftung des Springen-Buttons (Barrierefreiheit). */
     val novelGoToAction: String
+    // Feature A — Quellen-Plugin im Add-Server-Selektor
+    val serverKindPlugin: String
+    val addServerSelectPlugin: String
+    val addServerNoSourcePlugins: String
+    // Feature B — Reader-Preset
+    val readerPresetApply: String
+    val readerPresetNone: String
+    val readerPresetConfirmTitle: String
+    fun readerPresetConfirmBody(name: String): String
+    // Feature C — Sprache
+    val languagePluginInstalledHint: String
 }
 
 object StringsDe : Strings {
@@ -480,9 +495,13 @@ object StringsDe : Strings {
     override val pluginPresetRemove = "Entfernen"
     override val pluginPresetImported = "Importiert"
     override val pluginSearchHint = "Plugins suchen"
+    override val pluginTabLanguageLabel = "Sprache"
+    override val pluginTabReaderPresetLabel = "Reader-Preset"
     override val pluginFilterAll = "Alle"
     override val pluginFilterSources = "Quellen"
     override val pluginFilterPresets = "Presets"
+    override val pluginFilterLanguages = "Sprachen"
+    override val pluginFilterReaderPresets = "Reader-Presets"
     // Plugin-Repo-Browser (P2)
     override val repoBrowserTitle = "Plugins entdecken"
     override val repoBrowserOpen = "Plugins entdecken"
@@ -589,6 +608,14 @@ object StringsDe : Strings {
     override val novelGoToPercent = "Gehe zu (%)"
     override val novelGoToPlaceholder = "Seite oder %"
     override val novelGoToAction = "Springen"
+    override val serverKindPlugin = "Plugin"
+    override val addServerSelectPlugin = "Quellen-Plugin wählen"
+    override val addServerNoSourcePlugins = "Keine Quellen-Plugins installiert — im Plugins-Tab hinzufügen."
+    override val readerPresetApply = "Preset anwenden"
+    override val readerPresetNone = "Keine Reader-Presets installiert"
+    override val readerPresetConfirmTitle = "Preset anwenden?"
+    override fun readerPresetConfirmBody(name: String) = "„$name“ überschreibt die betroffenen Reader-Einstellungen."
+    override val languagePluginInstalledHint = "Installiert über Plugin"
 }
 
 object StringsEn : Strings {
@@ -773,9 +800,13 @@ object StringsEn : Strings {
     override val pluginPresetRemove = "Remove"
     override val pluginPresetImported = "Imported"
     override val pluginSearchHint = "Search plugins"
+    override val pluginTabLanguageLabel = "Language"
+    override val pluginTabReaderPresetLabel = "Reader preset"
     override val pluginFilterAll = "All"
     override val pluginFilterSources = "Sources"
     override val pluginFilterPresets = "Presets"
+    override val pluginFilterLanguages = "Languages"
+    override val pluginFilterReaderPresets = "Reader presets"
     // Plugin repo browser (P2)
     override val repoBrowserTitle = "Discover plugins"
     override val repoBrowserOpen = "Discover plugins"
@@ -882,6 +913,14 @@ object StringsEn : Strings {
     override val novelGoToPercent = "Go to (%)"
     override val novelGoToPlaceholder = "Page or %"
     override val novelGoToAction = "Go"
+    override val serverKindPlugin = "Plugin"
+    override val addServerSelectPlugin = "Choose source plugin"
+    override val addServerNoSourcePlugins = "No source plugins installed — add one in the Plugins tab."
+    override val readerPresetApply = "Apply preset"
+    override val readerPresetNone = "No reader presets installed"
+    override val readerPresetConfirmTitle = "Apply preset?"
+    override fun readerPresetConfirmBody(name: String) = "\"$name\" overwrites the affected reader settings."
+    override val languagePluginInstalledHint = "Installed via plugin"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

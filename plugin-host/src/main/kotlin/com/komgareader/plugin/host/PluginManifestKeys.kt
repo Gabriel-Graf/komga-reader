@@ -11,4 +11,14 @@ object PluginManifestKeys {
      * Quellen-Plugin (das nennt [ENTRY_CLASS]). Der Host liest das Asset OHNE Plugin-Code.
      */
     const val COLOR_PRESETS = "com.komgareader.plugin.COLOR_PRESETS"
+
+    /**
+     * Generischer data-only Plugin-Kategorie-Key. Wert = einer von
+     * [com.komgareader.plugin.PluginCategory] (`COLOR_PRESET`|`READER_PRESET`|`LANGUAGE`).
+     * Zusammen mit [DATA_ASSET] der Nachfolger des kategorie-spezifischen [COLOR_PRESETS].
+     */
+    const val DATA_CATEGORY = "com.komgareader.plugin.DATA_CATEGORY"
+
+    /** Asset-Dateiname (relativ zu `assets/`) der data-only JSON-Nutzlast. */
+    const val DATA_ASSET = "com.komgareader.plugin.DATA_ASSET"
 }

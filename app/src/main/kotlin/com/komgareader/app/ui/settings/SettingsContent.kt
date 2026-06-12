@@ -45,7 +45,10 @@ import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.CompactStepperRow
+import com.komgareader.app.ui.components.SettingsRow
 import com.komgareader.app.ui.components.EinkModal
+import com.komgareader.app.ui.plugins.AddPluginSourceModals
+import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.HighlightText
@@ -62,6 +65,7 @@ import com.komgareader.app.ui.icons.AppIcons
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
@@ -88,9 +92,13 @@ private sealed interface ConnectionModal {
 fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val servers by viewModel.serverList.collectAsState()
+    val sourcePlugins by viewModel.sourcePlugins.collectAsState()
 
     // Genau EIN Modal gleichzeitig: null = zu (E-Ink-Invariante).
     var modal by remember { mutableStateOf<ConnectionModal?>(null) }
+    // Plugin-Add-Flow: modal wird auf null gesetzt BEVOR pendingPlugin gesetzt wird →
+    // zu keinem Zeitpunkt sind AddConnectionModal und PluginTofuModal gleichzeitig sichtbar.
+    var pendingPlugin by remember { mutableStateOf<DiscoveredPlugin?>(null) }
 
     // Verbundene Server (mehrere gleichzeitig, gemischt) — „+" im Kopf öffnet das Modal,
     // jede Zeile trägt Zahnrad (Bearbeiten) + Papierkorb (Entfernen).
@@ -136,6 +144,13 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
                 viewModel.saveServer(name, url, apiKey, username, password, kind, id)
                 modal = null
             },
+            sourcePlugins = sourcePlugins,
+            onPluginSelected = { plugin ->
+                // AddConnectionModal schließen BEVOR pendingPlugin gesetzt wird:
+                // modal = null → keine Überschneidung mit PluginTofuModal.
+                modal = null
+                pendingPlugin = plugin
+            },
         )
         is ConnectionModal.Edit -> EditConnectionModal(
             config = mode.config,
@@ -147,10 +162,24 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         )
         null -> Unit
     }
+
+    // Plugin-TOFU→Config-Flow: läuft erst wenn modal == null, also nie gleichzeitig
+    // mit AddConnectionModal oder EditConnectionModal (E-Ink-Invariante: max. 1 Dialog).
+    AddPluginSourceModals(
+        trigger = pendingPlugin,
+        onDismiss = { pendingPlugin = null },
+        onAdd = { plugin, values ->
+            viewModel.addPluginSource(plugin, values)
+            pendingPlugin = null
+        },
+    )
 }
 
 /**
- * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor).
+ * Modal „Server hinzufügen": Komga/OPDS-Formular (Segment-Selektor) plus „Plugin"-Segment
+ * für entdeckte Quellen-Plugins. Im Plugin-Pfad ruft ein Tap auf eine Plugin-Zeile
+ * [onPluginSelected] — das Modal schließt sich im Elternteil, bevor der TOFU→Config-Dialog
+ * erscheint (E-Ink-Invariante: max. 1 Dialog gleichzeitig).
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -160,6 +189,8 @@ private fun AddConnectionModal(
         name: String, url: String, apiKey: String,
         username: String, password: String, kind: SourceKind, id: Long,
     ) -> Unit,
+    sourcePlugins: List<DiscoveredPlugin>,
+    onPluginSelected: (DiscoveredPlugin) -> Unit,
 ) {
     val s = LocalStrings.current
 
@@ -178,62 +209,89 @@ private fun AddConnectionModal(
             onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, 0L)
         },
         dismissLabel = s.cancel,
-        confirmEnabled = nameInput.isNotBlank() && urlInput.isNotBlank(),
+        // Plugin-Pfad: kein Speichern über EinkModal-Button — onPluginSelected übernimmt.
+        confirmEnabled = kindInput != SourceKind.PLUGIN && nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
-        // Quellenart: Komga (REST) oder OPDS (Feed) als Segment-Selektor.
-        // Markennamen — kein i18n-Key nötig.
+        // Quellenart: Komga (REST), OPDS (Feed) oder Plugin als Segment-Selektor.
         SegmentedChoiceRow(
             label = s.serverSectionKind,
             options = listOf(
                 SegmentOption(SourceKind.KOMGA.name, "Komga"),
                 SegmentOption(SourceKind.OPDS.name, "OPDS"),
+                SegmentOption(SourceKind.PLUGIN.name, s.serverKindPlugin),
             ),
             selectedKey = kindInput.name,
             onSelect = { kindInput = SourceKind.valueOf(it) },
         )
 
-        // Server-Identität: Name + URL gehören zusammen.
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldCaption(s.serverSectionServer)
-            OutlinedTextField(
-                value = nameInput,
-                onValueChange = { nameInput = it },
-                label = { Text(s.serverDisplayName) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-            OutlinedTextField(
-                value = urlInput,
-                onValueChange = { urlInput = it },
-                label = { Text(s.serverUrl) },
-                placeholder = { Text(s.serverUrlHint) },
-                supportingText = { Text(s.serverUrlHelper) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-            )
-        }
+        if (kindInput == SourceKind.PLUGIN) {
+            // Plugin-Pfad: Liste entdeckter Quellen-Plugins; leer → Hinweis.
+            if (sourcePlugins.isEmpty()) {
+                Text(
+                    s.addServerNoSourcePlugins,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FieldCaption(s.addServerSelectPlugin)
+                    sourcePlugins.forEach { plugin ->
+                        ChoiceRow(
+                            label = plugin.metadata.displayName,
+                            selected = false,
+                            query = "",
+                            dense = true,
+                            onSelect = { onPluginSelected(plugin) },
+                        )
+                    }
+                }
+            }
+        } else {
+            // Komga/OPDS-Pfad: normales Formular.
 
-        // Anmeldung (alle optional): Benutzer → Passwort → API-Schlüssel, schlicht gestapelt.
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldCaption(s.serverSectionAuth)
-            CredentialsFields(
-                username = usernameInput,
-                password = passwordInput,
-                onUsername = { usernameInput = it },
-                onPassword = { passwordInput = it },
-                usernameLabel = s.serverUsername,
-                passwordLabel = s.serverPassword,
-            )
-            OutlinedTextField(
-                value = apiKeyInput,
-                onValueChange = { apiKeyInput = it },
-                label = { Text(s.serverApiKeyOptional) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            )
+            // Server-Identität: Name + URL gehören zusammen.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FieldCaption(s.serverSectionServer)
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { nameInput = it },
+                    label = { Text(s.serverDisplayName) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
+                    label = { Text(s.serverUrl) },
+                    placeholder = { Text(s.serverUrlHint) },
+                    supportingText = { Text(s.serverUrlHelper) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                )
+            }
+
+            // Anmeldung (alle optional): Benutzer → Passwort → API-Schlüssel, schlicht gestapelt.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FieldCaption(s.serverSectionAuth)
+                CredentialsFields(
+                    username = usernameInput,
+                    password = passwordInput,
+                    onUsername = { usernameInput = it },
+                    onPassword = { passwordInput = it },
+                    usernameLabel = s.serverUsername,
+                    passwordLabel = s.serverPassword,
+                )
+                OutlinedTextField(
+                    value = apiKeyInput,
+                    onValueChange = { apiKeyInput = it },
+                    label = { Text(s.serverApiKeyOptional) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+            }
         }
     }
 }
@@ -469,16 +527,18 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     }
 }
 
-/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal) und der E-Ink-Refresh-Schalter. */
+/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal), E-Ink-Refresh-Schalter und Reader-Presets. */
 @Composable
 private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val displayModeStr by viewModel.displayMode.collectAsState()
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
+    val presets by viewModel.readerPresets.collectAsState()
 
     // Genau EIN Modal gleichzeitig (E-Ink-Invariante): null = zu.
     var showDisplayPicker by remember { mutableStateOf(false) }
+    var confirmPreset by remember { mutableStateOf<ReaderPreset?>(null) }
     val displayLabel: (DisplayMode) -> String = { dm ->
         when (dm) {
             DisplayMode.EINK -> s.displayEink
@@ -503,6 +563,21 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
                 onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
                 query = query,
             )
+            // Reader-Presets: je installierten Preset eine ChoiceRow (analog Sprach-Picker).
+            // Auswahl setzt confirmPreset → Bestätigungs-Modal → applyReaderPreset.
+            if (presets.isEmpty()) {
+                SettingsRow(label = s.readerPresetApply, query = query, helper = s.readerPresetNone) {}
+            } else {
+                presets.forEach { preset ->
+                    ChoiceRow(
+                        label = "${s.readerPresetApply}: ${preset.name}",
+                        selected = false,
+                        query = query,
+                        dense = true,
+                        onSelect = { confirmPreset = preset },
+                    )
+                }
+            }
         }
     }
 
@@ -517,6 +592,18 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
             onDismiss = { showDisplayPicker = false },
             closeLabel = s.close,
         )
+    }
+
+    confirmPreset?.let { p ->
+        EinkModal(
+            title = s.readerPresetConfirmTitle,
+            onDismiss = { confirmPreset = null },
+            confirmLabel = s.readerPresetApply,
+            onConfirm = { viewModel.applyReaderPreset(p); confirmPreset = null },
+            dismissLabel = s.cancel,
+        ) {
+            Text(s.readerPresetConfirmBody(p.name), style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 
@@ -699,6 +786,7 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
 fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val languageStr by viewModel.language.collectAsState()
+    val installed by viewModel.availableLanguages.collectAsState()
     SettingsGroup(s.settingsLanguage, query) {
         Language.entries.forEach { lang ->
             val label = when (lang) {
@@ -707,6 +795,12 @@ fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
             }
             ChoiceRow(label, selected = lang.code == languageStr, query = query, dense = true) {
                 viewModel.setLanguage(lang.code)
+            }
+        }
+        // Built-in-Codes nicht doppelt zeigen, falls ein Plugin de/en shadowt.
+        installed.filterNot { it.code == Language.DE.code || it.code == Language.EN.code }.forEach { spec ->
+            ChoiceRow(spec.name, selected = spec.code == languageStr, query = query, dense = true) {
+                viewModel.setLanguage(spec.code)
             }
         }
     }

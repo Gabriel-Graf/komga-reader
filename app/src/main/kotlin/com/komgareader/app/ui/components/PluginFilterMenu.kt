@@ -7,9 +7,9 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.data.plugin.repo.PluginTypeFilter
 
 /**
- * Filter-Menü des Plugins-Tabs: Einfach-Auswahl Alle/Quellen/Presets (Häkchen auf aktiv). Spiegelt
- * [TypeFilterMenu] (geteiltes [FilterRow] + [AnchoredMenuPopup]); klappt unter dem Filter-Icon auf.
- * Auswahl schließt das Menü (Einfach-Auswahl, kein Mehrfach-Toggle).
+ * Filter-Menü des Plugins-Tabs: Einfach-Auswahl Alle/Quellen/Presets/Sprachen/Reader-Presets
+ * (Häkchen auf aktiv). Spiegelt [TypeFilterMenu] (geteiltes [FilterRow] + [AnchoredMenuPopup]);
+ * klappt unter dem Filter-Icon auf. Auswahl schließt das Menü (Einfach-Auswahl, kein Mehrfach-Toggle).
  */
 @Composable
 fun PluginFilterMenu(
@@ -30,6 +30,14 @@ fun PluginFilterMenu(
         HorizontalDivider()
         FilterRow(label = s.pluginFilterPresets, checked = selected == PluginTypeFilter.PRESETS) {
             onSelect(PluginTypeFilter.PRESETS); onDismiss()
+        }
+        HorizontalDivider()
+        FilterRow(label = s.pluginFilterLanguages, checked = selected == PluginTypeFilter.LANGUAGES) {
+            onSelect(PluginTypeFilter.LANGUAGES); onDismiss()
+        }
+        HorizontalDivider()
+        FilterRow(label = s.pluginFilterReaderPresets, checked = selected == PluginTypeFilter.READER_PRESETS) {
+            onSelect(PluginTypeFilter.READER_PRESETS); onDismiss()
         }
     }
 }

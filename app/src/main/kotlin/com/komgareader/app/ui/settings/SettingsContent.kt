@@ -510,6 +510,20 @@ fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
             }
         }
     }
+
+    // Externer UI-Pack (L2): „Standard" + jeder installierte data-only UI-Pack (analog Sprach-Picker).
+    val activeUiPack by viewModel.activeUiPack.collectAsState()
+    val uiPacks by viewModel.availableUiPacks.collectAsState()
+    SettingsGroup(s.settingsUiPack, query) {
+        ChoiceRow(s.uiPackDefault, selected = activeUiPack.isBlank(), query = query, dense = true) {
+            viewModel.setActiveUiPack("")
+        }
+        uiPacks.forEach { spec ->
+            ChoiceRow(spec.displayName, selected = spec.packageName == activeUiPack, query = query, dense = true) {
+                viewModel.setActiveUiPack(spec.packageName)
+            }
+        }
+    }
 }
 
 /**

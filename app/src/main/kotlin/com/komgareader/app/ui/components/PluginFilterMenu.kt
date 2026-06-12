@@ -39,5 +39,9 @@ fun PluginFilterMenu(
         FilterRow(label = s.pluginFilterReaderPresets, checked = selected == PluginTypeFilter.READER_PRESETS) {
             onSelect(PluginTypeFilter.READER_PRESETS); onDismiss()
         }
+        HorizontalDivider()
+        FilterRow(label = s.pluginFilterUiPacks, checked = selected == PluginTypeFilter.UI_PACKS) {
+            onSelect(PluginTypeFilter.UI_PACKS); onDismiss()
+        }
     }
 }

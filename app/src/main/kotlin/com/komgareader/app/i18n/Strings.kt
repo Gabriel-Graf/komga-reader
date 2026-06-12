@@ -19,6 +19,8 @@ interface Strings {
     val shellLayoutAuto: String
     val shellLayoutCompact: String
     val shellLayoutExpanded: String
+    val settingsUiPack: String
+    val uiPackDefault: String
     val settingsServer: String
     val serverDisplayName: String
     val serverUrl: String
@@ -184,11 +186,13 @@ interface Strings {
     val pluginSearchHint: String          // Placeholder in der Suchleiste auf dem Plugins-Tab
     val pluginTabLanguageLabel: String     // Typ-Label „Sprache"
     val pluginTabReaderPresetLabel: String // Typ-Label „Reader-Preset"
+    val pluginTabUiPackLabel: String       // Typ-Label „UI-Pack"
     val pluginFilterAll: String           // Chip-Label „Alle"
     val pluginFilterSources: String       // Chip-Label „Quellen"
     val pluginFilterPresets: String       // Chip-Label „Presets"
     val pluginFilterLanguages: String     // Chip-Label „Sprachen"
     val pluginFilterReaderPresets: String // Chip-Label „Reader-Presets"
+    val pluginFilterUiPacks: String       // Chip-Label „UI-Packs"
     // Plugin-Repo-Browser (P2)
     val repoBrowserTitle: String
     val repoBrowserOpen: String
@@ -335,6 +339,8 @@ object StringsDe : Strings {
     override val shellLayoutAuto = "Automatisch"
     override val shellLayoutCompact = "Kompakt (Telefon)"
     override val shellLayoutExpanded = "Breit (Tablet)"
+    override val settingsUiPack = "UI-Pack"
+    override val uiPackDefault = "Standard"
     override val settingsServer = "Komga-Server"
     override val serverDisplayName = "Anzeigename"
     override val serverUrl = "Server-URL"
@@ -505,11 +511,13 @@ object StringsDe : Strings {
     override val pluginSearchHint = "Plugins suchen"
     override val pluginTabLanguageLabel = "Sprache"
     override val pluginTabReaderPresetLabel = "Reader-Preset"
+    override val pluginTabUiPackLabel = "UI-Pack"
     override val pluginFilterAll = "Alle"
     override val pluginFilterSources = "Quellen"
     override val pluginFilterPresets = "Presets"
     override val pluginFilterLanguages = "Sprachen"
     override val pluginFilterReaderPresets = "Reader-Presets"
+    override val pluginFilterUiPacks = "UI-Packs"
     // Plugin-Repo-Browser (P2)
     override val repoBrowserTitle = "Plugins entdecken"
     override val repoBrowserOpen = "Plugins entdecken"
@@ -644,6 +652,8 @@ object StringsEn : Strings {
     override val shellLayoutAuto = "Automatic"
     override val shellLayoutCompact = "Compact (phone)"
     override val shellLayoutExpanded = "Wide (tablet)"
+    override val settingsUiPack = "UI pack"
+    override val uiPackDefault = "Default"
     override val settingsServer = "Komga Server"
     override val serverDisplayName = "Display Name"
     override val serverUrl = "Server URL"
@@ -814,11 +824,13 @@ object StringsEn : Strings {
     override val pluginSearchHint = "Search plugins"
     override val pluginTabLanguageLabel = "Language"
     override val pluginTabReaderPresetLabel = "Reader preset"
+    override val pluginTabUiPackLabel = "UI pack"
     override val pluginFilterAll = "All"
     override val pluginFilterSources = "Sources"
     override val pluginFilterPresets = "Presets"
     override val pluginFilterLanguages = "Languages"
     override val pluginFilterReaderPresets = "Reader presets"
+    override val pluginFilterUiPacks = "UI packs"
     // Plugin repo browser (P2)
     override val repoBrowserTitle = "Discover plugins"
     override val repoBrowserOpen = "Discover plugins"

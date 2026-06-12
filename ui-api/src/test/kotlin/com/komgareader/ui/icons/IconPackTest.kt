@@ -1,4 +1,4 @@
-package com.komgareader.app.ui.icons
+package com.komgareader.ui.icons
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotNull

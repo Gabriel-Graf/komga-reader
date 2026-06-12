@@ -8,9 +8,11 @@ import com.komgareader.app.ui.components.DialogState
 import com.komgareader.app.ui.components.StandardTopAppBar
 import com.komgareader.app.ui.home.DefaultHomeHeader
 import com.komgareader.app.ui.home.HomeHeaderState
+import com.komgareader.app.ui.settings.DefaultSettings
+import com.komgareader.app.ui.settings.SettingsState
 
 /**
- * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog
+ * # UI-Slot-Naht (Layout-Ebene der modularen UI) — gebaute Regionen: Header, HomeHeader, Dialog, Settings
  *
  * Die [com.komgareader.app.ui.theme.UiPack]-Naht macht den **Look** auswechselbar (Farbe, Typo,
  * Token — „Theme zuerst"). Diese Naht ist das **„Layout danach"** aus `big-picture-and-goals.md`
@@ -25,14 +27,16 @@ import com.komgareader.app.ui.home.HomeHeaderState
  * Die Chrome-Regionen, die langfristig je einzeln auswechselbar werden sollen:
  * **header · homeHeader · overlay · tiles · nav · settings · dialog**.
  *
- * ## Stand: header + homeHeader + dialog gebaut
+ * ## Stand: header + homeHeader + dialog + settings gebaut
  *
- * Gebaut sind drei Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
- * ([HomeHeaderState]-Surface) und **dialog** ([DialogState]-Surface, der eine Onyx-Dialog-Rahmen
- * hinter [DialogSlot]). Bewusst je *eine* Region end-to-end statt aller auf einmal: jede war zuvor
- * an genau **einer** Stelle zentralisiert (`shared-structure-before-variants.md`: erst zentralisieren,
- * dann hinter die Naht). Die weiteren Slots (overlay/tiles/nav/settings), die `ui-api`-Modul-Extraktion
- * und ein APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Der Vertrag ist **in-tree und nicht eingefroren**.
+ * Gebaut sind vier Regionen — **header** (zentralisierte [StandardTopAppBar]), **homeHeader**
+ * ([HomeHeaderState]-Surface), **dialog** ([DialogState]-Surface, der eine Onyx-Dialog-Rahmen
+ * hinter [DialogSlot]) und **settings** ([SettingsState]-Surface, das Settings-Skelett — Sidebar-
+ * Master-Detail vs. Accordion — hinter [SettingsSlot]). Bewusst je *eine* Region end-to-end statt
+ * aller auf einmal: jede war zuvor an genau **einer** Stelle zentralisiert
+ * (`shared-structure-before-variants.md`: erst zentralisieren, dann hinter die Naht). Die weiteren
+ * Slots (overlay/tiles/nav), die `ui-api`-Modul-Extraktion und ein APK-Pack-Lader bleiben Soll
+ * (Skins-Plan P2/P3). Der Vertrag ist **in-tree und nicht eingefroren**.
  */
 
 /**
@@ -58,18 +62,32 @@ typealias HomeHeaderSlot = @Composable (state: HomeHeaderState) -> Unit
 typealias DialogSlot = @Composable (state: DialogState) -> Unit
 
 /**
+ * Vertrag der Settings-Region. Ein Pack ordnet die host-gebauten Sektionen aus der [SettingsState]-
+ * Surface an (Sidebar-Master-Detail, Accordion, flache Liste …) und besitzt den Navigations-State
+ * selbst — dieselbe Aufrufform, anderes Skelett. Die Sektions-Inhalte sind host-gebaut, das Pack
+ * platziert sie nur. Die E-Ink-Invarianten (gegatete Animation) bleiben host-erzwungen.
+ */
+typealias SettingsSlot = @Composable (state: SettingsState) -> Unit
+
+/**
  * Ein Slot-Pack: pro Region ein optionaler Slot. `null` = diese Region nicht überschreiben → Default.
- * Weitere Regionen (overlay/tiles/nav/settings) kommen später als weitere **optionale** Felder
+ * Weitere Regionen (overlay/tiles/nav) kommen später als weitere **optionale** Felder
  * hinzu, ohne bestehende Packs zu brechen (additiv).
  */
 data class UiSlotPack(
     val header: HeaderSlot? = null,
     val homeHeader: HomeHeaderSlot? = null,
     val dialog: DialogSlot? = null,
+    val settings: SettingsSlot? = null,
 )
 
 /** Aufgelöste Slots: jede Region garantiert non-null (Default eingesetzt, wo das Pack nichts liefert). */
-data class ResolvedSlots(val header: HeaderSlot, val homeHeader: HomeHeaderSlot, val dialog: DialogSlot)
+data class ResolvedSlots(
+    val header: HeaderSlot,
+    val homeHeader: HomeHeaderSlot,
+    val dialog: DialogSlot,
+    val settings: SettingsSlot,
+)
 
 /**
  * Auflöser der Slot-Naht: pro Region „Pack-Slot **oder** Default". **Pure Funktion** über nullbare
@@ -81,6 +99,7 @@ object UiSlots {
         header = pack.header ?: DefaultSlots.header,
         homeHeader = pack.homeHeader ?: DefaultSlots.homeHeader,
         dialog = pack.dialog ?: DefaultSlots.dialog,
+        settings = pack.settings ?: DefaultSlots.settings,
     )
 }
 
@@ -97,6 +116,9 @@ object DefaultSlots {
     }
     val dialog: DialogSlot = { state ->
         DefaultDialog(state)
+    }
+    val settings: SettingsSlot = { state ->
+        DefaultSettings(state)
     }
 }
 

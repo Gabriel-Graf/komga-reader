@@ -193,7 +193,7 @@ Die modulare UI staffelt sich in **drei Schichten**, jede eine eigene Naht mit D
 |---|---|---|---|
 | **Theme-Pack** (`UiPack`) | Look: Farbe/Token/Typo/Shapes | Geräteklasse (`DisplayBehavior`) | **gebaut** (Mono/Kaleido/Lcd) |
 | **Shell-Pack** (`AppShellState`/`DefaultShell`/`PhoneShell`) | **das ganze Layout-Skelett**: Nav-Ort (Bottom-Bar/Side-Rail/Drawer), Anordnung, Baum | **Form-Faktor** (Bildschirmgröße), orthogonal zur Geräteklasse | **gebaut** (Default/Phone, 2026-06-12) |
-| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader+dialog **gebaut**, Rest Soll |
+| **Region-Slots** (`UiSlotPack`) | einzelne Chrome-Regionen, die ein Shell-Pack platziert: header/homeHeader/overlay/tiles/settings/dialog | vom aktiven Shell-Pack gewählt | header+homeHeader+dialog+settings **gebaut**, Rest Soll |
 
 **Warum der Shell-Pack die neue oberste Naht ist (User-Entscheidung 2026-06-12):** Region-Slots sitzen
 *in* einem festen Skelett — sie können die Bottom-Bar restylen, aber nicht zu einem Drawer/Side-Rail
@@ -238,12 +238,13 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
 
 **Gebaut (Stand 2026-06-12):**
 - Theme-Pack (`UiPack`, Look nach Geräteklasse) · Region-Slots **header** + **homeHeader** + **dialog**
-  (der eine Onyx-Dialog `EinkModal` hinter `DialogSlot`/`DialogState`) ·
+  (der eine Onyx-Dialog `EinkModal` hinter `DialogSlot`/`DialogState`) + **settings**
+  (das Settings-Skelett hinter `SettingsSlot`/`SettingsState`) ·
   **Shell-Pack** für das Home-Skelett (`AppShellState`/`DefaultShell`/`PhoneShell`, Form-Faktor).
 
 **Noch offen für „komplette UI modular":**
-- **Übrige Region-Slots:** overlay · tiles · settings (3 von 6). `UiSlotPack` trägt heute
-  header+homeHeader+dialog.
+- **Übrige Region-Slots:** overlay · tiles · nav (3 von 6). `UiSlotPack` trägt heute
+  header+homeHeader+dialog+settings.
 - **Andere Vollbild-Routen** (`SeriesDetail`/`GroupBrowse`/`CollectionDetail`): heute ist **nur ihr
   Header** swappable (header-Slot), nicht ihr **Layout**. Für einen echten Phone-Formfaktor müssen auch
   sie anders anordbar sein — entweder eigene Shell-Packs oder slot-komponiert.
@@ -284,7 +285,7 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > `UiPackRegistry`, angewandt im Host `KomgaReaderTheme`. Die Farben sind damit **geräteklassen-aware**
 > (LCD volles Indigo-Schema, Kaleido gedämpft, mono S/W), nicht mehr global mono. Das ist das
 > „Theme zuerst"-Stück.
-> **Die Layout-Slot-Naht wächst — zwei Regionen gebaut:**
+> **Die Layout-Slot-Naht wächst — vier Regionen gebaut:**
 > - **Region `header` (Ist, 2026-06-09):** `app/ui/slots/UiSlots.kt` trägt `HeaderSlot`
 >   (typealias `@Composable (title, onBack?, actions) -> Unit`), `UiSlotPack(header)`, den puren Resolver
 >   `UiSlots.resolve` (fehlender Slot → `DefaultSlots`, nie `null`, analog `StubSource`) und
@@ -312,7 +313,20 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   `modifier` (keine Call-Site setzt es) ist ersatzlos entfallen. Swap-Beweis:
 >   `app/src/debug/kotlin/com/komgareader/app/ui/components/DialogSlotPreview.kt`. `EinkInfoDialog`/
 >   Scroll-Helfer bleiben unangetastet.
->   `UiSlotPack(header, homeHeader, dialog)` · `ResolvedSlots(header, homeHeader, dialog)`.
+> - **Region `settings` (Ist, 2026-06-12):** vierte gebaute Slot-Region. Vertrag: `SettingsSlot`
+>   (typealias `@Composable (state: SettingsState) -> Unit`). Minimale Capability-Surface `SettingsState`
+>   (`app/ui/settings/SettingsScreen.kt`): die host-gebauten `SettingsSection`s + der Such-`query`.
+>   Der Pack ordnet die Sektionen an (Sidebar-Master-Detail/Accordion/flach) und besitzt den
+>   Navigations-State selbst (`selectedId`/`openId` leben bewusst *in* der Layout-Impl, nicht in der
+>   Surface — ein flacher Pack hat keine „aktive Sektion") — er rendert die Sektions-Inhalte nie neu.
+>   `SettingsScreen(query, modifier, viewModel)` ist ein dünner Host-Wrapper, der
+>   `LocalResolvedSlots.current.settings(state)` in `Box(modifier)` ruft (der `modifier` bleibt —
+>   `SettingsRoute` reicht Route-Padding durch); **beide** Call-Sites unverändert. `DefaultSettings` ist
+>   der verbatim extrahierte Onyx-Renderer (private Helfer `SettingsMasterDetail`/`SettingsSidebar`/
+>   `SettingsAccordion` unverändert). Swap-Beweis:
+>   `app/src/debug/kotlin/com/komgareader/app/ui/settings/SettingsSlotPreview.kt` (`AlternativeSettings`:
+>   flache Einzel-Scroll-Liste). `SettingsSections.kt`/`SettingsViewModel`/die Sektions-Inhalte unangetastet.
+>   `UiSlotPack(header, homeHeader, dialog, settings)` · `ResolvedSlots(header, homeHeader, dialog, settings)`.
 > **Shell-Pack-Schicht gebaut (Ist, 2026-06-12):** `app/ui/shell/` trägt die Capability-Surface
 > `AppShellState` (benannte Stücke: `destinations` als Nav-Daten + `ShellDestination{icon,label,
 > header:HomeHeaderState?,content}`), den Vertrag `ShellPack`, die pure `formFactorFor(widthDp)` +
@@ -322,7 +336,7 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > (`MainActivity` route-graph, Reader = Geschwister-Route). Emulator-verifiziert (expanded→Default,
 > compact→Phone). Details: `architecture-seams.md` (Shell-Pack-Naht). **Noch Soll:** `DeclarativeShell`
 > (Ansatz 3, externe APK-Packs), Form-Faktor-User-Override, compact-Header-Politur. Ebenfalls Soll: die **übrigen drei Slots**
-> (overlay/tiles/settings — `UiSlotPack` trägt heute `header` + `homeHeader` + `dialog`), ein eigenes
+> (overlay/tiles/nav — `UiSlotPack` trägt heute `header` + `homeHeader` + `dialog` + `settings`), ein eigenes
 > **`ui-api`-Modul** (Vertrag bewusst in-tree, noch nicht eingefroren) und der **externe Pack-Lader**
 > (separates APK / ABI-Gate, Phase 4 — `UiPackRegistry` ist nur der In-Tree-Einhängepunkt). Wer hier
 > weiterbaut, zieht diesen Ist-Stand und `architecture-seams.md` im selben Commit nach und behauptet keinen

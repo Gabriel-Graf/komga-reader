@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.icons.AppIcons
+import com.komgareader.app.ui.slots.LocalResolvedSlots
 import com.komgareader.app.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.LocalDesignTokens
 
@@ -65,9 +66,22 @@ private val SizingMedium = SettingsSizing(220.dp, 28.dp, 16.sp, EinkTokens.scree
 private val SizingExpanded = SettingsSizing(280.dp, 32.dp, 20.sp, 24.dp)
 
 /**
- * Adaptiver Settings-Host. < 600 dp → Accordion (Phone), sonst Master-Detail
- * (Tablet/E-Ink), ab 900 dp größer. [query] (live) filtert auf Treffer-Sektionen,
- * springt automatisch zur ersten und markiert Treffer (siehe HighlightText).
+ * Capability-Surface der Settings-Region: die host-gebauten [SettingsSection]s + der Such-[query].
+ * Ein [com.komgareader.app.ui.slots.SettingsSlot]-Pack ordnet sie an (Sidebar/Accordion/flach) und
+ * besitzt den Navigations-State selbst (welche Sektion aktiv/aufgeklappt). Die Sektions-Inhalte
+ * (`section.content`) sind host-gebaut — das Pack platziert sie nur, baut sie nie neu
+ * („UI neu, Kernlogik gleich"). E-Ink-Invarianten bleiben host-erzwungen, nicht Teil dieser Surface.
+ */
+data class SettingsState(
+    val sections: List<SettingsSection>,
+    val query: String,
+)
+
+/**
+ * Adaptiver Settings-Host — dünner Wrapper: baut die [SettingsState]-Surface und delegiert an die
+ * `settings`-Region der Slot-Naht. [query] (live) filtert im Default-Pack auf Treffer-Sektionen,
+ * springt automatisch zur ersten und markiert Treffer (siehe HighlightText). Der [modifier] ist
+ * Host-Layout (Route-Padding), **nicht** Teil der Surface → als Box-Wrapper um den Slot-Call.
  */
 @Composable
 fun SettingsScreen(
@@ -77,9 +91,26 @@ fun SettingsScreen(
 ) {
     val s = LocalStrings.current
     val sections = buildSettingsSections(s, viewModel)
-    val visible = if (query.isBlank()) sections else sections.filter { sectionMatches(it.searchTerms, query) }
+    val state = SettingsState(sections, query)
+    Box(modifier) {
+        LocalResolvedSlots.current.settings(state)
+    }
+}
 
-    BoxWithConstraints(modifier.fillMaxSize()) {
+/**
+ * Das mitgelieferte Onyx-Settings-Skelett. < 600 dp → Accordion (Phone), sonst Master-Detail
+ * (Tablet/E-Ink), ab 900 dp größer. Verhaltens-/pixelgleich zum bisherigen `SettingsScreen`-Rumpf.
+ */
+@Composable
+fun DefaultSettings(state: SettingsState) {
+    val s = LocalStrings.current
+    val visible = if (state.query.isBlank()) {
+        state.sections
+    } else {
+        state.sections.filter { sectionMatches(it.searchTerms, state.query) }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
         if (visible.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(s.searchNoResults, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
@@ -87,10 +118,10 @@ fun SettingsScreen(
             return@BoxWithConstraints
         }
         if (maxWidth < 600.dp) {
-            SettingsAccordion(visible, query, SizingMedium)
+            SettingsAccordion(visible, state.query, SizingMedium)
         } else {
             val sizing = if (maxWidth >= 900.dp) SizingExpanded else SizingMedium
-            SettingsMasterDetail(visible, query, sizing)
+            SettingsMasterDetail(visible, state.query, sizing)
         }
     }
 }

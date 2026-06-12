@@ -184,9 +184,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
-  Region `homeHeader` + dritte Region `dialog` gebaut):** Über den Reader-Engines wird das *Chrome*
+  Region `homeHeader`, dritte Region `dialog` + vierte Region `settings` gebaut):** Über den
+  Reader-Engines wird das *Chrome*
   (Header/Overlay/Tiles/Nav/Settings/Dialog) regionweise auswechselbar — das „Layout danach"-Stück der
-  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind drei Regionen**
+  modularen UI (`big-picture-and-goals.md` → ui-modularity). **Gebaut sind vier Regionen**
   (`app/ui/slots/UiSlots.kt`):
   - **Region `header` (Ist, 2026-06-09):** In-Tree-Vertrag `HeaderSlot`
     (`@Composable (title, onBack?, actions) -> Unit`, spiegelt `StandardTopAppBar`). Call-Sites
@@ -215,10 +216,27 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     `app/src/debug/kotlin/com/komgareader/app/ui/components/DialogSlotPreview.kt`
     (`AlternativeDialog`: Titel zentriert, Aktionen vertikal gestapelt — nur Debug/Preview, keine
     Nutzer-Einstellung). `EinkInfoDialog`/Scroll-Helfer bleiben unangetastet.
-  `UiSlotPack(header, homeHeader, dialog)` · `ResolvedSlots(header, homeHeader, dialog)` · `DefaultSlots`
-  mit allen drei Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern Inhalt/Struktur, nie
-  die Bewegungs-/Akzent-Policy (die bleibt an `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
-  **Weiter Soll:** die übrigen Slots (overlay/tiles/nav/settings), die `ui-api`-Modul-Extraktion
+  - **Region `settings` (Ist, 2026-06-12):** In-Tree-Vertrag `SettingsSlot`
+    (`@Composable (state: SettingsState) -> Unit`). Die **Capability-Surface** `SettingsState`
+    (`app/ui/settings/SettingsScreen.kt`) ist minimal: die host-gebauten `SettingsSection`s
+    (aus `buildSettingsSections`, je `id`/`icon`/`title`/`searchTerms` als Daten + `content` als
+    host-gebautes Composable) + der Such-`query`. Der Pack **ordnet die Sektionen an** (Sidebar-
+    Master-Detail vs. Accordion vs. flach) und besitzt den **Navigations-State selbst** (`selectedId`/
+    `openId` leben bewusst *in* der Layout-Impl, nicht in der Surface — ein flacher Pack hat keine
+    „aktive Sektion") — er rendert die Sektions-Inhalte nie neu. `SettingsScreen(query, modifier,
+    viewModel)` ist jetzt ein **dünner Host-Wrapper**: baut die Surface und ruft
+    `LocalResolvedSlots.current.settings(state)` in einem `Box(modifier)` (der `modifier` bleibt —
+    `SettingsRoute` reicht das Route-Padding durch); **beide** Call-Sites (HomeScreen-Tab + SettingsRoute)
+    unverändert. `DefaultSettings` ist der verbatim extrahierte Onyx-Renderer (adaptive Verzweigung,
+    private Helfer `SettingsMasterDetail`/`SettingsSidebar`/`SettingsAccordion` unverändert). Swap-Beweis:
+    `app/src/debug/kotlin/com/komgareader/app/ui/settings/SettingsSlotPreview.kt`
+    (`AlternativeSettings`: flache Einzel-Scroll-Liste statt Sidebar/Accordion — nur Debug/Preview, keine
+    Nutzer-Einstellung). `SettingsSections.kt`/`SettingsViewModel`/die Sektions-Inhalte bleiben unangetastet.
+  `UiSlotPack(header, homeHeader, dialog, settings)` · `ResolvedSlots(header, homeHeader, dialog, settings)`
+  · `DefaultSlots` mit allen vier Default-Impls. **E-Ink-Invarianten host-erzwungen:** Slots liefern
+  Inhalt/Struktur, nie die Bewegungs-/Akzent-Policy (die bleibt an
+  `LocalDisplayBehavior`/`LocalDesignTokens`/`LocalEinkMode`).
+  **Weiter Soll:** die übrigen Slots (overlay/tiles/nav), die `ui-api`-Modul-Extraktion
   und der APK-Pack-Lader bleiben Soll (Skins-Plan P2/P3). Vertrag bewusst in-tree, **nicht** eingefroren.
 
 - **Shell-Pack-Naht (Ist, 2026-06-12 — die oberste UI-Schicht, Form-Faktor):** Über den Region-Slots

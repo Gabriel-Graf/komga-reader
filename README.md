@@ -225,3 +225,6 @@ native dependency provenance (versions, SPDX identifiers, build recipe) in
 
 Bundled assets: MuPDF (AGPL), crengine‑ng (GPL‑2.0‑or‑later), Lucide icons (ISC), DejaVu Sans
 (Bitstream Vera), Literata & Bitter (OFL‑1.1), TeX hyphenation patterns (MIT / permissive).
+
+Key UI dependency: [multiplatform-markdown-renderer](https://github.com/mikepenz/multiplatform-markdown-renderer)
+(Apache‑2.0, by Mike Penz) renders plugin READMEs in the in‑app plugin info modal.

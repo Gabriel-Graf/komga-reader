@@ -12,6 +12,8 @@ Drittsoftware:
   https://gitlab.com/coolreader-ng/crengine-ng — via JNI; arm64-v8a cross-kompiliert (siehe render-crengine/native/PROVENANCE.md).
 - LxReader (JNI-Bitmap-Bridge in render-crengine/src/main/cpp) — GPL-3.0-or-later, Aleksey Chernov, basierend auf CoolReader (Vadim Lopatin).
   https://gitlab.com/coolreader-ng/lxreader
+- multiplatform-markdown-renderer (Markdown-Render im Plugin-Info-Modal) — Apache-2.0, Mike Penz.
+  https://github.com/mikepenz/multiplatform-markdown-renderer — enthält Teile unter MIT (Copyright 2021 Erik Hellman); Remote-Bilder via Coil (Apache-2.0).
 
 Gebündelte Lese-Schriften (app/src/main/assets/fonts/):
 - DejaVu Sans 2.37 (Sans-Lese-Schrift) — Bitstream-Vera-Lizenz (permissiv, kein Copyleft), DejaVu-Fonts-Projekt.

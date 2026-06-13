@@ -9,7 +9,7 @@
 **Tech:** Coil 2.7 · Hilt-ViewModel · `:source-komga` · Material3 Compose.
 
 ## Test-Komga (lokal, läuft)
-- Emulator-URL: `http://10.0.2.2:25600/api/v1/` · API-Key: `2243c9f4ecc5404992ddf8eba4bf6488`
+- Emulator-URL: `http://10.0.2.2:25600/api/v1/` · API-Key: `<KOMGA_API_KEY>`
 - Inhalt: Serien `Berserk`, `Saga`. (Container `komga-test`; falls aus: `docker start komga-test`.)
 - Cleartext-HTTP → Network-Security-Config nötig (Task 0).
 
@@ -232,7 +232,7 @@ class LibraryFlowInstrumentedTest {
         val repo = RoomServerRepository(db.serverDao(), store)
         repo.save(ServerConfig(
             name = "Test", baseUrl = "http://10.0.2.2:25600/api/v1/",
-            apiKey = "2243c9f4ecc5404992ddf8eba4bf6488",
+            apiKey = "<KOMGA_API_KEY>",
         ))
         val source = KomgaSourceProvider().from(repo.config.first())!!
         val page = source.browse(0, SourceFilter())
@@ -243,7 +243,7 @@ class LibraryFlowInstrumentedTest {
     }
 }
 ```
-- [ ] **Step 2** Stelle sicher, dass die Test-Komga läuft: `docker start komga-test` (idempotent), `curl -s -H "X-API-Key: 2243c9f4ecc5404992ddf8eba4bf6488" http://localhost:25600/api/v1/series | grep -q Berserk`. Dann `./gradlew :app:connectedDebugAndroidTest` → grün.
+- [ ] **Step 2** Stelle sicher, dass die Test-Komga läuft: `docker start komga-test` (idempotent), `curl -s -H "X-API-Key: <KOMGA_API_KEY>" http://localhost:25600/api/v1/series | grep -q Berserk`. Dann `./gradlew :app:connectedDebugAndroidTest` → grün.
 - [ ] **Step 3 (Screenshot, optionaler Visual-Beweis)** Über die UI verbinden und Grid abfotografieren:
   - App starten, in Settings navigieren, Felder füllen (`adb shell input`), verbinden, zurück zur Bibliothek, `adb exec-out screencap -p > /tmp/library_grid.png`. Falls `adb input`-Navigation zu fragil ist: diesen Schritt überspringen — der Instrumented-Test in Step 2 ist der maßgebliche E2E-Beweis. Notiere im Report, ob ein Screenshot erzeugt wurde.
 - [ ] **Step 4** Commit: `test(app): Instrumented-E2E laedt echte Serien von lokaler Komga`.

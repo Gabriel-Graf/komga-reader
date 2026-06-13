@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # JVM unit tests across all modules — pure, no device. Fast, always runs.
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests
+        run: ./gradlew test --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-reports
+          path: '**/build/reports/tests/'
+
+  # Build the debug + androidTest APKs. Needs the pinned NDK + CMake because render-crengine
+  # cross-compiles its arm64-v8a JNI bridge against the committed crengine prefix.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned NDK + CMake (render-crengine arm64 JNI)
+        run: sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Assemble debug + androidTest APKs
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+
+  # Integration suite (the `ci.*` package) against Komga/Kavita Docker fixtures, on an Android
+  # emulator. Heavy → only on main / manual (PRs get unit+build).
+  #
+  # WHY an arm64 runner: the app is **arm64-v8a only** (render-crengine ships native libs only
+  # for arm64), so the emulator + system image must be arm64 too — an x86 emulator can't load
+  # the arm64 .so. GitHub's arm64 Linux runners (free for public repos) expose /dev/kvm, so the
+  # arm64 emulator runs with hardware acceleration. (On a private repo, arm64 runners are billed,
+  # or use a self-hosted arm64/KVM runner — the same machine that runs the GitLab pipeline.)
+  integration:
+    runs-on: ubuntu-24.04-arm
+    needs: [unit, build]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      # The arm64 runner image ships NO preinstalled Android SDK, and setup-android's arm64-Linux
+      # support is newer/less battle-tested — fail loudly here if sdkmanager isn't usable, rather
+      # than with a confusing NDK-install error below. If this step ever fails on the hosted arm64
+      # runner, fall back to a self-hosted arm64 runner with the SDK + emulator preinstalled (the
+      # same machine class as the GitLab `android-kvm` runner).
+      - name: Verify Android SDK tooling
+        run: sdkmanager --version
+      - name: Install pinned NDK + CMake
+        run: sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Start Komga + Kavita fixtures
+        run: tools/ci-fixtures/up.sh
+      # The Komga/OPDS `ci.*` tests are self-contained: CiKomga uses static fixture Basic-Auth on
+      # fixed ports — no runtime creds to plumb in. PluginKavitaCiTest needs the Kavita plugin APK
+      # *pre-installed* on the device; that APK lives in a separate (gitignored) repo and isn't
+      # provisioned on the throwaway CI emulator, so we deliberately do NOT pass kavitaUrl/kavitaKey
+      # → the test skips via its own assumeTrue (same as the GitLab pipeline). The plugin E2E is run
+      # from a dev machine / a pre-provisioned AVD, not standard CI.
+      - name: Integration tests (ci.* on an arm64 emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: arm64-v8a
+          target: google_apis
+          force-avd-creation: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          disable-animations: true
+          script: >
+            ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
+            -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci
+      - name: Tear down fixtures
+        if: always()
+        run: tools/ci-fixtures/down.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-reports
+          path: app/build/reports/androidTests/

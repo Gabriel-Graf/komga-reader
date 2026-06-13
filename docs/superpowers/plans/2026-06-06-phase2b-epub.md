@@ -8,7 +8,7 @@
 
 **Tech:** `:render-core` (`Document`/`RenderedPage`/`MupdfDocumentFactory`), Coroutines IO, Compose `HorizontalPager` + `Image(bitmap)`.
 
-## Test-Komga läuft: EPUB-Serie „Novels" (id `0QKW4K6NW233B`) → Buch id `0QKW4K6NW233C` (`application/epub+zip`). Emulator-URL `http://10.0.2.2:25600/api/v1/`, Key `2243c9f4ecc5404992ddf8eba4bf6488`.
+## Test-Komga läuft: EPUB-Serie „Novels" (id `0QKW4K6NW233B`) → Buch id `0QKW4K6NW233C` (`application/epub+zip`). Emulator-URL `http://10.0.2.2:25600/api/v1/`, Key `<KOMGA_API_KEY>`.
 
 ---
 
@@ -74,7 +74,7 @@ sealed interface ReaderContent {
 ```kotlin
 @Test fun rendert_epub_von_komga() = runTest {
     val source = KomgaSourceProvider().from(ServerConfig(
-        name="T", baseUrl="http://10.0.2.2:25600/api/v1/", apiKey="2243c9f4ecc5404992ddf8eba4bf6488"))!!
+        name="T", baseUrl="http://10.0.2.2:25600/api/v1/", apiKey="<KOMGA_API_KEY>"))!!
     val bytes = source.downloadFile("0QKW4K6NW233C")     // Novels/mistborn.epub
     assertTrue("epub bytes", bytes.size > 500)
     val doc = MupdfDocumentFactory().open(bytes, ".epub")

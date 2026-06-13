@@ -3,7 +3,6 @@ package com.komgareader.app
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.domain.model.ReadProgress
-import com.komgareader.domain.repository.ServerConfig
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -14,13 +13,7 @@ import org.junit.runner.RunWith
 class ReaderFlowInstrumentedTest {
 
     @Test fun laedt_seiten_und_synct_fortschritt() = runTest {
-        val source = KomgaSourceProvider().from(
-            ServerConfig(
-                name = "T",
-                baseUrl = "http://10.0.2.2:25600/api/v1/",
-                apiKey = "2243c9f4ecc5404992ddf8eba4bf6488",
-            ),
-        )!!
+        val source = KomgaSourceProvider().from(LocalTestServer.config(name = "T"))!!
         val books = source.books("0QKVPRDV0293Z")          // Berserk
         val book = books.first { it.remoteId == "0QKVPRDV42BFA" } // vol01
         val pages = source.pages(book.remoteId)

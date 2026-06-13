@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,22 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+// Credentials for the dev-local "*LiveTest" androidTest suite (NOT the CI `ci.` package, which uses
+// static fixture Basic-Auth — see CiKomga). Sourced from a Gradle property, an env var, or the
+// gitignored local.properties — NEVER committed. Empty by default → those tests skip (assumeTrue).
+// Configure once: add `komga.test.apiKey=<key>` to local.properties (see CONTRIBUTING.md).
+val komgaTestApiKey: String = run {
+    fun prop(k: String) = (project.findProperty(k) as String?)?.takeIf { it.isNotBlank() }
+    val fromLocal = rootProject.file("local.properties").takeIf { it.exists() }?.let { f ->
+        Properties().apply { f.inputStream().use { load(it) } }.getProperty("komga.test.apiKey")
+    }?.takeIf { it.isNotBlank() }
+    prop("komga.test.apiKey") ?: System.getenv("KOMGA_TEST_API_KEY")?.takeIf { it.isNotBlank() } ?: fromLocal ?: ""
+}
+val komgaTestBaseUrl: String =
+    (project.findProperty("komga.test.baseUrl") as String?)?.takeIf { it.isNotBlank() }
+        ?: System.getenv("KOMGA_TEST_BASE_URL")?.takeIf { it.isNotBlank() }
+        ?: "http://10.0.2.2:25600/api/v1/"
 
 android {
     namespace = "com.komgareader.app"
@@ -17,6 +35,8 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "com.komgareader.app.HiltTestRunner"
+        buildConfigField("String", "KOMGA_TEST_API_KEY", "\"$komgaTestApiKey\"")
+        buildConfigField("String", "KOMGA_TEST_BASE_URL", "\"$komgaTestBaseUrl\"")
     }
     buildTypes {
         release { isMinifyEnabled = false }

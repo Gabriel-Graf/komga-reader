@@ -8,7 +8,7 @@
 
 **Tech:** Compose `HorizontalPager` · Coil · Hilt-VM · KomgaSource (`pages`, `openPage`, `push/pullProgress`) · NoOp-EinkController + Volume-Key-Routing.
 
-## Test-Komga (läuft): Emulator `http://10.0.2.2:25600/api/v1/`, Key `2243c9f4ecc5404992ddf8eba4bf6488`. Serie `Berserk` (id `0QKVPRDV0293Z`) → Buch `vol01` (id `0QKVPRDV42BFA`, 4 Seiten).
+## Test-Komga (läuft): Emulator `http://10.0.2.2:25600/api/v1/`, Key `<KOMGA_API_KEY>`. Serie `Berserk` (id `0QKVPRDV0293Z`) → Buch `vol01` (id `0QKVPRDV42BFA`, 4 Seiten).
 
 ---
 
@@ -144,7 +144,7 @@ Hilt-Bindung: in einem `@Module @InstallIn(SingletonComponent::class)` (neu `app
 @Test fun laedt_seiten_und_synct_fortschritt() = runTest {
     val source = KomgaSourceProvider().from(ServerConfig(
         name = "T", baseUrl = "http://10.0.2.2:25600/api/v1/",
-        apiKey = "2243c9f4ecc5404992ddf8eba4bf6488"))!!
+        apiKey = "<KOMGA_API_KEY>"))!!
     val books = source.books("0QKVPRDV0293Z")          // Berserk
     val book = books.first { it.remoteId == "0QKVPRDV42BFA" } // vol01
     val pages = source.pages(book.remoteId)

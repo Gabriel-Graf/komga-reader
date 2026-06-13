@@ -13,8 +13,6 @@ import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
-import com.komgareader.domain.model.SourceKind
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.SourceManager
 import com.komgareader.plugin.host.PluginHost
 import kotlinx.coroutines.flow.first
@@ -49,8 +47,6 @@ class CollectionSyncLiveTest {
     private lateinit var manager: CollectionSyncManager
 
     private companion object {
-        const val BASE_URL = "http://10.0.2.2:25600/api/v1/"
-        const val ADMIN_KEY = "2243c9f4ecc5404992ddf8eba4bf6488"
         const val BERSERK_SERIES_ID = "0QKVPRDV0293Z"
         const val SAGA_SERIES_ID = "0QKVPRDV42BFC"
     }
@@ -82,12 +78,7 @@ class CollectionSyncLiveTest {
     @After fun tearDown() = db.close()
 
     private suspend fun registerKomga() {
-        repo.save(ServerConfig(
-            name = "Komga-REST",
-            baseUrl = BASE_URL,
-            apiKey = ADMIN_KEY,
-            kind = SourceKind.KOMGA,
-        ))
+        repo.save(LocalTestServer.config(name = "Komga-REST"))
     }
 
     @Test fun discovery_zieht_server_sammlung_in_die_leere_app() = runTest {

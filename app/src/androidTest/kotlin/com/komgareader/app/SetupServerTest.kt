@@ -4,10 +4,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.data.db.AppDatabase
-import com.komgareader.data.db.MIGRATION_1_2
-import com.komgareader.data.db.MIGRATION_2_3
-import com.komgareader.data.db.MIGRATION_3_4
-import com.komgareader.data.db.MIGRATION_4_5
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.domain.repository.ServerConfig
@@ -18,33 +14,33 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Einmal-Setup: schreibt die echte Server-Konfiguration in die App-Datenbank
- * (gleicher DB-Name und KeystoreCredentialStore-Alias wie in DataModule).
- * Nach diesem Test kann die App die NAS-Verbindung nutzen.
+ * Persistenz-Roundtrip: beweist, dass eine [ServerConfig] über den verschlüsselten
+ * [KeystoreCredentialStore] in Room geschrieben und unverändert wieder entschlüsselt gelesen wird
+ * (Schutz gegen die bekannte Room-Migrations-/Keystore-Wipe-Falle). Braucht KEINEN echten Server
+ * → in-memory-DB + eindeutiger Keystore-Alias (isoliert, fasst die echte App-DB nicht an) + ein
+ * Konstanten-Probe-Key (kein Secret). Läuft daher immer, nicht nur mit konfigurierter dev-local-Komga.
  */
 @RunWith(AndroidJUnit4::class)
 class SetupServerTest {
 
     @Test
-    fun speichert_server_konfiguration() = runTest {
+    fun persistiert_und_entschluesselt_serverkonfiguration() = runTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        // Gleicher DB-Name und gleiche Migrationen wie DataModule.database()
-        val db = Room.databaseBuilder(ctx, AppDatabase::class.java, "komga-reader.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-            .fallbackToDestructiveMigration()
-            .build()
-        val store = KeystoreCredentialStore()
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val store = KeystoreCredentialStore("setup-roundtrip-${System.nanoTime()}")
         val repo = RoomServerRepository(db.serverDao(), store)
-        repo.save(
-            ServerConfig(
-                name = "NAS",
-                baseUrl = "http://10.0.2.2:25600/api/v1/",
-                apiKey = "2243c9f4ecc5404992ddf8eba4bf6488",
-            ),
+        val saved = ServerConfig(
+            name = "NAS-Probe",
+            baseUrl = "http://example.invalid/api/v1/",
+            apiKey = "roundtrip-probe-key-not-a-secret",
         )
-        // Gelesenen Wert verifizieren — Credentials werden aus Room entschlüsselt gelesen
+        repo.save(saved)
+        // Aus Room entschlüsselt gelesen — der ganze Datensatz muss den Roundtrip überleben.
         val loaded = repo.config.first()!!
-        assertEquals("2243c9f4ecc5404992ddf8eba4bf6488", loaded.apiKey)
+        assertEquals(saved.name, loaded.name)
+        assertEquals(saved.baseUrl, loaded.baseUrl)
+        assertEquals(saved.apiKey, loaded.apiKey)
+        assertEquals(saved.kind, loaded.kind)
         db.close()
     }
 }

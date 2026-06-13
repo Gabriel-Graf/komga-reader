@@ -8,7 +8,7 @@
 
 **Tech:** Room · Hilt · `:render-core` · `:source-komga` · Coroutines IO.
 
-## Test-Komga: Berserk vol01 (id `0QKVPRDV42BFA`, cbz, 4 Seiten) @ `http://10.0.2.2:25600/api/v1/`, Key `2243c9f4ecc5404992ddf8eba4bf6488`.
+## Test-Komga: Berserk vol01 (id `0QKVPRDV42BFA`, cbz, 4 Seiten) @ `http://10.0.2.2:25600/api/v1/`, Key `<KOMGA_API_KEY>`.
 
 ---
 
@@ -94,7 +94,7 @@ interface DownloadRepository {
 - [ ] ```kotlin
 @Test fun download_und_offline_render() = runTest {
     val ctx = ApplicationProvider.getApplicationContext<Context>()
-    val source = KomgaSourceProvider().from(ServerConfig("T","http://10.0.2.2:25600/api/v1/","2243c9f4ecc5404992ddf8eba4bf6488"))!!
+    val source = KomgaSourceProvider().from(ServerConfig("T","http://10.0.2.2:25600/api/v1/","<KOMGA_API_KEY>"))!!
     val bytes = source.downloadFile("0QKVPRDV42BFA")     // Berserk vol01 cbz
     val dir = File(ctx.filesDir, "downloads-test").apply { mkdirs() }
     val f = File(dir, "b.cbz"); f.writeBytes(bytes)

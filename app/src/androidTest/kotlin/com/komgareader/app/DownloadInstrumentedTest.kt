@@ -9,7 +9,6 @@ import com.komgareader.data.db.AppDatabase
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomSettingsRepository
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.render.mupdf.MupdfDocumentFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -40,9 +39,7 @@ class DownloadInstrumentedTest {
 
     @Test fun download_und_offline_render() = runTest {
         val ctx = ApplicationProvider.getApplicationContext<Context>()
-        val source = KomgaSourceProvider().from(
-            ServerConfig("T", "http://10.0.2.2:25600/api/v1/", "2243c9f4ecc5404992ddf8eba4bf6488"),
-        )!!
+        val source = KomgaSourceProvider().from(LocalTestServer.config("T"))!!
         val bookRemoteId = "0QKVPRDV42BFA"
         val bytes = source.downloadFile(bookRemoteId)
         assertTrue("bytes empfangen: ${bytes.size}", bytes.size > 1000)

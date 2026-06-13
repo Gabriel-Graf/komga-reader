@@ -57,39 +57,48 @@ I/O, no sleeps).
 
 ### Instrumented / End‑to‑end testing
 
-```bash
-./gradlew :app:connectedAndroidTest
-```
+Instrumented tests run on an **arm64** device/emulator (the app ships arm64‑v8a‑only native libs).
+There are two kinds:
 
-Instrumented tests run on an arm64 device/emulator and exercise the real reading pipeline against
-a real Komga server. To run them you need a reachable Komga instance.
-
-A convenient local setup is a Docker Komga:
+**1. The CI integration suite** — the `com.komgareader.app.ci.*` package. It runs against a
+deterministic, self‑seeded set of Komga + Kavita Docker fixtures (`tools/ci-fixtures/`) using
+static Basic‑Auth — **no credentials to configure**:
 
 ```bash
-docker run -d --name komga-test -p 25600:25600 \
-  -e PUID=1000 -e PGID=1000 -e KOMGA_LIBRARIES_SCAN_STARTUP=true \
-  -v ~/komga-test/config:/config -v ~/komga-test/comics:/data \
-  gotson/komga:latest
+tools/ci-fixtures/up.sh                 # start + seed the fixtures
+./gradlew :app:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci
+tools/ci-fixtures/down.sh
 ```
 
-From an Android emulator the host is reachable at `http://10.0.2.2:25600/api/v1/`. Komga
-authenticates with an API key via the `X-API-Key` header (create one at
-`POST /api/v2/users/me/api-keys`).
+**2. Dev‑local "live" tests** (`*LiveTest` / `*InstrumentedTest`) — run against *your own* Komga
+docker. Their key is **not** committed: set it once in the **gitignored** `local.properties`:
 
-> **Note:** some instrumented tests currently hard‑code a local test API key and connection. If
-> you are setting up CI or a public fork, parameterise these (BuildConfig field / instrumentation
-> argument) rather than committing your own server credentials. See
-> [Project Status → release readiness](docs/PROJECT-STATUS.md#4-open-source-release-readiness).
+```properties
+komga.test.apiKey=<your komga api key>
+# optional, defaults to http://10.0.2.2:25600/api/v1/
+komga.test.baseUrl=http://10.0.2.2:25600/api/v1/
+```
+
+(Or pass `-Pkomga.test.apiKey=…` / set the `KOMGA_TEST_API_KEY` env var.) When no key is
+configured these tests **skip** (via `assumeTrue`) instead of failing — see `LocalTestServer`.
+A convenient local Komga: `docker run -d --name komga-test -p 25600:25600 -e PUID=1000 -e PGID=1000
+-e KOMGA_LIBRARIES_SCAN_STARTUP=true -v ~/komga-test/config:/config -v ~/komga-test/comics:/data
+gotson/komga:latest` (create a key at `POST /api/v2/users/me/api-keys`).
 
 The reference emulator (`eink_test`) is configured to **real Boox Go Color 7 Gen2 geometry**
 (`1264×1680 @ 300dpi`) so screenshots match the hardware.
 
 ### CI
 
-CI is currently GitLab‑based ([`.gitlab-ci.yml`](.gitlab-ci.yml), stages `build` / `unit` /
-`integration`). The integration stage needs a shell‑executor runner with Docker + `/dev/kvm` +
-the Android SDK. A GitHub Actions port is not yet provided.
+Two pipelines run the same suites:
+
+- **GitHub Actions** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `unit` + `build` on
+  `ubuntu-latest`; `integration` on an **`ubuntu-24.04-arm`** runner (the arm64‑only app needs an
+  arm64 emulator + system image — an x86 emulator can't load the arm64 native libs). It boots the
+  Komga/Kavita fixtures + an arm64 emulator (via `reactivecircus/android-emulator-runner`, needs
+  KVM). `integration` runs on `main` / manual dispatch only; PRs get `unit` + `build`.
+- **GitLab CI** ([`.gitlab-ci.yml`](.gitlab-ci.yml)): the original — a shell‑executor runner with
+  Docker + `/dev/kvm` + the Android SDK (tag `android-kvm`).
 
 ---
 

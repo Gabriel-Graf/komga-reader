@@ -2,7 +2,6 @@ package com.komgareader.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.app.data.KomgaSourceProvider
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.render.mupdf.MupdfDocumentFactory
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
@@ -14,13 +13,7 @@ class EpubReaderInstrumentedTest {
 
     @Test
     fun rendert_epub_von_komga() = runTest {
-        val source = KomgaSourceProvider().from(
-            ServerConfig(
-                name = "T",
-                baseUrl = "http://10.0.2.2:25600/api/v1/",
-                apiKey = "2243c9f4ecc5404992ddf8eba4bf6488",
-            ),
-        )!!
+        val source = KomgaSourceProvider().from(LocalTestServer.config(name = "T"))!!
         val bytes = source.downloadFile("0QKW4K6NW233C")     // Novels/mistborn.epub
         assertTrue("epub bytes", bytes.size > 500)
         val doc = MupdfDocumentFactory().open(bytes, ".epub")

@@ -11,9 +11,10 @@ source‑agnostic debt that once existed has been paid off, and the modular‑UI
 to an impressive degree. The main remaining work is **additive, on the external extension
 surface**: external packs are deliberately declarative/data‑only (no host‑crashing plugin code,
 by design), and the declarative vocabulary reaches theme/shell/icons but not yet per‑slot chrome
-arrangements — widening it is the north‑star frontier. The rest is **open‑source hygiene** (until
-now there was no README; a test API key is committed; CI is GitLab‑only — the plugin monorepo is
-now sorted). Device handling (mono/Kaleido/LCD) is **done and
+arrangements — widening it is the north‑star frontier. The open‑source hygiene is now largely
+done (README/CONTRIBUTING/architecture docs added; the plugin monorepo + release CI sorted; the
+committed test key removed from source; GitHub Actions CI added). Device handling (mono/Kaleido/LCD)
+is **done and
 deliberate** — the two‑axis `DisplayBehavior` model even future‑proofs a colour‑accent E‑Ink
 profile that today's design intentionally leaves mono.
 
@@ -123,7 +124,7 @@ goal is reachable at all:
 | G3 | **Detail body not yet a `DetailShell`.** Only the detail *scaffold* is slotted; the hero/grid arrangement is still screen‑owned (lives in the 1228‑line `SeriesDetailScreen`). | Medium. Last big chunk of UI that isn't decomposed. |
 | G4 | **Per‑region E‑Ink refresh tuning (Phase 3)** open; `RefreshScheduler` deprecated but not removed. | Low/Medium. Mostly device‑managed now. |
 | G5 | **Guided‑view interaction polish / detector v2** — detector is built and wired, but tuning and edge cases remain an ongoing area. | Low. |
-| G6 | **No GitHub‑native CI.** CI is GitLab‑only and needs a special KVM runner. | Medium for an OSS move to GitHub. |
+| G6 | *(Resolved.)* GitHub Actions CI added (`.github/workflows/ci.yml`): unit + build + arm64 integration. First run needs validation. | — |
 
 ---
 
@@ -139,13 +140,13 @@ The user's explicit goal is to open‑source this. Status of the must‑fix item
 | **README** | ✅ **added in this pass** | flesh out with screenshots |
 | **CONTRIBUTING / build guide** | ✅ **added in this pass** | — |
 | **Architecture doc (English)** | ✅ **added in this pass** | — |
-| **Committed test API key** | ⚠️ `2243c9f4…` hard‑coded in 6 `androidTest` files | parameterise via BuildConfig / instrumentation arg before publishing |
+| **Committed test API key** | ✅ **fixed** — removed from source | dev‑local tests now read it from `BuildConfig` (sourced from gitignored `local.properties` / env), skip when unset (`LocalTestServer`); CI suite uses static fixture Basic‑Auth. Scrubbed from the plan docs too (git history still retains it). |
 | Secrets / credentials in prod code | ✅ none found | `local.properties` is gitignored |
 | Example plugins discoverable | ✅ in the `KomgaReaderPlugins` monorepo | all official plugin sources now live there (built/signed/released by CI); Aurora added to the index. README points to it |
 | Internal docs language | ⚠️ specs/rules are German | community‑facing docs are now English; translating specs is a follow‑up |
 | Insecure Boox Maven repo (HTTP) | ⚠️ **external** (`repo.boox.com`, Onyx's server) over HTTP; HTTPS unusable (weak‑DH TLS) | not under our control. Mitigate with Gradle **dependency verification** (pin the SHA‑256 of `com.onyx.android.sdk:onyxsdk-device`) and/or **vendor** the `.aar` locally; content‑filter the repo to the Onyx group only |
 | Native build reproducibility | 🟡 crengine is arm64‑only with a **committed 386‑file prefix** | documented & reproducible, but it makes the repo heavy and x86 emulators unsupported |
-| GitHub Actions CI | ⏳ absent | port `.gitlab-ci.yml` or document GitLab usage |
+| GitHub Actions CI | ✅ **added** (`.github/workflows/ci.yml`) | unit + build on `ubuntu-latest`; integration on an `ubuntu-24.04-arm` runner (arm64 emulator + Docker fixtures). First run needs validation (Actions can't be run from here). |
 
 **None of these is a hard blocker** to publishing the source (AGPL obliges disclosure anyway).
 The test‑key cleanup and a plugin‑authoring walkthrough are the highest‑value pre‑release polish.
@@ -212,7 +213,8 @@ become a stable extension point — a minor, internal concern, not the external�
 ## 7. Prioritised recommendations
 
 **For the open‑source launch (do first):**
-1. Parameterise the committed test API key out of the `androidTest` files.
+1. ~~Parameterise the committed test API key out of the `androidTest` files.~~ **Done** (via
+   `BuildConfig`/`local.properties`, `LocalTestServer`); GitHub Actions CI added.
 2. Add a short plugin/UI‑pack authoring walkthrough (`docs/plugins/` already exists — point to it
    from the README) so newcomers can find the externally‑hosted examples.
 3. Decide the CI story for the public home (port to GitHub Actions, or document GitLab).

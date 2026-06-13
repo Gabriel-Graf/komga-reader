@@ -7,7 +7,6 @@ import com.komgareader.app.data.KomgaSourceProvider
 import com.komgareader.data.db.AppDatabase
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.security.KeystoreCredentialStore
-import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.SourceFilter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -23,10 +22,7 @@ class LibraryFlowInstrumentedTest {
         val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
         val store = KeystoreCredentialStore("test-cred-key-${System.nanoTime()}")
         val repo = RoomServerRepository(db.serverDao(), store)
-        repo.save(ServerConfig(
-            name = "Test", baseUrl = "http://10.0.2.2:25600/api/v1/",
-            apiKey = "2243c9f4ecc5404992ddf8eba4bf6488",
-        ))
+        repo.save(LocalTestServer.config(name = "Test"))
         val source = KomgaSourceProvider().from(repo.config.first())!!
         val page = source.browse(0, SourceFilter())
         val titles = page.items.map { it.title }

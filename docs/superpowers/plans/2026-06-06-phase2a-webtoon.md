@@ -8,7 +8,7 @@
 
 **Tech:** Compose `LazyColumn` + Coil. Kein neuer Netzwerk-Code.
 
-## Test-Komga läuft (Emulator `http://10.0.2.2:25600/api/v1/`, Key `2243c9f4ecc5404992ddf8eba4bf6488`, Berserk vol01 = 4 Seiten).
+## Test-Komga läuft (Emulator `http://10.0.2.2:25600/api/v1/`, Key `<KOMGA_API_KEY>`, Berserk vol01 = 4 Seiten).
 
 ---
 

@@ -188,8 +188,14 @@ fun PluginsScreen(
             SectionHeading(s.pluginSectionAvailable)
         }
         visible.discovered.forEach { row ->
-            RepoRow(row = row, onInstall = { viewModel.install(row) })
+            RepoRow(row = row, onInfo = { viewModel.openInfo(row) }, onInstall = { viewModel.install(row) })
         }
+    }
+
+    val infoFor by viewModel.infoFor.collectAsState()
+    val readmeState by viewModel.readmeState.collectAsState()
+    infoFor?.let { row ->
+        PluginInfoModal(row = row, readme = readmeState, onDismiss = { viewModel.closeInfo() })
     }
 
     if (showRepoManagement) {
@@ -379,7 +385,7 @@ private fun PresetImportRow(
  * Spiegelt den flachen 1.5px-Border-Stil von [PluginRow]. Keine Animation.
  */
 @Composable
-private fun RepoRow(row: BrowserRow, onInstall: () -> Unit) {
+private fun RepoRow(row: BrowserRow, onInfo: () -> Unit, onInstall: () -> Unit) {
     val s = LocalStrings.current
     val typeLabel = when (row.item.kind) {
         PluginKind.SOURCE -> s.pluginTabSourceLabel
@@ -402,6 +408,9 @@ private fun RepoRow(row: BrowserRow, onInstall: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        IconButton(onClick = onInfo) {
+            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
         }
         when {
             !row.compatible -> Text(

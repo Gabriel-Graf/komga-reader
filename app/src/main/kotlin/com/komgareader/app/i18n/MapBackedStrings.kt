@@ -195,6 +195,10 @@ class MapBackedStrings(
     override val pluginPresetImport: String get() = overrides["pluginPresetImport"] ?: fallback.pluginPresetImport
     override val pluginPresetRemove: String get() = overrides["pluginPresetRemove"] ?: fallback.pluginPresetRemove
     override val pluginPresetImported: String get() = overrides["pluginPresetImported"] ?: fallback.pluginPresetImported
+    override val pluginInfo: String get() = overrides["pluginInfo"] ?: fallback.pluginInfo
+    override val pluginInfoLicense: String get() = overrides["pluginInfoLicense"] ?: fallback.pluginInfoLicense
+    override val pluginInfoLoadingReadme: String get() = overrides["pluginInfoLoadingReadme"] ?: fallback.pluginInfoLoadingReadme
+    override val pluginInfoNoDescription: String get() = overrides["pluginInfoNoDescription"] ?: fallback.pluginInfoNoDescription
     override val pluginSearchHint: String get() = overrides["pluginSearchHint"] ?: fallback.pluginSearchHint
     override val pluginFilterAll: String get() = overrides["pluginFilterAll"] ?: fallback.pluginFilterAll
     override val pluginFilterSources: String get() = overrides["pluginFilterSources"] ?: fallback.pluginFilterSources

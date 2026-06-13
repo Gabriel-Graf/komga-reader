@@ -189,6 +189,11 @@ interface Strings {
     val pluginPresetImport: String        // „Importieren"
     val pluginPresetRemove: String        // „Entfernen"
     val pluginPresetImported: String      // Status „Importiert"
+    // Plugin-Info-Modal (ℹ): Header, optionale Lizenz, README-Render mit Fallback
+    val pluginInfo: String                // ℹ contentDescription / Modal-Titel-Kontext
+    val pluginInfoLicense: String         // Label vor dem Lizenz-Wert
+    val pluginInfoLoadingReadme: String   // Lade-Hinweis während des README-Fetch
+    val pluginInfoNoDescription: String   // Fallback ohne README/Beschreibung
     // Plugin-Tab Suche + Typ-Filter-Chip
     val pluginSearchHint: String          // Placeholder in der Suchleiste auf dem Plugins-Tab
     val pluginTabLanguageLabel: String     // Typ-Label „Sprache"
@@ -522,6 +527,10 @@ object StringsDe : Strings {
     override val pluginPresetImport = "Importieren"
     override val pluginPresetRemove = "Entfernen"
     override val pluginPresetImported = "Importiert"
+    override val pluginInfo = "Info"
+    override val pluginInfoLicense = "Lizenz"
+    override val pluginInfoLoadingReadme = "README wird geladen…"
+    override val pluginInfoNoDescription = "Keine Beschreibung verfügbar."
     override val pluginSearchHint = "Plugins suchen"
     override val pluginTabLanguageLabel = "Sprache"
     override val pluginTabReaderPresetLabel = "Reader-Preset"
@@ -842,6 +851,10 @@ object StringsEn : Strings {
     override val pluginPresetImport = "Import"
     override val pluginPresetRemove = "Remove"
     override val pluginPresetImported = "Imported"
+    override val pluginInfo = "Info"
+    override val pluginInfoLicense = "License"
+    override val pluginInfoLoadingReadme = "Loading README…"
+    override val pluginInfoNoDescription = "No description available."
     override val pluginSearchHint = "Search plugins"
     override val pluginTabLanguageLabel = "Language"
     override val pluginTabReaderPresetLabel = "Reader preset"

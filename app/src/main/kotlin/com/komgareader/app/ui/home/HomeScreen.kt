@@ -232,6 +232,7 @@ fun HomeScreen(
         },
     )
 
+    // Plugins: „+" (externe Repos verwalten/hinzufügen) + manueller Reload (Repo-Fetch + Re-Scan).
     val pluginsHeader = headerOf(
         filter = HomeHeaderFilter(
             icon = AppIcons.Filter,
@@ -247,6 +248,14 @@ fun HomeScreen(
                     onSelect = { pluginsVm.setTypeFilter(it) },
                     onDismiss = { pluginFilterMenuOpen = false },
                 )
+            }
+        },
+        actions = {
+            IconButton(onClick = { showRepoMgmt = true }) {
+                Icon(AppIcons.Plus, contentDescription = s.pluginManageRepos)
+            }
+            IconButton(onClick = { pluginsVm.reload() }) {
+                Icon(AppIcons.Refresh, contentDescription = s.pluginReload)
             }
         },
     )

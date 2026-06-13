@@ -9,7 +9,12 @@ class PluginCatalogFilterTest {
     private fun installed(name: String, kind: PluginKind) =
         InstalledEntry(packageName = "pkg.$name", displayName = name, kind = kind)
 
-    private fun discovered(name: String, kind: PluginKind, desc: String = "") =
+    private fun discovered(
+        name: String,
+        kind: PluginKind,
+        desc: String = "",
+        state: InstallState = InstallState.NOT_INSTALLED,
+    ) =
         BrowserRow(
             item = BrowsableEntry(
                 entry = RepoPluginEntry(packageName = "pkg.$name", name = name, description = desc),
@@ -17,7 +22,7 @@ class PluginCatalogFilterTest {
                 repoUrl = "https://x/repo.json",
                 kind = kind,
             ),
-            state = InstallState.NOT_INSTALLED,
+            state = state,
             compatible = true,
         )
 
@@ -84,6 +89,41 @@ class PluginCatalogFilterTest {
         val out = visibleRows(
             installed = emptyList(),
             discovered = listOf(discovered("Comick", PluginKind.SOURCE)),
+            query = "", typeFilter = PluginTypeFilter.ALL,
+        )
+        assertEquals(false, out.showDivider)
+    }
+
+    @Test
+    fun `already-installed discovered rows are dropped from the discovered section`() {
+        val out = visibleRows(
+            installed = listOf(installed("Kavita", PluginKind.SOURCE)),
+            discovered = listOf(
+                discovered("Kavita", PluginKind.SOURCE, state = InstallState.INSTALLED),
+                discovered("Comick", PluginKind.SOURCE, state = InstallState.NOT_INSTALLED),
+            ),
+            query = "", typeFilter = PluginTypeFilter.ALL,
+        )
+        // Installiertes erscheint nur oben, nicht doppelt unten.
+        assertEquals(listOf("Comick"), out.discovered.map { it.item.entry.name })
+    }
+
+    @Test
+    fun `update-available discovered rows stay in the discovered section`() {
+        val out = visibleRows(
+            installed = listOf(installed("Kavita", PluginKind.SOURCE)),
+            discovered = listOf(discovered("Kavita", PluginKind.SOURCE, state = InstallState.UPDATE_AVAILABLE)),
+            query = "", typeFilter = PluginTypeFilter.ALL,
+        )
+        // Ein verfügbares Update bleibt unten sichtbar (handlungsrelevant).
+        assertEquals(listOf("Kavita"), out.discovered.map { it.item.entry.name })
+    }
+
+    @Test
+    fun `showDivider is false when only installed rows remain after dropping installed-discovered`() {
+        val out = visibleRows(
+            installed = listOf(installed("Kavita", PluginKind.SOURCE)),
+            discovered = listOf(discovered("Kavita", PluginKind.SOURCE, state = InstallState.INSTALLED)),
             query = "", typeFilter = PluginTypeFilter.ALL,
         )
         assertEquals(false, out.showDivider)

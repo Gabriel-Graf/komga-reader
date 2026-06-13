@@ -2,22 +2,23 @@ package com.komgareader.app.ui.plugins
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -28,7 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -37,6 +41,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.EinkOutlinedButton
+import com.komgareader.app.ui.components.EinkTextField
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.ui.icons.AppIcons
@@ -112,7 +117,10 @@ fun PluginsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        // Installierte (oben)
+        // Installierte (oben) — mit Abschnitts-Überschrift zur klareren Einordnung.
+        if (visible.installed.isNotEmpty()) {
+            SectionHeading(s.pluginSectionInstalled)
+        }
         visible.installed.forEach { item ->
             when (item.kind) {
                 PluginKind.SOURCE -> sourceFor(item.packageName)?.let { src ->
@@ -172,10 +180,13 @@ fun PluginsScreen(
             }
         }
         if (visible.showDivider) {
-            HorizontalDivider(thickness = EinkTokens.hairline, color = MaterialTheme.colorScheme.outlineVariant)
+            SectionDivider()
         }
         if (loading) LoadingIndicator()
-        // Entdeckte (unten)
+        // Entdeckte (unten) — eigene Abschnitts-Überschrift.
+        if (visible.discovered.isNotEmpty()) {
+            SectionHeading(s.pluginSectionAvailable)
+        }
         visible.discovered.forEach { row ->
             RepoRow(row = row, onInstall = { viewModel.install(row) })
         }
@@ -226,6 +237,39 @@ fun PluginsScreen(
                 )
             }
         }
+    }
+}
+
+/** Abschnitts-Überschrift („Installiert"/„Verfügbar"): kleine, kräftige Label-Zeile, gedämpft. */
+@Composable
+private fun SectionHeading(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp),
+    )
+}
+
+/**
+ * Trenner zwischen installierten und entdeckten Plugins: kurzer, zentrierter, kräftiger Balken mit
+ * großzügigem Abstand oben/unten — macht die Sektions-Grenze deutlicher als eine durchgehende Hairline.
+ */
+@Composable
+private fun SectionDivider() {
+    // Unten weniger Abstand als oben, weil die folgende „Verfügbar"-Überschrift selbst Abstand mitbringt.
+    Box(
+        Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth(0.55f)
+                .height(EinkTokens.strongBorder)
+                .clip(RoundedCornerShape(EinkTokens.strongBorder))
+                .background(MaterialTheme.colorScheme.outline),
+        )
     }
 }
 
@@ -422,25 +466,19 @@ private fun RepoManagementModal(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = newUrl,
-                onValueChange = { newUrl = it },
-                label = { Text(s.repoBrowserRepoUrl) },
-                singleLine = true,
-                modifier = Modifier.weight(1f),
-            )
-            EinkOutlinedButton(
-                onClick = {
-                    if (newUrl.isNotBlank()) {
-                        onAdd(newUrl.trim())
-                        newUrl = ""
-                    }
-                },
-                modifier = Modifier.padding(start = 8.dp),
-            ) {
-                Text(s.repoBrowserAddRepo)
-            }
-        }
+        // Volle Zeilenbreite, Bestätigen als Pfeil-rechts im Feld (kein separater Button mehr).
+        EinkTextField(
+            value = newUrl,
+            onValueChange = { newUrl = it },
+            label = s.repoBrowserRepoUrl,
+            keyboardType = KeyboardType.Uri,
+            confirmLabel = s.repoBrowserAddRepo,
+            onConfirm = {
+                if (newUrl.isNotBlank()) {
+                    onAdd(newUrl.trim())
+                    newUrl = ""
+                }
+            },
+        )
     }
 }

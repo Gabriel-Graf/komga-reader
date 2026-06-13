@@ -138,6 +138,9 @@ interface Strings {
     val searchAction: String
     val searchNoResults: String
     val clearSearch: String
+    val clearInput: String      // X-Button: gesamten Feldinhalt löschen
+    val showPassword: String    // Auge: Passwort anzeigen
+    val hidePassword: String    // Auge: Passwort verbergen
     val filterByType: String
     val filterTypePlaceholder: String
     val filterDownloaded: String
@@ -175,6 +178,10 @@ interface Strings {
     val pluginTabSourceLabel: String      // Typ-Label „Quelle"
     val pluginTabPresetLabel: String      // Typ-Label „Farbprofile"
     val pluginTabEmpty: String            // Liste leer
+    val pluginSectionInstalled: String    // Abschnitts-Überschrift „Installiert"
+    val pluginSectionAvailable: String    // Abschnitts-Überschrift „Verfügbar"
+    val pluginReload: String              // ⟳ contentDescription (Repo-Fetch + Re-Scan)
+    val pluginManageRepos: String         // + contentDescription (Repos verwalten)
     val pluginAbiLabel: String            // ABI-Label vor der Versionsnummer
     val pluginConfigure: String           // ⚙ contentDescription
     val pluginUninstall: String           // 🗑 contentDescription
@@ -455,6 +462,9 @@ object StringsDe : Strings {
     override val searchAction = "Suchen"
     override val searchNoResults = "Keine Treffer"
     override val clearSearch = "Suche zurücksetzen"
+    override val clearInput = "Inhalt löschen"
+    override val showPassword = "Passwort anzeigen"
+    override val hidePassword = "Passwort verbergen"
     override val filterByType = "Nach Werk-Typ filtern"
     override val filterTypePlaceholder =
         "Keine Werke mit dem gewählten Typ gefunden.\n\n" +
@@ -501,6 +511,10 @@ object StringsDe : Strings {
     override val pluginTabSourceLabel = "Quelle"
     override val pluginTabPresetLabel = "Farbprofile"
     override val pluginTabEmpty = "Keine Plugins installiert."
+    override val pluginSectionInstalled = "Installiert"
+    override val pluginSectionAvailable = "Verfügbar"
+    override val pluginReload = "Neu laden"
+    override val pluginManageRepos = "Repos verwalten"
     override val pluginAbiLabel = "ABI"
     override val pluginConfigure = "Konfigurieren"
     override val pluginUninstall = "Entfernen"
@@ -768,6 +782,9 @@ object StringsEn : Strings {
     override val searchAction = "Search"
     override val searchNoResults = "No results"
     override val clearSearch = "Clear search"
+    override val clearInput = "Clear content"
+    override val showPassword = "Show password"
+    override val hidePassword = "Hide password"
     override val filterByType = "Filter by type"
     override val filterTypePlaceholder =
         "No works found for the selected type.\n\n" +
@@ -814,6 +831,10 @@ object StringsEn : Strings {
     override val pluginTabSourceLabel = "Source"
     override val pluginTabPresetLabel = "Color profiles"
     override val pluginTabEmpty = "No plugins installed."
+    override val pluginSectionInstalled = "Installed"
+    override val pluginSectionAvailable = "Available"
+    override val pluginReload = "Reload"
+    override val pluginManageRepos = "Manage repos"
     override val pluginAbiLabel = "ABI"
     override val pluginConfigure = "Configure"
     override val pluginUninstall = "Remove"

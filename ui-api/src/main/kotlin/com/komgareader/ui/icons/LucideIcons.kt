@@ -30,11 +30,7 @@ object LucideIcons {
             strokeLineJoin = StrokeJoin.Round,
         ).build()
 
-    /**
-     * Gefüllte Variante eines (geschlossenen) Lucide-Pfads — als **Aktiv-Zustand** eines sonst
-     * outline-gezeichneten Glyphs (z. B. Lesezeichen gesetzt). Füllung statt Strich; `Icon(…)`
-     * tönt sie wie jeden anderen Glyph. Nur für geschlossene Pfade sinnvoll.
-     */
+    /** Gefüllte Variante (fill statt stroke) — als Aktiv-Zustand desselben Outline-Glyphs. */
     private fun lucideFilled(name: String, pathData: String): ImageVector =
         ImageVector.Builder(
             name = name,
@@ -53,7 +49,6 @@ object LucideIcons {
     val ArrowRight: ImageVector by lazy { lucide("ArrowRight", "M5 12H19 M12 5L19 12 12 19") }
     val BookOpen: ImageVector by lazy { lucide("BookOpen", "M12 7V21 M3 18A1 1 0 0 1 2 17V4A1 1 0 0 1 3 3H8A4 4 0 0 1 12 7 4 4 0 0 1 16 3H21A1 1 0 0 1 22 4V17A1 1 0 0 1 21 18H15A3 3 0 0 0 12 21 3 3 0 0 0 9 18Z") }
     val Bookmark: ImageVector by lazy { lucide("Bookmark", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
-    val BookmarkFilled: ImageVector by lazy { lucideFilled("BookmarkFilled", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
     val Check: ImageVector by lazy { lucide("Check", "M20 6L9 17 4 12") }
     val ChevronDown: ImageVector by lazy { lucide("ChevronDown", "M6 9L12 15 18 9") }
     val ChevronRight: ImageVector by lazy { lucide("ChevronRight", "M9 18L15 12 9 6") }
@@ -64,6 +59,8 @@ object LucideIcons {
     val Contrast: ImageVector by lazy { lucide("Contrast", "M2 12A10 10 0 1 0 22 12A10 10 0 1 0 2 12 M12 18A6 6 0 0 0 12 6V18Z") }
     val Download: ImageVector by lazy { lucide("Download", "M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15 M7 10L12 15L17 10 M12 15L12 3") }
     val EllipsisVertical: ImageVector by lazy { lucide("EllipsisVertical", "M11 12A1 1 0 1 0 13 12A1 1 0 1 0 11 12 M11 5A1 1 0 1 0 13 5A1 1 0 1 0 11 5 M11 19A1 1 0 1 0 13 19A1 1 0 1 0 11 19") }
+    val Eye: ImageVector by lazy { lucide("Eye", "M2.062 12.348A1 1 0 0 1 2.062 11.652000000000001 10.75 10.75 0 0 1 21.938000000000002 11.652000000000001 1 1 0 0 1 21.938000000000002 12.348 10.75 10.75 0 0 1 2.062000000000001 12.348 M9 12A3 3 0 1 0 15 12A3 3 0 1 0 9 12") }
+    val EyeOff: ImageVector by lazy { lucide("EyeOff", "M10.733 5.076A10.744 10.744 0 0 1 21.938000000000002 11.651 1 1 0 0 1 21.938000000000002 12.347 10.747 10.747 0 0 1 20.494000000000003 14.837 M14.084 14.158A3 3 0 0 1 9.841999999999999 9.916 M17.479 17.499A10.75 10.75 0 0 1 2.0619999999999994 12.347999999999999 1 1 0 0 1 2.0619999999999994 11.652 10.75 10.75 0 0 1 6.507999999999999 6.5089999999999995 M2 2L22 22") }
     val GalleryVertical: ImageVector by lazy { lucide("GalleryVertical", "M3 2H21 M5 6H19A2 2 0 0 1 21 8V16A2 2 0 0 1 19 18H5A2 2 0 0 1 3 16V8A2 2 0 0 1 5 6Z M3 22H21") }
     val Grid2x2: ImageVector by lazy { lucide("Grid2x2", "M5 3H19A2 2 0 0 1 21 5V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3Z M3 12H21 M12 3V21") }
     val HardDriveDownload: ImageVector by lazy { lucide("HardDriveDownload", "M12 2V10 M16 6L12 10 8 6 M4 14H20A2 2 0 0 1 22 16V20A2 2 0 0 1 20 22H4A2 2 0 0 1 2 20V16A2 2 0 0 1 4 14Z M6 18H6.01 M10 18H10.01") }
@@ -87,4 +84,5 @@ object LucideIcons {
     val Trash2: ImageVector by lazy { lucide("Trash2", "M3 6H21 M19 6V20C19 21 18 22 17 22H7C6 22 5 21 5 20V6 M8 6V4C8 3 9 2 10 2H14C15 2 16 3 16 4V6 M10 11L10 17 M14 11L14 17") }
     val Type: ImageVector by lazy { lucide("Type", "M4 7L4 4L20 4L20 7 M9 20L15 20 M12 4L12 20") }
     val X: ImageVector by lazy { lucide("X", "M18 6L6 18 M6 6L18 18") }
+    val BookmarkFilled: ImageVector by lazy { lucideFilled("BookmarkFilled", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
 }

@@ -16,6 +16,7 @@ enum class IconKey {
     Refresh, Edit, Settings, Delete, Download, Local, Cloud, Info, Filter, Overflow, Stop, GridView,
     LargeGridView, ListView, Bookmark, BookmarkFilled, Library, Groups, Plugins, Contrast, Palette,
     Reader, Language, Connection, ReaderMode, PanelMode, Typography, TableOfContents, AlignLeft, AlignJustify,
+    PasswordShow, PasswordHide,
 }
 
 /**
@@ -75,6 +76,8 @@ object DefaultIconPack : IconPack {
         IconKey.TableOfContents -> LucideIcons.List // bewusst derselbe Glyph wie ListView
         IconKey.AlignLeft -> LucideIcons.AlignLeft
         IconKey.AlignJustify -> LucideIcons.AlignJustify
+        IconKey.PasswordShow -> LucideIcons.Eye
+        IconKey.PasswordHide -> LucideIcons.EyeOff
     }
 }
 

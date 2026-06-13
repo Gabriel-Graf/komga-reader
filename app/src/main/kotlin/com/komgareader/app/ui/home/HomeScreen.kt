@@ -1,11 +1,15 @@
 package com.komgareader.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -13,6 +17,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,6 +51,13 @@ import com.komgareader.app.ui.library.LibraryViewModel
 import com.komgareader.app.ui.plugins.PluginsScreen
 import com.komgareader.app.ui.settings.SettingsScreen
 import com.komgareader.app.ui.settings.SettingsViewModel
+import com.komgareader.app.ui.settings.AppUpdateViewModel
+import com.komgareader.app.data.AppUpdateState
+import com.komgareader.app.data.hasUpdate
+import com.komgareader.app.ui.components.EinkInfoDialog
+import com.komgareader.data.update.ReleaseInfo
+import com.komgareader.ui.theme.EinkTokens
+import kotlinx.coroutines.delay
 import com.komgareader.ui.shell.AppShellState
 import com.komgareader.ui.shell.ShellDestination
 import com.komgareader.ui.shell.ShellDestinationId
@@ -55,6 +67,7 @@ import com.komgareader.ui.shell.resolveFormFactor
 import com.komgareader.ui.slots.HomeHeaderFilter
 import com.komgareader.ui.slots.HomeHeaderSearch
 import com.komgareader.ui.slots.HomeHeaderState
+import com.komgareader.ui.slots.SettingsSectionId
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.data.plugin.repo.PluginTypeFilter
@@ -106,6 +119,29 @@ fun HomeScreen(
     val collectionsVm: com.komgareader.app.ui.collections.CollectionsViewModel = hiltViewModel()
     val pluginsVm: com.komgareader.app.ui.plugins.PluginsViewModel = hiltViewModel()
     val settingsVm: SettingsViewModel = hiltViewModel()
+    val updateVm: AppUpdateViewModel = hiltViewModel()
+    val updateState by updateVm.state.collectAsState()
+    val releaseNotes by updateVm.releaseNotes.collectAsState()
+    // App start: check for updates + check whether one was just installed (→ "what's new" notes).
+    LaunchedEffect(Unit) {
+        updateVm.check()
+        updateVm.checkJustUpdated()
+    }
+    // Start banner: shows the update message for 4s as soon as an update is found — exactly ONCE per
+    // process (rememberSaveable survives rotation). E-Ink: appears/disappears instantly (no fade).
+    var bannerShown by rememberSaveable { mutableStateOf(false) }
+    var bannerVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(updateState) {
+        if (updateState.hasUpdate && !bannerShown) {
+            bannerShown = true
+            bannerVisible = true
+            delay(4000)
+            bannerVisible = false
+        }
+    }
+    // Deep link from the update banner: open the settings tab pre-selecting "About". Cleared on any
+    // manual tab change (see selectTab) so it acts as a one-shot.
+    var requestedSettingsSection by remember { mutableStateOf<SettingsSectionId?>(null) }
     val pluginTypeFilter by pluginsVm.typeFilter.collectAsState()
     var showRepoMgmt by remember { mutableStateOf(false) }
     val groupsViewMode = tileViewModeOf(groupsVm.viewMode.collectAsState().value, TileViewMode.LIST)
@@ -154,11 +190,13 @@ fun HomeScreen(
     )
 
     fun headerOf(
+        title: String = "",
         filter: HomeHeaderFilter? = null,
         menu: @Composable () -> Unit = {},
         actions: @Composable RowScope.() -> Unit = {},
     ) = HomeHeaderState(
         status = { StatusCluster() },
+        title = title,
         search = sharedSearch,
         filter = filter,
         menu = menu,
@@ -166,6 +204,7 @@ fun HomeScreen(
     )
 
     val libraryHeader = headerOf(
+        title = s.tabBrowse,
         filter = HomeHeaderFilter(
             icon = AppIcons.Filter,
             contentDescription = s.filterByType,
@@ -197,6 +236,7 @@ fun HomeScreen(
 
     // Sammlungen-Liste: „+" (neue Sammlung) + rotierender Ansichts-Button + manueller Voll-Sync.
     val collectionsHeader = headerOf(
+        title = s.collections,
         actions = {
             IconButton(onClick = { showCreateCollection = true }) {
                 Icon(AppIcons.Plus, contentDescription = s.newCollection)
@@ -218,6 +258,7 @@ fun HomeScreen(
 
     // Bibliotheken: „+" (neue Bibliothek) + rotierender Ansichts-Button.
     val groupsHeader = headerOf(
+        title = s.tabGroups,
         actions = {
             IconButton(onClick = { showCreateGroup = true }) {
                 Icon(AppIcons.Plus, contentDescription = s.newGroup)
@@ -234,6 +275,7 @@ fun HomeScreen(
 
     // Plugins: „+" (externe Repos verwalten/hinzufügen) + manueller Reload (Repo-Fetch + Re-Scan).
     val pluginsHeader = headerOf(
+        title = s.navPlugins,
         filter = HomeHeaderFilter(
             icon = AppIcons.Filter,
             contentDescription = s.filterByType,
@@ -260,7 +302,7 @@ fun HomeScreen(
         },
     )
 
-    val settingsHeader = headerOf()
+    val settingsHeader = headerOf(title = s.settingsTitle)
 
     // Im Sammlungs-Detail liefert CollectionDetailScreen seine EIGENE TopBar (Titel/Suche +
     // Aktionen) → die COLLECTIONS-Destination bekommt dort header = null (kein Shell-Header).
@@ -337,7 +379,14 @@ fun HomeScreen(
             icon = AppIcons.Settings,
             label = s.settingsTitle,
             header = settingsHeader,
-            content = { SettingsScreen(query = if (onSettingsTab) query else submitted) },
+            content = {
+                SettingsScreen(
+                    query = if (onSettingsTab) query else submitted,
+                    initialSection = requestedSettingsSection,
+                )
+            },
+            // Dirty dot on the settings tab as soon as an app update is ready.
+            badge = updateState.hasUpdate,
         ),
     )
 
@@ -355,6 +404,7 @@ fun HomeScreen(
         openCollectionId = null
         showRepoMgmt = false
         pluginsVm.setQuery("")
+        requestedSettingsSection = null
     }
 
     // Form-Faktor wählt das Skelett (compact → Drawer-Deskriptor, sonst Bottom-Bar-Deskriptor);
@@ -379,13 +429,80 @@ fun HomeScreen(
         resolveFormFactor(layoutMode, configuration.screenWidthDp),
         effectiveOverride,
     )
+    // Banner content only when visible AND an update exists (stable local val for the smart-cast).
+    val available = updateState as? AppUpdateState.Available
     pack.Render(
         AppShellState(
             destinations = destinations,
             selectedId = ShellDestinationId.entries[selected],
             onSelect = { id -> selectTab(ShellDestinationId.entries.indexOf(id)) },
+            banner = if (bannerVisible && available != null) {
+                {
+                    // Tapping the banner jumps to Settings → "About" (straight to the update).
+                    UpdateBanner(available.release.tag) {
+                        selectTab(TAB_SETTINGS)
+                        requestedSettingsSection = SettingsSectionId.ABOUT
+                        bannerVisible = false
+                    }
+                }
+            } else {
+                null
+            },
         ),
     )
+    // Read-only "what's new" modal, shown once after an update was installed (based on the release body).
+    releaseNotes?.let { notes ->
+        ReleaseNotesDialog(notes) { updateVm.dismissReleaseNotes() }
+    }
+}
+
+/**
+ * Start banner "Update available: vX" — flat E-Ink look (1.5px border instead of shadow), centered
+ * under the toolbar. Tapping it ([onClick]) jumps to the update. Pure display piece; the host owns
+ * visibility and the 4-second timing.
+ */
+@Composable
+private fun UpdateBanner(version: String, onClick: () -> Unit) {
+    val s = LocalStrings.current
+    Row(
+        Modifier
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(EinkTokens.strongBorder, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(s.aboutUpdateAvailable(version), style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/**
+ * Read-only "what's new" modal shown once after an update was installed. Renders the GitHub release
+ * notes (tag description). [ReleaseNotesBody] is the single swap point for richer (markdown) rendering.
+ */
+@Composable
+private fun ReleaseNotesDialog(release: ReleaseInfo, onDismiss: () -> Unit) {
+    val s = LocalStrings.current
+    EinkInfoDialog(
+        title = s.aboutWhatsNew(release.tag),
+        onDismiss = onDismiss,
+        closeLabel = s.close,
+    ) {
+        ReleaseNotesBody(release.body)
+    }
+}
+
+/**
+ * Renders the release body. Plain text for now (preserves line breaks). This is the single place to
+ * swap in a markdown renderer once that dependency is Kotlin-compatible with this module.
+ */
+@Composable
+private fun ReleaseNotesBody(body: String) {
+    Text(body, style = MaterialTheme.typography.bodyMedium)
 }
 
 /** Kompakter Filter-Chip im Suchfeld: aktiv gesetzter Filter (Label + ✕ zum Entfernen). Akzentfarbe = aktiv. */

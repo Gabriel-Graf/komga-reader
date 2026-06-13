@@ -12,7 +12,11 @@ import com.komgareader.ui.slots.SettingsSectionId
  * Strings (Titel + Zeilen-Labels + Helper) — Grundlage für Filter + „warum gefunden".
  */
 @Composable
-fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<SettingsSection> = listOf(
+fun buildSettingsSections(
+    s: Strings,
+    viewModel: SettingsViewModel,
+    aboutBadge: Boolean = false,
+): List<SettingsSection> = listOf(
     SettingsSection(
         id = SettingsSectionId.CONNECTION,
         icon = AppIcons.Connection,
@@ -28,7 +32,12 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
         id = SettingsSectionId.APPEARANCE,
         icon = AppIcons.Contrast,
         title = s.settingsAppearance,
-        searchTerms = listOf(s.settingsAppearance, s.settingsTheme, s.themeLight, s.themeDark, s.themeSystem),
+        searchTerms = listOf(
+            s.settingsAppearance,
+            s.settingsDisplayMode, s.displayModeHelper, s.displayEink, s.displaySmartphone,
+            s.settingsTheme, s.themeLight, s.themeDark, s.themeSystem,
+            s.settingsUiPack, s.uiPackDefault,
+        ),
         content = { q -> AppearanceSettingsContent(viewModel, q) },
     ),
     SettingsSection(
@@ -51,7 +60,6 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
             s.settingsReader,
             s.settingsScopeGeneral, s.settingsScopeNovel, s.settingsScopeWebtoon, s.settingsScopeComic,
             s.settingsWebtoon, s.webtoonOverlap, s.webtoonOverlapHelper,
-            s.settingsDisplayMode, s.displayModeHelper, s.displayEink, s.displaySmartphone,
             s.settingsShellLayout, s.shellLayoutAuto, s.shellLayoutCompact, s.shellLayoutExpanded,
             s.settingsEinkRefresh, s.deviceManagedRefresh, s.deviceManagedRefreshHelper,
             s.novelTypography, s.novelTextHeading, s.novelFontSize, s.novelLineHeight, s.novelFontWeight,
@@ -78,7 +86,11 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
         id = SettingsSectionId.ABOUT,
         icon = AppIcons.Info,
         title = s.settingsAbout,
-        searchTerms = listOf(s.settingsAbout, s.appName, s.aboutDevice, s.versionLabel, BuildConfig.VERSION_NAME),
+        searchTerms = listOf(
+            s.settingsAbout, s.appName, s.aboutDevice, s.versionLabel, BuildConfig.VERSION_NAME,
+            s.aboutCheckUpdates, s.aboutSourceCode,
+        ),
+        badge = aboutBadge,
         content = { q -> AboutContent(q) },
     ),
 )

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -85,6 +86,11 @@ private fun FloatingNavCell(item: BottomNavItem, selected: Boolean, onClick: () 
                 modifier = Modifier.size(20.dp),
                 tint = if (selected) onAccent else inactive,
             )
+            if (item.badge) {
+                com.komgareader.app.ui.components.BadgeDot(
+                    Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-1).dp),
+                )
+            }
         }
         Spacer(Modifier.height(3.dp))
         Text(

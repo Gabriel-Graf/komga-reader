@@ -3,6 +3,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Relaunch the app after a self-update: a full-screen-intent notification reopens it (background
+         activity launch is restricted, so a direct startActivity is best-effort only). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!--
       Plugin-Deinstallation: das Trash-Icon im Plugins-Tab startet die System-UninstallerActivity
       via ACTION_DELETE. Ohne diese Permission lehnt sie ab ("Uid does not have
@@ -42,5 +46,13 @@
         <receiver
             android:name=".ui.plugins.repo.PluginInstallReceiver"
             android:exported="false" />
+        <!-- Relaunches the app automatically after a self-update install. -->
+        <receiver
+            android:name=".update.UpdateRelaunchReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

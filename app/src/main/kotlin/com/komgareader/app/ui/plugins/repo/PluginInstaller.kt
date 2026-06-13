@@ -1,11 +1,10 @@
 package com.komgareader.app.ui.plugins.repo
 
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.os.Build
+import com.komgareader.app.data.ApkSessionInstaller
+import com.komgareader.app.data.ApkSessionResult
 import com.komgareader.data.plugin.repo.fingerprintMatches
 import com.komgareader.plugin.host.PluginSignature
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,6 +27,7 @@ sealed interface InstallResult {
  */
 class PluginInstaller @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val apkSession: ApkSessionInstaller,
 ) {
     /** SHA-256 des Signaturzertifikats einer noch-nicht-installierten APK-Datei (API 28+). */
     private fun apkCertSha256(apk: File): String? = runCatching {
@@ -56,28 +56,10 @@ class PluginInstaller @Inject constructor(
                 apk.delete()
                 return@withContext if (actual == null) InstallResult.Failed else InstallResult.FingerprintMismatch
             }
-            val pi = context.packageManager.packageInstaller
-            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-            val sessionId = runCatching { pi.createSession(params) }.getOrElse { apk.delete(); return@withContext InstallResult.Failed }
-            runCatching {
-                pi.openSession(sessionId).use { session ->
-                    session.openWrite("plugin.apk", 0, apk.length()).use { out ->
-                        apk.inputStream().use { it.copyTo(out) }
-                        session.fsync(out)
-                    }
-                    val intent = Intent(context, PluginInstallReceiver::class.java)
-                    // FLAG_MUTABLE ist Pflicht: PackageInstaller befüllt EXTRA_STATUS/EXTRA_INTENT erst beim
-                    // Senden. FLAG_IMMUTABLE würde auf API 31+ eine SecurityException werfen.
-                    val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                    val pending = PendingIntent.getBroadcast(context, sessionId, intent, flags)
-                    session.commit(pending.intentSender)
-                }
-                InstallResult.SessionStarted
-            }.getOrElse {
-                // Offene Session nicht verwaisen lassen (sonst Timeout-Leck); Cache-APK aufräumen.
-                runCatching { pi.abandonSession(sessionId) }
-                apk.delete()
-                InstallResult.Failed
+            // Fingerprint matches → commit via the shared session mechanics (OS dialog).
+            when (apkSession.commit(apk)) {
+                ApkSessionResult.STARTED -> InstallResult.SessionStarted
+                ApkSessionResult.FAILED -> { apk.delete(); InstallResult.Failed }
             }
         }
 }

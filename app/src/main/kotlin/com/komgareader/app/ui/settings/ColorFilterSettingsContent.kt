@@ -107,38 +107,45 @@ fun ColorFilterSettingsContent(
 
     // Vorschau-Cover — bleibt oben gepinnt (scrollt nicht mit den Reglern weg).
     val cover: @Composable () -> Unit = {
-        preview?.let { p ->
-            val request = remember(p) {
-                ImageRequest.Builder(ctx).data(p)
-                    .crossfade(false).build()
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
-                    if (canGoBack) {
-                        CompactIconButton(AppIcons.Back, s.colorFilterPrevImage) {
-                            viewModel.previousPreview()
-                        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
+                if (canGoBack) {
+                    CompactIconButton(AppIcons.Back, s.colorFilterPrevImage) {
+                        viewModel.previousPreview()
                     }
                 }
-                FilteredReaderAsyncImage(
-                    model = request,
-                    contentDescription = s.colorFilterPreview,
-                    contentScale = ContentScale.Crop,
-                    profileOverride = previewProfile,
-                    modifier = Modifier
-                        .height(240.dp)
-                        .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(4.dp))
-                        .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
-                )
-                Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
-                    CompactIconButton(AppIcons.Forward, s.colorFilterNextImage) {
-                        viewModel.nextPreview()
+            }
+            // Fester, gerahmter Platzhalter — sofort sichtbar, bevor das Bild lädt; das Bild füllt ihn
+            // anschließend (kein Layout-Sprung, analog zu den Cover-Kacheln im Grid). Wichtig auf E-Ink.
+            Box(
+                Modifier
+                    .height(240.dp)
+                    .aspectRatio(2f / 3f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                preview?.let { p ->
+                    val request = remember(p) {
+                        ImageRequest.Builder(ctx).data(p)
+                            .crossfade(false).build()
                     }
+                    FilteredReaderAsyncImage(
+                        model = request,
+                        contentDescription = s.colorFilterPreview,
+                        contentScale = ContentScale.Crop,
+                        profileOverride = previewProfile,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+            Box(Modifier.width(NAV_SLOT), contentAlignment = Alignment.Center) {
+                CompactIconButton(AppIcons.Forward, s.colorFilterNextImage) {
+                    viewModel.nextPreview()
                 }
             }
         }

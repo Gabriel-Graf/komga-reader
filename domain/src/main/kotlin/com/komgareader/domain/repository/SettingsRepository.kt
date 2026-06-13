@@ -31,6 +31,9 @@ interface SettingsRepository {
     val officialRepoEnabled: Flow<Boolean>
     /** packageName des aktiven UI-Packs (data-only Plugin-Kategorie UI_PACK); "" = keiner (Host-Default). */
     val activeUiPack: Flow<String>
+    /** Last app version (versionName) the user has seen. "" = never set (first run). Basis for the
+     *  "what's new" modal: shows the release notes exactly once after a version bump. */
+    val lastSeenVersion: Flow<String>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -52,4 +55,5 @@ interface SettingsRepository {
     suspend fun setDeviceManagedRefresh(value: Boolean)
     suspend fun setOfficialRepoEnabled(enabled: Boolean)
     suspend fun setActiveUiPack(packageName: String)
+    suspend fun setLastSeenVersion(version: String)
 }

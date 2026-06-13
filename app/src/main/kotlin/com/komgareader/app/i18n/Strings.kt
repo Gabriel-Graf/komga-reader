@@ -120,6 +120,16 @@ interface Strings {
     val aboutLicense: String
     val aboutSourceCode: String
     val aboutSourceCodeUrl: String
+    // App self-update ("About" section + start banner)
+    val aboutCheckUpdates: String
+    val aboutChecking: String
+    val aboutUpToDate: String
+    val aboutCheckFailed: String
+    val aboutInstallUpdate: String
+    val aboutDownloading: String
+    fun aboutUpdateAvailable(version: String): String
+    fun aboutWhatsNew(version: String): String
+    val updateInstalledNotice: String
     // Bibliothek: Laden/Download (Snackbar + Fehler-Retry)
     val retry: String
     val downloadComplete: String
@@ -449,7 +459,16 @@ object StringsDe : Strings {
     override val versionLabel = "Version"
     override val aboutLicense = "Lizenz"
     override val aboutSourceCode = "Quellcode"
-    override val aboutSourceCodeUrl = "github.com/komga-reader"
+    override val aboutSourceCodeUrl = "github.com/Gabriel-Graf/komga-reader"
+    override val aboutCheckUpdates = "Nach Updates suchen"
+    override val aboutChecking = "Suche nach Updates…"
+    override val aboutUpToDate = "Aktuell – neueste Version installiert."
+    override val aboutCheckFailed = "Konnte nicht nach Updates suchen."
+    override val aboutInstallUpdate = "Update installieren"
+    override val aboutDownloading = "Lädt…"
+    override fun aboutUpdateAvailable(version: String) = "Update verfügbar: $version"
+    override fun aboutWhatsNew(version: String) = "Was ist neu in $version"
+    override val updateInstalledNotice = "Update installiert – zum Öffnen tippen"
     override val retry = "Wiederholen"
     override val downloadComplete = "Serie heruntergeladen."
     override fun downloadingChapters(count: Int) = "Lade $count Kapitel…"
@@ -772,7 +791,16 @@ object StringsEn : Strings {
     override val versionLabel = "Version"
     override val aboutLicense = "License"
     override val aboutSourceCode = "Source code"
-    override val aboutSourceCodeUrl = "github.com/komga-reader"
+    override val aboutSourceCodeUrl = "github.com/Gabriel-Graf/komga-reader"
+    override val aboutCheckUpdates = "Check for updates"
+    override val aboutChecking = "Checking for updates…"
+    override val aboutUpToDate = "Up to date – latest version installed."
+    override val aboutCheckFailed = "Could not check for updates."
+    override val aboutInstallUpdate = "Install update"
+    override val aboutDownloading = "Downloading…"
+    override fun aboutUpdateAvailable(version: String) = "Update available: $version"
+    override fun aboutWhatsNew(version: String) = "What's new in $version"
+    override val updateInstalledNotice = "Update installed — tap to open"
     override val retry = "Retry"
     override val downloadComplete = "Series downloaded."
     override fun downloadingChapters(count: Int) = "Downloading $count chapters…"

@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -73,13 +74,18 @@ class PluginsViewModel @Inject constructor(
     private val _readmeState = MutableStateFlow<ReadmeState>(ReadmeState.Empty)
     val readmeState: StateFlow<ReadmeState> = _readmeState.asStateFlow()
 
+    /** In-flight README load; cancelled when a new info modal opens or the modal closes,
+     *  so a slow earlier fetch can never overwrite the state of a later/closed modal. */
+    private var readmeJob: Job? = null
+
     /** Opens the info modal for [row] and loads its README if present. */
     fun openInfo(row: BrowserRow) {
         _infoFor.value = row
+        readmeJob?.cancel()
         val raw = row.item.entry.readmeUrl
         if (raw.isBlank()) { _readmeState.value = ReadmeState.Empty; return }
         _readmeState.value = ReadmeState.Loading
-        viewModelScope.launch {
+        readmeJob = viewModelScope.launch {
             val url = resolveRepoUrl(row.item.repoUrl, raw)
             val md = catalog.fetchReadme(url)
             _readmeState.value = if (md.isNullOrBlank()) ReadmeState.Empty else ReadmeState.Loaded(md)
@@ -87,7 +93,12 @@ class PluginsViewModel @Inject constructor(
     }
 
     /** Closes the info modal. */
-    fun closeInfo() { _infoFor.value = null; _readmeState.value = ReadmeState.Empty }
+    fun closeInfo() {
+        readmeJob?.cancel()
+        readmeJob = null
+        _infoFor.value = null
+        _readmeState.value = ReadmeState.Empty
+    }
 
     /** Gefilterte, anzeigefertige Sicht: installiert oben, entdeckt unten, Divider-Flag. */
     @Suppress("UNCHECKED_CAST")

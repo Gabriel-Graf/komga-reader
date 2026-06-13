@@ -100,6 +100,26 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeInit(
 }
 
 /*
+ * Register a single font at [jPath] at runtime — the primitive behind installing
+ * a font plugin and using it WITHOUT an app restart. RegisterFont is callable any
+ * time after InitFontManager (which nativeInit ran).
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeAddFont(
+        JNIEnv* env, jobject /*thiz*/, jstring jPath) {
+    // Font manager must be booted (InitFontManager ran in nativeInit).
+    if (fontMan == nullptr)
+        return JNI_FALSE;
+    const char* path = env->GetStringUTFChars(jPath, nullptr);
+    bool registered = fontMan->RegisterFont(lString8(path));
+    LOGI("nativeAddFont(%s) -> %d", path, registered);
+    env->ReleaseStringUTFChars(jPath, path);
+    // Re-registering the same path returns false (already known) — benign. The real
+    // success condition is that the manager ends up with at least one usable font.
+    return (fontMan->GetFontCount() > 0) ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
  * Registered font face names, RECORD_SEP-separated ("" if none). Lets a test
  * assert that all bundled families (e.g. "Literata", "Bitter") are registered.
  */

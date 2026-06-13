@@ -28,6 +28,14 @@ object CrengineNative {
     /** Registered font face names, RECORD_SEP-separated ("" if none). */
     external fun nativeFontFaces(): String
 
+    /**
+     * Register a single font at [absolutePath] at runtime (post-boot), so an
+     * installed font plugin becomes usable WITHOUT an app restart. Returns true
+     * once the manager holds at least one usable font; re-registering the same
+     * path is a benign no-op.
+     */
+    external fun nativeAddFont(absolutePath: String): Boolean
+
     /** Activate a hyphenation dictionary by id (e.g. "hyph-de-1996.pattern"); true if reachable. */
     external fun nativeActivateDictionary(id: String): Boolean
 

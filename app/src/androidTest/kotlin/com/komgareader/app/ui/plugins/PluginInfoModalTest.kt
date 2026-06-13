@@ -60,6 +60,8 @@ class PluginInfoModalTest {
                 }
             }
         }
+        // The description is a raw data field from the entry (not a localised string), so it renders
+        // verbatim regardless of the provided StringsEn locale.
         rule.onNodeWithText("Eine Demo-Beschreibung.").assertIsDisplayed()
     }
 

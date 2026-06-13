@@ -369,8 +369,8 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   **keine** Nutzer-Einstellung).
 > - **Region `homeHeader` (Ist, 2026-06-12):** zweite gebaute Slot-Region. Vertrag: `HomeHeaderSlot`
 >   (typealias `@Composable (state: HomeHeaderState) -> Unit`). Capability-Surface-Prinzip: **„UI neu,
->   Kernlogik gleich"** — der Host (Core) baut `HomeHeaderState` (Status · `HomeHeaderSearch` · optional
->   `HomeHeaderFilter` · Menü-Overlay · `actions: @Composable RowScope.() -> Unit`) und besitzt alle
+>   Kernlogik gleich"** — der Host (Core) baut `HomeHeaderState` (Status · `title` (Tab-Titel, Drawer-Modus) ·
+>   `HomeHeaderSearch` · optional `HomeHeaderFilter` · Menü-Overlay · `actions: @Composable RowScope.() -> Unit`) und besitzt alle
 >   Logik; ein Pack **arrangiert** die Capabilities, implementiert sie nie neu. `DefaultHomeHeader`
 >   (`app/ui/home/HomeHeader.kt`) ist das mitgelieferte Onyx-Layout. `HomeScreen` baut die Surface pro Tab
 >   und ruft `LocalResolvedSlots.current.homeHeader(state)`. Die frühere **„Ausnahme `HomeScreen`"** (nicht

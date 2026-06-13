@@ -5,11 +5,13 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,9 +37,16 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.BuildConfig
+import com.komgareader.app.data.AppUpdateState
+import com.komgareader.data.update.ReleaseInfo
+import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.ChoiceRow
@@ -474,6 +483,16 @@ private fun ServerRow(
 @Composable
 fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
+    // Anzeige-Modus (E-Ink ⟷ Smartphone) gehört zur Darstellung — eigene Gruppe ganz oben, über dem
+    // Erscheinungsbild. Steuert Bewegung/Akzentfarbe (DisplayBehavior); orthogonal zum Layout-Modus (Reader).
+    val displayModeStr by viewModel.displayMode.collectAsState()
+    val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
+    val displayLabel: (DisplayMode) -> String = { dm ->
+        when (dm) {
+            DisplayMode.EINK -> s.displayEink
+            DisplayMode.SMARTPHONE -> s.displaySmartphone
+        }
+    }
     val themeModeStr by viewModel.themeMode.collectAsState()
     val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
     // Externer UI-Pack (L2): „Standard" + jeder installierte data-only UI-Pack (analog Sprach-Picker).
@@ -481,9 +500,16 @@ fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
     val uiPacks by viewModel.availableUiPacks.collectAsState()
 
     // Eigener Column-Root (wie [ReaderSettingsContent]): der Host platziert die Section-`content` in einer
-    // Box (SettingsScreen.kt), die mehrere Geschwister ÜBEREINANDER stapeln würde — die zwei Gruppen
-    // (Theme + UI-Pack) müssen vertikal gestapelt werden, sonst überlappen sie.
+    // Box (SettingsScreen.kt), die mehrere Geschwister ÜBEREINANDER stapeln würde — die Gruppen
+    // (Anzeige-Modus + Theme + UI-Pack) müssen vertikal gestapelt werden, sonst überlappen sie.
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+        SettingsGroup(s.settingsDisplayMode, query) {
+            DisplayMode.entries.forEach { mode ->
+                ChoiceRow(displayLabel(mode), selected = mode == displayMode, query = query, dense = true) {
+                    viewModel.setDisplayMode(mode.name)
+                }
+            }
+        }
         SettingsGroup(s.settingsTheme, query) {
             ThemeMode.entries.forEach { mode ->
                 val label = when (mode) {
@@ -530,23 +556,14 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
 @Composable
 private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
-    val displayModeStr by viewModel.displayMode.collectAsState()
-    val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
     val shellLayoutModeStr by viewModel.shellLayoutMode.collectAsState()
     val shellLayoutMode = runCatching { ShellLayoutMode.valueOf(shellLayoutModeStr) }.getOrDefault(ShellLayoutMode.AUTO)
     val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
     val presets by viewModel.readerPresets.collectAsState()
 
     // Genau EIN Modal gleichzeitig (E-Ink-Invariante): null = zu.
-    var showDisplayPicker by remember { mutableStateOf(false) }
     var showShellLayoutPicker by remember { mutableStateOf(false) }
     var confirmPreset by remember { mutableStateOf<ReaderPreset?>(null) }
-    val displayLabel: (DisplayMode) -> String = { dm ->
-        when (dm) {
-            DisplayMode.EINK -> s.displayEink
-            DisplayMode.SMARTPHONE -> s.displaySmartphone
-        }
-    }
     val shellLayoutLabel: (ShellLayoutMode) -> String = { mode ->
         when (mode) {
             ShellLayoutMode.AUTO -> s.shellLayoutAuto
@@ -558,14 +575,7 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     Column {
         ScopeHeader(s.settingsScopeGeneral)
         Column(Modifier.padding(start = SettingsGroupIndent)) {
-            // Anzeige-Modus über Wert+Chevron → Picker-Modal (mockup-treu; konsistent mit Schriftart).
-            PickerRow(
-                label = s.settingsDisplayMode,
-                value = displayLabel(displayMode),
-                onClick = { showDisplayPicker = true },
-                query = query,
-            )
-            // Form-Faktor des Home-Skeletts (Override), orthogonal zum Anzeige-Modus.
+            // Form-Faktor des Home-Skeletts (Override). Der Anzeige-Modus lebt jetzt in der Darstellung.
             PickerRow(
                 label = s.settingsShellLayout,
                 value = shellLayoutLabel(shellLayoutMode),
@@ -595,19 +605,6 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
                 }
             }
         }
-    }
-
-    if (showDisplayPicker) {
-        PickerModal(
-            title = s.settingsDisplayMode,
-            options = DisplayMode.entries,
-            selectedKey = displayMode.name,
-            keyOf = { it.name },
-            labelOf = displayLabel,
-            onSelect = { viewModel.setDisplayMode(it) },
-            onDismiss = { showDisplayPicker = false },
-            closeLabel = s.close,
-        )
     }
 
     if (showShellLayoutPicker) {
@@ -836,8 +833,10 @@ fun LanguageSettingsContent(viewModel: SettingsViewModel, query: String) {
 }
 
 @Composable
-fun AboutContent(query: String) {
+fun AboutContent(query: String, viewModel: AppUpdateViewModel = hiltViewModel()) {
     val s = LocalStrings.current
+    val updateState by viewModel.state.collectAsState()
+    val installing by viewModel.installing.collectAsState()
     SettingsGroup(s.appName, query) {
         HighlightText(
             s.aboutDevice, query, MaterialTheme.typography.bodySmall,
@@ -846,8 +845,95 @@ fun AboutContent(query: String) {
         )
         AboutRow(s.versionLabel, BuildConfig.VERSION_NAME, query)
         AboutRow(s.aboutLicense, "AGPL-3.0-or-later", query)
-        AboutRow(s.aboutSourceCode, s.aboutSourceCodeUrl, query)
+        // Source code: a real, clickable link to the repo (display without scheme, target with https).
+        AboutLinkRow(s.aboutSourceCode, s.aboutSourceCodeUrl, query)
+        Spacer(Modifier.height(16.dp))
+        UpdateSection(
+            state = updateState,
+            installing = installing,
+            query = query,
+            onCheck = { viewModel.check() },
+            onInstall = { viewModel.install(it) },
+        )
     }
+}
+
+/** Label on the left · clickable, underlined link on the right (opens `https://<value>` in the browser). */
+@Composable
+private fun AboutLinkRow(label: String, displayUrl: String, query: String) {
+    val uriHandler = LocalUriHandler.current
+    val accent = LocalDesignTokens.current.accent
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        HighlightText(
+            displayUrl, query,
+            MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
+            color = accent,
+            modifier = Modifier.clickable { uriHandler.openUri("https://$displayUrl") },
+        )
+    }
+}
+
+/**
+ * Update area: "Check for updates" button + status. When an update is available, instead shows
+ * "Install update" (downloads the release APK + starts the OS installer).
+ */
+@Composable
+private fun UpdateSection(
+    state: AppUpdateState,
+    installing: Boolean,
+    query: String,
+    onCheck: () -> Unit,
+    onInstall: (ReleaseInfo) -> Unit,
+) {
+    val s = LocalStrings.current
+    // Buttons + status centered horizontally. When an update is available, ONLY the install button
+    // (no extra "check" button — would be doubled); otherwise the "check" button + status.
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (state is AppUpdateState.Available) {
+            HighlightText(
+                s.aboutUpdateAvailable(state.release.tag), query,
+                MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            )
+            Spacer(Modifier.height(8.dp))
+            EinkOutlinedButton(onClick = { onInstall(state.release) }, enabled = !installing) {
+                Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(if (installing) s.aboutDownloading else s.aboutInstallUpdate)
+            }
+        } else {
+            EinkOutlinedButton(onClick = onCheck, enabled = state != AppUpdateState.Checking) {
+                Icon(AppIcons.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(s.aboutCheckUpdates)
+            }
+            when (state) {
+                AppUpdateState.Checking -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutChecking, query) }
+                AppUpdateState.UpToDate -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutUpToDate, query) }
+                AppUpdateState.Unknown -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutCheckFailed, query) }
+                else -> Unit
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpdateStatusLine(text: String, query: String) {
+    HighlightText(
+        text, query, MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** Label-/Wert-Zeile im „Über"-Abschnitt: Label links (gedämpft), Wert rechts (suchbar). */

@@ -254,8 +254,9 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     nur Debug/Preview).
   - **Region `homeHeader` (Ist, 2026-06-12):** In-Tree-Vertrag `HomeHeaderSlot`
     (`@Composable (state: HomeHeaderState) -> Unit`). Die **Capability-Surface** `HomeHeaderState`
-    kapselt Status, Suche (`HomeHeaderSearch`), generischen Filter-Slot (`HomeHeaderFilter`), Menü-Overlay
-    und Tab-spezifische Aktionen. Der Host (Core) baut die Surface und besitzt die Logik; das Pack
+    kapselt Status, **Tab-Titel** (`title`, im Drawer-Modus neben dem Burger gezeigt; Bottom-Bar zeigt
+    stattdessen den Status), Suche (`HomeHeaderSearch`), generischen Filter-Slot (`HomeHeaderFilter`),
+    Menü-Overlay und Tab-spezifische Aktionen. Der Host (Core) baut die Surface und besitzt die Logik; das Pack
     **arrangiert** sie — implementiert sie nie neu („UI neu, Kernlogik gleich"). `DefaultHomeHeader`
     (`app/ui/home/HomeHeader.kt`) ist das Default-Layout (Onyx-Look). `HomeScreen` baut die Surface pro
     Tab und ruft `LocalResolvedSlots.current.homeHeader(state)`. Die frühere **„Ausnahme HomeScreen"**
@@ -449,8 +450,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Widget — die Widget-Wahl IST die Variabilität); logik-gebundene (content/header) als **host-gebaute**
   Composables (Pack platziert nur, „UI neu, Kernlogik gleich"). **NavHost + Reader unberührt:** der Reader
   ist eine Geschwister-Route im NavHost (`MainActivity`), liegt nicht *in* der Shell — der Shell-Pack-Bereich
-  ist exakt das alte `HomeScreen`. **E-Ink host-erzwungen:** `DrawerShell` gatet die Drawer-Bewegung über
-  `LocalEinkMode` (`snapTo` statt Slide). **Form-Faktor (Shell) ⟂ Geräteklasse (Theme)** — orthogonale
+  ist exakt das alte `HomeScreen`. **Wisch-Navigation (Ist, 2026-06-13):** der geteilte `ShellContent`
+  (in `DeclarativeShell`, von allen drei Skeletten genutzt) rendert den aktiven Inhalt im Smartphone-Modus
+  (`allowsMotion`) in einem `HorizontalPager` über ALLE Destinations — der ganze Inhalt ist zwischen den Tabs
+  wischbar, Tab-Tap ⇄ Wisch-Geste bleiben über `selectedId`/`settledPage` synchron. **E-Ink host-erzwungen:**
+  bei `!allowsMotion` KEIN Pager (direktes Rendern), weil jede Wisch-Bewegung Ghosting/Teil-Refresh erzeugt
+  (`animation-gating.md`). **E-Ink host-erzwungen:** `DrawerShell` gatet die Drawer-Bewegung über
+  `LocalEinkMode` (`snapTo` statt Slide); der Drawer trägt oben einen Kopf (Logo + App-Name), die aktive Zeile
+  ist theme-gerundet (`MaterialTheme.shapes.small`, kein Material-Pill). **Form-Faktor (Shell) ⟂ Geräteklasse (Theme)** — orthogonale
   Achsen. Emulator-verifiziert: expanded→Bottom-Bar-Skelett, compact→Drawer-Skelett, gleiche `AppShellState`.
   Swap-Beweis: `app/src/debug/.../ui/shell/DeclarativeShellPreview.kt` (dieselbe `AppShellState`, nur der
   `ShellDescriptor` schaltet das Skelett). **Weiter Soll:** der **externe** deklarative Shell-Pack-Lader

@@ -19,5 +19,7 @@ data class SettingsSection(
     val title: String,
     val searchTerms: List<String>,
     val scrollable: Boolean = true,
+    /** true = small "dirty" dot on the section icon (e.g. "About" when an app update is ready). */
+    val badge: Boolean = false,
     val content: @Composable (query: String) -> Unit,
 )

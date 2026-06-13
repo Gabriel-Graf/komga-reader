@@ -20,6 +20,9 @@ data class ShellDestination(
     val label: String,
     /** null = diese Destination bringt eigene Bar / will keinen Shell-Header (z. B. Collections-Detail). */
     val header: HomeHeaderState?,
+    /** true = small "dirty" dot on the nav icon (e.g. update available on the settings tab). The pack
+     *  renders the dot; its meaning is host-determined (pure nav data). */
+    val badge: Boolean = false,
     val content: @Composable () -> Unit,
 )
 
@@ -32,6 +35,10 @@ data class AppShellState(
     val destinations: List<ShellDestination>,
     val selectedId: ShellDestinationId,
     val onSelect: (ShellDestinationId) -> Unit,
+    /** Optional, host-built overlay centered BELOW the toolbar (above the content) — e.g. the
+     *  4-second update message on app start. null = no overlay. The host owns motion/visibility
+     *  (E-Ink invariant host-enforced); the pack only places it. */
+    val banner: (@Composable () -> Unit)? = null,
 ) {
     val selected: ShellDestination
         get() = destinations.firstOrNull { it.id == selectedId }

@@ -124,6 +124,17 @@ class MapBackedStrings(
     override val aboutLicense: String get() = overrides["aboutLicense"] ?: fallback.aboutLicense
     override val aboutSourceCode: String get() = overrides["aboutSourceCode"] ?: fallback.aboutSourceCode
     override val aboutSourceCodeUrl: String get() = overrides["aboutSourceCodeUrl"] ?: fallback.aboutSourceCodeUrl
+    override val aboutCheckUpdates: String get() = overrides["aboutCheckUpdates"] ?: fallback.aboutCheckUpdates
+    override val aboutChecking: String get() = overrides["aboutChecking"] ?: fallback.aboutChecking
+    override val aboutUpToDate: String get() = overrides["aboutUpToDate"] ?: fallback.aboutUpToDate
+    override val aboutCheckFailed: String get() = overrides["aboutCheckFailed"] ?: fallback.aboutCheckFailed
+    override val aboutInstallUpdate: String get() = overrides["aboutInstallUpdate"] ?: fallback.aboutInstallUpdate
+    override val aboutDownloading: String get() = overrides["aboutDownloading"] ?: fallback.aboutDownloading
+    override fun aboutUpdateAvailable(version: String): String =
+        overrides["aboutUpdateAvailable"]?.replace("{version}", version) ?: fallback.aboutUpdateAvailable(version)
+    override fun aboutWhatsNew(version: String): String =
+        overrides["aboutWhatsNew"]?.replace("{version}", version) ?: fallback.aboutWhatsNew(version)
+    override val updateInstalledNotice: String get() = overrides["updateInstalledNotice"] ?: fallback.updateInstalledNotice
     override val retry: String get() = overrides["retry"] ?: fallback.retry
     override val downloadComplete: String get() = overrides["downloadComplete"] ?: fallback.downloadComplete
     override fun downloadingChapters(count: Int): String =

@@ -13,6 +13,9 @@ import androidx.compose.ui.unit.IntOffset
  */
 data class HomeHeaderState(
     val status: @Composable () -> Unit,
+    /** Titel der aktiven Destination — Orientierung im Drawer-Modus (neben dem Burger). Bottom-Bar zeigt
+     *  stattdessen den [status]-Cluster und ignoriert ihn. Leer = kein Titel. */
+    val title: String = "",
     val search: HomeHeaderSearch,
     val filter: HomeHeaderFilter?,
     val menu: @Composable () -> Unit,

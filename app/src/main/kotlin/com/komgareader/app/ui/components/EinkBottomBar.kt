@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,6 +34,8 @@ import com.komgareader.ui.theme.LocalDesignTokens
 data class BottomNavItem(
     val icon: ImageVector,
     val label: String,
+    /** true = small dirty dot on the icon (e.g. update available). */
+    val badge: Boolean = false,
 )
 
 /**
@@ -107,12 +110,17 @@ private fun NavCell(
                     },
                 ),
         )
-        Icon(
-            imageVector = item.icon,
-            contentDescription = item.label,
-            modifier = Modifier.size(EinkTokens.navIcon),
-            tint = tint,
-        )
+        Box {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.label,
+                modifier = Modifier.size(EinkTokens.navIcon),
+                tint = tint,
+            )
+            if (item.badge) {
+                BadgeDot(Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-2).dp))
+            }
+        }
         Spacer(Modifier.height(2.dp))
         Text(
             text = item.label,

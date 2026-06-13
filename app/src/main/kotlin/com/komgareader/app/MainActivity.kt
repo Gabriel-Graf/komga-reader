@@ -1,9 +1,14 @@
 package com.komgareader.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -70,6 +75,21 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var syncCoordinator: com.komgareader.app.data.SyncCoordinator
 
+    /**
+     * Lets us post the "update installed — tap to open" notification (the reliable relaunch path,
+     * since background-activity-launch is blocked). On API 33+ POST_NOTIFICATIONS must be granted at
+     * runtime, otherwise the notification is silently dropped.
+     */
+    private val requestNotifications =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
+    private fun ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!granted) requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP -> {
@@ -104,6 +124,7 @@ class MainActivity : ComponentActivity() {
         Coil.setImageLoader(imageLoader)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enterFullscreen()
+        ensureNotificationPermission()
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeModeStr by settingsViewModel.themeMode.collectAsState()

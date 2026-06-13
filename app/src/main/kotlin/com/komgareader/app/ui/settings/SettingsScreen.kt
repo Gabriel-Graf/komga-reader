@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,7 +47,9 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.app.data.hasUpdate
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.components.BadgeDot
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.LocalEinkMode
@@ -78,11 +82,15 @@ private val SizingExpanded = SettingsSizing(280.dp, 32.dp, 20.sp, 24.dp)
 fun SettingsScreen(
     query: String,
     modifier: Modifier = Modifier,
+    initialSection: SettingsSectionId? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
+    updateViewModel: AppUpdateViewModel = hiltViewModel(),
 ) {
     val s = LocalStrings.current
-    val sections = buildSettingsSections(s, viewModel)
-    val state = SettingsState(sections, query)
+    // The "About" section gets the dirty dot when an app update is ready (guides the user there).
+    val updateState by updateViewModel.state.collectAsState()
+    val sections = buildSettingsSections(s, viewModel, aboutBadge = updateState.hasUpdate)
+    val state = SettingsState(sections, query, initialSectionId = initialSection)
     Box(modifier) {
         LocalResolvedSlots.current.settings(state)
     }
@@ -109,21 +117,30 @@ fun DefaultSettings(state: SettingsState) {
             return@BoxWithConstraints
         }
         if (maxWidth < 600.dp) {
-            SettingsAccordion(visible, state.query, SizingMedium)
+            SettingsAccordion(visible, state.query, SizingMedium, state.initialSectionId)
         } else {
             val sizing = if (maxWidth >= 900.dp) SizingExpanded else SizingMedium
-            SettingsMasterDetail(visible, state.query, sizing)
+            SettingsMasterDetail(visible, state.query, sizing, state.initialSectionId)
         }
     }
 }
 
 @Composable
-private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, sizing: SettingsSizing) {
-    var selectedId by rememberSaveable { mutableStateOf(visible.first().id) }
+private fun SettingsMasterDetail(
+    visible: List<SettingsSection>,
+    query: String,
+    sizing: SettingsSizing,
+    initialSectionId: SettingsSectionId? = null,
+) {
+    var selectedId by rememberSaveable { mutableStateOf(initialSectionId ?: visible.first().id) }
     // Auto-Sprung: wenn die Auswahl ausgefiltert ist, auf die erste sichtbare wechseln.
     // Key auf query (stabil), nicht auf die bei jeder Recomposition neue visible-Liste.
     LaunchedEffect(query) {
         if (visible.none { it.id == selectedId }) selectedId = visible.first().id
+    }
+    // Deep-link hint (e.g. update banner → "About"): jump to it when the host requests a section.
+    LaunchedEffect(initialSectionId) {
+        if (initialSectionId != null && visible.any { it.id == initialSectionId }) selectedId = initialSectionId
     }
     val selected = visible.firstOrNull { it.id == selectedId } ?: visible.first()
 
@@ -144,6 +161,8 @@ private fun SettingsMasterDetail(visible: List<SettingsSection>, query: String, 
             Modifier
                 .width(2.dp)
                 .fillMaxHeight()
+                // Etwas kürzer als die volle Höhe: Luft oben (zur Suche) und unten — gibt dem Layout Ruhe.
+                .padding(vertical = EinkTokens.sectionGap)
                 .padding(bottom = LocalContentBottomInset.current),
         ) {
             Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.outline))
@@ -193,12 +212,7 @@ private fun SettingsSidebar(
                         .background(if (active) accent else Color.Transparent),
                 )
                 Spacer(Modifier.width(10.dp))
-                Icon(
-                    section.icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(sizing.iconSize),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+                SectionIcon(section, sizing.iconSize)
                 Spacer(Modifier.width(12.dp))
                 HighlightText(
                     text = section.title,
@@ -215,9 +229,18 @@ private fun SettingsSidebar(
 }
 
 @Composable
-private fun SettingsAccordion(visible: List<SettingsSection>, query: String, sizing: SettingsSizing) {
+private fun SettingsAccordion(
+    visible: List<SettingsSection>,
+    query: String,
+    sizing: SettingsSizing,
+    initialSectionId: SettingsSectionId? = null,
+) {
     // Bei aktiver Suche alle Treffer-Sektionen aufgeklappt; sonst nur die manuell geöffnete (null = alle zu).
-    var openId by rememberSaveable { mutableStateOf<SettingsSectionId?>(visible.first().id) }
+    var openId by rememberSaveable { mutableStateOf<SettingsSectionId?>(initialSectionId ?: visible.first().id) }
+    // Deep-link hint (e.g. update banner → "About"): expand it when the host requests a section.
+    LaunchedEffect(initialSectionId) {
+        if (initialSectionId != null && visible.any { it.id == initialSectionId }) openId = initialSectionId
+    }
     val searching = query.isNotBlank()
 
     LazyColumn(
@@ -243,12 +266,7 @@ private fun SettingsAccordion(visible: List<SettingsSection>, query: String, siz
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        section.icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(sizing.iconSize),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
+                    SectionIcon(section, sizing.iconSize)
                     Spacer(Modifier.width(12.dp))
                     HighlightText(
                         text = section.title,
@@ -274,6 +292,22 @@ private fun SettingsAccordion(visible: List<SettingsSection>, query: String, siz
                     }
                 }
             }
+        }
+    }
+}
+
+/** Section icon with an optional "dirty" dot (e.g. "About" when an app update is available). */
+@Composable
+private fun SectionIcon(section: SettingsSection, size: Dp) {
+    Box {
+        Icon(
+            section.icon,
+            contentDescription = null,
+            modifier = Modifier.size(size),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+        if (section.badge) {
+            BadgeDot(Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-3).dp))
         }
     }
 }

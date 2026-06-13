@@ -2,12 +2,16 @@ package com.komgareader.app.ui.home
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.ui.components.EinkSearchBar
@@ -87,6 +92,8 @@ private fun DrawerModeHeader(state: HomeHeaderState, onMenu: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     HeaderSearchField(state, Modifier.weight(1f))
+                    // Filter gehört zur aktiven Suche — zwischen Suchfeld und Schließen-X (statt verdeckt).
+                    FilterSlot(state)
                     IconButton(onClick = {
                         state.search.onClear?.invoke()
                         searchOpen = false
@@ -95,12 +102,26 @@ private fun DrawerModeHeader(state: HomeHeaderState, onMenu: () -> Unit) {
                     }
                 }
             } else {
-                Box(Modifier.align(Alignment.CenterStart)) {
+                // EINE Row über die ganze Breite: Burger + Titel (mit `weight` → der Titel truncatet,
+                // statt von den rechten Aktionen/der Suche überdeckt zu werden), rechts Aktionen + Lupe.
+                // Ohne aktive Suche KEIN Filter (der erscheint erst mit der Suche, s. o.).
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     IconButton(onClick = onMenu) { Icon(AppIcons.ListView, contentDescription = null) }
-                }
-                Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+                    if (state.title.isNotEmpty()) {
+                        Text(
+                            state.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(start = 4.dp, end = 8.dp),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
                     state.actions(this)
-                    FilterSlot(state)
                     IconButton(onClick = { searchOpen = true }) {
                         Icon(AppIcons.Search, contentDescription = state.search.placeholder)
                     }

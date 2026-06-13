@@ -139,4 +139,15 @@ object DataModule {
                 .callTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
                 .build(),
         )
+
+    @Provides @Singleton
+    fun githubReleaseClient(): com.komgareader.data.update.GithubReleaseClient =
+        com.komgareader.data.update.GithubReleaseClient(
+            okhttp3.OkHttpClient.Builder()
+                .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                // The APK download can be large → more generous call timeout.
+                .callTimeout(180, java.util.concurrent.TimeUnit.SECONDS)
+                .build(),
+        )
 }

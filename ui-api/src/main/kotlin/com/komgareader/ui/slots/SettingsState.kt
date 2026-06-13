@@ -1,13 +1,17 @@
 package com.komgareader.ui.slots
 
 /**
- * Capability-Surface der Settings-Region: die host-gebauten [SettingsSection]s + der Such-[query].
- * Ein [SettingsSlot]-Pack ordnet sie an (Sidebar/Accordion/flach) und
- * besitzt den Navigations-State selbst (welche Sektion aktiv/aufgeklappt). Die Sektions-Inhalte
- * (`section.content`) sind host-gebaut — das Pack platziert sie nur, baut sie nie neu
- * („UI neu, Kernlogik gleich"). E-Ink-Invarianten bleiben host-erzwungen, nicht Teil dieser Surface.
+ * Capability surface of the settings region: the host-built [SettingsSection]s + the search [query].
+ * A [SettingsSlot] pack arranges them (sidebar/accordion/flat) and owns the navigation state itself
+ * (which section is active/expanded). The section contents (`section.content`) are host-built — the
+ * pack only places them, never rebuilds them ("new UI, same core logic"). E-Ink invariants stay
+ * host-enforced, not part of this surface.
+ *
+ * [initialSectionId] is an optional host hint to open a specific section first (e.g. a deep link from
+ * the update banner to "About"); null = the pack's own default.
  */
 data class SettingsState(
     val sections: List<SettingsSection>,
     val query: String,
+    val initialSectionId: SettingsSectionId? = null,
 )

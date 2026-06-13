@@ -142,6 +142,7 @@ class ReaderViewModelTest {
         override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
         override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
         override val activeUiPack: Flow<String> = flowOf("")
+        override val lastSeenVersion: Flow<String> = flowOf("")
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")
@@ -163,6 +164,7 @@ class ReaderViewModelTest {
         override suspend fun setDeviceManagedRefresh(value: Boolean) = error("not used")
         override suspend fun setOfficialRepoEnabled(enabled: Boolean) = error("not used")
         override suspend fun setActiveUiPack(packageName: String) = error("not used")
+        override suspend fun setLastSeenVersion(version: String) = error("not used")
     }
 
     private fun book(remoteId: String, pageCount: Int) = Book(

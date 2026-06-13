@@ -69,7 +69,9 @@ class PluginHost(private val context: Context) {
             val label = pkg.applicationInfo?.let { appInfo ->
                 runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrNull()?.ifBlank { null }
             } ?: pkg.packageName
-            DiscoveredDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, json)
+            val license = meta.getString(PluginManifestKeys.LICENSE)?.trim().orEmpty()
+            @Suppress("DEPRECATION") val versionCode = pkg.versionCode.toLong()
+            DiscoveredDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, json, license, versionCode)
         }
     }
 

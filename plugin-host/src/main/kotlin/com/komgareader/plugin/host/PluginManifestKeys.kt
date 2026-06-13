@@ -21,4 +21,11 @@ object PluginManifestKeys {
 
     /** Asset-Dateiname (relativ zu `assets/`) der data-only JSON-Nutzlast. */
     const val DATA_ASSET = "com.komgareader.plugin.DATA_ASSET"
+
+    /**
+     * SPDX license identifier declared by the plugin APK (e.g. `OFL-1.1`). Optional;
+     * empty string when not declared. Used by the host to display the license in the
+     * Plugin-Info-Modal and to gate sideload installs for font plugins.
+     */
+    const val LICENSE = "com.komgareader.plugin.LICENSE"
 }

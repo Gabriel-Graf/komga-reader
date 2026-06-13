@@ -17,4 +17,8 @@ data class DiscoveredDataPlugin(
     val assetName: String,
     val displayName: String,
     val assetJson: String,
+    /** SPDX license identifier from the plugin manifest (empty when not declared). */
+    val license: String = "",
+    /** Android versionCode of the plugin APK; 0 when unavailable. */
+    val versionCode: Long = 0,
 )

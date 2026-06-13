@@ -1,17 +1,18 @@
 package com.komgareader.plugin.host
 
+import com.komgareader.plugin.PluginAbi
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AbiGateTest {
-    @Test fun acceptsV1AndV2() {
-        assertTrue(AbiGate.isCompatible(1))
-        assertTrue(AbiGate.isCompatible(2))
+    @Test fun acceptsSupportedRange() {
+        assertTrue(AbiGate.isCompatible(PluginAbi.MIN_SUPPORTED))
+        assertTrue(AbiGate.isCompatible(PluginAbi.VERSION))
     }
 
-    @Test fun rejectsBelowMinAndAboveVersion() {
-        assertFalse(AbiGate.isCompatible(0))
-        assertFalse(AbiGate.isCompatible(3))
+    @Test fun rejectsOutsideRange() {
+        assertFalse(AbiGate.isCompatible(PluginAbi.MIN_SUPPORTED - 1))
+        assertFalse(AbiGate.isCompatible(PluginAbi.VERSION + 1))
     }
 }

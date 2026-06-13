@@ -421,8 +421,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `tiles`-Slot ein. `BottomBarShell`/`FloatingNavShell` teilen das Gerüst (Inset-Mechanik) über das geteilte
   `OverlayBarShell` (Bar als `@Composable`-Slot, `shared-structure-before-variants`); die Kachel-Varianten teilen
   `TileCoverContent`. E-Ink-Modus unverändert (Default-Kachel + `EinkBottomBar`). Emulator-verifiziert (dark+light
-  + E-Ink-Regression). **Phase 2 — das deklarative `ui_pack.json`-`theme` auf volle Tokens/Typo/Shapes (Daten,
-  host-gerendert, E-Ink-gegated) — bleibt Soll** (eigener Plan, leitet das Schema aus diesem Referenz-Look ab).
+  + E-Ink-Regression). **Phase 2 (Ist, 2026-06-13) — das deklarative `ui_pack.json`-`theme` trägt jetzt den
+  vollen Look als Daten:** `theme.light`/`dark` mit 8 Farb-Rollen (background/surface/navDock/accent/onAccent/
+  onBackground/onSurfaceVariant/outline) + `cornerRadius`/`elevation`/`typography`. Reinheit: `ThemeSpec` (domain,
+  Primitive) → `parseUiPackSpec` (data) → `UiPackSpec.toUiPackOrNull()` (app, Runtime-`UiPack`) → `KomgaReaderTheme`
+  **ersetzt** den Geräteklassen-Pack durch den externen — **host-gegated** (`allowsAccentColor`; mono E-Ink ignoriert
+  Farben, Emulator-verifiziert). `navDock`→`surfaceVariant` (Floating-Nav-Fläche). Alte flache accent/cornerRadius-
+  Packs bleiben über `tokenOverride` gültig. **Externes Aurora-Daten-APK** (`plugin/komga-ui-pack-aurora`,
+  Distributions-Repo) reproduziert den In-Tree-Look 1:1 (1→3-Beweis, mit rotem Akzent distinkt bewiesen).
   **Form-Faktor-User-Override (Ist, 2026-06-12, S0.1):** die
   pure `resolveFormFactor(mode: ShellLayoutMode, widthDp)` (neben `formFactorFor`, unit-getestet) lässt
   den Nutzer den Form-Faktor überschreiben — Domain-Enum `ShellLayoutMode{AUTO,COMPACT,EXPANDED}`,

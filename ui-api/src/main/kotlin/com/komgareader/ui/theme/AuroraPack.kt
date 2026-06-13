@@ -26,10 +26,11 @@ private val AuroraDark = darkColorScheme(
 private val AuroraLight = lightColorScheme(
     primary = Cobalt, onPrimary = Color.White,
     primaryContainer = Color(0xFFDCE0FF), onPrimaryContainer = Color(0xFF11205E),
-    background = Color(0xFFCDD1D9), onBackground = Color(0xFF1A1D24),
-    surface = Color(0xFFC3C8D1), onSurface = Color(0xFF1A1D24),
-    surfaceVariant = Color(0xFF959CAA), onSurfaceVariant = Color(0xFF3F4450),
-    outline = Color(0xFFB1B7C2), outlineVariant = Color(0xFFBFC4CE),
+    // Weiß als Haupt-Hintergrund + sauberes neutrales (nicht blaustichiges) Hellgrau für Flächen/Nav-Dock.
+    background = Color(0xFFFFFFFF), onBackground = Color(0xFF1A1B1E),
+    surface = Color(0xFFEDEDEF), onSurface = Color(0xFF1A1B1E),
+    surfaceVariant = Color(0xFFE1E1E4), onSurfaceVariant = Color(0xFF6B6C70),
+    outline = Color(0xFFD3D3D6), outlineVariant = Color(0xFFE1E1E4),
 )
 
 private val AuroraShapes = Shapes(

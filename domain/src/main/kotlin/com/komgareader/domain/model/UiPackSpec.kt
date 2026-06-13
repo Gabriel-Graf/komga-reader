@@ -14,6 +14,9 @@ package com.komgareader.domain.model
  * @property accentHex Akzentfarbe (`#RRGGBB`) — host-erzwungen NUR angewandt, wenn die Geräteklasse
  *   Akzentfarbe erlaubt (mono E-Ink ignoriert).
  * @property cornerRadiusDp Eckenradius in dp (invariant-neutral, gilt immer).
+ * @property theme Voller deklarativer Theme-Deskriptor (Phase 2): Farb-Rollen, Eckenradius, Elevation,
+ *   Typo — alle Sektionen optional. Ersetzt `accentHex`/`cornerRadiusDp` nicht (bleiben für Packs,
+ *   die nur diese Felder setzen).
  */
 data class UiPackSpec(
     val packageName: String,
@@ -23,8 +26,9 @@ data class UiPackSpec(
     val iconRemap: Map<String, String> = emptyMap(),
     val accentHex: String? = null,
     val cornerRadiusDp: Int? = null,
+    val theme: ThemeSpec? = null,
 ) {
     /** true, wenn der Pack mindestens eine Sektion liefert (sonst ist er wirkungslos). */
     val hasAnyOverride: Boolean
-        get() = navStyle != null || iconRemap.isNotEmpty() || accentHex != null || cornerRadiusDp != null
+        get() = navStyle != null || iconRemap.isNotEmpty() || accentHex != null || cornerRadiusDp != null || theme != null
 }

@@ -476,30 +476,35 @@ fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
     val themeModeStr by viewModel.themeMode.collectAsState()
     val themeMode = runCatching { ThemeMode.valueOf(themeModeStr) }.getOrDefault(ThemeMode.SYSTEM)
-
-    SettingsGroup(s.settingsTheme, query) {
-        ThemeMode.entries.forEach { mode ->
-            val label = when (mode) {
-                ThemeMode.LIGHT -> s.themeLight
-                ThemeMode.DARK -> s.themeDark
-                ThemeMode.SYSTEM -> s.themeSystem
-            }
-            ChoiceRow(label, selected = mode == themeMode, query = query, dense = true) {
-                viewModel.setTheme(mode.name)
-            }
-        }
-    }
-
     // Externer UI-Pack (L2): „Standard" + jeder installierte data-only UI-Pack (analog Sprach-Picker).
     val activeUiPack by viewModel.activeUiPack.collectAsState()
     val uiPacks by viewModel.availableUiPacks.collectAsState()
-    SettingsGroup(s.settingsUiPack, query) {
-        ChoiceRow(s.uiPackDefault, selected = activeUiPack.isBlank(), query = query, dense = true) {
-            viewModel.setActiveUiPack("")
+
+    // Eigener Column-Root (wie [ReaderSettingsContent]): der Host platziert die Section-`content` in einer
+    // Box (SettingsScreen.kt), die mehrere Geschwister ÜBEREINANDER stapeln würde — die zwei Gruppen
+    // (Theme + UI-Pack) müssen vertikal gestapelt werden, sonst überlappen sie.
+    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
+        SettingsGroup(s.settingsTheme, query) {
+            ThemeMode.entries.forEach { mode ->
+                val label = when (mode) {
+                    ThemeMode.LIGHT -> s.themeLight
+                    ThemeMode.DARK -> s.themeDark
+                    ThemeMode.SYSTEM -> s.themeSystem
+                }
+                ChoiceRow(label, selected = mode == themeMode, query = query, dense = true) {
+                    viewModel.setTheme(mode.name)
+                }
+            }
         }
-        uiPacks.forEach { spec ->
-            ChoiceRow(spec.displayName, selected = spec.packageName == activeUiPack, query = query, dense = true) {
-                viewModel.setActiveUiPack(spec.packageName)
+
+        SettingsGroup(s.settingsUiPack, query) {
+            ChoiceRow(s.uiPackDefault, selected = activeUiPack.isBlank(), query = query, dense = true) {
+                viewModel.setActiveUiPack("")
+            }
+            uiPacks.forEach { spec ->
+                ChoiceRow(spec.displayName, selected = spec.packageName == activeUiPack, query = query, dense = true) {
+                    viewModel.setActiveUiPack(spec.packageName)
+                }
             }
         }
     }

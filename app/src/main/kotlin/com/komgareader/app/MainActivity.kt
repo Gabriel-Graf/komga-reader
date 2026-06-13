@@ -33,6 +33,7 @@ import com.komgareader.app.ui.groups.GroupBrowseRoute
 import com.komgareader.app.ui.home.HomeScreen
 import com.komgareader.app.ui.pack.toIconPack
 import com.komgareader.app.ui.pack.tokenOverride
+import com.komgareader.app.ui.pack.toUiPackOrNull
 import com.komgareader.app.ui.reader.ReaderRoute
 import com.komgareader.app.ui.series.SeriesDetailScreen
 import com.komgareader.app.ui.settings.SettingsRoute
@@ -127,6 +128,7 @@ class MainActivity : ComponentActivity() {
                 ActiveIconPack.current = activeUiPack?.toIconPack() ?: DefaultIconPack
             }
             val tokenOverride = remember(activeUiPack) { activeUiPack?.tokenOverride() }
+            val externalPack = remember(activeUiPack) { activeUiPack?.toUiPackOrNull() }
             // remember: LocalStrings ist ein staticCompositionLocalOf (kein Gleichheits-Check) — ohne
             // remember alloziert resolveStrings bei jeder Recomposition (z.B. Color-Profile-Wechsel) eine
             // neue MapBackedStrings-Instanz und recomposed bei aktivem Sprach-Plugin den ganzen Baum.
@@ -154,7 +156,7 @@ class MainActivity : ComponentActivity() {
                         UiSlotPack()
                     }
                 }
-                KomgaReaderTheme(themeMode = themeMode, slotPack = slotPack, tokenOverride = tokenOverride) {
+                KomgaReaderTheme(themeMode = themeMode, slotPack = slotPack, tokenOverride = tokenOverride, externalPack = externalPack) {
                     val nav = rememberNavController()
                     LaunchedEffect(Unit) { syncCoordinator.onAppStart() }
                     // „Zur Bibliothek" app-weit verfügbar (Home-Button im Detail-Header u. a.):

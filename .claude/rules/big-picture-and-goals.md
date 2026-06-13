@@ -303,8 +303,10 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   Browser + Fingerprint-Install wie Quellen-/Preset-Plugins) liefert einen **deklarativen JSON-Deskriptor**
   `ui_pack.json` mit drei optionalen Sektionen (Subset-Packs, fehlend → Host-Default): `shell.navStyle`
   (überschreibt den Form-Faktor-Default — `ShellPackRegistry.forFormFactor(ff, override)`, Override schlägt
-  Form-Faktor), `icons` (IconKey-Remap, s. o.) und `theme` (`accent`-Hex + `cornerRadius` →
-  `KomgaReaderTheme(tokenOverride)`). **Streng deklarativ** (kein Plugin-Compose, kein Host-Rechte-Crash);
+  Form-Faktor), `icons` (IconKey-Remap, s. o.) und `theme` (in L2 nur `accent`-Hex + `cornerRadius` →
+  `KomgaReaderTheme(tokenOverride)`; **seit Phase 2 (2026-06-13) der volle Look als Daten** — `light`/`dark` ×
+  8 Rollen + Typo/Elevation → `toUiPackOrNull` ersetzt den Geräteklassen-Pack host-gegated, s. Theme-Pack-Naht).
+  **Streng deklarativ** (kein Plugin-Compose, kein Host-Rechte-Crash);
   der pure Pfad bleibt rein (`UiPackSpec` domain-Primitive, `parseUiPackSpec` data), die Compose-Übersetzung
   liegt nur in `:app` (`UiPackApply.kt`). **E-Ink host-erzwungen:** der **Akzent-Override** gilt NUR bei
   `LocalDisplayBehavior.allowsAccentColor` (mono E-Ink ignoriert ihn → bleibt Schwarz); Eckradius/Shell/Icons
@@ -345,10 +347,15 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 > distinktiver **Modern-Mobile-Look** (Slate/Deeper-Grey + Cobalt `#3D5AFE`, dark+light, SoftShapes, getunte
 > System-Typo); `packFor(LCD)→AuroraPack` (`LcdPack` bleibt Fallback). Dazu im Smartphone-Modus die schwebende
 > Pill-Nav `ShellNavStyle.FLOATING_NAV` (`FloatingNavShell`, host-erzwungen via `auroraShellOverride`) + die
-> Card-Kachel `AuroraSeriesTile` (`tiles`-Slot). Emulator-verifiziert; E-Ink unberührt. Das ist der **Referenz-
-> Look**, aus dem **Phase 2** das deklarative `ui_pack.json`-`theme` auf **volle Tokens** ableitet (Daten,
-> host-gerendert, E-Ink-gegated) — damit Aurora als externes Daten-APK lieferbar wird (eigener Plan, **Soll**).
-> Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modern-mobile-ui-pack-aurora*`.
+> Card-Kachel `AuroraSeriesTile` (`tiles`-Slot). Emulator-verifiziert; E-Ink unberührt. **Phase 2 (Ist,
+> 2026-06-13) — gebaut:** das deklarative `ui_pack.json`-`theme` trägt jetzt den **vollen Look als Daten**
+> (`light`/`dark` × 8 Farb-Rollen + `cornerRadius`/`elevation`/`typography`). `ThemeSpec` (domain) →
+> `parseUiPackSpec` (data) → `toUiPackOrNull` (app, Runtime-`UiPack`) → `KomgaReaderTheme` ersetzt den
+> Geräteklassen-Pack **host-gegated** (`allowsAccentColor`; mono E-Ink ignoriert Farben). Externes
+> **Aurora-Daten-APK** (Distributions-Repo, `type:ui_pack`) reproduziert den In-Tree-Look 1:1 (1→3-Beweis,
+> Emulator-verifiziert). Alte flache accent/cornerRadius-Packs bleiben gültig (`tokenOverride`). Doku:
+> `docs/ui-packs/README.md`. Design/Plan: `docs/superpowers/specs|plans/2026-06-12-modern-mobile-ui-pack-aurora*`,
+> `2026-06-12-ui-pack-declarative-theme-phase2-design.md`, `2026-06-13-ui-pack-declarative-theme-phase2.md`.
 > **Die Layout-Slot-Naht — alle sechs Regionen gebaut (Reihe abgeschlossen):**
 > - **Region `header` (Ist, 2026-06-09; Such-Capability 2026-06-12, D1.1):** `app/ui/slots/UiSlots.kt` trägt
 >   `HeaderSlot` (jetzt `@Composable (state: HeaderState) -> Unit`), die Surface

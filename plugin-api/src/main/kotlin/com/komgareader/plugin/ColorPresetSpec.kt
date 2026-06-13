@@ -1,10 +1,10 @@
 package com.komgareader.plugin
 
 /** ABI-Gate als zwei Integer (kein semver-String) — Plugin-Plan-Entscheidung 2.
- *  VERSION 2 = additive Erweiterung (data-only Plugin-Kategorien, [PluginCategory]).
+ *  VERSION 3 = additive Erweiterung (data-only Kategorie PANEL_MODEL, [PluginCategory]).
  *  MIN_SUPPORTED bleibt 1: color-preset-v1-APKs laden unverändert weiter. */
 object PluginAbi {
-    const val VERSION = 2
+    const val VERSION = 3
     const val MIN_SUPPORTED = 1
 }
 

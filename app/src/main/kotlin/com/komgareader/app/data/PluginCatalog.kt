@@ -14,17 +14,22 @@ import com.komgareader.data.plugin.repo.PluginRepoClient
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.data.plugin.repo.RepoStore
 import com.komgareader.data.plugin.repo.installState
+import com.komgareader.data.plugin.repo.isLicenseAllowed
 import com.komgareader.data.plugin.repo.mergeRepoEntries
 import com.komgareader.data.plugin.repo.parseRepoIndex
 import com.komgareader.data.plugin.repo.pluginKindOf
 import com.komgareader.data.plugin.repo.resolveRepoUrl
 import com.komgareader.data.plugin.LanguageSpec
+import com.komgareader.data.plugin.parseFontSpecs
 import com.komgareader.data.plugin.parseLanguageSpec
 import com.komgareader.data.plugin.parseReaderPresetSpecs
 import com.komgareader.data.plugin.parseUiPackSpec
 import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.model.UiPackSpec
 import com.komgareader.domain.model.SourceKind
+import com.komgareader.domain.render.NovelFont
+import com.komgareader.domain.render.NovelFonts
+import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.plugin.PluginCategory
 import com.komgareader.domain.repository.ColorProfileRepository
@@ -56,12 +61,14 @@ fun installedEntriesOf(
     languages: List<DiscoveredDataPlugin> = emptyList(),
     readerPresets: List<DiscoveredDataPlugin> = emptyList(),
     uiPacks: List<DiscoveredDataPlugin> = emptyList(),
+    fonts: List<DiscoveredDataPlugin> = emptyList(),
 ): List<InstalledEntry> =
     sources.map { InstalledEntry(it.packageName, it.metadata.displayName, PluginKind.SOURCE) } +
         presets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PRESET) } +
         languages.map { InstalledEntry(it.packageName, it.displayName, PluginKind.LANGUAGE) } +
         readerPresets.map { InstalledEntry(it.packageName, it.displayName, PluginKind.READER_PRESET) } +
-        uiPacks.map { InstalledEntry(it.packageName, it.displayName, PluginKind.UI_PACK) }
+        uiPacks.map { InstalledEntry(it.packageName, it.displayName, PluginKind.UI_PACK) } +
+        fonts.map { InstalledEntry(it.packageName, it.displayName, PluginKind.FONT) }
 
 /**
  * Einziger Halter des Plugin-Discovery-Zustands (installierte APK-Quellen/-Presets + entdeckte
@@ -80,6 +87,7 @@ class PluginCatalog @Inject constructor(
     private val repoStore: RepoStore,
     private val client: PluginRepoClient,
     private val installer: PluginInstaller,
+    private val reflowableDocumentFactory: ReflowableDocumentFactory,
 ) {
     private val _sources = MutableStateFlow<List<DiscoveredPlugin>>(emptyList())
     val sources: StateFlow<List<DiscoveredPlugin>> = _sources.asStateFlow()
@@ -109,6 +117,18 @@ class PluginCatalog @Inject constructor(
     private val _uiPackDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
     val uiPackDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _uiPackDataPlugins.asStateFlow()
 
+    // Raw discovered font plugins (Plugins tab; includes license-blocked ones so they stay uninstallable-visible).
+    private val _fontDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
+    val fontDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _fontDataPlugins.asStateFlow()
+
+    // Built-in + license-allowed plugin fonts, merged for the novel font picker.
+    private val _allNovelFonts = MutableStateFlow(NovelFonts.ALL)
+    val allNovelFonts: StateFlow<List<NovelFont>> = _allNovelFonts.asStateFlow()
+
+    // family -> TTF file on disk (plugin fonts + extracted built-ins), for the picker live sample.
+    private val _fontSampleFiles = MutableStateFlow<Map<String, File>>(emptyMap())
+    val fontSampleFiles: StateFlow<Map<String, File>> = _fontSampleFiles.asStateFlow()
+
     private val _discovered = MutableStateFlow<List<BrowserRow>>(emptyList())
     val discovered: StateFlow<List<BrowserRow>> = _discovered.asStateFlow()
 
@@ -137,6 +157,7 @@ class PluginCatalog @Inject constructor(
             _languageDataPlugins.value,
             _readerPresetDataPlugins.value,
             _uiPackDataPlugins.value,
+            _fontDataPlugins.value,
         )
 
     /**
@@ -169,6 +190,11 @@ class PluginCatalog @Inject constructor(
                 .onFailure { Log.w("PluginCatalog", "discoverUiPackPlugins failed", it) }
                 .getOrDefault(emptyList())
         }
+        val rawFonts = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverDataPlugins(PluginCategory.FONT) }
+                .onFailure { Log.w("PluginCatalog", "discoverFontPlugins failed", it) }
+                .getOrDefault(emptyList())
+        }
         _sources.value = srcs
         _presetPlugins.value = presets
         _languageDataPlugins.value = rawLanguages
@@ -184,6 +210,42 @@ class PluginCatalog @Inject constructor(
         val activeUiPack = settings.activeUiPack.first()
         if (activeUiPack.isNotBlank() && _uiPackPlugins.value.none { it.packageName == activeUiPack }) {
             settings.setActiveUiPack("")
+        }
+
+        _fontDataPlugins.value = rawFonts
+        val fontsRoot = File(context.filesDir, "plugin-fonts")
+        val pluginFonts = mutableListOf<NovelFont>()
+        val sampleFiles = mutableMapOf<String, File>()
+        withContext(Dispatchers.IO) {
+            // Gate B (sideload): only license-allowed font APKs are extracted/registered/merged.
+            rawFonts.filter { isLicenseAllowed(it.license) }.forEach { plugin ->
+                parseFontSpecs(plugin.assetJson, plugin.abiVersion).orEmpty().forEach { spec ->
+                    val file = pluginHost.extractFontAsset(plugin.packageName, spec.asset, fontsRoot)
+                        ?: return@forEach
+                    reflowableDocumentFactory.registerFont(file.absolutePath)
+                    pluginFonts.add(NovelFont(family = spec.family, label = spec.label, asset = file.absolutePath))
+                    sampleFiles[spec.family] = file
+                }
+            }
+            // Extract built-in TTFs too, so the picker can sample them in their real face.
+            NovelFonts.ALL.forEach { font ->
+                runCatching {
+                    val out = File(fontsRoot, "builtin/${font.asset.substringAfterLast('/')}")
+                    if (!out.exists()) {
+                        out.parentFile?.mkdirs()
+                        context.assets.open(font.asset).use { input -> out.outputStream().use { input.copyTo(it) } }
+                    }
+                    sampleFiles[font.family] = out
+                }
+            }
+        }
+        _allNovelFonts.value = NovelFonts.ALL + pluginFonts
+        _fontSampleFiles.value = sampleFiles
+
+        // Active novel font falls back to default if its plugin is gone / license-blocked.
+        val activeFont = settings.novelFontFamily.first()
+        if (_allNovelFonts.value.none { it.family == activeFont }) {
+            settings.setNovelFontFamily(NovelFonts.DEFAULT)
         }
 
         val installed = (srcs.map { it.packageName } + presets.map { it.packageName }).toSet()
@@ -248,6 +310,11 @@ class PluginCatalog @Inject constructor(
         val dest = File(dir, "${row.item.entry.packageName}-${row.item.entry.versionCode}.apk")
         val ok = client.download(url, dest)
         if (!ok) { _error.value = "download"; return }
+        if (row.item.kind == PluginKind.FONT && !isLicenseAllowed(row.item.entry.license)) {
+            dest.delete()
+            _error.value = "license_blocked"
+            return
+        }
         when (installer.verifyAndInstall(dest, row.item.entry.fingerprint)) {
             is InstallResult.FingerprintMismatch -> _error.value = "fingerprint"
             is InstallResult.Failed -> _error.value = "install"

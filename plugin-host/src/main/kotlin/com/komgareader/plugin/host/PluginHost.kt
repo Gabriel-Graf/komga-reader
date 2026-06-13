@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import dalvik.system.PathClassLoader
+import java.io.File
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceId
@@ -86,6 +87,28 @@ class PluginHost(private val context: Context) {
                 ?: return@mapNotNull null
             DiscoveredPresetPlugin(d.packageName, d.displayName, d.abiVersion, specs)
         }
+
+    /**
+     * Extracts a data-only plugin asset (e.g. a TTF) to permanent, version-keyed storage:
+     * `<destRoot>/<packageName>/<versionCode>/<asset-basename>`. Stale version dirs of the same
+     * package are removed first (no stale TTF after an update). Returns the file, or null on
+     * I/O error. Uses createPackageContext(pkg, 0) — resources only, no code load / no TOFU.
+     */
+    fun extractFontAsset(packageName: String, assetPath: String, destRoot: File): File? = runCatching {
+        val pm = context.packageManager
+        @Suppress("DEPRECATION")
+        val versionCode = pm.getPackageInfo(packageName, 0).versionCode.toLong()
+        val target = fontAssetTargetFile(destRoot, packageName, versionCode, assetPath)
+        val packageDir = target.parentFile?.parentFile // <destRoot>/<packageName>
+        if (packageDir != null) staleVersionDirs(packageDir, versionCode).forEach { it.deleteRecursively() }
+        if (!target.exists()) {
+            target.parentFile?.mkdirs()
+            context.createPackageContext(packageName, 0).assets.open(assetPath).use { input ->
+                target.outputStream().use { input.copyTo(it) }
+            }
+        }
+        target
+    }.getOrNull()
 
     /**
      * Erzeugt die laufende BrowsableSource für eine konfigurierte Plugin-Quelle — NUR wenn die

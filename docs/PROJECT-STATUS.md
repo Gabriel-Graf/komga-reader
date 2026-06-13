@@ -144,7 +144,7 @@ The user's explicit goal is to open‑source this. Status of the must‑fix item
 | Secrets / credentials in prod code | ✅ none found | `local.properties` is gitignored |
 | Example plugins discoverable | ✅ in the `KomgaReaderPlugins` monorepo | all official plugin sources now live there (built/signed/released by CI); Aurora added to the index. README points to it |
 | Internal docs language | ⚠️ specs/rules are German | community‑facing docs are now English; translating specs is a follow‑up |
-| Insecure Boox Maven repo (HTTP) | ⚠️ **external** (`repo.boox.com`, Onyx's server) over HTTP; HTTPS unusable (weak‑DH TLS) | not under our control. Mitigate with Gradle **dependency verification** (pin the SHA‑256 of `com.onyx.android.sdk:onyxsdk-device`) and/or **vendor** the `.aar` locally; content‑filter the repo to the Onyx group only |
+| Insecure Boox Maven repo (HTTP) | ✅ **hardened** | external (Onyx's HTTP server, unfixable TLS) — neutralised: the Onyx `.aar` SHA‑256 is pinned in `gradle/verification-metadata.xml` (tamper‑tested), and the Boox + Ghostscript repos are content‑filtered to their one group each (no dependency‑confusion/MITM vector). |
 | Native build reproducibility | 🟡 crengine is arm64‑only with a **committed 386‑file prefix** | documented & reproducible, but it makes the repo heavy and x86 emulators unsupported |
 | GitHub Actions CI | ✅ **added** (`.github/workflows/ci.yml`) | unit + build on `ubuntu-latest`; integration on an `ubuntu-24.04-arm` runner (arm64 emulator + Docker fixtures). First run needs validation (Actions can't be run from here). |
 
@@ -217,7 +217,8 @@ become a stable extension point — a minor, internal concern, not the external�
    `BuildConfig`/`local.properties`, `LocalTestServer`); GitHub Actions CI added.
 2. Add a short plugin/UI‑pack authoring walkthrough (`docs/plugins/` already exists — point to it
    from the README) so newcomers can find the externally‑hosted examples.
-3. Decide the CI story for the public home (port to GitHub Actions, or document GitLab).
+3. ~~Decide the CI story for the public home.~~ **Done** — GitHub Actions CI added
+   (`.github/workflows/ci.yml`); the GitLab pipeline is kept too.
 4. Add screenshots/GIFs to the README.
 
 **For the north‑star (flexibility) roadmap:**

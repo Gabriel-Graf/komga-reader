@@ -86,6 +86,11 @@ class SettingsViewModel @Inject constructor(
     val sourcePlugins = catalog.sources
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    val availableNovelFonts =
+        catalog.allNovelFonts.stateIn(viewModelScope, SharingStarted.Eagerly, NovelFonts.ALL)
+    val fontSampleFiles =
+        catalog.fontSampleFiles.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     /**
      * Persistiert eine bestätigte Plugin-Quelle als [ServerConfig] (kind = PLUGIN).
      * Spiegelt [PluginsViewModel.addPluginSource] — beide nutzen [pluginServerConfig] (DRY).

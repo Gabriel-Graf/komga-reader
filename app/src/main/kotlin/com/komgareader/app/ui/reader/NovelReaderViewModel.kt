@@ -4,12 +4,14 @@ import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.render.Chapter
+import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.ReflowableDocument
@@ -70,6 +72,7 @@ class NovelReaderViewModel @Inject constructor(
     private val bus: HardwareButtonBus,
     private val settings: SettingsRepository,
     private val novelProgress: NovelProgressRepository,
+    private val catalog: PluginCatalog,
     @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel(), Viewer {
 
@@ -108,6 +111,11 @@ class NovelReaderViewModel @Inject constructor(
             fontWeight = alignHyphWeight.third,
         ).toReflowConfig()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ReflowConfig.DEFAULT)
+
+    val availableNovelFonts =
+        catalog.allNovelFonts.stateIn(viewModelScope, SharingStarted.Eagerly, NovelFonts.ALL)
+    val fontSampleFiles =
+        catalog.fontSampleFiles.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /** Overlay-Sichtbarkeit als eigener Flow für das geteilte [ReaderScaffold]. */
     override val chromeVisible: StateFlow<Boolean> = _uiState

@@ -19,6 +19,8 @@ import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.DownloadedBook
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.render.Document
 import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.repository.SettingsRepository
@@ -139,10 +141,10 @@ class ReaderViewModelTest {
         override val novelTextAlign: Flow<String> = flowOf("LEFT")
         override val novelHyphenationLang: Flow<String> = flowOf("")
         override val novelFontWeight: Flow<Int> = flowOf(400)
-        override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
         override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
         override val activeUiPack: Flow<String> = flowOf("")
         override val lastSeenVersion: Flow<String> = flowOf("")
+        override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")
@@ -161,10 +163,10 @@ class ReaderViewModelTest {
         override suspend fun setNovelTextAlign(align: String) = error("not used")
         override suspend fun setNovelHyphenationLang(lang: String) = error("not used")
         override suspend fun setNovelFontWeight(value: Int) = error("not used")
-        override suspend fun setDeviceManagedRefresh(value: Boolean) = error("not used")
         override suspend fun setOfficialRepoEnabled(enabled: Boolean) = error("not used")
         override suspend fun setActiveUiPack(packageName: String) = error("not used")
         override suspend fun setLastSeenVersion(version: String) = error("not used")
+        override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) = error("not used")
     }
 
     private fun book(remoteId: String, pageCount: Int) = Book(

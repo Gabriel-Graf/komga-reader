@@ -5,6 +5,10 @@ import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
 import io.mockk.mockk
+import com.komgareader.domain.eink.EinkCapabilities
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
+import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.ColorProfile
@@ -55,6 +59,17 @@ class SettingsViewModelTest {
             displayMode = { "EINK" },
         )
 
+    private fun stubEinkController(): EinkController = object : EinkController {
+        override val capabilities = EinkCapabilities(hasEink = false, canColor = false, canInvert = false)
+        override val buttonEvents = kotlinx.coroutines.flow.flowOf<com.komgareader.domain.eink.ButtonEvent>()
+        override fun refresh(region: com.komgareader.domain.eink.Region, mode: com.komgareader.domain.eink.RefreshMode) {}
+        override fun setContrast(level: Int) {}
+        override fun setInverted(inverted: Boolean) {}
+        override fun applyRefreshMode(id: String?) {}
+        override fun applyColorMode(id: String?) {}
+        override fun defaultProfile(context: EinkContext) = EinkContextProfile()
+    }
+
     private fun viewModel(servers: ServerRepository): SettingsViewModel {
         val collections = StubCollectionRepository()
         return SettingsViewModel(
@@ -65,6 +80,7 @@ class SettingsViewModelTest {
             collections,
             noOpCoordinator(),
             mockk(relaxed = true),
+            stubEinkController(),
         )
     }
 
@@ -78,6 +94,7 @@ class SettingsViewModelTest {
             collections,
             noOpCoordinator(),
             mockk(relaxed = true),
+            stubEinkController(),
         )
     }
 
@@ -187,10 +204,10 @@ private class StubSettingsRepository : SettingsRepository {
     override val novelTextAlign: Flow<String> = flowOf("JUSTIFY")
     override val novelHyphenationLang: Flow<String> = flowOf("")
     override val novelFontWeight: Flow<Int> = flowOf(400)
-    override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override val activeUiPack: Flow<String> = flowOf("")
     override val lastSeenVersion: Flow<String> = flowOf("")
+    override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -209,10 +226,10 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setNovelTextAlign(align: String) {}
     override suspend fun setNovelHyphenationLang(lang: String) {}
     override suspend fun setNovelFontWeight(value: Int) {}
-    override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setLastSeenVersion(version: String) {}
+    override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
 }
 
 /**
@@ -254,10 +271,10 @@ private class CapturingSettingsRepository(
     override val novelTextAlign: Flow<String> = flowOf(textAlign)
     override val novelHyphenationLang: Flow<String> = flowOf(hyphenationLang)
     override val novelFontWeight: Flow<Int> = flowOf(fontWeight)
-    override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override val activeUiPack: Flow<String> = flowOf("")
     override val lastSeenVersion: Flow<String> = flowOf("")
+    override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -276,10 +293,10 @@ private class CapturingSettingsRepository(
     override suspend fun setNovelTextAlign(align: String) { novelTextAlignValue = align }
     override suspend fun setNovelHyphenationLang(lang: String) { novelHyphenationLangValue = lang }
     override suspend fun setNovelFontWeight(value: Int) { novelFontWeightValue = value }
-    override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setLastSeenVersion(version: String) {}
+    override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
 }
 
 /** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */

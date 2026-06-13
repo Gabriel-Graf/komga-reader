@@ -2,10 +2,15 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.SettingEntity
 import com.komgareader.data.db.SettingsDao
+import com.komgareader.data.eink.decodeEinkContextProfiles
+import com.komgareader.data.eink.encodeEinkContextProfiles
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository {
@@ -45,14 +50,13 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.observe(KEY_NOVEL_HYPHENATION).map { it ?: "" }
     override val novelFontWeight: Flow<Int> =
         dao.observe(KEY_NOVEL_FONT_WEIGHT).map { it?.toIntOrNull() ?: 400 }
-    // Default true: das Gerät (Onyx) steuert Ghosting-Clears selbst; der App-Scheduler ist aus.
-    override val deviceManagedRefresh: Flow<Boolean> =
-        dao.observe(KEY_DEVICE_MANAGED_REFRESH).map { it?.toBooleanStrictOrNull() ?: true }
     // Default true: das offizielle Plugin-Repo wird im Browser standardmäßig geladen.
     override val officialRepoEnabled: Flow<Boolean> =
         dao.observe(KEY_OFFICIAL_REPO_ENABLED).map { it?.toBooleanStrictOrNull() ?: true }
     override val activeUiPack: Flow<String> = dao.observe(KEY_ACTIVE_UI_PACK).map { it ?: "" }
     override val lastSeenVersion: Flow<String> = dao.observe(KEY_LAST_SEEN_VERSION).map { it ?: "" }
+    override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> =
+        dao.observe(KEY_EINK_CONTEXT_PROFILES).map { decodeEinkContextProfiles(it) }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -85,12 +89,15 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_NOVEL_HYPHENATION, lang))
     override suspend fun setNovelFontWeight(value: Int) =
         dao.put(SettingEntity(KEY_NOVEL_FONT_WEIGHT, value.toString()))
-    override suspend fun setDeviceManagedRefresh(value: Boolean) =
-        dao.put(SettingEntity(KEY_DEVICE_MANAGED_REFRESH, value.toString()))
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) =
         dao.put(SettingEntity(KEY_OFFICIAL_REPO_ENABLED, enabled.toString()))
     override suspend fun setActiveUiPack(packageName: String) =
         dao.put(SettingEntity(KEY_ACTIVE_UI_PACK, packageName))
+    override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {
+        val current = decodeEinkContextProfiles(dao.observe(KEY_EINK_CONTEXT_PROFILES).first())
+        val next = current + (context to profile)
+        dao.put(SettingEntity(KEY_EINK_CONTEXT_PROFILES, encodeEinkContextProfiles(next)))
+    }
 
     override suspend fun setLastSeenVersion(version: String) =
         dao.put(SettingEntity(KEY_LAST_SEEN_VERSION, version))
@@ -117,9 +124,9 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_NOVEL_TEXT_ALIGN = "novel_text_align"
         const val KEY_NOVEL_HYPHENATION = "novel_hyphenation_lang"
         const val KEY_NOVEL_FONT_WEIGHT = "novel_font_weight"
-        const val KEY_DEVICE_MANAGED_REFRESH = "device_managed_refresh"
         const val KEY_OFFICIAL_REPO_ENABLED = "official_repo_enabled"
         const val KEY_ACTIVE_UI_PACK = "active_ui_pack"
         const val KEY_LAST_SEEN_VERSION = "last_seen_version"
+        const val KEY_EINK_CONTEXT_PROFILES = "eink_context_profiles"
     }
 }

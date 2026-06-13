@@ -286,10 +286,34 @@ interface Strings {
     val settingsWebtoon: String
     val webtoonOverlapHelper: String
     val webtoonOverlap: String
-    // E-Ink-Refresh
-    val settingsEinkRefresh: String
-    val deviceManagedRefresh: String
-    val deviceManagedRefreshHelper: String
+    // E-Ink Dynamics — per-context refresh/colour mode section
+    val settingsEinkDynamics: String
+    val settingsEinkDynamicsDesc: String
+    val einkContextHome: String
+    val einkContextPaged: String
+    val einkContextWebtoon: String
+    val einkContextComic: String
+    val einkContextNovel: String
+    val einkAxisRefresh: String
+    val einkAxisColor: String
+    val einkModeDeviceDefault: String
+    val einkRefreshHd: String
+    val einkRefreshBalanced: String
+    val einkRefreshRegal: String
+    val einkRefreshSpeed: String
+    val einkRefreshUltra: String
+    val einkColorSystem: String
+    val einkColorColor: String
+    val einkColorMono: String
+    // E-Ink mode descriptions (shown as secondary line in the picker)
+    val einkRefreshHdDesc: String
+    val einkRefreshBalancedDesc: String
+    val einkRefreshRegalDesc: String
+    val einkRefreshSpeedDesc: String
+    val einkRefreshUltraDesc: String
+    val einkColorSystemDesc: String
+    val einkColorColorDesc: String
+    val einkColorMonoDesc: String
     // Reader-Settings: Scope-Köpfe (scope-gruppierte Hierarchie)
     val settingsScopeGeneral: String
     val settingsScopeNovel: String
@@ -627,11 +651,32 @@ object StringsDe : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
     override val webtoonOverlap = "Überlappung"
-    override val settingsEinkRefresh = "E-Ink-Refresh"
-    override val deviceManagedRefresh = "Refresh dem Gerät überlassen"
-    override val deviceManagedRefreshHelper =
-        "Das Gerät (Onyx) steuert das Ghosting-Clear selbst — die App erzwingt keinen Voll-Refresh. " +
-            "Schnelles Blättern bleibt aktiv. Aus = die App steuert (Voll-Refresh alle paar Seiten)."
+    override val settingsEinkDynamics = "E-Ink Dynamik"
+    override val settingsEinkDynamicsDesc = "Refresh- und Farbmodus je Lese-Kontext automatisch schalten."
+    override val einkContextHome = "Startseite"
+    override val einkContextPaged = "Manga"
+    override val einkContextWebtoon = "Webtoon"
+    override val einkContextComic = "Comic"
+    override val einkContextNovel = "Roman"
+    override val einkAxisRefresh = "Refresh"
+    override val einkAxisColor = "Farbe"
+    override val einkModeDeviceDefault = "Gerät entscheidet"
+    override val einkRefreshHd = "HD"
+    override val einkRefreshBalanced = "Balanced"
+    override val einkRefreshRegal = "Regal"
+    override val einkRefreshSpeed = "Speed"
+    override val einkRefreshUltra = "Ultra"
+    override val einkColorSystem = "System"
+    override val einkColorColor = "Farbe"
+    override val einkColorMono = "Mono"
+    override val einkRefreshHdDesc = "Beste Qualität, voller Refresh — fürs Lesen und Details."
+    override val einkRefreshBalancedDesc = "Kompromiss aus Tempo und Qualität."
+    override val einkRefreshRegalDesc = "Anti-Ghosting, optimiert für Text."
+    override val einkRefreshSpeedDesc = "Schnelles Blättern, etwas Ghosting."
+    override val einkRefreshUltraDesc = "Maximales Tempo, niedrigste Qualität — fürs Scrollen."
+    override val einkColorSystemDesc = "Onyx-Farbe unverändert lassen."
+    override val einkColorColorDesc = "Onyx-Farbverstärkung an."
+    override val einkColorMonoDesc = "Graustufen, Farbe aus."
     override val settingsScopeGeneral = "Allgemein"
     override val settingsScopeNovel = "Roman-Reader"
     override val settingsScopeWebtoon = "Webtoon"
@@ -959,11 +1004,32 @@ object StringsEn : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
     override val webtoonOverlap = "Overlap"
-    override val settingsEinkRefresh = "E-Ink refresh"
-    override val deviceManagedRefresh = "Let the device manage refresh"
-    override val deviceManagedRefreshHelper =
-        "The device (Onyx) handles ghosting clears itself — the app forces no full refresh. " +
-            "Fast paging stays on. Off = the app manages it (full refresh every few pages)."
+    override val settingsEinkDynamics = "E-Ink dynamics"
+    override val settingsEinkDynamicsDesc = "Switch refresh and colour mode automatically per reading context."
+    override val einkContextHome = "Home"
+    override val einkContextPaged = "Manga"
+    override val einkContextWebtoon = "Webtoon"
+    override val einkContextComic = "Comic"
+    override val einkContextNovel = "Novel"
+    override val einkAxisRefresh = "Refresh"
+    override val einkAxisColor = "Colour"
+    override val einkModeDeviceDefault = "Device default"
+    override val einkRefreshHd = "HD"
+    override val einkRefreshBalanced = "Balanced"
+    override val einkRefreshRegal = "Regal"
+    override val einkRefreshSpeed = "Speed"
+    override val einkRefreshUltra = "Ultra"
+    override val einkColorSystem = "System"
+    override val einkColorColor = "Colour"
+    override val einkColorMono = "Mono"
+    override val einkRefreshHdDesc = "Best quality, full refresh — for reading and detail."
+    override val einkRefreshBalancedDesc = "A compromise between speed and quality."
+    override val einkRefreshRegalDesc = "Anti-ghosting, optimised for text."
+    override val einkRefreshSpeedDesc = "Fast page turns, some ghosting."
+    override val einkRefreshUltraDesc = "Maximum speed, lowest quality — for scrolling."
+    override val einkColorSystemDesc = "Leave the Onyx colour setting untouched."
+    override val einkColorColorDesc = "Onyx colour enhancement on."
+    override val einkColorMonoDesc = "Greyscale, colour off."
     override val settingsScopeGeneral = "General"
     override val settingsScopeNovel = "Novel reader"
     override val settingsScopeWebtoon = "Webtoon"

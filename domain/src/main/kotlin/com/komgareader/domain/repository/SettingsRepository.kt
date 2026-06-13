@@ -1,5 +1,7 @@
 package com.komgareader.domain.repository
 
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
 import kotlinx.coroutines.flow.Flow
 
 /** App-weite Einstellungen (Theme, Sprache, Anzeige-Modus, Download-Ordner) als Strings (UI-neutral). */
@@ -24,9 +26,6 @@ interface SettingsRepository {
     val novelTextAlign: Flow<String>          // "LEFT" | "JUSTIFY"
     val novelHyphenationLang: Flow<String>    // "" = aus, sonst Sprachcode ("de"/"en")
     val novelFontWeight: Flow<Int>            // Grund-Schriftstärke (400 = normal, höher = dicker)
-    // E-Ink-Refresh: true = der App-seitige Voll-Refresh (RefreshScheduler) ist AUS, das Gerät
-    // (Onyx) entscheidet selbst über Ghosting-Clears; der Fast-Modus bleibt aktiv. Default true.
-    val deviceManagedRefresh: Flow<Boolean>
     /** Ob das offizielle Plugin-Repo im Browser geladen wird (Default true). */
     val officialRepoEnabled: Flow<Boolean>
     /** packageName des aktiven UI-Packs (data-only Plugin-Kategorie UI_PACK); "" = keiner (Host-Default). */
@@ -34,6 +33,8 @@ interface SettingsRepository {
     /** Last app version (versionName) the user has seen. "" = never set (first run). Basis for the
      *  "what's new" modal: shows the release notes exactly once after a version bump. */
     val lastSeenVersion: Flow<String>
+    /** Per-context E-Ink mode overrides; unset axes fall back to the device default. */
+    val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -52,8 +53,8 @@ interface SettingsRepository {
     suspend fun setNovelTextAlign(align: String)
     suspend fun setNovelHyphenationLang(lang: String)
     suspend fun setNovelFontWeight(value: Int)
-    suspend fun setDeviceManagedRefresh(value: Boolean)
     suspend fun setOfficialRepoEnabled(enabled: Boolean)
     suspend fun setActiveUiPack(packageName: String)
     suspend fun setLastSeenVersion(version: String)
+    suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile)
 }

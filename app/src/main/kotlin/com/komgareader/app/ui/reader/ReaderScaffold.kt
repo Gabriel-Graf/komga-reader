@@ -95,7 +95,7 @@ fun ReaderScaffold(
  *
  * **Keine Animation auf E-Ink:** Overlay, Footer und Tap-Zonen-Hints erscheinen sofort;
  * nur der Start-Hinweis blendet auf dem Smartphone per Fade, auf E-Ink sofort
- * (`animation-gating`). Refresh (`RefreshScheduler`) ist nicht Teil der Surface → ein Pack kann
+ * (`animation-gating`). Refresh-Verhalten ist nicht Teil der Surface → ein Pack kann
  * ihn nicht umgehen; der E-Ink-Scrim bleibt host-erzwungen.
  */
 @Composable

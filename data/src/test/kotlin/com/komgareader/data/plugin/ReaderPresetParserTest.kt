@@ -28,17 +28,26 @@ class ReaderPresetParserTest {
     @Test fun parsesAllFields() {
         val json = """
             [{"abiVersion":2,"name":"Voll","settings":{
-              "displayMode":"EINK","deviceManagedRefresh":false,"webtoonOverlapPercent":30,
+              "displayMode":"EINK","webtoonOverlapPercent":30,
               "novelFontSizeEm":1.0,"novelLineHeight":1.0,"novelMarginPreset":"NORMAL",
               "novelFontFamily":"DejaVu Sans","novelTextAlign":"JUSTIFY","novelHyphenationLang":"de",
               "novelFontWeight":400,"guidedPanelOverlay":true}}]
         """.trimIndent()
         val o = parseReaderPresetSpecs(json, abi)!!.single().overrides
         assertEquals("EINK", o.displayMode)
-        assertEquals(false, o.deviceManagedRefresh)
         assertEquals(30, o.webtoonOverlapPercent)
         assertEquals(400, o.novelFontWeight)
         assertEquals(true, o.guidedPanelOverlay)
+    }
+
+    @Test fun ignoresLegacyDeviceManagedRefreshKey() {
+        // Existing plugin JSON may still contain "deviceManagedRefresh"; the parser must ignore it silently.
+        val json = """
+            [{"name":"Legacy","settings":{"deviceManagedRefresh":false,"novelFontWeight":500}}]
+        """.trimIndent()
+        val o = parseReaderPresetSpecs(json, abi)!!.single().overrides
+        assertEquals(500, o.novelFontWeight)  // known key still parsed
+        assertNull(o.novelFontSizeEm)          // unset field stays null
     }
 
     @Test fun skipsEntryWithoutName() {

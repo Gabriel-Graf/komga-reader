@@ -166,7 +166,7 @@ Die Trennlinie ist die zentrale Design-Entscheidung dieses Ziels:
 
 | Schicht | Beispiele | Status |
 |---|---|---|
-| **Core (bleibt)** | Reader-Engines (paged/webtoon/comic/novel), die `Viewer`-Naht, der `RefreshScheduler`, der Lese-/Sync-Pfad, die Naht-A/B-Verträge | nie durch ein UI-Plugin ersetzbar — sie sind die Lese- und E-Ink-Garantie |
+| **Core (bleibt)** | Reader-Engines (paged/webtoon/comic/novel), die `Viewer`-Naht, `EinkContextController`/`EinkController` (Naht B), der Lese-/Sync-Pfad, die Naht-A/B-Verträge | nie durch ein UI-Plugin ersetzbar — sie sind die Lese- und E-Ink-Garantie |
 | **Chrome (austauschbar)** | Overlays, Header, Buttons, Navigation, Tiles, Settings, Dialog-Rahmen, das Theme | soll hinter adressierbaren Slots/Regionen liegen, je einzeln ersetzbar; in der Summe = ganze UI |
 
 Die Reader sind **Core, weil** sie die Render-/Refresh-Korrektheit tragen (Naht B, E-Ink-Invarianten).
@@ -429,7 +429,7 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   (`app/ui/reader/ReaderChrome.kt`: `title` + `onBack`/`onHome`/`onSettings` + reader-spezifische `actions`).
 >   **Kein `visible`-Flag in der Surface:** Sichtbarkeit (chromeVisible) + E-Ink-Scrim (`readerOverlayScrim`)
 >   host-erzwungen — `ReaderScaffold` rendert nur in `if (chromeVisible)` (Compose-Knackpunkt: BoxScope-Receiver
->   explizit via `with(this) { overlay(state) }`). Reader-Engines/`Viewer`/`RefreshScheduler` unberührt; das
+>   explizit via `with(this) { overlay(state) }`). Reader-Engines/`Viewer` unberührt; das
 >   ganze umgebende Gerüst (Tap-Zonen/Footer/Scaffold) ist mit C1 (`readerChrome`-Region) gebaut. Swap-Beweis:
 >   `app/src/debug/kotlin/com/komgareader/app/ui/reader/OverlaySlotPreview.kt`
 >   (`AlternativeReaderOverlay`: Shortcuts links, Titel zentriert).
@@ -457,7 +457,7 @@ sie zuzumauern (sonst wird es genau die Schuld aus der Ziel-Tabelle):
 >   `ReaderScaffold(chrome, …)` bleibt dünner Host-Wrapper (collectAsState + Surface bauen +
 >   `LocalResolvedSlots.current.readerChrome(state)`); **die fünf Reader-Call-Sites unverändert**.
 >   `DefaultReaderScaffold` = verbatim extrahierter Onyx-Renderer (innerer Overlay-Aufruf bleibt über die
->   `overlay`-Region). E-Ink-Scrim + Animation-Gating host-erzwungen; Reader-Engines/`Viewer.kt`/`RefreshScheduler`/
+>   `overlay`-Region). E-Ink-Scrim + Animation-Gating host-erzwungen; Reader-Engines/`Viewer.kt`/
 >   `ReaderChrome.kt`-Helfer unberührt. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/ReaderChromeSlotPreview.kt`
 >   (`AlternativeReaderChrome`: Status-Fuß oben statt unten, Tap-Hints/Start-Hinweis weggelassen).
 >   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail, readerChrome)` ·

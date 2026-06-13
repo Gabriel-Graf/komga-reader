@@ -13,17 +13,21 @@ enum class HardwareButton { PAGE_NEXT, PAGE_PREV, VOLUME_UP, VOLUME_DOWN }
 
 data class ButtonEvent(val button: HardwareButton)
 
-/** Geräte-Fähigkeiten zur Laufzeit (Boox vs. generisches Tablet). */
+/** Device capabilities at runtime (Boox vs. generic tablet). */
 data class EinkCapabilities(
     val hasEink: Boolean,
     val canColor: Boolean,
     val canInvert: Boolean,
+    /** Refresh modes this device can switch app-wide; empty = axis unsupported (UI hides it). */
+    val refreshModes: List<EinkModeOption> = emptyList(),
+    /** System colour modes this device can switch; empty = axis unsupported. */
+    val colorModes: List<EinkModeOption> = emptyList(),
 )
 
 /**
- * Naht B (Geräteseite): kapselt E-Ink-Spezifika. Boox-Implementierung nutzt das
- * Onyx-SDK; auf Nicht-Boox greift eine No-Op-Implementierung (Standard-Invalidate,
- * Buttons als normale KeyEvents), damit Entwicklung/Tests überall laufen.
+ * Seam B (device side): encapsulates E-Ink specifics. The Boox implementation uses the
+ * Onyx SDK; on non-Boox hardware a no-op implementation takes over (standard invalidate,
+ * buttons as normal KeyEvents) so development and tests run everywhere.
  */
 interface EinkController {
     val capabilities: EinkCapabilities
@@ -31,4 +35,13 @@ interface EinkController {
     fun refresh(region: Region, mode: RefreshMode)
     fun setContrast(level: Int)
     fun setInverted(inverted: Boolean)
+
+    /** Applies an advertised refresh mode by id; null/unknown id = graceful no-op. */
+    fun applyRefreshMode(id: String?)
+
+    /** Applies an advertised system colour mode by id; null/unknown id = graceful no-op. */
+    fun applyColorMode(id: String?)
+
+    /** Device-specific sane default profile for the given context (app stores only overrides). */
+    fun defaultProfile(context: EinkContext): EinkContextProfile
 }

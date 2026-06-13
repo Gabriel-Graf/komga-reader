@@ -47,6 +47,10 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
+    // Prebuilt JNI-Libs (MuPDF/crengine + libz/androidx-graphics-path) lassen sich nicht strippen;
+    // AGP packt sie ohnehin „as they are" und warnt dabei. Strip-Versuch hier bewusst überspringen
+    // → keine „Unable to strip"-Warnung, identisches Ergebnis (die .so bleiben unverändert).
+    packaging { jniLibs { keepDebugSymbols += setOf("**/libmupdf_java.so", "**/libcr3bridge.so", "**/libz.so", "**/libandroidx.graphics.path.so") } }
 }
 
 dependencies {

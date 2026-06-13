@@ -129,9 +129,12 @@ copy‑paste the previous variant.
 
 ## 4. Where plugins live
 
-The example/first‑party plugins (a Kavita source, UI packs, presets) are **separate git
-repositories** checked out under `plugin/`, which is **gitignored** — they are not part of this
-host repo. The official plugin index/distribution repo is **`Gabriel-Graf/KomgaReaderPlugins`**.
+The officially supported plugins (a Kavita source, UI packs, colour/reader/language presets) live
+in the **[`Gabriel-Graf/KomgaReaderPlugins`](https://github.com/Gabriel-Graf/KomgaReaderPlugins)
+monorepo** — one source tree built by one CI that signs and releases every plugin and regenerates
+the `repo.json` index the app reads. They are **not** part of this host repo. (The `plugin/` dir
+here is local scratch and is gitignored.) Third-party plugins can be hosted in any repo serving a
+`repo.json`.
 
 To build a plugin, link only the shaded **`com.komgareader:plugin-sdk`** artifact as
 `compileOnly` (it bundles `plugin-api` + `source-api` + `domain` with a clean POM). A source

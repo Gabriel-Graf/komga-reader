@@ -211,9 +211,11 @@ A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no download
   relocation, clean POM) — the one `compileOnly` artifact external plugin authors link.
 - **Categories:** source plugins (e.g. Kavita, code APK) and data‑only packs (colour presets,
   reader presets, languages, UI packs). Data‑only packs ship a JSON asset and `hasCode="false"`.
-- **Distribution:** plugins are not in this repo. The official index repo is
-  `Gabriel-Graf/KomgaReaderPlugins`; a repo browser installs from there and verifies the cert
-  fingerprint against the index before installing.
+- **Distribution:** officially supported plugins live in the `Gabriel-Graf/KomgaReaderPlugins`
+  **monorepo** (one source tree + one CI that builds, signs and releases all of them) and are
+  published through its `repo.json` index. The in‑app repo browser installs from there and verifies
+  the cert fingerprint against the index before installing. Third‑party plugins can be hosted in any
+  repo that serves a `repo.json`.
 
 **Deliberately not built — arbitrary UI‑view plugins (Compose code with host privileges).** A
 crash would take the host down, and the E‑Ink invariants couldn't be enforced. The chosen path is

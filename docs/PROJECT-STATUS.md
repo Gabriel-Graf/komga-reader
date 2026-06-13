@@ -12,8 +12,8 @@ to an impressive degree. The main remaining work is **additive, on the external 
 surface**: external packs are deliberately declarative/data‑only (no host‑crashing plugin code,
 by design), and the declarative vocabulary reaches theme/shell/icons but not yet per‑slot chrome
 arrangements — widening it is the north‑star frontier. The rest is **open‑source hygiene** (until
-now there was no README; the example plugins live in separate, not‑yet‑pushed repos; a test API
-key is committed; CI is GitLab‑only). Device handling (mono/Kaleido/LCD) is **done and
+now there was no README; a test API key is committed; CI is GitLab‑only — the plugin monorepo is
+now sorted). Device handling (mono/Kaleido/LCD) is **done and
 deliberate** — the two‑axis `DisplayBehavior` model even future‑proofs a colour‑accent E‑Ink
 profile that today's design intentionally leaves mono.
 
@@ -141,7 +141,7 @@ The user's explicit goal is to open‑source this. Status of the must‑fix item
 | **Architecture doc (English)** | ✅ **added in this pass** | — |
 | **Committed test API key** | ⚠️ `2243c9f4…` hard‑coded in 6 `androidTest` files | parameterise via BuildConfig / instrumentation arg before publishing |
 | Secrets / credentials in prod code | ✅ none found | `local.properties` is gitignored |
-| Example plugins discoverable | 🟡 separate repos, not yet pushed | the 4 plugins under `/plugin/` are prepped (committed, `Gabriel-Graf` SSH remotes added); they need their GitHub repos created, then pushed |
+| Example plugins discoverable | ✅ in the `KomgaReaderPlugins` monorepo | all official plugin sources now live there (built/signed/released by CI); Aurora added to the index. README points to it |
 | Internal docs language | ⚠️ specs/rules are German | community‑facing docs are now English; translating specs is a follow‑up |
 | Insecure Boox Maven repo (HTTP) | ⚠️ **external** (`repo.boox.com`, Onyx's server) over HTTP; HTTPS unusable (weak‑DH TLS) | not under our control. Mitigate with Gradle **dependency verification** (pin the SHA‑256 of `com.onyx.android.sdk:onyxsdk-device`) and/or **vendor** the `.aar` locally; content‑filter the repo to the Onyx group only |
 | Native build reproducibility | 🟡 crengine is arm64‑only with a **committed 386‑file prefix** | documented & reproducible, but it makes the repo heavy and x86 emulators unsupported |

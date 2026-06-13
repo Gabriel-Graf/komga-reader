@@ -149,9 +149,11 @@ Flexibility is the point, so extension is first‑class. See
 - **Add a source** (Komga‑like server): implement `MediaSource` / `BrowsableSource` in a new
   `source-*` module, or ship it as a **plugin APK** linking only `com.komgareader:plugin-sdk`.
 - **Ship a plugin**: source plugins, colour presets, reader presets, language packs and
-  **UI packs** install at runtime. Plugins live in their **own repositories** (the official
-  index is `Gabriel-Graf/KomgaReaderPlugins`); the example plugins under `plugin/` are
-  intentionally **not** part of this repo (they have their own git repos and are gitignored).
+  **UI packs** install at runtime. The officially supported plugins live in the
+  [`Gabriel-Graf/KomgaReaderPlugins`](https://github.com/Gabriel-Graf/KomgaReaderPlugins)
+  **monorepo** — one source tree, one CI that builds, signs and releases them all, plus the
+  `repo.json` index the app reads. Third-party plugins can live in any repo that serves a
+  `repo.json`. (The `plugin/` dir in *this* repo is local scratch and is gitignored.)
 - **Re‑skin the UI**: a data‑only **UI pack** (`ui_pack.json`) can replace the theme (full
   colour roles + typography + shapes), the navigation shell style, and remap icons —
   declaratively, with no plugin code and no host privileges. The E‑Ink invariants stay

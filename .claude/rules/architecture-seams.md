@@ -11,12 +11,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 ┌─ Domain (kennt weder UI noch Daten noch Quelle) ───────────┐
 │  Modelle · UseCases · Repository-Interfaces · ViewerType   │
 └──────── ↓ NAHT A: Quellen ──────────── ↓ NAHT B: Engine ───┘
-┌─ MediaSource ───────────┐   ┌─ Document (Render) ───────────┐
-│ KomgaSource (REST)      │   │ MuPDF (C++/JNI) → Bitmap      │
-│ OpdsSource              │   │ OnyxRefresher (E-Ink-Refresh) │
-│ [LocalSource, Plugins…] │   │ EinkController (Onyx ⟂ No-Op) │
-│ SourceManager + Stub     │  │ Compose-Reader-Screens        │
-└─────────────────────────┘   └───────────────────────────────┘
+┌─ MediaSource ───────────┐   ┌─ Document (Render) ───────────────┐
+│ KomgaSource (REST)      │   │ MuPDF (C++/JNI) → Bitmap          │
+│ OpdsSource              │   │ EinkController (Onyx ⟂ No-Op)     │
+│ [LocalSource, Plugins…] │   │ EinkContextController (@Singleton) │
+│ SourceManager + Stub     │  │ Compose-Reader-Screens             │
+└─────────────────────────┘   └───────────────────────────────────┘
 ```
 
 > **Soll vs. Ist — diese Regel trennt beides.** Verbindliche Regeln dürfen keine
@@ -176,30 +176,49 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `Document`/`ReflowableDocument` ein (Phase 4 / `novel-reflow-reader`) — ohne den Rest zu berühren.
 - **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
-  Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities` (hasEink/canColor/
-  canInvert) — siehe Big-Picture-Doku zur Geräteklassen-Frage.
-- **E-Ink-Refresh (Ist, 2026-06-08):** Die Refresh-**Entscheidung** (PARTIAL beim Blättern,
-  FULL-Promotion gegen Ghosting / bei bewusstem Bildwechsel) liegt jetzt im geräteunabhängigen,
-  pur-getesteten **`RefreshScheduler`** (`domain/eink`, Event-Zählung statt Index-Modulo +
-  `mergeRegions`). Die **Ausführung** macht weiter `OnyxRefresher` (`eink-onyx`, gerätenah) +
-  `EinkReaderEffect`. Eine Scheduler-Instanz pro Reader-Sitzung, von allen Readern über den
-  `Viewer`-Vertrag geteilt. (`triggerGhostClearIfNeeded` ist entfernt.)
-  **Update (2026-06-09): `RefreshScheduler` ist `@Deprecated` + standardmäßig wirkungslos.** Die
-  Einstellung `deviceManagedRefresh` (Default **an**) überlässt den Voll-Refresh dem Onyx-Gerät —
-  `OnyxRefresher.deviceManaged` macht dann `fullRefreshNow`/`fullRefreshIfNeeded` zu No-Ops (der
-  Fast-Modus `enterFastMode` bleibt aktiv). Der Scheduler läuft nur noch als Fallback, wenn der
-  Toggle (Settings → Reader → „E-Ink-Refresh") ausgeschaltet wird; dann blättern alle Reader
-  partial mit periodischer GC-Promotion (auch der Roman-Reader — der erzwang vorher pro Seite FULL).
-  Mittelfristig entfernen.
-- **Reader / Viewer-Naht (Ist, 2026-06-08):** Es gibt den **`Viewer`**-Vertrag
+  Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`
+  (hasEink/canColor/canInvert, `refreshModes: List<EinkModeOption>`, `colorModes: List<EinkModeOption>`;
+  leere Liste = Achse nicht unterstützt, UI blendet Sektion aus) — siehe Big-Picture-Doku zur
+  Geräteklassen-Frage.
+- **E-Ink-Refresh + Farbe (Ist, 2026-06-13 — kontext-basierter EinkWise-Pfad):**
+  Der Refresh-Modus und der System-Farbmodus werden **je Lese-Kontext** über das Onyx-EinkWise-API
+  angewendet. Kerntypen in `domain/eink/`:
+  `EinkContext{HOME,PAGED,WEBTOON,COMIC,NOVEL}` — was gerade auf dem Bildschirm ist;
+  `EinkModeOption(id, label)` — ein vom Gerät beworbener Modus;
+  `EinkContextProfile(refreshModeId?, colorModeId?)` — Profil pro Kontext (null = Gerätestandard
+  unberührt lassen);
+  `resolveEinkProfile(userOverride, deviceDefault)` — pure Funktion, unit-getestet
+  (`EinkProfilesTest`): gesetzter Override gewinnt, ungesetzte Achse fällt auf Gerätestandard zurück.
+  `EinkController` hat neu: `applyRefreshMode(id?)`, `applyColorMode(id?)`,
+  `defaultProfile(context): EinkContextProfile`.
+  `OnyxEinkController` bildet Ids auf `EpdController.setAppScopeRefreshMode(UpdateOption)` ab
+  (hd→NORMAL, balanced→FAST_QUALITY, regal→REGAL, speed→FAST, ultra→FAST_X) und schaltet
+  Systemfarbe via `enableColorAdjust()`/`disableColorAdjust()`. Gerätestandard: WEBTOON→speed,
+  alle anderen→hd, Farbe immer system.
+  `EinkContextController` (@Singleton, `app/data`) ist der imperative Shell-Singleton: liest
+  User-Override aus `SettingsRepository.einkContextProfiles` (JSON-Blob, Room-Key
+  `eink_context_profiles`, keine Migration), löst das Profil per `resolveEinkProfile` auf und
+  ruft `controller.applyRefreshMode`/`applyColorMode`. `EinkContextEffect(context)` ist das
+  zugehörige Composable: `LifecycleResumeEffect` stellt sicher, dass das richtige Profil auch
+  nach einem Push (z. B. Reader→Home) beim Resume wiederhergestellt wird. Jeder Screen deklariert
+  seinen Kontext: `HomeScreen→HOME`, `ReaderRoute` mappt `ViewerMode`/`ReaderContent.Novel`.
+  Settings-Sektion **„E-Ink Dynamik"** (Matrix Kontext × {Refresh, Farbe}): nur sichtbar auf
+  Boox (refreshModes/colorModes nicht leer). Ersetzt den alten `deviceManagedRefresh`-Toggle.
+  Entfernt: `RefreshScheduler` (domain + Test), `OnyxRefresher` (eink-onyx), `EinkReaderEffect`,
+  `ReaderEinkHolder`, `Viewer.refreshScheduler`-Property, `deviceManagedRefresh`-Setting,
+  `ReaderPresetOverrides.deviceManagedRefresh`-Feld (Legacy-JSON-Key wird beim Lesen ignoriert),
+  `enterFastMode`/`fullRefreshNow`/`fullRefreshIfNeeded` in `OnyxEinkController`.
+- **Reader / Viewer-Naht (Ist, 2026-06-08; aktualisiert 2026-06-13):** Es gibt den **`Viewer`**-Vertrag
   (`app/ui/reader/Viewer.kt`) — eine **Compose-Zustands**-Naht (chromeVisible-`StateFlow`,
-  `toggleChrome`/`navigateTo`/`onPageSettled`, `refreshScheduler`), **nicht** das alte OO-`bind/
-  onButton/teardown` (Compose verwaltet den Lifecycle deklarativ). Alle Reader-VMs
+  `toggleChrome`/`navigateTo`/`onPageSettled`), **nicht** das alte OO-`bind/onButton/teardown`
+  (Compose verwaltet den Lifecycle deklarativ). Alle Reader-VMs
   (`ReaderViewModel`, `ComicReaderViewModel`, `NovelReaderViewModel`) implementieren ihn; das
   geteilte `ReaderScaffold` arbeitet dagegen. Reader bleiben eigene `@Composable`-Screens
   (`PagedReaderScreen`/`WebtoonReaderScreen`/`ComicReaderScreen`/`NovelReaderScreen`), dispatcht
   per `when(ViewerMode)`/`when(ReaderContent)` in `ReaderRoute.kt` — ein 5. Reader/UI-Plugin
-  implementiert **`Viewer`** statt einer Parallel-Linie.
+  implementiert **`Viewer`** statt einer Parallel-Linie. **Kein `refreshScheduler`** im `Viewer`
+  (seit 2026-06-13 entfernt — E-Ink-Refresh läuft jetzt über den kontext-basierten
+  `EinkContextController`-Pfad, nicht über die Viewer-Naht).
 - **Geteilte Chrome-Shortcuts (Ist, 2026-06-10):** `ReaderScaffold`/`ReaderChromeOverlay` tragen
   jetzt `onHome`/`onSettings` und rendern oben rechts an **einer** Stelle die geteilten Buttons
   **[Home][Einstellungen]** (in dieser Reihenfolge), **danach** die reader-spezifischen `actions`
@@ -217,13 +236,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `ReaderViewModel.loadWebtoonStrip` hält nur noch das I/O (`seriesIdOf`/`books`/`pullProgress`)
   + das `SourceImage`-Mapping und delegiert die Planung. paged/webtoon/rendered **bleiben** in
   `ReaderViewModel`, weil der **In-Screen-Toggle `toggleViewerMode` (paged⟷webtoon, comic⟷webtoon)**
-  beide Layouts auf **einem** geladenen `ReaderContent` rendert und dabei `_currentPage`, den
-  **einen** `RefreshScheduler` (Viewer-Naht: genau eine Instanz pro Sitzung) und `frameStep`
-  geteilt teilt. Ein voller Zwei-VM-Split würde diesen Toggle brechen (zweiter Scheduler verboten,
-  Scroll-/Seitenposition ginge verloren oder Inhalt müsste auf Toggle neu geladen werden = Lade-
-  Sturm + Verhaltensänderung). Der Toggle bleibt daher **bewusst** in `ReaderViewModel` —
-  dokumentiert direkt an `toggleViewerMode`. Die genuin webtoon-spezifische Logik ist trotzdem
-  raus aus dem God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
+  beide Layouts auf **einem** geladenen `ReaderContent` rendert und dabei `_currentPage` und
+  `frameStep` geteilt teilt. Ein voller Zwei-VM-Split würde diesen Toggle brechen (Scroll-/
+  Seitenposition ginge verloren oder Inhalt müsste auf Toggle neu geladen werden = Lade-Sturm +
+  Verhaltensänderung). Der Toggle bleibt daher **bewusst** in `ReaderViewModel` — dokumentiert
+  direkt an `toggleViewerMode`. Die genuin webtoon-spezifische Logik ist trotzdem raus aus dem
+  God-VM und einzeln getestet (`WebtoonStripPlannerTest`).
 
 - **UI-Slot-Naht / Chrome (Ist, 2026-06-09 — erste Region `header` gebaut; Ist, 2026-06-12 — zweite
   Region `homeHeader`, dritte Region `dialog`, vierte Region `settings`, fünfte Region `tiles`,
@@ -370,7 +388,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     unverändert** (PagedReaderScreen/WebtoonReaderScreen/ComicReaderScreen/NovelReaderScreen/EpubReaderScreen).
     `DefaultReaderScaffold(state)` ist der verbatim extrahierte Onyx-Renderer; der innere Overlay-Aufruf bleibt
     über die `overlay`-Region (Komposition). Der E-Ink-Scrim (`readerOverlayScrim`) + die Animation-Gating-Pfade
-    bleiben host-erzwungen. Reader-Engines / `Viewer.kt` / `RefreshScheduler` / die `ReaderChrome.kt`-Helfer
+    bleiben host-erzwungen. Reader-Engines / `Viewer.kt` / die `ReaderChrome.kt`-Helfer
     unangetastet. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/ReaderChromeSlotPreview.kt`
     (`AlternativeReaderChrome`: Status-Fuß oben statt unten, Tap-Hints/Start-Hinweis weggelassen — nur
     Debug/Preview).

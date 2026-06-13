@@ -11,6 +11,7 @@ import com.komgareader.ui.slots.LocalResolvedSlots
 import com.komgareader.ui.slots.UiSlotPack
 import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.ui.theme.LocalUiPack
+import com.komgareader.ui.theme.UiPack
 import com.komgareader.ui.theme.UiPackRegistry
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
@@ -26,6 +27,7 @@ fun KomgaReaderTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     slotPack: UiSlotPack = UiSlotPack(),
     tokenOverride: TokenOverride? = null,
+    externalPack: UiPack? = null,
     content: @Composable () -> Unit,
 ) {
     val dark = when (themeMode) {
@@ -34,7 +36,12 @@ fun KomgaReaderTheme(
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
     val behavior = LocalDisplayBehavior.current
-    val pack = UiPackRegistry.forBehavior(behavior)
+    val devicePack = UiPackRegistry.forBehavior(behavior)
+    // Externer Voll-Theme-Pack (Phase 2) ersetzt den Geräteklassen-Pack — NUR wenn die Geräteklasse Farbe
+    // erlaubt (`allowsAccentColor`). Heute heißt das: Smartphone-Modus ja, **E-Ink-Modus (mono) nein** — dort
+    // bleibt der S/W-Pack (`displayBehaviorFor`: EINK→allowsAccentColor=false). Ein künftiges Farb-E-Ink-Profil
+    // mit allowsAccentColor=true ließe den Pack bewusst durch.
+    val pack = if (behavior.allowsAccentColor) externalPack ?: devicePack else devicePack
     // Token-Override eines externen UI-Packs (L2) auf die geräteklassen-gewählten Tokens anwenden:
     // Eckradius gilt immer (invariant-neutral); der **Akzent** ist E-Ink-host-erzwungen — nur wenn die
     // Geräteklasse Akzentfarbe erlaubt (mono E-Ink ignoriert ihn, bleibt Schwarz). onAccent bleibt vom Pack.

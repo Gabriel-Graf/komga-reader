@@ -61,6 +61,8 @@ import com.komgareader.data.plugin.repo.PluginTypeFilter
 import com.komgareader.app.ui.shell.auroraShellOverride
 import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.app.ui.reader.EinkContextEffect
+import com.komgareader.domain.eink.EinkContext
 
 private const val TAB_LIBRARY = 0
 private const val TAB_COLLECTIONS = 1
@@ -379,6 +381,7 @@ fun HomeScreen(
         resolveFormFactor(layoutMode, configuration.screenWidthDp),
         effectiveOverride,
     )
+    EinkContextEffect(EinkContext.HOME)
     pack.Render(
         AppShellState(
             destinations = destinations,

@@ -20,7 +20,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.common.label
+import com.komgareader.domain.eink.EinkContext
 import com.komgareader.eink.onyx.OnyxRefresher
+
+private fun einkContextFor(mode: ViewerMode, isNovel: Boolean): EinkContext = when {
+    isNovel -> EinkContext.NOVEL
+    mode == ViewerMode.WEBTOON -> EinkContext.WEBTOON
+    mode == ViewerMode.COMIC -> EinkContext.COMIC
+    else -> EinkContext.PAGED
+}
 
 /**
  * Reader-Host: holt den ReaderViewModel und wählt je nach ReaderContent
@@ -53,6 +61,10 @@ fun ReaderRoute(
     val content by viewModel.content.collectAsState()
     val mode by viewModel.viewerMode.collectAsState()
     val displayMode by viewModel.displayMode.collectAsState()
+
+    // Declare the current reader context so the E-Ink controller applies the right profile.
+    // Re-evaluated on mode toggle and content change (Novel/Webtoon/Comic/Paged).
+    EinkContextEffect(einkContextFor(mode, isNovel = content is ReaderContent.Novel))
 
     when (val c = content) {
         is ReaderContent.Loading -> {

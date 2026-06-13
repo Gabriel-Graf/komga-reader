@@ -153,7 +153,9 @@ Flexibility is the point, so extension is first‑class. See
   [`Gabriel-Graf/KomgaReaderPlugins`](https://github.com/Gabriel-Graf/KomgaReaderPlugins)
   **monorepo** — one source tree, one CI that builds, signs and releases them all, plus the
   `repo.json` index the app reads. Third-party plugins can live in any repo that serves a
-  `repo.json`. (The `plugin/` dir in *this* repo is local scratch and is gitignored.)
+  `repo.json`. (The `plugin/` dir in *this* repo is local scratch and is gitignored.) Each `repo.json`
+  entry may carry optional `previewUrl`, `readmeUrl` and `license` fields — the in‑app repo browser
+  shows an ℹ info modal per plugin with the preview image and the rendered `README.md`.
 - **Re‑skin the UI**: a data‑only **UI pack** (`ui_pack.json`) can replace the theme (full
   colour roles + typography + shapes), the navigation shell style, and remap icons —
   declaratively, with no plugin code and no host privileges. The E‑Ink invariants stay

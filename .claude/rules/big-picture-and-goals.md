@@ -124,14 +124,21 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
      **Repo-Browser gebaut + E2E-grün (Slice P2, 2026-06-11):** das Screen-`+` öffnet `RepoBrowserScreen`
      (gepushte Route). Ein offizielles Default-Repo (Konstante `PluginRepoDefaults.OFFICIAL_URL` + Settings-
      Toggle, abschaltbar) + vom Nutzer hinzugefügte Repo-URLs (`plugin_repos`, Migration 16→17). Jedes Repo
-     liefert ein `repo.json` (`name` + Liste {packageName,name,type,abiVersion,versionCode,apkUrl,**fingerprint**}),
+     liefert ein `repo.json` (`name` + Liste {packageName,name,type,abiVersion,versionCode,apkUrl,**fingerprint**,
+     plus optional **previewUrl/readmeUrl/license**}),
      geladen via `PluginRepoClient` (OkHttp), gemergt (dedup nach höchster versionCode), je Eintrag
      `installState` (NOT_INSTALLED/INSTALLED/UPDATE_AVAILABLE) + ABI-Gate. Install = APK herunterladen →
      **Cert-SHA-256 gegen den Index-`fingerprint` verifizieren** (`PluginInstaller`, reuse `PluginSignature`) →
      nur bei Match `PackageInstaller`-Session (OS-Dialog). Mismatch = harter Abbruch, Datei gelöscht, nie
      installiert. Die reinen Parse-/Merge-/Version-/Fingerprint-Funktionen liegen in `:data` (unit-getestet),
-     `domain` bleibt netzfrei. **Soll (späterer Slice):** Auto-Refresh/Update-Badge, Plugin-Icons, Signierung
-     des Index selbst.
+     `domain` bleibt netzfrei. **Plugin-Info-Modal gebaut (Ist, 2026-06-13, Font-Plugins P1):** jede entdeckte
+     Repo-Zeile trägt einen ℹ-Button (links vom Download) → `PluginInfoModal` (`app/ui/plugins`, `EinkInfoDialog`-Basis)
+     mit Kopf/Lizenz, optionalem Vorschau-Bild und **gerendertem README** (Markdown via `multiplatform-markdown-renderer`
+     0.28.0, coil2, E-Ink-Anim host-gegated; `description`-Fallback). Dafür trägt `RepoPluginEntry` jetzt drei
+     **generische, optionale** Felder `previewUrl`/`readmeUrl`/`license` (gelten für alle Plugin-Typen, nicht nur Fonts;
+     `PluginRepoClient.fetchText` lädt das README, `resolveRepoUrl` löst relative URLs). `license` wird in P1 nur
+     **angezeigt** (Allowlist/Block = Font-Plugins P2). **Soll (späterer Slice):** Auto-Refresh/Update-Badge,
+     Plugin-Icons, Signierung des Index selbst.
    - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert
      `BrowsableSource`-Impls → `PluginHost.sourceFor(...)` → `SourceRegistration` → `SourceManager`.
      Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored) ist das erste

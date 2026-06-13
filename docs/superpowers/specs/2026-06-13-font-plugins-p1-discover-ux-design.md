@@ -1,6 +1,14 @@
 # Font-Plugins P1 — Generische Plugin-Discover-UX (Info-Modal + Vorschau-Bild)
 
-> Datum: 2026-06-13 · Status: Design freigegeben · Phase: P1 von 3 (Font-Plugin-Vorhaben)
+> Datum: 2026-06-13 · Status: **umgesetzt** (Branch `feat/font-plugins-p1`) · Phase: P1 von 3 (Font-Plugin-Vorhaben)
+
+> **Ist-Nachtrag (2026-06-13):** Umgesetzt mit `multiplatform-markdown-renderer` **0.28.0** statt 0.41.0
+> — 0.41.0 ist mit Kotlin 2.2 gebaut (Metadata 2.2.0 + stdlib 2.3.21) und bricht gegen das Projekt-Kotlin
+> 2.0.21; 0.28.0 ist die neueste 2.0.21-kompatible Release mit **identischer API** (m3-`Markdown`,
+> `Coil2ImageTransformerImpl`, `markdownAnimations{this}`) und transitiv Coil 2.7.0. Dadurch **kein**
+> Projekt-Kotlin- und **kein** compileSdk-Bump nötig (bleibt 34). Die unten genannte „0.41.0" gilt
+> als Soll der Recherche; der Ist ist 0.28.0. Der Loading-Zustand nutzt `LoadingIndicator` (nicht den
+> ursprünglich geplanten dedizierten i18n-Text — animation-gating-Konvention).
 
 ## Einordnung: das 3-Spec-Vorhaben
 

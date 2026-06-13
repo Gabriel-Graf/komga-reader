@@ -8,6 +8,12 @@
 
 **Tech Stack:** Kotlin, Jetpack Compose (Material3), Coil 2.7.0, kotlinx.serialization, OkHttp/MockWebServer, JUnit5; `com.mikepenz:multiplatform-markdown-renderer:0.41.0` (android + m3 + coil2).
 
+> **Ist-Nachtrag (2026-06-13):** Tatsächlich gepinnt auf **0.28.0** (nicht 0.41.0). 0.41.0 ist mit Kotlin 2.2
+> gebaut → Metadata-Inkompatibilität mit dem Projekt-Kotlin 2.0.21. 0.28.0 = neueste 2.0.21-kompatible Release,
+> **identische API** (m3-`Markdown`/`Coil2ImageTransformerImpl`/`markdownAnimations`), transitiv Coil 2.7.0 —
+> **kein** Kotlin-/compileSdk-Bump (compileSdk bleibt 34). Alle „0.41.0"/„compileSdk 36"-Erwähnungen unten sind
+> damit überholt; der gebaute Ist ist 0.28.0 auf compileSdk 34. Loading-Zustand: `LoadingIndicator` (Review-Fix).
+
 **Spec:** `docs/superpowers/specs/2026-06-13-font-plugins-p1-discover-ux-design.md`. **Recherche-Belege:** Memory `font-plugins-research` (Lib-Lizenz/AGPL verifiziert).
 
 ---

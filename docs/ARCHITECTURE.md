@@ -220,6 +220,11 @@ A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no download
   published through its `repo.json` index. The in‑app repo browser installs from there and verifies
   the cert fingerprint against the index before installing. Third‑party plugins can be hosted in any
   repo that serves a `repo.json`.
+- **Discover info modal:** each discovered entry has an ℹ button that opens a per‑plugin info modal
+  (header + optional license, an optional preview image, and the rendered `README.md`). Three optional
+  generic `repo.json` fields back it — `previewUrl`, `readmeUrl`, `license` — usable by any plugin type.
+  README markdown (with remote images) renders via `multiplatform-markdown-renderer` (Apache‑2.0); motion
+  is host‑gated for E‑Ink. `license` is shown here; allowlist enforcement is a later font‑plugin slice.
 
 **Deliberately not built — arbitrary UI‑view plugins (Compose code with host privileges).** A
 crash would take the host down, and the E‑Ink invariants couldn't be enforced. The chosen path is

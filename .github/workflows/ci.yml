@@ -72,16 +72,19 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      # The arm64 runner image ships NO preinstalled Android SDK. setup-android's built-in license
+      # acceptance (`sdkmanager --licenses`) exits 1 on arm64, so we disable it and accept licenses
+      # manually + robustly below. If the arm64 emulator path keeps fighting, the reliable fallback
+      # is a self-hosted arm64/KVM runner with SDK + emulator preinstalled (same class as the GitLab
+      # `android-kvm` runner) — switch `runs-on` to that.
       - uses: android-actions/setup-android@v3
-      # The arm64 runner image ships NO preinstalled Android SDK, and setup-android's arm64-Linux
-      # support is newer/less battle-tested — fail loudly here if sdkmanager isn't usable, rather
-      # than with a confusing NDK-install error below. If this step ever fails on the hosted arm64
-      # runner, fall back to a self-hosted arm64 runner with the SDK + emulator preinstalled (the
-      # same machine class as the GitLab `android-kvm` runner).
-      - name: Verify Android SDK tooling
-        run: sdkmanager --version
-      - name: Install pinned NDK + CMake
-        run: sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
+        with:
+          accept-android-sdk-licenses: false
+      - name: Accept SDK licenses + install pinned NDK/CMake
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager --version
+          sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

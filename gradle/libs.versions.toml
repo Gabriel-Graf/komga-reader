@@ -1,5 +1,6 @@
 [versions]
 coil = "2.7.0"
+mikepenzMarkdown = "0.41.0"
 kotlin = "2.0.21"
 coroutines = "1.9.0"
 room = "2.6.1"
@@ -64,6 +65,9 @@ hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", ve
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+markdown-renderer-android = { module = "com.mikepenz:multiplatform-markdown-renderer-android", version.ref = "mikepenzMarkdown" }
+markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "mikepenzMarkdown" }
+markdown-renderer-coil2 = { module = "com.mikepenz:multiplatform-markdown-renderer-coil2", version.ref = "mikepenzMarkdown" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }

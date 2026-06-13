@@ -6,6 +6,10 @@ summarises the authoritative (and more detailed, German) design specs under
 **maximum flexibility**: every axis of variation — source, device, reading mode, UI — sits
 behind a seam so it can grow by *addition*, never by core rewrite.
 
+> **Visual version:** [`docs/architektur/`](architektur/) has Excalidraw diagrams — an overview
+> that drills into each critical subsystem (the two seams, the viewers + comic cutter, the plugin
+> interface, the modular UI).
+
 ---
 
 ## 1. The big idea: two seams

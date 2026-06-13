@@ -97,4 +97,21 @@ object TestDataModule {
 
     @Provides @Singleton
     fun collectionRepository(db: AppDatabase): CollectionRepository = RoomCollectionRepository(db.collectionDao())
+
+    // Plugin-Repo-Browser-Bindings (spiegeln DataModule) — sonst fehlen sie im Test-Graph, weil
+    // dieses Modul DataModule komplett ersetzt (@TestInstallIn replaces). PluginCatalog/PluginsViewModel
+    // der ci.ui-Tests brauchen RepoStore + PluginRepoClient.
+    @Provides @Singleton
+    fun pluginRepoDao(db: AppDatabase): com.komgareader.data.db.PluginRepoDao = db.pluginRepoDao()
+
+    @Provides @Singleton
+    fun repoStore(
+        dao: com.komgareader.data.db.PluginRepoDao,
+        settings: SettingsRepository,
+    ): com.komgareader.data.plugin.repo.RepoStore =
+        com.komgareader.data.plugin.repo.RepoStore(dao, settings)
+
+    @Provides @Singleton
+    fun pluginRepoClient(): com.komgareader.data.plugin.repo.PluginRepoClient =
+        com.komgareader.data.plugin.repo.PluginRepoClient(okhttp3.OkHttpClient())
 }

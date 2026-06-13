@@ -44,4 +44,10 @@ class UiPackThemeTest {
         val pack = spec(ThemeSpec(dark = ColorRolesSpec(background = "#15171C", accent = "#3D5AFE"))).toUiPackOrNull()!!
         assertEquals(Color(0xFF15171C), pack.colorScheme(dark = false).background)
     }
+
+    @Test fun `cornerRadius 0 ergibt 0dp medium (geclampter Pfad)`() {
+        val pack = spec(ThemeSpec(dark = ColorRolesSpec(accent = "#3D5AFE"), cornerRadiusDp = 0)).toUiPackOrNull()!!
+        assertEquals(RoundedCornerShape(0.dp), pack.shapes.medium)
+        assertEquals(0.dp, pack.designTokens(dark = true).cornerRadius)
+    }
 }

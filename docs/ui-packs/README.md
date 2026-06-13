@@ -125,6 +125,10 @@ Beide Blöcke sind optional. Fehlt ein Modus → der Host spiegelt den anderen (
 auch als dark-Fallback und umgekehrt). Fehlen beide → keine Farb-Übernahme (tokenOverride-Pfad
 für flaches `accent`/`cornerRadius` bleibt).
 
+> **Wichtig:** `cornerRadius`, `elevation` und `typography` werden nur **gemeinsam mit mindestens einem
+> Farb-Modus** (`light`/`dark`) angewandt. Ein Pack mit *nur* Typo/Radius, aber ohne `light`/`dark`, ist
+> wirkungslos (No-op) — gib immer mindestens einen Farb-Block an, wenn du Radius/Typo setzt.
+
 Alle Farben als `#RRGGBB`-Hex-String, alle optional:
 
 | Rolle | Bedeutung |

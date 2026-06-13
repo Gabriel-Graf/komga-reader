@@ -18,9 +18,12 @@ import com.komgareader.ui.theme.UiPack
 
 /**
  * Übersetzt die deklarative [ThemeSpec] (domain, Primitive) in einen Runtime-[UiPack] — **nur hier in `:app`**
- * (domain/data bleiben Compose-frei). `null`, wenn der Pack keine Farb-Sektion liefert (dann greift weiter der
- * `tokenOverride`-Pfad für reine accent/cornerRadius-Packs). Fehlender Modus mirror't den anderen; fehlende
- * Einzel-Rolle bleibt Material-Default. E-Ink-Gate (Pack nur auf LCD) liegt host-seitig in `KomgaReaderTheme`.
+ * (domain/data bleiben Compose-frei). `null`, wenn der Pack keine Farb-Sektion liefert (`theme.hasColors` false) —
+ * dann greift weiter der `tokenOverride`-Pfad für reine accent/cornerRadius-Packs. **Folge: `cornerRadius`/
+ * `elevation`/`typography` gelten nur GEMEINSAM mit mindestens einem Farb-Modus (`light`/`dark`)** — ein reiner
+ * Typo-/Radius-Pack ohne Farben ist hier ein No-op (so im Schema dokumentiert, `docs/ui-packs/README.md`).
+ * Fehlender Modus mirror't den anderen; fehlende Einzel-Rolle bleibt Material-Default. E-Ink-Gate (Pack nur auf
+ * LCD) liegt host-seitig in `KomgaReaderTheme`.
  */
 fun UiPackSpec.toUiPackOrNull(): UiPack? {
     val t = theme?.takeIf { it.hasColors } ?: return null

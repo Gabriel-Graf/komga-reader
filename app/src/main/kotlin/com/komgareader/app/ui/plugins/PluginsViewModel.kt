@@ -7,8 +7,12 @@ import com.komgareader.app.data.installedEntriesOf
 import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.data.plugin.ColorPresetImporter
+import com.komgareader.data.plugin.repo.BrowsableEntry
 import com.komgareader.data.plugin.repo.BrowserRow
+import com.komgareader.data.plugin.repo.InstallState
+import com.komgareader.data.plugin.repo.InstalledEntry
 import com.komgareader.data.plugin.repo.PluginTypeFilter
+import com.komgareader.data.plugin.repo.RepoPluginEntry
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.data.plugin.repo.VisibleRows
 import com.komgareader.data.plugin.repo.resolveRepoUrl
@@ -91,6 +95,26 @@ class PluginsViewModel @Inject constructor(
             _readmeState.value = if (md.isNullOrBlank()) ReadmeState.Empty else ReadmeState.Loaded(md)
         }
     }
+
+    /** Opens the info modal for an INSTALLED plugin: reuses its repo entry (README/preview/license)
+     *  if the package is in a configured repo, else a minimal synthesized entry (name only). */
+    fun openInfoForInstalled(entry: InstalledEntry) {
+        val fromRepo = catalog.discovered.value.firstOrNull { it.item.entry.packageName == entry.packageName }
+        openInfo(fromRepo ?: syntheticRow(entry))
+    }
+
+    /** Minimal [BrowserRow] for an installed plugin that is not present in any configured repo:
+     *  carries only name/kind so the modal shows a header + the "no description" fallback. */
+    private fun syntheticRow(entry: InstalledEntry): BrowserRow = BrowserRow(
+        item = BrowsableEntry(
+            entry = RepoPluginEntry(packageName = entry.packageName, name = entry.displayName),
+            repoName = "",
+            repoUrl = "",
+            kind = entry.kind,
+        ),
+        state = InstallState.INSTALLED,
+        compatible = true,
+    )
 
     /** Closes the info modal. */
     fun closeInfo() {

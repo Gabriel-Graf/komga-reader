@@ -46,9 +46,12 @@ fun PluginInfoModal(
         PluginKind.UI_PACK -> s.pluginTabUiPackLabel
     }
 
+    // Synthesized installed entries (not in any repo) have a blank version -> show the type only.
+    val header = if (entry.versionName.isBlank()) typeLabel else "$typeLabel · v${entry.versionName}"
+
     EinkInfoDialog(title = entry.name, onDismiss = onDismiss, closeLabel = s.close) {
         Text(
-            "$typeLabel · v${entry.versionName}",
+            header,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

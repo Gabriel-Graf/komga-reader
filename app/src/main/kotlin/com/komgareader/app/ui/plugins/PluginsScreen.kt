@@ -131,6 +131,7 @@ fun PluginsScreen(
                         abiVersion = src.abiVersion,
                         configureLabel = s.pluginConfigure,
                         uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
                         onConfigure = { tofuFor = src },
                         onUninstall = { uninstall(src.packageName) },
                     )
@@ -143,6 +144,7 @@ fun PluginsScreen(
                         abiVersion = p.abiVersion,
                         configureLabel = s.pluginConfigure,
                         uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
                         onConfigure = { presetDetailFor = p },
                         onUninstall = { uninstall(p.packageName) },
                     )
@@ -154,6 +156,7 @@ fun PluginsScreen(
                         abiLabel = s.pluginAbiLabel,
                         abiVersion = lang.abiVersion,
                         uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
                         onUninstall = { uninstall(lang.packageName) },
                     )
                 }
@@ -164,6 +167,7 @@ fun PluginsScreen(
                         abiLabel = s.pluginAbiLabel,
                         abiVersion = rp.abiVersion,
                         uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
                         onUninstall = { uninstall(rp.packageName) },
                     )
                 }
@@ -174,6 +178,7 @@ fun PluginsScreen(
                         abiLabel = s.pluginAbiLabel,
                         abiVersion = up.abiVersion,
                         uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
                         onUninstall = { uninstall(up.packageName) },
                     )
                 }
@@ -279,7 +284,7 @@ private fun SectionDivider() {
     }
 }
 
-/** Eine Plugin-Zeile: Name + Typ-Label + ABI links, ⚙ + 🗑 rechts. Flach, 1.5px-Border, keine Animation. */
+/** Eine Plugin-Zeile: Name + Typ-Label + ABI links, ℹ + ⚙ + 🗑 rechts. Flach, 1.5px-Border, keine Animation. */
 @Composable
 private fun PluginRow(
     title: String,
@@ -288,9 +293,11 @@ private fun PluginRow(
     abiVersion: Int,
     configureLabel: String,
     uninstallLabel: String,
+    onInfo: () -> Unit,
     onConfigure: () -> Unit,
     onUninstall: () -> Unit,
 ) {
+    val s = LocalStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -305,6 +312,9 @@ private fun PluginRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        IconButton(onClick = onInfo) {
+            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
         }
         IconButton(onClick = onConfigure) {
             Icon(AppIcons.Settings, contentDescription = configureLabel, modifier = Modifier.size(22.dp))
@@ -317,7 +327,7 @@ private fun PluginRow(
 
 /**
  * Plugin-Zeile für data-only Plugins (Sprache, Reader-Preset): Name + Typ-Label + ABI links,
- * nur 🗑 rechts — kein ⚙ (keine konfigurierbaren Werte). Flach, 1.5px-Border, keine Animation.
+ * ℹ + 🗑 rechts — kein ⚙ (keine konfigurierbaren Werte). Flach, 1.5px-Border, keine Animation.
  */
 @Composable
 private fun DataPluginRow(
@@ -326,8 +336,10 @@ private fun DataPluginRow(
     abiLabel: String,
     abiVersion: Int,
     uninstallLabel: String,
+    onInfo: () -> Unit,
     onUninstall: () -> Unit,
 ) {
+    val s = LocalStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -342,6 +354,9 @@ private fun DataPluginRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        IconButton(onClick = onInfo) {
+            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
         }
         IconButton(onClick = onUninstall) {
             Icon(AppIcons.Delete, contentDescription = uninstallLabel, modifier = Modifier.size(22.dp))

@@ -8,6 +8,14 @@ die drei Lesemodi (paged Comic, Webtoon-Scroll, EPUB-Reflow) + nativ Komga + E-I
 - Design-Spec: `docs/superpowers/specs/2026-06-06-komga-eink-reader-design.md` (die ganze Architektur)
 - Pläne: `docs/superpowers/plans/`
 
+## Language
+
+Code-facing artifacts are **always English**: code comments + KDoc, project docs (`docs/`,
+`README`, this file and `.claude/rules/*` going forward), GitHub **release notes**, and **commit
+messages**. Conversation with the user stays German. User-visible UI text is the one exception —
+it always goes through i18n with **both German and English** values (`app/.../i18n`), as the
+E-Ink design language requires; those translations are localized content, not authored docs.
+
 ## Die nicht verhandelbaren Invarianten
 
 Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorbei:

@@ -41,13 +41,34 @@ class RepoIndexParserTest {
         assertNull(parseRepoIndex("""[1,2,3]"""))
     }
 
-    @Test fun resolveApkUrl_absolutePassesThrough() {
-        assertEquals("https://x/c.apk", resolveApkUrl("https://r/repo.json", "https://x/c.apk"))
+    @Test fun parsesOptionalMetadataFields() {
+        val json = """
+            {"name":"R","plugins":[{
+              "packageName":"com.x","apkUrl":"x.apk","fingerprint":"ab","versionCode":1,
+              "previewUrl":"img/x.png","readmeUrl":"x/README.md","license":"OFL-1.1"
+            }]}
+        """.trimIndent()
+        val e = parseRepoIndex(json)!!.plugins.single()
+        assertEquals("img/x.png", e.previewUrl)
+        assertEquals("x/README.md", e.readmeUrl)
+        assertEquals("OFL-1.1", e.license)
     }
 
-    @Test fun resolveApkUrl_relativeAgainstRepoBase() {
-        assertEquals("https://r/sub/p/a.apk", resolveApkUrl("https://r/sub/repo.json", "p/a.apk"))
-        assertEquals("https://r/p/a.apk", resolveApkUrl("https://r/repo.json", "/p/a.apk"))
+    @Test fun optionalMetadataDefaultsToEmpty() {
+        val json = """{"name":"R","plugins":[{"packageName":"com.x","apkUrl":"x.apk","fingerprint":"ab","versionCode":1}]}"""
+        val e = parseRepoIndex(json)!!.plugins.single()
+        assertEquals("", e.previewUrl)
+        assertEquals("", e.readmeUrl)
+        assertEquals("", e.license)
+    }
+
+    @Test fun resolveRepoUrl_absolutePassesThrough() {
+        assertEquals("https://x/c.png", resolveRepoUrl("https://r/repo.json", "https://x/c.png"))
+    }
+
+    @Test fun resolveRepoUrl_relativeAgainstRepoBase() {
+        assertEquals("https://r/sub/p/a.png", resolveRepoUrl("https://r/sub/repo.json", "p/a.png"))
+        assertEquals("https://r/p/a.png", resolveRepoUrl("https://r/repo.json", "/p/a.png"))
     }
 
     @Test fun installStateAllCases() {

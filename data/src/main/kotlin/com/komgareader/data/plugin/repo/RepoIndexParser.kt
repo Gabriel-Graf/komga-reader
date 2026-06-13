@@ -15,10 +15,11 @@ fun parseRepoIndex(text: String): RepoIndex? {
     return idx.copy(plugins = valid)
 }
 
-/** Löst [apkUrl] auf: absolute http(s)-URL unverändert; sonst relativ gegen die Basis der [repoUrl]. */
-fun resolveApkUrl(repoUrl: String, apkUrl: String): String {
-    if (apkUrl.startsWith("http://") || apkUrl.startsWith("https://")) return apkUrl
-    return URI(repoUrl).resolve(apkUrl).toString()
+/** Resolves a repo-relative URL against the base of [repoUrl]; an absolute http(s) URL is returned unchanged.
+ *  Generic for apkUrl/previewUrl/readmeUrl. */
+fun resolveRepoUrl(repoUrl: String, path: String): String {
+    if (path.startsWith("http://") || path.startsWith("https://")) return path
+    return URI(repoUrl).resolve(path).toString()
 }
 
 /** Mappt den Index-`type` auf [PluginKind]; Unbekanntes → SOURCE (konservativ). */

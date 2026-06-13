@@ -28,6 +28,12 @@ data class RepoPluginEntry(
     val versionName: String = "",
     val apkUrl: String = "",
     val fingerprint: String = "",
+    /** Optional repo-relative or absolute URL of a preview image. */
+    val previewUrl: String = "",
+    /** Optional repo-relative or absolute URL of a README/description document. */
+    val readmeUrl: String = "",
+    /** Optional SPDX license identifier (e.g. "OFL-1.1"). */
+    val license: String = "",
 )
 
 /** Ein gemergter, anzeigefertiger Eintrag mit Repo-Herkunft. */

@@ -17,7 +17,7 @@ import com.komgareader.data.plugin.repo.installState
 import com.komgareader.data.plugin.repo.mergeRepoEntries
 import com.komgareader.data.plugin.repo.parseRepoIndex
 import com.komgareader.data.plugin.repo.pluginKindOf
-import com.komgareader.data.plugin.repo.resolveApkUrl
+import com.komgareader.data.plugin.repo.resolveRepoUrl
 import com.komgareader.data.plugin.LanguageSpec
 import com.komgareader.data.plugin.parseLanguageSpec
 import com.komgareader.data.plugin.parseReaderPresetSpecs
@@ -239,7 +239,7 @@ class PluginCatalog @Inject constructor(
     /** Lädt das APK, verifiziert den Fingerprint, startet die Installation (OS-Dialog). */
     suspend fun install(row: BrowserRow) {
         _error.value = null
-        val url = resolveApkUrl(row.item.repoUrl, row.item.entry.apkUrl)
+        val url = resolveRepoUrl(row.item.repoUrl, row.item.entry.apkUrl)
         val dir = File(context.cacheDir, "plugin-repo").apply { mkdirs() }
         val dest = File(dir, "${row.item.entry.packageName}-${row.item.entry.versionCode}.apk")
         val ok = client.download(url, dest)

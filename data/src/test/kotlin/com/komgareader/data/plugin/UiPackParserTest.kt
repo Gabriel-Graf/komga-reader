@@ -1,5 +1,6 @@
 package com.komgareader.data.plugin
 
+import com.komgareader.plugin.PluginAbi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -62,8 +63,9 @@ class UiPackParserTest {
     }
 
     @Test fun abiAusserhalbDerSpanneGibtNull() {
-        // PluginAbi.VERSION = 2 — ABI 3 ist (noch) nicht unterstützt.
-        assertNull(parseUiPackSpec("""{"abiVersion":3,"shell":{"navStyle":"DRAWER"}}""", pkg, name, abi))
+        // Eine ABI über [PluginAbi.VERSION] wird (noch) nicht unterstützt — bump-robust.
+        val tooHigh = PluginAbi.VERSION + 1
+        assertNull(parseUiPackSpec("""{"abiVersion":$tooHigh,"shell":{"navStyle":"DRAWER"}}""", pkg, name, abi))
         // ABI 0 liegt unter MIN_SUPPORTED.
         assertNull(parseUiPackSpec("""{"abiVersion":0,"icons":{"Home":"Library"}}""", pkg, name, abi))
     }

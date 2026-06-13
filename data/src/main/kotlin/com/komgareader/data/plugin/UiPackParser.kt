@@ -1,5 +1,8 @@
 package com.komgareader.data.plugin
 
+import com.komgareader.domain.model.ColorRolesSpec
+import com.komgareader.domain.model.ThemeSpec
+import com.komgareader.domain.model.TypoSpec
 import com.komgareader.domain.model.UiPackSpec
 import com.komgareader.plugin.PluginAbi
 import org.json.JSONObject
@@ -45,6 +48,43 @@ fun parseUiPackSpec(
     // Eckradius ohne Nutzerabsicht. Sentinel-Default trennt „fehlt/unparsebar" sauber von einer echten 0.
     val cornerRadiusDp = theme?.optInt("cornerRadius", Int.MIN_VALUE)?.takeIf { it != Int.MIN_VALUE }
 
+    val themeSpec = theme?.let { t ->
+        fun roles(key: String): ColorRolesSpec? = t.optJSONObject(key)?.let { o ->
+            ColorRolesSpec(
+                background = o.optString("background").takeIf { it.isNotBlank() },
+                surface = o.optString("surface").takeIf { it.isNotBlank() },
+                navDock = o.optString("navDock").takeIf { it.isNotBlank() },
+                accent = o.optString("accent").takeIf { it.isNotBlank() },
+                onAccent = o.optString("onAccent").takeIf { it.isNotBlank() },
+                onBackground = o.optString("onBackground").takeIf { it.isNotBlank() },
+                onSurfaceVariant = o.optString("onSurfaceVariant").takeIf { it.isNotBlank() },
+                outline = o.optString("outline").takeIf { it.isNotBlank() },
+            )
+        }
+        val light = roles("light")
+        val dark = roles("dark")
+        if (light == null && dark == null) {
+            null
+        } else {
+            val typo = t.optJSONObject("typography")?.let { p ->
+                TypoSpec(
+                    headlineWeight = p.optInt("headlineWeight", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE },
+                    titleWeight = p.optInt("titleWeight", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE },
+                    // .isFinite() verwirft NaN/Infinity aus einem unparsebaren Wert (org.json gibt dann NaN) —
+                    // konsistent mit dem Sentinel-Schutz oben, kein NaN-Tracking ins Rendering.
+                    headlineTrackingEm = if (p.has("headlineTrackingEm")) p.optDouble("headlineTrackingEm").toFloat().takeIf { it.isFinite() } else null,
+                )
+            }
+            ThemeSpec(
+                light = light,
+                dark = dark,
+                cornerRadiusDp = cornerRadiusDp,
+                elevation = if (t.has("elevation")) t.optBoolean("elevation") else null,
+                typography = typo,
+            )
+        }
+    }
+
     return UiPackSpec(
         packageName = packageName,
         displayName = displayName,
@@ -53,5 +93,6 @@ fun parseUiPackSpec(
         iconRemap = iconRemap,
         accentHex = accentHex,
         cornerRadiusDp = cornerRadiusDp,
+        theme = themeSpec,
     )
 }

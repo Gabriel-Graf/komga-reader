@@ -46,4 +46,13 @@ class DataPluginManifestTest {
         )
         assertEquals(PluginCategory.COLOR_PRESET to "old.json", r)
     }
+
+    @Test fun `resolves panel_model category from explicit keys`() {
+        val r = resolveDataPluginManifest(
+            dataCategory = "PANEL_MODEL",
+            dataAsset = "panel_model.onnx",
+            legacyColorPresets = null,
+        )
+        assertEquals(PluginCategory.PANEL_MODEL to "panel_model.onnx", r)
+    }
 }

@@ -18,3 +18,16 @@ data class DiscoveredDataPlugin(
     val displayName: String,
     val assetJson: String,
 )
+
+/**
+ * Metadaten eines installierten, ABI-kompatiblen data-only Plugins OHNE dass das Asset gelesen wird.
+ * Für Kategorien mit großen Binär-Assets (z.B. PANEL_MODEL/ONNX, mehrere MB): Listen/UI brauchen nur
+ * Identität + ABI + Asset-Name, nicht die Bytes. Bytes erst über [PluginHost.binaryDataPluginBytes].
+ */
+data class DataPluginInfo(
+    val packageName: String,
+    val category: PluginCategory,
+    val abiVersion: Int,
+    val assetName: String,
+    val displayName: String,
+)

@@ -74,6 +74,44 @@ class PluginHost(private val context: Context) {
     }
 
     /**
+     * Wie [discoverDataPlugins], aber OHNE das Asset zu lesen — nur Identität/ABI/Asset-Name. Für
+     * Kategorien mit großen Binär-Assets (PANEL_MODEL): das Listing soll nie mehrere MB pro Scan laden.
+     */
+    fun discoverDataPluginInfos(category: PluginCategory): List<DataPluginInfo> {
+        val pm = context.packageManager
+        val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+        return packages.mapNotNull { pkg ->
+            val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
+            val resolved = resolveDataPluginManifest(
+                dataCategory = meta.getString(PluginManifestKeys.DATA_CATEGORY),
+                dataAsset = meta.getString(PluginManifestKeys.DATA_ASSET),
+                legacyColorPresets = meta.getString(PluginManifestKeys.COLOR_PRESETS),
+            ) ?: return@mapNotNull null
+            val (resolvedCategory, assetName) = resolved
+            if (resolvedCategory != category) return@mapNotNull null
+            val abi = readAbiVersion(meta) ?: return@mapNotNull null
+            if (!AbiGate.isCompatible(abi)) return@mapNotNull null
+            val label = pkg.applicationInfo?.let { appInfo ->
+                runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrNull()?.ifBlank { null }
+            } ?: pkg.packageName
+            DataPluginInfo(pkg.packageName, resolvedCategory, abi, assetName, label)
+        }
+    }
+
+    /**
+     * Liest die rohen Asset-Bytes des ersten installierten, ABI-kompatiblen data-only Plugins der
+     * [category] (via `createPackageContext(pkg, 0)`, Flags 0 = nur Ressourcen, KEIN Code). null,
+     * wenn keines installiert ist oder das Asset nicht lesbar ist. Für binäre Assets (ONNX-Modell).
+     */
+    fun binaryDataPluginBytes(category: PluginCategory): ByteArray? {
+        val info = discoverDataPluginInfos(category).firstOrNull() ?: return null
+        return runCatching {
+            context.createPackageContext(info.packageName, 0)
+                .assets.open(info.assetName).use { it.readBytes() }
+        }.getOrNull()
+    }
+
+    /**
      * Alle installierten, ABI-kompatiblen **data-only** Color-Preset-Plugins (Typ c) — dünner Wrapper
      * über [discoverDataPlugins] für [com.komgareader.plugin.PluginCategory.COLOR_PRESET]. Parst den
      * Asset-JSON via [parsePresetSpecs]; leere/kaputte Assets werden verworfen.

@@ -1,7 +1,13 @@
 package com.komgareader.app.ui.home
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.fillMaxWidth
+import com.komgareader.app.ui.components.LocalEinkMode
+import com.mikepenz.markdown.coil2.Coil2ImageTransformerImpl
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.model.markdownAnimations
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -497,12 +503,18 @@ private fun ReleaseNotesDialog(release: ReleaseInfo, onDismiss: () -> Unit) {
 }
 
 /**
- * Renders the release body. Plain text for now (preserves line breaks). This is the single place to
- * swap in a markdown renderer once that dependency is Kotlin-compatible with this module.
+ * Renders the GitHub release body as Markdown (headings, lists, links), matching the plugin info
+ * modal. Text-size animation is E-Ink-gated (no motion on E-Ink, `animation-gating.md`).
  */
 @Composable
 private fun ReleaseNotesBody(body: String) {
-    Text(body, style = MaterialTheme.typography.bodyMedium)
+    val eink = LocalEinkMode.current
+    Markdown(
+        content = body,
+        imageTransformer = Coil2ImageTransformerImpl,
+        animations = markdownAnimations(animateTextSize = { if (eink) this else animateContentSize() }),
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /** Kompakter Filter-Chip im Suchfeld: aktiv gesetzter Filter (Label + ✕ zum Entfernen). Akzentfarbe = aktiv. */

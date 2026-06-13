@@ -10,6 +10,8 @@ import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.model.UserCollection
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.CollectionSyncLink
@@ -190,6 +192,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override val activeUiPack: Flow<String> = flowOf("")
+    override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -211,6 +214,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
     override suspend fun setActiveUiPack(packageName: String) {}
+    override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
 }
 
 /**
@@ -255,6 +259,7 @@ private class CapturingSettingsRepository(
     override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override val activeUiPack: Flow<String> = flowOf("")
+    override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -276,6 +281,7 @@ private class CapturingSettingsRepository(
     override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
     override suspend fun setActiveUiPack(packageName: String) {}
+    override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
 }
 
 /** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */

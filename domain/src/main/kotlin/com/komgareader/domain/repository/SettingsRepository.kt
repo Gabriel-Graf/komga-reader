@@ -1,5 +1,7 @@
 package com.komgareader.domain.repository
 
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
 import kotlinx.coroutines.flow.Flow
 
 /** App-weite Einstellungen (Theme, Sprache, Anzeige-Modus, Download-Ordner) als Strings (UI-neutral). */
@@ -31,6 +33,8 @@ interface SettingsRepository {
     val officialRepoEnabled: Flow<Boolean>
     /** packageName des aktiven UI-Packs (data-only Plugin-Kategorie UI_PACK); "" = keiner (Host-Default). */
     val activeUiPack: Flow<String>
+    /** Per-context E-Ink mode overrides; unset axes fall back to the device default. */
+    val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -52,4 +56,5 @@ interface SettingsRepository {
     suspend fun setDeviceManagedRefresh(value: Boolean)
     suspend fun setOfficialRepoEnabled(enabled: Boolean)
     suspend fun setActiveUiPack(packageName: String)
+    suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile)
 }

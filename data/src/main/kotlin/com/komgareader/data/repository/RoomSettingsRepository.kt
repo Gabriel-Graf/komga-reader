@@ -2,10 +2,15 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.SettingEntity
 import com.komgareader.data.db.SettingsDao
+import com.komgareader.data.eink.decodeEinkContextProfiles
+import com.komgareader.data.eink.encodeEinkContextProfiles
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository {
@@ -52,6 +57,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val officialRepoEnabled: Flow<Boolean> =
         dao.observe(KEY_OFFICIAL_REPO_ENABLED).map { it?.toBooleanStrictOrNull() ?: true }
     override val activeUiPack: Flow<String> = dao.observe(KEY_ACTIVE_UI_PACK).map { it ?: "" }
+    override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> =
+        dao.observe(KEY_EINK_CONTEXT_PROFILES).map { decodeEinkContextProfiles(it) }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -90,6 +97,11 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_OFFICIAL_REPO_ENABLED, enabled.toString()))
     override suspend fun setActiveUiPack(packageName: String) =
         dao.put(SettingEntity(KEY_ACTIVE_UI_PACK, packageName))
+    override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {
+        val current = decodeEinkContextProfiles(dao.observe(KEY_EINK_CONTEXT_PROFILES).first())
+        val next = current + (context to profile)
+        dao.put(SettingEntity(KEY_EINK_CONTEXT_PROFILES, encodeEinkContextProfiles(next)))
+    }
 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
@@ -116,5 +128,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_DEVICE_MANAGED_REFRESH = "device_managed_refresh"
         const val KEY_OFFICIAL_REPO_ENABLED = "official_repo_enabled"
         const val KEY_ACTIVE_UI_PACK = "active_ui_pack"
+        const val KEY_EINK_CONTEXT_PROFILES = "eink_context_profiles"
     }
 }

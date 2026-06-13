@@ -125,6 +125,10 @@ class PluginCatalog @Inject constructor(
 
     fun dismissError() { _error.value = null }
 
+    /** Loads a discovered plugin's README markdown (null on error/empty). */
+    suspend fun fetchReadme(url: String): String? =
+        if (url.isBlank()) null else client.fetchText(url)
+
     /** Installierte als quellen-agnostische [InstalledEntry] (für die pure `visibleRows`-Filterung). */
     fun installedEntries(): List<InstalledEntry> =
         installedEntriesOf(

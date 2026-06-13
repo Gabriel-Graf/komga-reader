@@ -11,6 +11,7 @@ import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.PluginTypeFilter
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.data.plugin.repo.VisibleRows
+import com.komgareader.data.plugin.repo.resolveRepoUrl
 import com.komgareader.data.plugin.repo.visibleRows
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.repository.ColorProfileRepository
@@ -28,6 +29,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+/** State of the README area in the plugin info modal. */
+sealed interface ReadmeState {
+    data object Loading : ReadmeState
+    data class Loaded(val markdown: String) : ReadmeState
+    data object Empty : ReadmeState   // no README / error -> description fallback in the UI
+}
 
 @HiltViewModel
 class PluginsViewModel @Inject constructor(
@@ -58,6 +66,28 @@ class PluginsViewModel @Inject constructor(
     private val _typeFilter = MutableStateFlow(PluginTypeFilter.ALL)
     val typeFilter: StateFlow<PluginTypeFilter> = _typeFilter.asStateFlow()
     fun setTypeFilter(f: PluginTypeFilter) { _typeFilter.value = f }
+
+    private val _infoFor = MutableStateFlow<BrowserRow?>(null)
+    val infoFor: StateFlow<BrowserRow?> = _infoFor.asStateFlow()
+
+    private val _readmeState = MutableStateFlow<ReadmeState>(ReadmeState.Empty)
+    val readmeState: StateFlow<ReadmeState> = _readmeState.asStateFlow()
+
+    /** Opens the info modal for [row] and loads its README if present. */
+    fun openInfo(row: BrowserRow) {
+        _infoFor.value = row
+        val raw = row.item.entry.readmeUrl
+        if (raw.isBlank()) { _readmeState.value = ReadmeState.Empty; return }
+        _readmeState.value = ReadmeState.Loading
+        viewModelScope.launch {
+            val url = resolveRepoUrl(row.item.repoUrl, raw)
+            val md = catalog.fetchReadme(url)
+            _readmeState.value = if (md.isNullOrBlank()) ReadmeState.Empty else ReadmeState.Loaded(md)
+        }
+    }
+
+    /** Closes the info modal. */
+    fun closeInfo() { _infoFor.value = null; _readmeState.value = ReadmeState.Empty }
 
     /** Gefilterte, anzeigefertige Sicht: installiert oben, entdeckt unten, Divider-Flag. */
     @Suppress("UNCHECKED_CAST")

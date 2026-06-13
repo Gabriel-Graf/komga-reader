@@ -55,17 +55,19 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
 
   # Integration suite (the `ci.*` package) against Komga/Kavita Docker fixtures, on an Android
-  # emulator. Heavy → only on main / manual (PRs get unit+build).
+  # emulator. **Manual-only** (workflow_dispatch) → push/PR pipelines are gated by unit+build,
+  # which are reliable; this heavy job never blocks them.
   #
-  # WHY an arm64 runner: the app is **arm64-v8a only** (render-crengine ships native libs only
-  # for arm64), so the emulator + system image must be arm64 too — an x86 emulator can't load
-  # the arm64 .so. GitHub's arm64 Linux runners (free for public repos) expose /dev/kvm, so the
-  # arm64 emulator runs with hardware acceleration. (On a private repo, arm64 runners are billed,
-  # or use a self-hosted arm64/KVM runner — the same machine that runs the GitLab pipeline.)
+  # WHY an arm64 runner: the app is **arm64-v8a only** (render-crengine ships native libs only for
+  # arm64), so the emulator + system image must be arm64 too — an x86 emulator can't load the arm64
+  # .so. GitHub's **hosted** arm64 runners do NOT work for this yet (`setup-android`'s sdkmanager
+  # exits 1 on arm64). To actually run this job, switch `runs-on` to a **self-hosted** arm64/KVM
+  # runner with the Android SDK + emulator preinstalled — i.e. the same box as the GitLab
+  # `android-kvm` runner: `runs-on: [self-hosted, android-kvm]`.
   integration:
     runs-on: ubuntu-24.04-arm
     needs: [unit, build]
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

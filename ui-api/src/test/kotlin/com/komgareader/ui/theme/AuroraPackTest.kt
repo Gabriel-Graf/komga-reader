@@ -17,10 +17,11 @@ class AuroraPackTest {
         assertEquals(Cobalt, cs.primary)
     }
 
-    @Test fun `light colorScheme trägt Deeper-Grey + dunkles Dock`() {
+    @Test fun `light colorScheme trägt weißen bg + neutrales Grau + Cobalt`() {
+        // Aurora-Light-Verfeinerung (c2f1ab4a): weißer bg + neutrales Grau (kein Blaustich).
         val cs = AuroraPack.colorScheme(dark = false)
-        assertEquals(Color(0xFFCDD1D9), cs.background)
-        assertEquals(Color(0xFF959CAA), cs.surfaceVariant)
+        assertEquals(Color(0xFFFFFFFF), cs.background)
+        assertEquals(Color(0xFFE1E1E4), cs.surfaceVariant)
         assertEquals(Cobalt, cs.primary)
     }
 

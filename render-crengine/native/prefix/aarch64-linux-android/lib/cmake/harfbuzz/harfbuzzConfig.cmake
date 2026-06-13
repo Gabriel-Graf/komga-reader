@@ -55,7 +55,7 @@ add_library(harfbuzz::harfbuzz STATIC IMPORTED)
 
 set_target_properties(harfbuzz::harfbuzz PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "/harfbuzz"
-  INTERFACE_LINK_LIBRARIES "Threads::Threads;/home/gabriel/Documents/Projekte/komga-reader/.claude/worktrees/novel-reflow-reader/render-crengine/native/thirdparty/thirdparty-bldtool/../../prefix/aarch64-linux-android/lib/libfreetype.a"
+  INTERFACE_LINK_LIBRARIES "Threads::Threads;${CMAKE_CURRENT_LIST_DIR}/../../../lib/libfreetype.a"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)

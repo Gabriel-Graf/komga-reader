@@ -1,20 +1,17 @@
 package com.komgareader.app.ui.shell
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,7 +28,7 @@ import com.komgareader.app.ui.components.BottomNavItem
 import com.komgareader.app.ui.components.EinkBottomBar
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.LocalEinkMode
-import com.komgareader.ui.icons.AppIcons
+import com.komgareader.app.ui.home.LocalDrawerToggle
 import com.komgareader.ui.shell.AppShellState
 import com.komgareader.ui.shell.ShellDescriptor
 import com.komgareader.ui.shell.ShellNavStyle
@@ -106,10 +103,12 @@ private fun FloatingNavShell(state: AppShellState) =
 
 /**
  * Swap-Beweis-Skelett für den compact Form-Faktor: dasselbe Können, fundamental andere Anordnung —
- * Nav als Drawer (Burger oben links) statt Bottom-Bar. Konsumiert DIESELBE [AppShellState] wie
- * [BottomBarShell], rendert dieselben host-gebauten header/content-Stücke. Kein Core-Code wird berührt.
- * E-Ink-Invarianten bleiben host-erzwungen: das Drawer-Öffnen/Schließen ist über [LocalEinkMode]
- * gegatet (auf E-Ink sofortiger `snapTo` statt Slide-Animation, `animation-gating.md`).
+ * Nav als Drawer statt Bottom-Bar. Konsumiert DIESELBE [AppShellState] wie [BottomBarShell], rendert
+ * dieselben host-gebauten header/content-Stücke. **Eine** Topbar (der bestehende homeHeader) — keine
+ * zweite mehr: der Burger lebt im Header, die Schublade wird über [LocalDrawerToggle] geöffnet (so
+ * weichen Uhrzeit/Akku dem Burger, und die Suche wird zur Lupe→zentriert, s. [DefaultHomeHeader]).
+ * E-Ink-Invarianten bleiben host-erzwungen: Öffnen/Schließen ist über [LocalEinkMode] gegatet
+ * (auf E-Ink sofortiger `snapTo` statt Slide-Animation, `animation-gating.md`).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,6 +119,8 @@ private fun DrawerShell(state: AppShellState) {
     val scope = rememberCoroutineScope()
     // Animation-Gating: auf E-Ink kein Slide — sofortiger Zustandswechsel (snapTo).
     val eink = LocalEinkMode.current
+    // Öffnen-Aktion für den Burger im Header (statt einer eigenen zweiten TopAppBar).
+    val openDrawer: () -> Unit = { scope.launch { if (eink) drawer.snapTo(DrawerValue.Open) else drawer.open() } }
     ModalNavigationDrawer(
         drawerState = drawer,
         drawerContent = {
@@ -145,22 +146,14 @@ private fun DrawerShell(state: AppShellState) {
             }
         },
     ) {
-        Scaffold(
-            topBar = {
-                Column {
-                    TopAppBar(
-                        title = { Text(state.selected.label) },
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { if (eink) drawer.snapTo(DrawerValue.Open) else drawer.open() } }) {
-                                Icon(AppIcons.ListView, contentDescription = null)
-                            }
-                        },
-                    )
-                    state.selected.header?.let { slots.homeHeader(it) }
-                }
-            },
-        ) { inner ->
-            Box(Modifier.fillMaxSize().padding(inner)) { state.selected.content() }
+        // EINE Topbar: nur der bestehende homeHeader. Der Burger lebt darin — der DrawerShell stellt
+        // bloß die Öffnen-Aktion über [LocalDrawerToggle] bereit; [DefaultHomeHeader] rendert ihn links.
+        CompositionLocalProvider(LocalDrawerToggle provides openDrawer) {
+            Scaffold(
+                topBar = { state.selected.header?.let { slots.homeHeader(it) } },
+            ) { inner ->
+                Box(Modifier.fillMaxSize().padding(inner)) { state.selected.content() }
+            }
         }
     }
 }

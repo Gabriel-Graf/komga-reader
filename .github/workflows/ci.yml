@@ -1,3 +1,7 @@
+# JDK 21 is required (not 17): the pure-Kotlin modules (domain, source-*, plugin-api/-sdk,
+# guided-view) build with `kotlin { jvmToolchain(21) }` → Java-21 bytecode (class v65). The
+# non-toolchained Android consumers' javac must run on a JDK that can read it, i.e. ≥21. Building
+# on JDK 17 fails with "class file has wrong version 65.0, should be 61.0". Keep this at 21.
 name: CI
 
 on:
@@ -19,7 +23,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests
         run: ./gradlew test --no-daemon --stacktrace
@@ -38,7 +42,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: android-actions/setup-android@v3
       - name: Install pinned NDK + CMake (render-crengine arm64 JNI)
         run: sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
@@ -67,7 +71,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: android-actions/setup-android@v3
       # The arm64 runner image ships NO preinstalled Android SDK, and setup-android's arm64-Linux
       # support is newer/less battle-tested — fail loudly here if sdkmanager isn't usable, rather

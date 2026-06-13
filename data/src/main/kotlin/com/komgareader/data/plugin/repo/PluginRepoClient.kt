@@ -22,6 +22,16 @@ class PluginRepoClient(private val http: OkHttpClient) {
         }.getOrNull()
     }
 
+    /** Fetches arbitrary text (e.g. README markdown); null on network/HTTP error. */
+    suspend fun fetchText(url: String): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            http.newCall(Request.Builder().url(url).build()).execute().use { resp ->
+                if (!resp.isSuccessful) return@use null
+                resp.body?.string()
+            }
+        }.getOrNull()
+    }
+
     /** Lädt [url] nach [dest]; true bei Erfolg. Bei Fehler wird [dest] gelöscht. */
     suspend fun download(url: String, dest: File): Boolean = withContext(Dispatchers.IO) {
         runCatching {

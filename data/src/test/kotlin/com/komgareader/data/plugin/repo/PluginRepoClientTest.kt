@@ -30,6 +30,19 @@ class PluginRepoClientTest {
         assertNull(client.fetchIndex(server.url("/repo.json").toString()))
     }
 
+    @Test fun fetchTextReturnsBody() = runTest {
+        server.enqueue(MockResponse().setBody("# Hallo\n![x](https://h/x.png)"))
+        server.start()
+        val body = client.fetchText(server.url("/README.md").toString())
+        assertEquals("# Hallo\n![x](https://h/x.png)", body)
+    }
+
+    @Test fun fetchTextReturnsNullOn404() = runTest {
+        server.enqueue(MockResponse().setResponseCode(404))
+        server.start()
+        assertNull(client.fetchText(server.url("/missing").toString()))
+    }
+
     @Test fun downloadWritesBytesToFile() = runTest {
         server.enqueue(MockResponse().setBody("APKBYTES"))
         server.start()

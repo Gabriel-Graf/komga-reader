@@ -17,9 +17,9 @@ fun parseRepoIndex(text: String): RepoIndex? {
 
 /** Resolves a repo-relative URL against the base of [repoUrl]; an absolute http(s) URL is returned unchanged.
  *  Generic for apkUrl/previewUrl/readmeUrl. */
-fun resolveRepoUrl(repoUrl: String, path: String): String {
-    if (path.startsWith("http://") || path.startsWith("https://")) return path
-    return URI(repoUrl).resolve(path).toString()
+fun resolveRepoUrl(repoUrl: String, urlOrPath: String): String {
+    if (urlOrPath.startsWith("http://") || urlOrPath.startsWith("https://")) return urlOrPath
+    return URI(repoUrl).resolve(urlOrPath).toString()
 }
 
 /** Mappt den Index-`type` auf [PluginKind]; Unbekanntes → SOURCE (konservativ). */

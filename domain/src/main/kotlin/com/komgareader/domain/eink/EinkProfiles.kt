@@ -8,7 +8,7 @@ enum class EinkContext { HOME, PAGED, WEBTOON, COMIC, NOVEL }
  * [label] is the device's default display name (the app may override it via i18n for known
  * built-in ids).
  */
-data class EinkModeOption(val id: String, val label: String)
+data class EinkModeOption(val id: String, val label: String, val description: String? = null)
 
 /** A per-context profile. `null` on an axis means "leave the device/system default untouched". */
 data class EinkContextProfile(

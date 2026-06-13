@@ -61,13 +61,18 @@ fun EinkDynamicsSettingsContent(viewModel: SettingsViewModel) {
     when (val picker = openPicker) {
         is OpenPicker.Refresh -> {
             val profile = profiles[picker.context] ?: EinkContextProfile()
-            val options = buildModeOptions(s.einkModeDeviceDefault, refreshModes) { refreshModeLabel(s, it) }
+            val options = buildModeOptions(
+                s.einkModeDeviceDefault, refreshModes,
+                labelOf = { refreshModeLabel(s, it) },
+                descriptionOf = { refreshModeDesc(s, it) },
+            )
             PickerModal(
                 title = "${contextLabel(s, picker.context)} – ${s.einkAxisRefresh}",
                 options = options,
                 selectedKey = profile.refreshModeId ?: KEY_DEVICE_DEFAULT,
                 keyOf = { it.key },
                 labelOf = { it.label },
+                descriptionOf = { it.description },
                 onSelect = { key ->
                     viewModel.setEinkRefreshMode(picker.context, key.nullIfDeviceDefault())
                 },
@@ -77,13 +82,18 @@ fun EinkDynamicsSettingsContent(viewModel: SettingsViewModel) {
         }
         is OpenPicker.Color -> {
             val profile = profiles[picker.context] ?: EinkContextProfile()
-            val options = buildModeOptions(s.einkModeDeviceDefault, colorModes) { colorModeLabel(s, it) }
+            val options = buildModeOptions(
+                s.einkModeDeviceDefault, colorModes,
+                labelOf = { colorModeLabel(s, it) },
+                descriptionOf = { colorModeDesc(s, it) },
+            )
             PickerModal(
                 title = "${contextLabel(s, picker.context)} – ${s.einkAxisColor}",
                 options = options,
                 selectedKey = profile.colorModeId ?: KEY_DEVICE_DEFAULT,
                 keyOf = { it.key },
                 labelOf = { it.label },
+                descriptionOf = { it.description },
                 onSelect = { key ->
                     viewModel.setEinkColorMode(picker.context, key.nullIfDeviceDefault())
                 },
@@ -105,8 +115,8 @@ private sealed interface OpenPicker {
     data class Color(val context: EinkContext) : OpenPicker
 }
 
-/** A (key, label) pair fed into [PickerModal]. */
-private data class ModeEntry(val key: String, val label: String)
+/** A (key, label, description) triple fed into [PickerModal]. */
+private data class ModeEntry(val key: String, val label: String, val description: String? = null)
 
 /** Sentinel key for the "Device default" (null) choice. */
 private const val KEY_DEVICE_DEFAULT = "__device_default__"
@@ -119,15 +129,18 @@ private fun String.nullIfDeviceDefault(): String? =
  *
  * [labelOf] maps each [EinkModeOption] to its display label — pass [refreshModeLabel] or
  * [colorModeLabel] so that known mode ids show the i18n label instead of the raw device string.
+ * [descriptionOf] maps each option to its localised description (null → no secondary line).
+ * The "Device default" sentinel never carries a description.
  */
 private fun buildModeOptions(
     defaultLabel: String,
     modes: List<EinkModeOption>,
     labelOf: (EinkModeOption) -> String,
+    descriptionOf: (EinkModeOption) -> String?,
 ): List<ModeEntry> =
     buildList {
         add(ModeEntry(KEY_DEVICE_DEFAULT, defaultLabel))
-        modes.forEach { add(ModeEntry(it.id, labelOf(it))) }
+        modes.forEach { add(ModeEntry(it.id, labelOf(it), descriptionOf(it))) }
     }
 
 /** Localised label for each [EinkContext]. */
@@ -154,6 +167,27 @@ private fun colorModeLabel(s: Strings, option: EinkModeOption): String = when (o
     "color" -> s.einkColorColor
     "mono" -> s.einkColorMono
     else -> option.label
+}
+
+/**
+ * Localised description for a refresh mode id; falls back to [EinkModeOption.description] for
+ * unknown/plugin modes, which may be null (→ no secondary line rendered).
+ */
+private fun refreshModeDesc(s: Strings, option: EinkModeOption): String? = when (option.id) {
+    "hd" -> s.einkRefreshHdDesc
+    "balanced" -> s.einkRefreshBalancedDesc
+    "regal" -> s.einkRefreshRegalDesc
+    "speed" -> s.einkRefreshSpeedDesc
+    "ultra" -> s.einkRefreshUltraDesc
+    else -> option.description
+}
+
+/** Localised description for a colour mode id; falls back to [EinkModeOption.description]. */
+private fun colorModeDesc(s: Strings, option: EinkModeOption): String? = when (option.id) {
+    "system" -> s.einkColorSystemDesc
+    "color" -> s.einkColorColorDesc
+    "mono" -> s.einkColorMonoDesc
+    else -> option.description
 }
 
 /** Returns the display label for a mode id on the refresh axis (device default → s.einkModeDeviceDefault). */

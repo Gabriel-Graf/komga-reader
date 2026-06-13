@@ -182,7 +182,9 @@ fun PickerRow(
  * X) — die Auswahl ist die einzige Aktion, ein Bestätigen-Button wäre überflüssig.
  *
  * Generisch über [T]: [options] beliebige Werte, [keyOf]/[labelOf] mappen auf
- * Persistenz-Schlüssel + Anzeigename.
+ * Persistenz-Schlüssel + Anzeigename. [descriptionOf] ist optional — wenn gesetzt und nicht
+ * null, wird eine kleinere sekundäre Zeile unter dem Option-Label gerendert (nur im offenen
+ * Picker sichtbar, nicht in der kollabierten [PickerRow]).
  */
 @Composable
 fun <T> PickerModal(
@@ -194,19 +196,41 @@ fun <T> PickerModal(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit,
     closeLabel: String,
+    descriptionOf: ((T) -> String?)? = null,
 ) {
     EinkInfoDialog(title = title, onDismiss = onDismiss, closeLabel = closeLabel) {
         options.forEach { option ->
             val key = keyOf(option)
-            ChoiceRow(
-                label = labelOf(option),
-                selected = key == selectedKey,
-                dense = true,
-                onSelect = {
-                    onSelect(key)
-                    onDismiss()
-                },
-            )
+            val description = descriptionOf?.invoke(option)
+            if (description != null) {
+                Column {
+                    ChoiceRow(
+                        label = labelOf(option),
+                        selected = key == selectedKey,
+                        dense = true,
+                        onSelect = {
+                            onSelect(key)
+                            onDismiss()
+                        },
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
+            } else {
+                ChoiceRow(
+                    label = labelOf(option),
+                    selected = key == selectedKey,
+                    dense = true,
+                    onSelect = {
+                        onSelect(key)
+                        onDismiss()
+                    },
+                )
+            }
         }
     }
 }

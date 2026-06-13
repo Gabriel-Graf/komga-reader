@@ -291,6 +291,15 @@ interface Strings {
     val einkColorSystem: String
     val einkColorColor: String
     val einkColorMono: String
+    // E-Ink mode descriptions (shown as secondary line in the picker)
+    val einkRefreshHdDesc: String
+    val einkRefreshBalancedDesc: String
+    val einkRefreshRegalDesc: String
+    val einkRefreshSpeedDesc: String
+    val einkRefreshUltraDesc: String
+    val einkColorSystemDesc: String
+    val einkColorColorDesc: String
+    val einkColorMonoDesc: String
     // Reader-Settings: Scope-Köpfe (scope-gruppierte Hierarchie)
     val settingsScopeGeneral: String
     val settingsScopeNovel: String
@@ -634,6 +643,14 @@ object StringsDe : Strings {
     override val einkColorSystem = "System"
     override val einkColorColor = "Farbe"
     override val einkColorMono = "Mono"
+    override val einkRefreshHdDesc = "Beste Qualität, voller Refresh — fürs Lesen und Details."
+    override val einkRefreshBalancedDesc = "Kompromiss aus Tempo und Qualität."
+    override val einkRefreshRegalDesc = "Anti-Ghosting, optimiert für Text."
+    override val einkRefreshSpeedDesc = "Schnelles Blättern, etwas Ghosting."
+    override val einkRefreshUltraDesc = "Maximales Tempo, niedrigste Qualität — fürs Scrollen."
+    override val einkColorSystemDesc = "Onyx-Farbe unverändert lassen."
+    override val einkColorColorDesc = "Onyx-Farbverstärkung an."
+    override val einkColorMonoDesc = "Graustufen, Farbe aus."
     override val settingsScopeGeneral = "Allgemein"
     override val settingsScopeNovel = "Roman-Reader"
     override val settingsScopeWebtoon = "Webtoon"
@@ -967,6 +984,14 @@ object StringsEn : Strings {
     override val einkColorSystem = "System"
     override val einkColorColor = "Colour"
     override val einkColorMono = "Mono"
+    override val einkRefreshHdDesc = "Best quality, full refresh — for reading and detail."
+    override val einkRefreshBalancedDesc = "A compromise between speed and quality."
+    override val einkRefreshRegalDesc = "Anti-ghosting, optimised for text."
+    override val einkRefreshSpeedDesc = "Fast page turns, some ghosting."
+    override val einkRefreshUltraDesc = "Maximum speed, lowest quality — for scrolling."
+    override val einkColorSystemDesc = "Leave the Onyx colour setting untouched."
+    override val einkColorColorDesc = "Onyx colour enhancement on."
+    override val einkColorMonoDesc = "Greyscale, colour off."
     override val settingsScopeGeneral = "General"
     override val settingsScopeNovel = "Novel reader"
     override val settingsScopeWebtoon = "Webtoon"

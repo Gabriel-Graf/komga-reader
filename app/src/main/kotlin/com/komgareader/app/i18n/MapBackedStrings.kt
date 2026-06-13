@@ -284,6 +284,14 @@ class MapBackedStrings(
     override val einkColorSystem: String get() = overrides["einkColorSystem"] ?: fallback.einkColorSystem
     override val einkColorColor: String get() = overrides["einkColorColor"] ?: fallback.einkColorColor
     override val einkColorMono: String get() = overrides["einkColorMono"] ?: fallback.einkColorMono
+    override val einkRefreshHdDesc: String get() = overrides["einkRefreshHdDesc"] ?: fallback.einkRefreshHdDesc
+    override val einkRefreshBalancedDesc: String get() = overrides["einkRefreshBalancedDesc"] ?: fallback.einkRefreshBalancedDesc
+    override val einkRefreshRegalDesc: String get() = overrides["einkRefreshRegalDesc"] ?: fallback.einkRefreshRegalDesc
+    override val einkRefreshSpeedDesc: String get() = overrides["einkRefreshSpeedDesc"] ?: fallback.einkRefreshSpeedDesc
+    override val einkRefreshUltraDesc: String get() = overrides["einkRefreshUltraDesc"] ?: fallback.einkRefreshUltraDesc
+    override val einkColorSystemDesc: String get() = overrides["einkColorSystemDesc"] ?: fallback.einkColorSystemDesc
+    override val einkColorColorDesc: String get() = overrides["einkColorColorDesc"] ?: fallback.einkColorColorDesc
+    override val einkColorMonoDesc: String get() = overrides["einkColorMonoDesc"] ?: fallback.einkColorMonoDesc
     override val settingsScopeGeneral: String get() = overrides["settingsScopeGeneral"] ?: fallback.settingsScopeGeneral
     override val settingsScopeNovel: String get() = overrides["settingsScopeNovel"] ?: fallback.settingsScopeNovel
     override val settingsScopeWebtoon: String get() = overrides["settingsScopeWebtoon"] ?: fallback.settingsScopeWebtoon

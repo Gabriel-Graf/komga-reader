@@ -37,16 +37,16 @@ class OnyxEinkController(
         canColor = true,
         canInvert = true,
         refreshModes = listOf(
-            EinkModeOption(REFRESH_HD, "HD"),
-            EinkModeOption(REFRESH_BALANCED, "Balanced"),
-            EinkModeOption(REFRESH_REGAL, "Regal"),
-            EinkModeOption(REFRESH_SPEED, "Speed"),
-            EinkModeOption(REFRESH_ULTRA, "Ultra"),
+            EinkModeOption(REFRESH_HD, "HD", "Best quality, full refresh — for reading and detail."),
+            EinkModeOption(REFRESH_BALANCED, "Balanced", "A compromise between speed and quality."),
+            EinkModeOption(REFRESH_REGAL, "Regal", "Anti-ghosting, optimised for text."),
+            EinkModeOption(REFRESH_SPEED, "Speed", "Fast page turns, some ghosting."),
+            EinkModeOption(REFRESH_ULTRA, "Ultra", "Maximum speed, lowest quality — for scrolling."),
         ),
         colorModes = listOf(
-            EinkModeOption(COLOR_SYSTEM, "System"),
-            EinkModeOption(COLOR_ON, "Colour"),
-            EinkModeOption(COLOR_MONO, "Mono"),
+            EinkModeOption(COLOR_SYSTEM, "System", "Leave the Onyx colour setting untouched."),
+            EinkModeOption(COLOR_ON, "Colour", "Onyx colour enhancement on."),
+            EinkModeOption(COLOR_MONO, "Mono", "Greyscale, colour off."),
         ),
     )
 

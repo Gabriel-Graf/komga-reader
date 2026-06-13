@@ -1,6 +1,8 @@
 package com.komgareader.app.ui.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.komgareader.app.BuildConfig
 import com.komgareader.app.i18n.Strings
 import com.komgareader.ui.icons.AppIcons
@@ -15,8 +17,9 @@ import com.komgareader.ui.slots.SettingsSectionId
  * refresh mode (i.e. on Onyx Boox hardware). On non-Boox devices the section is absent.
  */
 @Composable
-fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<SettingsSection> =
-    buildList {
+fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<SettingsSection> {
+    val displayMode by viewModel.displayMode.collectAsState()
+    return buildList {
         add(
             SettingsSection(
                 id = SettingsSectionId.CONNECTION,
@@ -71,8 +74,9 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
                 content = { q -> ReaderSettingsContent(viewModel, q) },
             ),
         )
-        // Only shown on Boox hardware (at least one refresh mode advertised).
-        if (viewModel.einkRefreshModes.isNotEmpty()) {
+        // Only shown on Boox hardware (at least one refresh mode advertised) AND in E-Ink mode
+        // (the section has no effect in Smartphone display mode).
+        if (viewModel.einkRefreshModes.isNotEmpty() && displayMode != "SMARTPHONE") {
             add(
                 SettingsSection(
                     id = SettingsSectionId.EINK_DYNAMICS,
@@ -118,3 +122,4 @@ fun buildSettingsSections(s: Strings, viewModel: SettingsViewModel): List<Settin
             ),
         )
     }
+}

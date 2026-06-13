@@ -5,13 +5,15 @@ import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
 import io.mockk.mockk
+import com.komgareader.domain.eink.EinkCapabilities
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
+import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.model.UserCollection
-import com.komgareader.domain.eink.EinkContext
-import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.CollectionSyncLink
@@ -57,6 +59,17 @@ class SettingsViewModelTest {
             displayMode = { "EINK" },
         )
 
+    private fun stubEinkController(): EinkController = object : EinkController {
+        override val capabilities = EinkCapabilities(hasEink = false, canColor = false, canInvert = false)
+        override val buttonEvents = kotlinx.coroutines.flow.flowOf<com.komgareader.domain.eink.ButtonEvent>()
+        override fun refresh(region: com.komgareader.domain.eink.Region, mode: com.komgareader.domain.eink.RefreshMode) {}
+        override fun setContrast(level: Int) {}
+        override fun setInverted(inverted: Boolean) {}
+        override fun applyRefreshMode(id: String?) {}
+        override fun applyColorMode(id: String?) {}
+        override fun defaultProfile(context: EinkContext) = EinkContextProfile()
+    }
+
     private fun viewModel(servers: ServerRepository): SettingsViewModel {
         val collections = StubCollectionRepository()
         return SettingsViewModel(
@@ -67,6 +80,7 @@ class SettingsViewModelTest {
             collections,
             noOpCoordinator(),
             mockk(relaxed = true),
+            stubEinkController(),
         )
     }
 
@@ -80,6 +94,7 @@ class SettingsViewModelTest {
             collections,
             noOpCoordinator(),
             mockk(relaxed = true),
+            stubEinkController(),
         )
     }
 

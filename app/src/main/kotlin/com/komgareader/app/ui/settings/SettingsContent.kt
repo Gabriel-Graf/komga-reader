@@ -526,7 +526,7 @@ fun ReaderSettingsContent(viewModel: SettingsViewModel, query: String) {
     }
 }
 
-/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal), E-Ink-Refresh-Schalter und Reader-Presets. */
+/** Scope „Allgemein": Anzeige-Modus (Wert + Picker-Modal) und Reader-Presets. */
 @Composable
 private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
@@ -534,7 +534,6 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
     val displayMode = runCatching { DisplayMode.valueOf(displayModeStr) }.getOrDefault(DisplayMode.EINK)
     val shellLayoutModeStr by viewModel.shellLayoutMode.collectAsState()
     val shellLayoutMode = runCatching { ShellLayoutMode.valueOf(shellLayoutModeStr) }.getOrDefault(ShellLayoutMode.AUTO)
-    val deviceManagedRefresh by viewModel.deviceManagedRefresh.collectAsState()
     val presets by viewModel.readerPresets.collectAsState()
 
     // Genau EIN Modal gleichzeitig (E-Ink-Invariante): null = zu.
@@ -570,13 +569,6 @@ private fun GeneralScope(viewModel: SettingsViewModel, query: String) {
                 label = s.settingsShellLayout,
                 value = shellLayoutLabel(shellLayoutMode),
                 onClick = { showShellLayoutPicker = true },
-                query = query,
-            )
-            SwitchRow(
-                label = s.settingsEinkRefresh,
-                helper = s.deviceManagedRefreshHelper,
-                checked = deviceManagedRefresh,
-                onCheckedChange = { viewModel.setDeviceManagedRefresh(it) },
                 query = query,
             )
             // Reader-Presets: je installierten Preset eine ChoiceRow (analog Sprach-Picker).

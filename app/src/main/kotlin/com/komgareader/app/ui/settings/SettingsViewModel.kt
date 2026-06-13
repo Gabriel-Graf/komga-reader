@@ -7,6 +7,10 @@ import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.plugin.host.DiscoveredPlugin
+import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.eink.EinkContextProfile
+import com.komgareader.domain.eink.EinkController
+import com.komgareader.domain.eink.EinkModeOption
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.model.SourceKind
@@ -36,6 +40,7 @@ class SettingsViewModel @Inject constructor(
     private val collections: CollectionRepository,
     private val coordinator: SyncCoordinator,
     private val catalog: PluginCatalog,
+    private val einkController: EinkController,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -45,6 +50,13 @@ class SettingsViewModel @Inject constructor(
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val deviceManagedRefresh = settings.deviceManagedRefresh.stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    // E-Ink Dynamics: device capabilities (static) + per-context overrides (persistent).
+    val einkRefreshModes: List<EinkModeOption> = einkController.capabilities.refreshModes
+    val einkColorModes: List<EinkModeOption> = einkController.capabilities.colorModes
+    val einkContextProfiles = settings.einkContextProfiles
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     val webtoonOverlapPercent =
         settings.webtoonOverlapPercent.stateIn(viewModelScope, SharingStarted.Eagerly, 25)
     // Roman-Typografie (global). Gespiegelt aus demselben SettingsRepository wie das In-Reader-Panel
@@ -115,6 +127,21 @@ class SettingsViewModel @Inject constructor(
     fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
     fun setDeviceManagedRefresh(value: Boolean) =
         viewModelScope.launch { settings.setDeviceManagedRefresh(value) }.let {}
+
+    fun setEinkRefreshMode(context: EinkContext, id: String?) {
+        val current = einkContextProfiles.value[context] ?: EinkContextProfile()
+        viewModelScope.launch {
+            settings.setEinkContextProfile(context, current.copy(refreshModeId = id))
+        }
+    }
+
+    fun setEinkColorMode(context: EinkContext, id: String?) {
+        val current = einkContextProfiles.value[context] ?: EinkContextProfile()
+        viewModelScope.launch {
+            settings.setEinkContextProfile(context, current.copy(colorModeId = id))
+        }
+    }
+
     fun setWebtoonOverlap(percent: Int) =
         viewModelScope.launch { settings.setWebtoonOverlapPercent(percent) }.let {}
     fun setNovelFontSizeEm(value: Float) = viewModelScope.launch { settings.setNovelFontSizeEm(value) }.let {}

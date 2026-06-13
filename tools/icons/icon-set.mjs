@@ -17,6 +17,8 @@ export const ICONS = {
   "contrast": "Contrast",
   "download": "Download",
   "ellipsis-vertical": "EllipsisVertical",
+  "eye": "Eye",
+  "eye-off": "EyeOff",
   "gallery-vertical": "GalleryVertical",
   "grid-2x2": "Grid2x2",
   "hard-drive-download": "HardDriveDownload",
@@ -40,4 +42,10 @@ export const ICONS = {
   "trash-2": "Trash2",
   "type": "Type",
   "x": "X",
+};
+
+// Gefüllte Varianten (gefüllt statt Outline, als Aktiv-Zustand): Glyph-Name → Kotlin-Property.
+// Nutzt denselben Lucide-SVG-Pfad wie der Outline-Glyph, aber `fill` statt `stroke`.
+export const FILLED = {
+  "bookmark": "BookmarkFilled",
 };

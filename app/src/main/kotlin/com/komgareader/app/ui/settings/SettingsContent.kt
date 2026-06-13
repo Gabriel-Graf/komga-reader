@@ -13,12 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,7 +36,6 @@ import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.BuildConfig
 import com.komgareader.app.i18n.Language
@@ -50,6 +47,7 @@ import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.plugins.AddPluginSourceModals
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.app.ui.components.EinkOutlinedButton
+import com.komgareader.app.ui.components.EinkTextField
 import com.komgareader.app.ui.components.FieldCaption
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.components.PickerModal
@@ -253,22 +251,18 @@ private fun AddConnectionModal(
             // Server-Identität: Name + URL gehören zusammen.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FieldCaption(s.serverSectionServer)
-                OutlinedTextField(
+                EinkTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it },
-                    label = { Text(s.serverDisplayName) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    label = s.serverDisplayName,
                 )
-                OutlinedTextField(
+                EinkTextField(
                     value = urlInput,
                     onValueChange = { urlInput = it },
-                    label = { Text(s.serverUrl) },
-                    placeholder = { Text(s.serverUrlHint) },
-                    supportingText = { Text(s.serverUrlHelper) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    label = s.serverUrl,
+                    placeholder = s.serverUrlHint,
+                    supportingText = s.serverUrlHelper,
+                    keyboardType = KeyboardType.Uri,
                 )
             }
 
@@ -283,14 +277,11 @@ private fun AddConnectionModal(
                     usernameLabel = s.serverUsername,
                     passwordLabel = s.serverPassword,
                 )
-                OutlinedTextField(
+                EinkTextField(
                     value = apiKeyInput,
                     onValueChange = { apiKeyInput = it },
-                    label = { Text(s.serverApiKeyOptional) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    label = s.serverApiKeyOptional,
+                    isPassword = true,
                 )
             }
         }
@@ -343,22 +334,18 @@ private fun EditConnectionModal(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FieldCaption(s.serverSectionServer)
-            OutlinedTextField(
+            EinkTextField(
                 value = nameInput,
                 onValueChange = { nameInput = it },
-                label = { Text(s.serverDisplayName) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = s.serverDisplayName,
             )
-            OutlinedTextField(
+            EinkTextField(
                 value = urlInput,
                 onValueChange = { urlInput = it },
-                label = { Text(s.serverUrl) },
-                placeholder = { Text(s.serverUrlHint) },
-                supportingText = { Text(s.serverUrlHelper) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                label = s.serverUrl,
+                placeholder = s.serverUrlHint,
+                supportingText = s.serverUrlHelper,
+                keyboardType = KeyboardType.Uri,
             )
         }
 
@@ -372,14 +359,11 @@ private fun EditConnectionModal(
                 usernameLabel = s.serverUsername,
                 passwordLabel = s.serverPassword,
             )
-            OutlinedTextField(
+            EinkTextField(
                 value = apiKeyInput,
                 onValueChange = { apiKeyInput = it },
-                label = { Text(s.serverApiKeyOptional) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                label = s.serverApiKeyOptional,
+                isPassword = true,
             )
         }
     }
@@ -403,12 +387,11 @@ private fun CredentialsFields(
         AutofillNode(autofillTypes = listOf(AutofillType.Username), onFill = onUsername)
     }
     autofillTree += usernameNode
-    OutlinedTextField(
+    EinkTextField(
         value = username,
         onValueChange = onUsername,
-        label = { Text(usernameLabel) },
+        label = usernameLabel,
         modifier = Modifier
-            .fillMaxWidth()
             .onGloballyPositioned { usernameNode.boundingBox = it.boundsInWindow() }
             .onFocusChanged { focus ->
                 autofill?.run {
@@ -416,19 +399,17 @@ private fun CredentialsFields(
                     else cancelAutofillForNode(usernameNode)
                 }
             },
-        singleLine = true,
     )
 
     val passwordNode = remember(onPassword) {
         AutofillNode(autofillTypes = listOf(AutofillType.Password), onFill = onPassword)
     }
     autofillTree += passwordNode
-    OutlinedTextField(
+    EinkTextField(
         value = password,
         onValueChange = onPassword,
-        label = { Text(passwordLabel) },
+        label = passwordLabel,
         modifier = Modifier
-            .fillMaxWidth()
             .onGloballyPositioned { passwordNode.boundingBox = it.boundsInWindow() }
             .onFocusChanged { focus ->
                 autofill?.run {
@@ -436,9 +417,7 @@ private fun CredentialsFields(
                     else cancelAutofillForNode(passwordNode)
                 }
             },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        isPassword = true,
     )
 }
 

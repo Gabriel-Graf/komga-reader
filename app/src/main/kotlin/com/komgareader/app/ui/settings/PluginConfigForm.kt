@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -16,8 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.komgareader.app.ui.components.EinkTextField
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.plugin.ConfigField
 import com.komgareader.plugin.ConfigSchema
@@ -123,29 +121,22 @@ private fun PluginConfigField(
     onValueChange: (String) -> Unit,
 ) {
     when (field.type) {
-        FieldType.TEXT -> OutlinedTextField(
+        FieldType.TEXT -> EinkTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(field.label) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
+            label = field.label,
         )
-        FieldType.URL -> OutlinedTextField(
+        FieldType.URL -> EinkTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(field.label) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            label = field.label,
+            keyboardType = KeyboardType.Uri,
         )
-        FieldType.SECRET -> OutlinedTextField(
+        FieldType.SECRET -> EinkTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(field.label) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            label = field.label,
+            isPassword = true,
         )
         FieldType.BOOL -> {
             val checked = value == "true"

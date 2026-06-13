@@ -35,8 +35,10 @@ private fun PluginKind.matches(filter: PluginTypeFilter): Boolean = when (filter
 
 /**
  * Reine Filterung des Plugins-Tabs: Typ-Chip + Suchtext auf installierte UND entdeckte anwenden.
- * Installierte bleiben oben; der Divider erscheint nur, wenn nach Filterung BEIDE Abschnitte Inhalt
- * haben (keine schwebende Linie über leerem Bereich).
+ * Installierte bleiben oben; ein bereits installierter Eintrag verschwindet unten aus den entdeckten
+ * (er ist schon oben gelistet) — ein verfügbares Update [InstallState.UPDATE_AVAILABLE] bleibt jedoch
+ * unten sichtbar, weil es handlungsrelevant ist. Der Divider erscheint nur, wenn nach Filterung BEIDE
+ * Abschnitte Inhalt haben (keine schwebende Linie über leerem Bereich).
  */
 fun visibleRows(
     installed: List<InstalledEntry>,
@@ -49,7 +51,8 @@ fun visibleRows(
         it.kind.matches(typeFilter) && (q.isBlank() || it.displayName.contains(q, ignoreCase = true))
     }
     val filteredDiscovered = discovered.filter {
-        it.item.kind.matches(typeFilter) && (
+        it.state != InstallState.INSTALLED &&
+            it.item.kind.matches(typeFilter) && (
             q.isBlank() ||
                 it.item.entry.name.contains(q, ignoreCase = true) ||
                 it.item.entry.description.contains(q, ignoreCase = true)

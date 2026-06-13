@@ -62,4 +62,6 @@ object AppIcons {
     val TableOfContents: ImageVector get() = ActiveIconPack.resolve(IconKey.TableOfContents)
     val AlignLeft: ImageVector get() = ActiveIconPack.resolve(IconKey.AlignLeft)
     val AlignJustify: ImageVector get() = ActiveIconPack.resolve(IconKey.AlignJustify)
+    val PasswordShow: ImageVector get() = ActiveIconPack.resolve(IconKey.PasswordShow)
+    val PasswordHide: ImageVector get() = ActiveIconPack.resolve(IconKey.PasswordHide)
 }

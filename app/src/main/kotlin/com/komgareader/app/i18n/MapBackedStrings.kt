@@ -141,6 +141,9 @@ class MapBackedStrings(
     override val searchAction: String get() = overrides["searchAction"] ?: fallback.searchAction
     override val searchNoResults: String get() = overrides["searchNoResults"] ?: fallback.searchNoResults
     override val clearSearch: String get() = overrides["clearSearch"] ?: fallback.clearSearch
+    override val clearInput: String get() = overrides["clearInput"] ?: fallback.clearInput
+    override val showPassword: String get() = overrides["showPassword"] ?: fallback.showPassword
+    override val hidePassword: String get() = overrides["hidePassword"] ?: fallback.hidePassword
     override val filterByType: String get() = overrides["filterByType"] ?: fallback.filterByType
     override val filterTypePlaceholder: String get() = overrides["filterTypePlaceholder"] ?: fallback.filterTypePlaceholder
     override val filterDownloaded: String get() = overrides["filterDownloaded"] ?: fallback.filterDownloaded
@@ -181,6 +184,10 @@ class MapBackedStrings(
     override val pluginTabReaderPresetLabel: String get() = overrides["pluginTabReaderPresetLabel"] ?: fallback.pluginTabReaderPresetLabel
     override val pluginTabUiPackLabel: String get() = overrides["pluginTabUiPackLabel"] ?: fallback.pluginTabUiPackLabel
     override val pluginTabEmpty: String get() = overrides["pluginTabEmpty"] ?: fallback.pluginTabEmpty
+    override val pluginSectionInstalled: String get() = overrides["pluginSectionInstalled"] ?: fallback.pluginSectionInstalled
+    override val pluginSectionAvailable: String get() = overrides["pluginSectionAvailable"] ?: fallback.pluginSectionAvailable
+    override val pluginReload: String get() = overrides["pluginReload"] ?: fallback.pluginReload
+    override val pluginManageRepos: String get() = overrides["pluginManageRepos"] ?: fallback.pluginManageRepos
     override val pluginAbiLabel: String get() = overrides["pluginAbiLabel"] ?: fallback.pluginAbiLabel
     override val pluginConfigure: String get() = overrides["pluginConfigure"] ?: fallback.pluginConfigure
     override val pluginUninstall: String get() = overrides["pluginUninstall"] ?: fallback.pluginUninstall

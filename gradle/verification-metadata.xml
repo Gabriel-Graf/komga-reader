@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
+   <!--
+     Targeted dependency verification (supply-chain hardening).
+
+     WHY this file is "trust everything EXCEPT one group": the Onyx Boox SDK
+     (`com.onyx.android.sdk:onyxsdk-device`) is the ONLY dependency fetched from
+     an insecure HTTP Maven repo (`repo.boox.com`, see settings.gradle.kts — its
+     TLS is unusable, weak-DH). That HTTP connection is the one MITM-exploitable
+     spot in the build. The repo is also content-filtered to that single group,
+     so it can't be used to inject any other artifact. Here we additionally pin
+     the SHA-256 of the Onyx `.aar`, so a tampered SDK fails the build.
+
+     Everything else resolves over HTTPS (Google, Maven Central, Ghostscript) and
+     is trusted here rather than pinned, to avoid the high-maintenance burden of a
+     full global verification file (which must be regenerated on every dependency
+     bump). If you later want full verification, run gradlew with the
+     "write-verification-metadata sha256 build" flag and remove the broad trust rule.
+
+     The Onyx SDK is proprietary, so it cannot be vendored into this AGPL repo;
+     pinning its checksum is the correct integrity control.
+   -->
+   <configuration>
+      <verify-metadata>false</verify-metadata>
+      <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <!-- Trust every group whose name does NOT start with com.onyx.android.sdk
+              (Java-regex negative lookahead). The Onyx group falls through to the
+              <components> checksum below and is the only verified artifact. -->
+         <trust group="^(?!com\.onyx\.android\.sdk).*$" regex="true"/>
+      </trusted-artifacts>
+   </configuration>
+   <components>
+      <component group="com.onyx.android.sdk" name="onyxsdk-device" version="1.3.5">
+         <artifact name="onyxsdk-device-1.3.5.aar">
+            <sha256 value="6e57dab76f679512329f9dbb0985bba406418f18d272ad00d1cfac98e6bbe0f4"
+                    origin="Resolved from repo.boox.com and pinned 2026-06-13"/>
+         </artifact>
+      </component>
+   </components>
+</verification-metadata>

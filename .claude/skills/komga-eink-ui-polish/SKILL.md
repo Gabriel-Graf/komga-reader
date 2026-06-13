@@ -1,6 +1,6 @@
 ---
 name: komga-eink-ui-polish
-description: Use at the START of any UI/visual task in the Komga-Reader app (Jetpack Compose, Onyx Boox Go Color 7 Gen2). Entry point + index for the Komga UI — the device-native "Onyx-look" design language, the three device classes (mono E-Ink / colour E-Ink Kaleido / LCD) on two orthogonal axes (motion ⟂ accent colour), component catalogue, tokens, Lucide/AppIcons, settings architecture, anti-patterns. Routes to the domain skills (viewer-type, guided-comic, colour-filter) and to frontend-design for LCD craft. Building or refactoring a screen, component, dialog, theme, indicator, list, reader chrome — start here.
+description: Use at the START of any UI/visual task in the Komga-Reader app (Jetpack Compose, Onyx Boox Go Color 7 Gen2). Entry point + index for the Komga UI — the device-native "Onyx-look" design language, the three device classes (mono E-Ink / colour E-Ink Kaleido / LCD) on two orthogonal axes (motion ⟂ accent colour), component catalogue, tokens, Lucide/AppIcons, settings architecture, anti-patterns. Routes to the domain skills (viewer-type, guided-comic, colour-filter), to frontend-design for LCD craft, and to android-development / chrisbanes-skills for Kotlin/Compose design patterns and code conventions (E-Ink invariants override them). Building or refactoring a screen, component, dialog, theme, indicator, list, reader chrome — start here.
 ---
 
 # Komga UI — Design-Philosophie & Index
@@ -67,6 +67,8 @@ modus-sensitives Verhalten.
 | Geführten Comic-Reader (Panel-Zoom, PanelDetector, Tap-Zonen) | **`komga-guided-comic-reader`** |
 | Farbfilter für Cover/Seiten (Kaleido-Sättigung/Kontrast, `ColorProfile`) | **`komga-eink-color-filter`** |
 | LCD-Craft (Bewegung + Farbe erlaubt) — kreative Qualität | **`frontend-design`** |
+| Kotlin/Compose **Design-Patterns** (Slot-API, State-Hoisting, State-Holder/UI-Split, Modifier-Konvention, Flow/Event-Modeling, Recomposition-Perf, Stability) | **`chrisbanes-skills:*`** — *E-Ink-Invarianten schlagen sie* (s. u.) |
+| Android-**Architektur & Namens-/Datei-Konventionen** (Route/Screen-Split, `UiState` sealed interface, Repo-Pattern, Offline-first) | **`android-development`** — *E-Ink-Invarianten schlagen sie* (s. u.) |
 | Animation gaten (jede Bewegung braucht E-Ink-Pfad) | Regel `animation-gating.md` |
 | Verbindliche Kurzfassung der Designsprache (Spec) | Regel `eink-design-language.md` |
 | Warum nicht binär (Geräteklassen, Ziele, Nogos) | Regel `big-picture-and-goals.md` |
@@ -76,6 +78,54 @@ Die Geräteklassen-Disziplin (oben) gilt in **allen** Sub-Skills. **Ziel modular
 Chrome-Element (Overlay/Header/Buttons/Navigation/Tiles/Settings) gehört hinter eine adressierbare,
 austauschbare Grenze — nie hart in den Compose-Baum verdrahtet (sonst kann die Community nichts
 ersetzen ohne Fork). Beim Bauen mitdenken.
+
+## Android-/Compose-Handwerk: Quell-Skills — E-Ink schlägt sie
+
+Zwei externe Skill-Familien tragen allgemeines Kotlin/Compose-Handwerk. Lade sie für **Design-Patterns
+und Code-/Namens-Konventionen** — **nicht** für Look oder Verhalten. Look/Bewegung/Farbe/Icons/Dialoge
+diktiert **ausschließlich** dieser Skill + die Projekt-Regeln.
+
+- **`android-development`** — Architektur- & Datei-/Namens-Konventionen (Route/Screen-Split,
+  `UiState` als sealed interface, `onAction`/explizite Callbacks, Repo-Interface + `OfflineFirst`-Impl,
+  `toModel`/`toEntity`-Mapper, `stateIn(WhileSubscribed(5_000))`). Es ist **NowInAndroid/Material-3-orientiert** —
+  Struktur übernehmen, **Material-Look nie**.
+- **`chrisbanes-skills:*`** — die kanonische Referenz für **einzelne** Compose-Patterns. Lade den
+  passenden Sub-Skill gezielt: `compose-slot-api-pattern`, `compose-state-hoisting`,
+  `compose-state-holder-ui-split`, `compose-modifier-and-layout-style`, `kotlin-flow-state-event-modeling`,
+  `compose-state-authoring`, `compose-recomposition-performance`, `compose-stability-diagnostics`,
+  `kotlin-types-value-class`, `compose-side-effects`, `compose-animations`.
+
+> **REQUIRED — die E-Ink-/Projekt-Invarianten überschreiben jeden Rat dieser Skills.** Diese Skills kennen
+> weder E-Ink noch die zwei Nähte noch die Geräteklassen-Disziplin. Wo ihr Rat mit etwas in **diesem**
+> Skill oder den `.claude/rules/*` kollidiert, **gewinnt die E-Ink/Projekt-Seite — immer.** Den Buchstaben
+> eines externen Patterns zu befolgen und dabei eine Invariante zu brechen, ist ein Bug, kein „best practice".
+
+**Kollisionen, bei denen die E-Ink/Projekt-Seite gewinnt (Schließe-die-Lücke):**
+
+| Externer Rat | Hier gilt stattdessen |
+|---|---|
+| `compose-animations` zeigt `AnimatedVisibility`/`animate*AsState` als Standard | **Jede** Bewegung über `allowsMotion`/`LocalEinkMode` gegatet, bewegungsfreier Pfad Pflicht (`animation-gating.md`). Default = **keine** Bewegung. |
+| Material-3-Komponenten (`AlertDialog`, `Checkbox`, `Button`, `OutlinedTextField`, `ListItem`) als Bausteine | **Nie roh.** Erst greppen, geteilte `Eink*`-Komponente nutzen (Ersatztabelle unten). Dialog = `EinkModal`. |
+| Material-Icons / `Icons.*` in Beispielen | **Nur** `AppIcons.<Zweck>` (Lucide). Material-Icons sind aus den Deps raus. |
+| `dynamicColor`/Material-`primary`-Akzent, farbige Indikatoren | UI-Akzent nur hinter `allowsAccentColor`; E-Ink-Modus (mono **+** Kaleido) = Schwarz. Nie an `allowsMotion` koppeln. |
+| `isSystemInDarkTheme()`/Geräte-Boolean als Verhaltens-Gate | Verhalten aus `LocalDisplayBehavior` (zwei Achsen), **nie** ein binäres `isEink`/Boolean (Nogo, `big-picture-and-goals.md`). |
+| Material-Default-`FontWeight.Normal`, disabled-Grau | Zentral `EinkTypography` (Body 500 / Labels 600); disabled-Text explizit `onSurface` (E-Ink-Lesbarkeit). |
+| Multi-Modul-Schnitt `feature:api/impl`, `core:*` aus NowInAndroid | Komga hat **seinen eigenen** Modulschnitt (`domain`/`source-api`/`ui-api`/`app`/…) + die zwei Nähte. **Nicht** auf NiA umbauen — `architecture-seams.md` ist maßgeblich. |
+
+**Konventionen, die wir übernehmen (Design-Pattern + Sprach-/Namens-Konvention):**
+
+| Konvention (Quelle) | Regel für neue Komponenten/VMs hier |
+|---|---|
+| **Slot-API statt Primitiv-Flut** (`compose-slot-api-pattern`) | Variiert Inhalt pro Aufrufer → `@Composable () -> Unit`-Slots, **keine** `title: String, …icon: ImageVector?, showX: Boolean`-Anhäufung. Deckt sich mit der Slot-Naht (`UiSlotPack`/Capability-Surfaces) — auf **neue** Komponenten anwenden. |
+| **State-Holder/UI-Split** (`compose-state-holder-ui-split`) | `XRoute(viewModel)` sammelt State/Effekte + verdrahtet → `XScreen(state, onAbc, modifier)` ist pur (nur State + Callbacks), previewbar. Entspricht den `*Route.kt`/`Viewer`-Mustern — so weiterführen. |
+| **`modifier`-Parameter-Konvention** (`compose-modifier-and-layout-style`) | Layout-Composable bekommt `modifier: Modifier = Modifier`, **exakt so benannt**, **nach** Pflicht-Params, **vor** Content-Lambdas, auf den Root angewandt. Kein hartes `.fillMaxWidth()` auf dem Root. Modifier-Kette als **ein** fluenter Ausdruck. |
+| **UiState als sealed interface** (`android-development`) | `sealed interface XUiState { data object Loading; data class Success(...); data class Error(...) }` statt loser Bools/Nullables. |
+| **Flow/Event-Modeling** (`kotlin-flow-state-event-modeling`) | State: `StateFlow` via `stateIn(WhileSubscribed(5_000))`, **keine** Sentinel-Werte (Phasing). One-shot-Events (Navigation/Snackbar): `Channel(BUFFERED).receiveAsFlow()`, **nicht** `SharedFlow`. |
+| **collectAsStateWithLifecycle** (`compose-state-holder-ui-split`) | In `*Route`-Composables `collectAsStateWithLifecycle()` statt `collectAsState()`. |
+| **Stability/Value-Class** (`kotlin-types-value-class`, `compose-stability-diagnostics`) | Bei Recompose-Hotspots: `@JvmInline value class` für ID-Wrapper, stabile Parameter-Typen prüfen (Compiler-Report) — **bevor** man eine Bewegung „optimiert" (auf E-Ink gibt es eh keine). |
+
+Namens-Konvention bleibt projektweit: Komponenten `Eink*`/semantischer Zweck, Icons `AppIcons.<Zweck>`,
+View*-Split `*Route`/`*Screen`, Sub-Skill-Patterns **innerhalb** dieser Grenzen — nie gegen sie.
 
 ## Token-Quelle (Single Source of Truth)
 
@@ -300,4 +350,5 @@ ein sichtbarer Flash + Full-Refresh (Ghosting) — unnötig, weil sich nur ein D
 Gehört zu [[project-komga-eink-reader]]. Domain-Skills: [[komga-viewer-type-resolution]],
 [[komga-guided-comic-reader]], [[komga-eink-color-filter]]. Regeln: `eink-design-language.md`
 (Pflicht-Kurzfassung), `animation-gating.md`, `big-picture-and-goals.md` (Geräteklassen/Nogos).
-LCD-Craft: `frontend-design`.
+LCD-Craft: `frontend-design`. Kotlin/Compose-Handwerk (Design-Patterns + Code-Konventionen,
+**E-Ink schlägt sie**): `android-development`, `chrisbanes-skills:*` — siehe Sektion oben.

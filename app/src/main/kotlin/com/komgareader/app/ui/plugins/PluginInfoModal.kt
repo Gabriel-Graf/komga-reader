@@ -13,6 +13,7 @@ import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.app.ui.components.FilteredAsyncImage
+import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.LocalEinkMode
 import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.PluginKind
@@ -67,11 +68,7 @@ fun PluginInfoModal(
             )
         }
         when (readme) {
-            is ReadmeState.Loading -> Text(
-                s.pluginInfoLoadingReadme,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            is ReadmeState.Loading -> LoadingIndicator()
             is ReadmeState.Loaded -> Markdown(
                 content = readme.markdown,
                 imageTransformer = Coil2ImageTransformerImpl,

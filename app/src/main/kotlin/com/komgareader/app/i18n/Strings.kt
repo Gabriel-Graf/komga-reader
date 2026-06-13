@@ -192,7 +192,6 @@ interface Strings {
     // Plugin-Info-Modal (ℹ): Header, optionale Lizenz, README-Render mit Fallback
     val pluginInfo: String                // ℹ contentDescription / Modal-Titel-Kontext
     val pluginInfoLicense: String         // Label vor dem Lizenz-Wert
-    val pluginInfoLoadingReadme: String   // Lade-Hinweis während des README-Fetch
     val pluginInfoNoDescription: String   // Fallback ohne README/Beschreibung
     // Plugin-Tab Suche + Typ-Filter-Chip
     val pluginSearchHint: String          // Placeholder in der Suchleiste auf dem Plugins-Tab
@@ -529,7 +528,6 @@ object StringsDe : Strings {
     override val pluginPresetImported = "Importiert"
     override val pluginInfo = "Info"
     override val pluginInfoLicense = "Lizenz"
-    override val pluginInfoLoadingReadme = "README wird geladen…"
     override val pluginInfoNoDescription = "Keine Beschreibung verfügbar."
     override val pluginSearchHint = "Plugins suchen"
     override val pluginTabLanguageLabel = "Sprache"
@@ -853,7 +851,6 @@ object StringsEn : Strings {
     override val pluginPresetImported = "Imported"
     override val pluginInfo = "Info"
     override val pluginInfoLicense = "License"
-    override val pluginInfoLoadingReadme = "Loading README…"
     override val pluginInfoNoDescription = "No description available."
     override val pluginSearchHint = "Search plugins"
     override val pluginTabLanguageLabel = "Language"

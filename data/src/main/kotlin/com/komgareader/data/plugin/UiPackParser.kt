@@ -20,6 +20,9 @@ import org.json.JSONObject
  *   Aufrufer filtert wirkungslose Packs über [UiPackSpec.hasAnyOverride].
  * - Ungültige Einträge in der Icon-Remap-Map (Nicht-String-Werte) werden übersprungen; die Gültigkeit
  *   der IconKey-Namen prüft erst der app-seitige Konverter (`UiPackSpec.toIconPack`).
+ * - Schema `theme`: `cornerRadius` (Int dp), `elevation` (Bool), `typography` {headlineWeight/titleWeight/
+ *   headlineTrackingEm}, `light`/`dark` je mit den 8 Rollen background/surface/navDock/accent/onAccent/
+ *   onBackground/onSurfaceVariant/outline (alle `#RRGGBB`, alle optional). Vollständige Referenz: `docs/ui-packs/README.md`.
  */
 fun parseUiPackSpec(
     json: String,

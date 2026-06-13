@@ -87,4 +87,11 @@ interface ReflowableDocumentFactory {
         viewportWidth: Int,
         viewportHeight: Int,
     ): ReflowableDocument
+
+    /**
+     * Registers an additional reflowable-reader font at runtime (absolute TTF path).
+     * Returns true if the engine's font manager has at least one usable font afterwards.
+     * Default no-op so non-crengine factories need no change — the domain stays engine-free.
+     */
+    fun registerFont(absolutePath: String): Boolean = false
 }

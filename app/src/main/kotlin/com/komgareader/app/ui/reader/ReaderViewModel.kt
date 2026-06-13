@@ -98,10 +98,6 @@ class ReaderViewModel @Inject constructor(
         .map { runCatching { DisplayMode.valueOf(it) }.getOrDefault(DisplayMode.EINK) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, DisplayMode.EINK)
 
-    /** Whether the device manages full refresh itself (setting; default on). */
-    val deviceManagedRefresh: StateFlow<Boolean> = settings.deviceManagedRefresh
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
-
     /**
      * Frame-Sprünge im Webtoon-Modus (Hardware-/Lautstärke-Tasten): +1 = vorwärts,
      * -1 = rückwärts. Der WebtoonReaderScreen scrollt darauf um ~1 Bildschirmhöhe.

@@ -204,7 +204,6 @@ private class StubSettingsRepository : SettingsRepository {
     override val novelTextAlign: Flow<String> = flowOf("JUSTIFY")
     override val novelHyphenationLang: Flow<String> = flowOf("")
     override val novelFontWeight: Flow<Int> = flowOf(400)
-    override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override val activeUiPack: Flow<String> = flowOf("")
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
@@ -226,7 +225,6 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setNovelTextAlign(align: String) {}
     override suspend fun setNovelHyphenationLang(lang: String) {}
     override suspend fun setNovelFontWeight(value: Int) {}
-    override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
@@ -271,7 +269,6 @@ private class CapturingSettingsRepository(
     override val novelTextAlign: Flow<String> = flowOf(textAlign)
     override val novelHyphenationLang: Flow<String> = flowOf(hyphenationLang)
     override val novelFontWeight: Flow<Int> = flowOf(fontWeight)
-    override val deviceManagedRefresh: Flow<Boolean> = flowOf(true)
     override val officialRepoEnabled: Flow<Boolean> = flowOf(true)
     override val activeUiPack: Flow<String> = flowOf("")
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
@@ -293,7 +290,6 @@ private class CapturingSettingsRepository(
     override suspend fun setNovelTextAlign(align: String) { novelTextAlignValue = align }
     override suspend fun setNovelHyphenationLang(lang: String) { novelHyphenationLangValue = lang }
     override suspend fun setNovelFontWeight(value: Int) { novelFontWeightValue = value }
-    override suspend fun setDeviceManagedRefresh(value: Boolean) {}
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) {}
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}

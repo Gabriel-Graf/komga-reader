@@ -29,7 +29,6 @@ fun parseReaderPresetSpecs(json: String, manifestAbi: Int): List<ReaderPreset>? 
 
 private fun JSONObject.toOverrides(): ReaderPresetOverrides = ReaderPresetOverrides(
     displayMode = optStringOrNull("displayMode"),
-    deviceManagedRefresh = optBoolOrNull("deviceManagedRefresh"),
     webtoonOverlapPercent = optIntOrNull("webtoonOverlapPercent"),
     novelFontSizeEm = optFloatOrNull("novelFontSizeEm"),
     novelLineHeight = optFloatOrNull("novelLineHeight"),

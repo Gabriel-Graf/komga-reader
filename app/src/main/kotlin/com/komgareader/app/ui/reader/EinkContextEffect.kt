@@ -10,7 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
-/** Bridges the singleton [EinkContextController] into Composition (mirrors ReaderEinkHolder). */
+/** Bridges the singleton [EinkContextController] into Composition. */
 @HiltViewModel
 class EinkContextHolder @Inject constructor(
     val controller: EinkContextController,

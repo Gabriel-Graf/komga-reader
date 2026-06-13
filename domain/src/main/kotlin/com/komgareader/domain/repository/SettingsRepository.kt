@@ -26,9 +26,6 @@ interface SettingsRepository {
     val novelTextAlign: Flow<String>          // "LEFT" | "JUSTIFY"
     val novelHyphenationLang: Flow<String>    // "" = aus, sonst Sprachcode ("de"/"en")
     val novelFontWeight: Flow<Int>            // Grund-Schriftstärke (400 = normal, höher = dicker)
-    // E-Ink-Refresh: true = der App-seitige Voll-Refresh (RefreshScheduler) ist AUS, das Gerät
-    // (Onyx) entscheidet selbst über Ghosting-Clears; der Fast-Modus bleibt aktiv. Default true.
-    val deviceManagedRefresh: Flow<Boolean>
     /** Ob das offizielle Plugin-Repo im Browser geladen wird (Default true). */
     val officialRepoEnabled: Flow<Boolean>
     /** packageName des aktiven UI-Packs (data-only Plugin-Kategorie UI_PACK); "" = keiner (Host-Default). */
@@ -53,7 +50,6 @@ interface SettingsRepository {
     suspend fun setNovelTextAlign(align: String)
     suspend fun setNovelHyphenationLang(lang: String)
     suspend fun setNovelFontWeight(value: Int)
-    suspend fun setDeviceManagedRefresh(value: Boolean)
     suspend fun setOfficialRepoEnabled(enabled: Boolean)
     suspend fun setActiveUiPack(packageName: String)
     suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile)

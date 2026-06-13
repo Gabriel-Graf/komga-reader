@@ -43,8 +43,8 @@ import com.komgareader.ui.icons.AppIcons
  *
  * **Keine Animation:** Der Seitenwechsel ist ein sofortiger State-Wechsel
  * (currentPage). Der Refresh läuft — wie im Paged-Reader — über den geteilten
- * [com.komgareader.domain.eink.RefreshScheduler]: PARTIAL beim Blättern, periodische
- * GC-Full-Promotion gegen Ghosting, forceFull nur beim Re-Layout (E-Ink, `animation-gating`).
+ * Refresh-Verhalten wird dynamisch über den [com.komgareader.app.data.EinkContextController]
+ * gesteuert (E-Ink, `animation-gating`).
  */
 @Composable
 fun NovelReaderScreen(

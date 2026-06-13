@@ -266,9 +266,6 @@ class MapBackedStrings(
     override val settingsWebtoon: String get() = overrides["settingsWebtoon"] ?: fallback.settingsWebtoon
     override val webtoonOverlapHelper: String get() = overrides["webtoonOverlapHelper"] ?: fallback.webtoonOverlapHelper
     override val webtoonOverlap: String get() = overrides["webtoonOverlap"] ?: fallback.webtoonOverlap
-    override val settingsEinkRefresh: String get() = overrides["settingsEinkRefresh"] ?: fallback.settingsEinkRefresh
-    override val deviceManagedRefresh: String get() = overrides["deviceManagedRefresh"] ?: fallback.deviceManagedRefresh
-    override val deviceManagedRefreshHelper: String get() = overrides["deviceManagedRefreshHelper"] ?: fallback.deviceManagedRefreshHelper
     override val settingsEinkDynamics: String get() = overrides["settingsEinkDynamics"] ?: fallback.settingsEinkDynamics
     override val settingsEinkDynamicsDesc: String get() = overrides["settingsEinkDynamicsDesc"] ?: fallback.settingsEinkDynamicsDesc
     override val einkContextHome: String get() = overrides["einkContextHome"] ?: fallback.einkContextHome

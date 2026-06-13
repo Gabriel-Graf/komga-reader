@@ -50,9 +50,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.observe(KEY_NOVEL_HYPHENATION).map { it ?: "" }
     override val novelFontWeight: Flow<Int> =
         dao.observe(KEY_NOVEL_FONT_WEIGHT).map { it?.toIntOrNull() ?: 400 }
-    // Default true: das Gerät (Onyx) steuert Ghosting-Clears selbst; der App-Scheduler ist aus.
-    override val deviceManagedRefresh: Flow<Boolean> =
-        dao.observe(KEY_DEVICE_MANAGED_REFRESH).map { it?.toBooleanStrictOrNull() ?: true }
     // Default true: das offizielle Plugin-Repo wird im Browser standardmäßig geladen.
     override val officialRepoEnabled: Flow<Boolean> =
         dao.observe(KEY_OFFICIAL_REPO_ENABLED).map { it?.toBooleanStrictOrNull() ?: true }
@@ -91,8 +88,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_NOVEL_HYPHENATION, lang))
     override suspend fun setNovelFontWeight(value: Int) =
         dao.put(SettingEntity(KEY_NOVEL_FONT_WEIGHT, value.toString()))
-    override suspend fun setDeviceManagedRefresh(value: Boolean) =
-        dao.put(SettingEntity(KEY_DEVICE_MANAGED_REFRESH, value.toString()))
     override suspend fun setOfficialRepoEnabled(enabled: Boolean) =
         dao.put(SettingEntity(KEY_OFFICIAL_REPO_ENABLED, enabled.toString()))
     override suspend fun setActiveUiPack(packageName: String) =
@@ -125,7 +120,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_NOVEL_TEXT_ALIGN = "novel_text_align"
         const val KEY_NOVEL_HYPHENATION = "novel_hyphenation_lang"
         const val KEY_NOVEL_FONT_WEIGHT = "novel_font_weight"
-        const val KEY_DEVICE_MANAGED_REFRESH = "device_managed_refresh"
         const val KEY_OFFICIAL_REPO_ENABLED = "official_repo_enabled"
         const val KEY_ACTIVE_UI_PACK = "active_ui_pack"
         const val KEY_EINK_CONTEXT_PROFILES = "eink_context_profiles"

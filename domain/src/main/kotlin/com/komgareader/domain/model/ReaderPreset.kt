@@ -7,7 +7,6 @@ package com.komgareader.domain.model
  */
 data class ReaderPresetOverrides(
     val displayMode: String? = null,
-    val deviceManagedRefresh: Boolean? = null,
     val webtoonOverlapPercent: Int? = null,
     val novelFontSizeEm: Float? = null,
     val novelLineHeight: Float? = null,

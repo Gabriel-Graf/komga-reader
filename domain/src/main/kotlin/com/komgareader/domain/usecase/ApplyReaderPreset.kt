@@ -9,7 +9,6 @@ import com.komgareader.domain.model.ReaderPresetOverrides
  */
 class ReaderPresetSink(
     val setDisplayMode: (String) -> Unit,
-    val setDeviceManagedRefresh: (Boolean) -> Unit,
     val setWebtoonOverlapPercent: (Int) -> Unit,
     val setNovelFontSizeEm: (Float) -> Unit,
     val setNovelLineHeight: (Float) -> Unit,
@@ -24,7 +23,6 @@ class ReaderPresetSink(
 /** Wendet nur die gesetzten (nicht-null) Felder eines Presets über die [sink] an. */
 fun applyReaderPreset(o: ReaderPresetOverrides, sink: ReaderPresetSink) {
     o.displayMode?.let(sink.setDisplayMode)
-    o.deviceManagedRefresh?.let(sink.setDeviceManagedRefresh)
     o.webtoonOverlapPercent?.let(sink.setWebtoonOverlapPercent)
     o.novelFontSizeEm?.let(sink.setNovelFontSizeEm)
     o.novelLineHeight?.let(sink.setNovelLineHeight)

@@ -272,10 +272,6 @@ interface Strings {
     val settingsWebtoon: String
     val webtoonOverlapHelper: String
     val webtoonOverlap: String
-    // E-Ink-Refresh (legacy toggle — kept for ReaderPresetSink compatibility)
-    val settingsEinkRefresh: String
-    val deviceManagedRefresh: String
-    val deviceManagedRefreshHelper: String
     // E-Ink Dynamics — per-context refresh/colour mode section
     val settingsEinkDynamics: String
     val settingsEinkDynamicsDesc: String
@@ -620,11 +616,6 @@ object StringsDe : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Überlappung zwischen Streifen (verhindert sichtbare Lücken beim Blättern)."
     override val webtoonOverlap = "Überlappung"
-    override val settingsEinkRefresh = "E-Ink-Refresh"
-    override val deviceManagedRefresh = "Refresh dem Gerät überlassen"
-    override val deviceManagedRefreshHelper =
-        "Das Gerät (Onyx) steuert das Ghosting-Clear selbst — die App erzwingt keinen Voll-Refresh. " +
-            "Schnelles Blättern bleibt aktiv. Aus = die App steuert (Voll-Refresh alle paar Seiten)."
     override val settingsEinkDynamics = "E-Ink Dynamik"
     override val settingsEinkDynamicsDesc = "Refresh- und Farbmodus je Lese-Kontext automatisch schalten."
     override val einkContextHome = "Startseite"
@@ -958,11 +949,6 @@ object StringsEn : Strings {
     override val settingsWebtoon = "Webtoon"
     override val webtoonOverlapHelper = "Overlap between strips (prevents visible gaps when scrolling)."
     override val webtoonOverlap = "Overlap"
-    override val settingsEinkRefresh = "E-Ink refresh"
-    override val deviceManagedRefresh = "Let the device manage refresh"
-    override val deviceManagedRefreshHelper =
-        "The device (Onyx) handles ghosting clears itself — the app forces no full refresh. " +
-            "Fast paging stays on. Off = the app manages it (full refresh every few pages)."
     override val settingsEinkDynamics = "E-Ink dynamics"
     override val settingsEinkDynamicsDesc = "Switch refresh and colour mode automatically per reading context."
     override val einkContextHome = "Home"

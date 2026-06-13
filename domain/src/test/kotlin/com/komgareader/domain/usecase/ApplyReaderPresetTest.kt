@@ -9,7 +9,6 @@ class ApplyReaderPresetTest {
         val applied = linkedMapOf<String, Any>()
         val sink = ReaderPresetSink(
             setDisplayMode = { applied["displayMode"] = it },
-            setDeviceManagedRefresh = { applied["deviceManagedRefresh"] = it },
             setWebtoonOverlapPercent = { applied["webtoonOverlapPercent"] = it },
             setNovelFontSizeEm = { applied["novelFontSizeEm"] = it },
             setNovelLineHeight = { applied["novelLineHeight"] = it },

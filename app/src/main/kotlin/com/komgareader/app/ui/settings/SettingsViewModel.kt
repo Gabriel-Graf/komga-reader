@@ -49,7 +49,6 @@ class SettingsViewModel @Inject constructor(
         settings.shellLayoutMode.stateIn(viewModelScope, SharingStarted.Eagerly, ShellLayoutMode.AUTO.name)
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-    val deviceManagedRefresh = settings.deviceManagedRefresh.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     // E-Ink Dynamics: device capabilities (static) + per-context overrides (persistent).
     val einkRefreshModes: List<EinkModeOption> = einkController.capabilities.refreshModes
@@ -102,7 +101,6 @@ class SettingsViewModel @Inject constructor(
             preset.overrides,
             ReaderPresetSink(
                 setDisplayMode = ::setDisplayMode,
-                setDeviceManagedRefresh = ::setDeviceManagedRefresh,
                 setWebtoonOverlapPercent = ::setWebtoonOverlap,
                 setNovelFontSizeEm = ::setNovelFontSizeEm,
                 setNovelLineHeight = ::setNovelLineHeight,
@@ -125,8 +123,6 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setActiveUiPack(packageName) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
     fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
-    fun setDeviceManagedRefresh(value: Boolean) =
-        viewModelScope.launch { settings.setDeviceManagedRefresh(value) }.let {}
 
     fun setEinkRefreshMode(context: EinkContext, id: String?) {
         val current = einkContextProfiles.value[context] ?: EinkContextProfile()

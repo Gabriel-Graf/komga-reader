@@ -90,6 +90,11 @@ class RepoIndexParserTest {
         assertEquals(PluginKind.SOURCE, pluginKindOf("garbage"))
     }
 
+    @Test fun fontTypeMapsToFontKind() {
+        assertEquals(PluginKind.FONT, pluginKindOf("font"))
+        assertEquals(PluginKind.FONT, pluginKindOf("FONT"))
+    }
+
     @Test fun mergeDedupsByPackageKeepingHighestVersion() {
         val e1 = BrowsableEntry(RepoPluginEntry("a.b", "A", versionCode = 1, apkUrl = "u", fingerprint = "f"), "R1", "https://r1/repo.json", PluginKind.SOURCE)
         val e2 = BrowsableEntry(RepoPluginEntry("a.b", "A", versionCode = 3, apkUrl = "u", fingerprint = "f"), "R2", "https://r2/repo.json", PluginKind.SOURCE)

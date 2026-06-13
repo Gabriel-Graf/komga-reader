@@ -3,7 +3,7 @@ package com.komgareader.data.plugin.repo
 import kotlinx.serialization.Serializable
 
 /** Plugin-Typ im Repo-Index (nur für Label/Filter — Install ist für beide gleich). */
-enum class PluginKind { SOURCE, PRESET, LANGUAGE, READER_PRESET, UI_PACK }
+enum class PluginKind { SOURCE, PRESET, LANGUAGE, READER_PRESET, UI_PACK, FONT }
 
 /** Installations-Zustand eines Index-Eintrags relativ zum installierten Paket. */
 enum class InstallState { NOT_INSTALLED, INSTALLED, UPDATE_AVAILABLE }

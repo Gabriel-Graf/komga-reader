@@ -182,6 +182,7 @@ fun PluginsScreen(
                         onUninstall = { uninstall(up.packageName) },
                     )
                 }
+                PluginKind.FONT -> { /* font plugins are data-only; no installed handler yet */ }
             }
         }
         if (visible.showDivider) {
@@ -408,6 +409,7 @@ private fun RepoRow(row: BrowserRow, onInfo: () -> Unit, onInstall: () -> Unit) 
         PluginKind.LANGUAGE -> s.pluginTabLanguageLabel
         PluginKind.READER_PRESET -> s.pluginTabReaderPresetLabel
         PluginKind.UI_PACK -> s.pluginTabUiPackLabel
+        PluginKind.FONT -> s.pluginTabFontLabel
     }
     Row(
         modifier = Modifier

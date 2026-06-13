@@ -216,6 +216,8 @@ class MapBackedStrings(
     override val pluginFilterLanguages: String get() = overrides["pluginFilterLanguages"] ?: fallback.pluginFilterLanguages
     override val pluginFilterReaderPresets: String get() = overrides["pluginFilterReaderPresets"] ?: fallback.pluginFilterReaderPresets
     override val pluginFilterUiPacks: String get() = overrides["pluginFilterUiPacks"] ?: fallback.pluginFilterUiPacks
+    override val pluginTabFontLabel: String get() = overrides["pluginTabFontLabel"] ?: fallback.pluginTabFontLabel
+    override val pluginFilterFonts: String get() = overrides["pluginFilterFonts"] ?: fallback.pluginFilterFonts
     override val repoBrowserTitle: String get() = overrides["repoBrowserTitle"] ?: fallback.repoBrowserTitle
     override val repoBrowserOpen: String get() = overrides["repoBrowserOpen"] ?: fallback.repoBrowserOpen
     override val repoBrowserSearch: String get() = overrides["repoBrowserSearch"] ?: fallback.repoBrowserSearch

@@ -11,14 +11,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
-import com.komgareader.domain.eink.RefreshMode
-import com.komgareader.eink.onyx.OnyxRefresher
 
 @Composable
 fun PagedReaderScreen(
@@ -29,11 +26,9 @@ fun PagedReaderScreen(
     onSettings: () -> Unit,
     onToggleMode: () -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel(),
-    refresher: OnyxRefresher? = null,
 ) {
     val requestedPage by viewModel.requestedPage.collectAsState()
     val ctx = LocalContext.current
-    val rootView = LocalView.current
 
     val pageCount = pages.size
     if (pageCount == 0) return
@@ -47,13 +42,9 @@ fun PagedReaderScreen(
         }
     }
 
-    // Fortschritt pushen wenn Seite gesettled + Refresh-Entscheidung über den geteilten Scheduler
+    // Report page settle for progress tracking
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onPageSettled(pagerState.currentPage)
-        // Event-gezählte FULL-Promotion gegen Ghosting (nicht Index-Modulo); nur Boox refresht.
-        if (refresher != null && viewModel.refreshScheduler.onContentChange() == RefreshMode.FULL) {
-            refresher.fullRefreshNow(rootView)
-        }
     }
 
     ReaderScaffold(

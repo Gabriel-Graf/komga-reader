@@ -14,7 +14,6 @@ import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.usecase.NovelProgressMapper
 import com.komgareader.eink.onyx.OnyxEinkController
-import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.domain.source.SourceManager
 import com.komgareader.render.crengine.CrengineDocumentFactory
 import com.komgareader.render.mupdf.MupdfDocumentFactory
@@ -107,17 +106,13 @@ object AppModule {
     @Singleton
     fun einkController(
         bus: HardwareButtonBus,
-        refresher: OnyxRefresher,
         @ApplicationContext ctx: Context,
     ): EinkController {
         return if (Build.MANUFACTURER.equals("ONYX", ignoreCase = true)) {
-            val controller = OnyxEinkController(
+            OnyxEinkController(
                 buttonEvents_ = bus.events,
                 appPackageName = ctx.packageName,
             )
-            // OnyxRefresher erhält die konkrete Controller-Instanz
-            refresher.controller = controller
-            controller
         } else {
             NoOpEinkController(bus)
         }

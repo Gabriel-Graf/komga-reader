@@ -12,7 +12,6 @@ import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
-import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
@@ -99,11 +98,7 @@ class ReaderViewModel @Inject constructor(
         .map { runCatching { DisplayMode.valueOf(it) }.getOrDefault(DisplayMode.EINK) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, DisplayMode.EINK)
 
-    /**
-     * Ob das Gerät den Voll-Refresh selbst steuert (Einstellung; Default an). Speist
-     * [com.komgareader.eink.onyx.OnyxRefresher.deviceManaged] über den [ReaderRoute] — gilt
-     * dann für ALLE Reader (geteilter Refresher-Singleton).
-     */
+    /** Whether the device manages full refresh itself (setting; default on). */
     val deviceManagedRefresh: StateFlow<Boolean> = settings.deviceManagedRefresh
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
@@ -114,13 +109,6 @@ class ReaderViewModel @Inject constructor(
     private val _frameStep = MutableSharedFlow<Int>(extraBufferCapacity = 8)
     val frameStep: SharedFlow<Int> = _frameStep.asSharedFlow()
 
-    /**
-     * Geräteunabhängige Refresh-Entscheidung (PARTIAL beim Blättern, FULL-Promotion gegen
-     * Ghosting) — eine Instanz pro Reader-Sitzung, von Paged + Webtoon geteilt. Die Ausführung
-     * macht der `OnyxRefresher` (gerätenah); hier steckt nur die getestete Entscheidungslogik.
-     */
-    override val refreshScheduler = RefreshScheduler()
-
     // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
     private var document: Document? = null
     private val renderCache = mutableMapOf<Int, Bitmap>()
@@ -130,12 +118,11 @@ class ReaderViewModel @Inject constructor(
      * Schaltet den **Anzeige**-Modus paged⟷webtoon (bzw. comic⟷webtoon) auf demselben bereits
      * geladenen [ReaderContent] um — kein Neuladen, nur ein anderes Layout über dieselbe
      * `pages`-Liste. Dieser Toggle bleibt **bewusst** in diesem VM (kein Zwei-VM-Split): beide
-     * Layouts teilen `_currentPage` (Scroll-/Seitenposition über den Wechsel hinweg), den **einen**
-     * [refreshScheduler] (Viewer-Naht: genau eine Instanz pro Sitzung) und [frameStep]. Ein
-     * separates `WebtoonReaderViewModel` müsste diesen geteilten Zustand entweder duplizieren
-     * (zweiter Scheduler — verboten), die Position beim Toggle verlieren oder den Inhalt neu laden
-     * (Lade-Sturm + Verhaltensänderung). Die genuin webtoon-spezifische *Lade-Logik* ist stattdessen
-     * in den puren [buildWebtoonStrip] ausgelagert und einzeln getestet.
+     * Layouts teilen `_currentPage` (Scroll-/Seitenposition über den Wechsel hinweg) und [frameStep].
+     * Ein separates `WebtoonReaderViewModel` müsste diesen geteilten Zustand entweder duplizieren,
+     * die Position beim Toggle verlieren oder den Inhalt neu laden (Lade-Sturm + Verhaltensänderung).
+     * Die genuin webtoon-spezifische *Lade-Logik* ist stattdessen in den puren [buildWebtoonStrip]
+     * ausgelagert und einzeln getestet.
      */
     fun toggleViewerMode() {
         viewerMode.value = if (viewerMode.value == ViewerMode.WEBTOON) pagedFamilyMode else ViewerMode.WEBTOON

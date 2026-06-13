@@ -7,7 +7,6 @@ import coil.ImageLoader
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
-import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.guidedview.GuidedNavigator
 import com.komgareader.guidedview.GuidedPosition
@@ -56,9 +55,6 @@ class ComicReaderViewModel @Inject constructor(
     override val chromeVisible: StateFlow<Boolean> = _uiState
         .map { it.chromeVisible }
         .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.chromeVisible)
-
-    /** Geteilte Refresh-Entscheidung (Viewer-Naht) — Panel-/Zoom-Wechsel = forceFull. */
-    override val refreshScheduler = RefreshScheduler()
 
     /** Debug: erkannte Panel-Rahmen als farbige Rechtecke über die Seite legen. */
     val showPanelOverlay: StateFlow<Boolean> =

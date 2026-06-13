@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,8 +34,6 @@ import com.komgareader.app.ui.common.label
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.ui.icons.AppIcons
-import com.komgareader.domain.eink.RefreshMode
-import com.komgareader.eink.onyx.OnyxRefresher
 
 /**
  * Roman-Reader (ViewerType.NOVEL): zeigt eine **reflowte** EPUB-Seite, die der
@@ -55,7 +52,6 @@ fun NovelReaderScreen(
     onHome: () -> Unit,
     onSettings: () -> Unit,
     novelVm: NovelReaderViewModel = hiltViewModel(),
-    refresher: OnyxRefresher? = null,
 ) {
     val state by novelVm.uiState.collectAsState()
     val reflowConfig by novelVm.reflowConfig.collectAsState()
@@ -64,25 +60,14 @@ fun NovelReaderScreen(
     val progressPercent by novelVm.progressPercent.collectAsState()
     val bookTitle by novelVm.bookTitle.collectAsState()
     val bookAuthor by novelVm.bookAuthor.collectAsState()
-    val rootView = LocalView.current
     val strings = LocalStrings.current
     var typoPanelOpen by remember { mutableStateOf(false) }
     var tocPanelOpen by remember { mutableStateOf(false) }
     var searchPanelOpen by remember { mutableStateOf(false) }
 
-    // Ein normaler Roman-Seitenwechsel ist KEIN bewusster Bildwechsel, sondern Blättern wie im
-    // Paged-Reader → PARTIAL (schneller DU-Refresh), mit periodischer GC-Promotion gegen Ghosting
-    // über den geteilten Scheduler (alle N Seiten ein Full). NUR ein Re-Layout (Typo-Änderung →
-    // pageCount ändert sich) ist ein bewusster Vollbild-Wechsel → forceFull. Sonst flasht jede
-    // Seite voll (Onyx-„Regal"-Anmutung). No-Op auf Nicht-Boox.
-    var lastPageCount by remember { mutableStateOf(state.pageCount) }
-    LaunchedEffect(state.currentPage, state.pageCount) {
+    // Report page settle for progress tracking; refresh is device-managed via EinkContext.
+    LaunchedEffect(state.currentPage) {
         novelVm.onPageSettled(state.currentPage)
-        val relayout = state.pageCount != lastPageCount
-        lastPageCount = state.pageCount
-        if (novelVm.refreshScheduler.onContentChange(forceFull = relayout) == RefreshMode.FULL) {
-            refresher?.fullRefreshNow(rootView)
-        }
     }
 
     // Max. ein Dialog gleichzeitig über dem Reader (E-Ink-Designsprache): exklusive Verzweigung.

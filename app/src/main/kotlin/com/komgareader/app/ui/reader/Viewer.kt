@@ -1,6 +1,5 @@
 package com.komgareader.app.ui.reader
 
-import com.komgareader.domain.eink.RefreshScheduler
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -12,19 +11,12 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * Bewusst eine **Compose-Zustands**-Naht (Sichtbarkeit als `StateFlow`, Settle-/Tap-Callbacks),
  * nicht das OO-`bind/onButton/teardown` aus der alten Spec — Compose verwaltet den Lifecycle
- * deklarativ. Hier liegt nur das, was die Reader **wirklich** teilen: Chrome, Navigation und die
- * geräteunabhängige Refresh-Entscheidung.
+ * deklarativ. Hier liegt nur das, was die Reader **wirklich** teilen: Chrome, Navigation und
+ * Seiten-Settle-Callbacks.
  */
 interface Viewer {
     /** Sichtbarkeit des durchscheinenden Reader-Overlays (Bars ein/aus). */
     val chromeVisible: StateFlow<Boolean>
-
-    /**
-     * Geräteunabhängige Refresh-Entscheidung (PARTIAL beim Blättern, FULL-Promotion gegen
-     * Ghosting / bei bewusstem Bildwechsel). EINE Instanz pro Reader-Sitzung — alle Reader
-     * teilen damit dieselbe getestete Logik; die Ausführung macht der `OnyxRefresher`.
-     */
-    val refreshScheduler: RefreshScheduler
 
     /** Mitte-Tap: Overlay ein-/ausblenden. */
     fun toggleChrome()

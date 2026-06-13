@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.data.coil.SourceImage
@@ -32,8 +31,6 @@ import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.ui.icons.AppIcons
-import com.komgareader.domain.eink.RefreshMode
-import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.guidedview.PanelGeometry
 
 /**
@@ -60,10 +57,8 @@ fun ComicReaderScreen(
     onSettings: () -> Unit,
     onToggleMode: () -> Unit = {},
     comicVm: ComicReaderViewModel = hiltViewModel(),
-    refresher: OnyxRefresher? = null,
 ) {
     val ctx = LocalContext.current
-    val rootView = LocalView.current
     val pageCount = pages.size
     if (pageCount == 0) return
 
@@ -88,17 +83,6 @@ fun ComicReaderScreen(
     LaunchedEffect(state.position.page) {
         if (state.position.page != pagerState.currentPage) {
             pagerState.scrollToPage(state.position.page)
-        }
-    }
-
-    // INTEGRATION 2: E-Ink-Full-Refresh bei Panel-/Zoom-Wechsel (Spec §5).
-    // Ein Panel- oder Zoom-Wechsel ist ein bewusster Bildwechsel -> sofortiger
-    // GC-Full-Refresh gegen Ghosting, analog zum Webtoon-Frame-Sprung.
-    // Null-safe: No-Op auf Nicht-Boox-Geräten.
-    LaunchedEffect(state.position, state.zoomed) {
-        // Panel-/Zoom-Wechsel = bewusster Bildwechsel → forceFull über den geteilten Scheduler (Viewer-Naht).
-        if (comicVm.refreshScheduler.onContentChange(forceFull = true) == RefreshMode.FULL) {
-            refresher?.fullRefreshNow(rootView)
         }
     }
 

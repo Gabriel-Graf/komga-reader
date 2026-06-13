@@ -9,7 +9,6 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
-import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.render.Chapter
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
@@ -114,9 +113,6 @@ class NovelReaderViewModel @Inject constructor(
     override val chromeVisible: StateFlow<Boolean> = _uiState
         .map { it.chromeVisible }
         .stateIn(viewModelScope, SharingStarted.Eagerly, _uiState.value.chromeVisible)
-
-    /** Geteilte Refresh-Entscheidung (Viewer-Naht) — Re-Layout/Seitenwechsel = forceFull. */
-    override val refreshScheduler = RefreshScheduler()
 
     /**
      * Inhaltsverzeichnis des geöffneten Romans (flach, tiefenmarkiert). Wird einmal

@@ -22,17 +22,13 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
-import com.komgareader.domain.eink.RefreshMode
-import com.komgareader.domain.eink.RefreshScheduler
 import com.komgareader.domain.model.DisplayMode
-import com.komgareader.eink.onyx.OnyxRefresher
 import com.komgareader.ui.slots.ReaderTapZones
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -61,17 +57,14 @@ fun WebtoonReaderScreen(
     displayMode: DisplayMode,
     frameSteps: Flow<Int>,
     chrome: Viewer,
-    refreshScheduler: RefreshScheduler,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onSettings: () -> Unit,
     onPageVisible: (Int) -> Unit,
     onToggleMode: () -> Unit,
-    refresher: OnyxRefresher? = null,
 ) {
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialPage)
     val ctx = LocalContext.current
-    val rootView = LocalView.current
     val scope = rememberCoroutineScope()
     val pageCount = pages.size
     val eink = displayMode == DisplayMode.EINK
@@ -82,21 +75,12 @@ fun WebtoonReaderScreen(
     // gleichzeitiger Bild-Requests aus (sonst Lade-Sturm bei langen Strips).
     val placeholderHeight = LocalConfiguration.current.screenHeightDp.dp
 
-    // Frame-Sprung: ~1 Bildschirmhöhe (mit Überlappung). E-Ink ohne Animation,
-    // danach ein GC-Full-Refresh; Smartphone animiert.
+    // Frame-Sprung: ~1 Bildschirmhöhe (mit Überlappung). E-Ink ohne Animation; Smartphone animiert.
     suspend fun jumpFrame(direction: Int) {
         val viewport = listState.layoutInfo.viewportSize.height
         if (viewport <= 0) return
         val delta = direction * viewport * (1f - FRAME_OVERLAP)
-        if (eink) {
-            listState.scrollBy(delta)
-            // Frame-Sprung = bewusster Bildwechsel → forceFull über den geteilten Scheduler.
-            if (refreshScheduler.onContentChange(forceFull = true) == RefreshMode.FULL) {
-                refresher?.fullRefreshNow(rootView)
-            }
-        } else {
-            listState.animateScrollBy(delta)
-        }
+        if (eink) listState.scrollBy(delta) else listState.animateScrollBy(delta)
     }
 
     // Hardware-/Lautstärke-Tasten → Frame-Sprung
@@ -104,16 +88,9 @@ fun WebtoonReaderScreen(
         frameSteps.collect { jumpFrame(it) }
     }
 
-    // Fortschritt tracken (kapitel-genau im ViewModel). Im Smartphone-Modus zusätzlich
-    // periodischer GC-Refresh gegen Ghosting (E-Ink refresht ohnehin pro Frame).
+    // Track progress (chapter-accurate in ViewModel).
     LaunchedEffect(listState.firstVisibleItemIndex) {
         onPageVisible(listState.firstVisibleItemIndex)
-        // Smartphone: periodischer GC-Refresh über denselben event-gezählten Scheduler.
-        if (!eink && refresher != null &&
-            refreshScheduler.onContentChange() == RefreshMode.FULL
-        ) {
-            refresher.fullRefreshNow(rootView)
-        }
     }
 
     ReaderScaffold(

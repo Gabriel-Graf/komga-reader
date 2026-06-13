@@ -170,14 +170,14 @@ Das Aurora-Pack reproduziert den In-Tree-`AuroraPack`-Look rein deklarativ
       "headlineTrackingEm": -0.02
     },
     "light": {
-      "background":       "#CDD1D9",
-      "surface":          "#C3C8D1",
-      "navDock":          "#959CAA",
+      "background":       "#FFFFFF",
+      "surface":          "#EDEDEF",
+      "navDock":          "#E1E1E4",
       "accent":           "#3D5AFE",
       "onAccent":         "#FFFFFF",
-      "onBackground":     "#1A1D24",
-      "onSurfaceVariant": "#3F4450",
-      "outline":          "#B1B7C2"
+      "onBackground":     "#1A1B1E",
+      "onSurfaceVariant": "#6B6C70",
+      "outline":          "#D3D3D6"
     },
     "dark": {
       "background":       "#15171C",

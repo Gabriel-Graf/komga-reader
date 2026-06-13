@@ -28,6 +28,7 @@ fun pluginKindOf(type: String): PluginKind = when {
     type.equals("language", ignoreCase = true) -> PluginKind.LANGUAGE
     type.equals("reader_preset", ignoreCase = true) -> PluginKind.READER_PRESET
     type.equals("ui_pack", ignoreCase = true) -> PluginKind.UI_PACK
+    type.equals("panel_model", ignoreCase = true) -> PluginKind.PANEL_MODEL
     else -> PluginKind.SOURCE
 }
 

@@ -26,6 +26,34 @@ class CrengineDocumentFactory(
     /** true, sobald der prozessweite Font-Manager-Bootstrap durchgelaufen ist. */
     private val fontManagerReady = AtomicBoolean(false)
 
+    // Plugin font paths registered before the (single) nativeInit boot; flushed in ensureFontManager().
+    private val pendingFontPaths = mutableListOf<String>()
+
+    /**
+     * Registers a plugin-supplied font file with the crengine font manager.
+     *
+     * If the engine has not booted yet (no novel opened), the path is buffered in
+     * [pendingFontPaths] and passed to the single [CrengineNative.nativeInit] call when the first
+     * novel is opened. Once the engine is booted, the font is registered live via
+     * [CrengineNative.nativeAddFont].
+     *
+     * Concurrency note: this method is [Synchronized]; [ensureFontManager] snapshots
+     * [pendingFontPaths] inside [synchronized] as well. A path added in the tiny window after
+     * the snapshot but before nativeInit completes is benign — it will be picked up by the next
+     * [registerFont] call (which sees [fontManagerReady] == true and delegates to nativeAddFont).
+     * A second nativeInit must never be called.
+     */
+    @Synchronized
+    override fun registerFont(absolutePath: String): Boolean {
+        // Boot not done yet → defer; ensureFontManager() passes these to the single nativeInit.
+        if (!fontManagerReady.get()) {
+            if (absolutePath !in pendingFontPaths) pendingFontPaths.add(absolutePath)
+            return false
+        }
+        // Already booted → register live; a second nativeInit is forbidden.
+        return CrengineNative.nativeAddFont(absolutePath)
+    }
+
     override fun open(
         bytes: ByteArray,
         formatHint: String,
@@ -37,17 +65,17 @@ class CrengineDocumentFactory(
     }
 
     /**
-     * Initialisiert den crengine-Font-Manager genau einmal: entpackt alle gebündelten
-     * Lese-Schriften ([NovelFonts.ALL]) und die Silbentrennungs-Muster aus den Assets in
-     * den Cache und registriert sie nativ. [AtomicBoolean.compareAndSet] gewinnt das
-     * Rennen atomar — nur der erste Aufrufer ruft [CrengineNative.nativeInit], alle
-     * weiteren kehren sofort zurück.
+     * Initialises the crengine font manager exactly once: extracts all bundled novel fonts
+     * ([NovelFonts.ALL]) and hyphenation patterns from assets into the cache, then registers
+     * them — together with any plugin fonts buffered in [pendingFontPaths] — via the single
+     * [CrengineNative.nativeInit] call. [AtomicBoolean.compareAndSet] wins the race atomically;
+     * only the first caller invokes nativeInit, all subsequent callers return immediately.
      */
     private fun ensureFontManager() {
         if (!fontManagerReady.compareAndSet(false, true)) return
-        val fontPaths = NovelFonts.ALL
-            .map { extractAsset(it.asset, context.cacheDir).absolutePath }
-            .toTypedArray()
+        val builtinPaths = NovelFonts.ALL.map { extractAsset(it.asset, context.cacheDir).absolutePath }
+        val pending = synchronized(this) { pendingFontPaths.toList() }
+        val fontPaths = (builtinPaths + pending).toTypedArray()
         val hyphDir = extractHyphenationPatterns()
         CrengineNative.nativeInit(fontPaths, hyphDir)
     }

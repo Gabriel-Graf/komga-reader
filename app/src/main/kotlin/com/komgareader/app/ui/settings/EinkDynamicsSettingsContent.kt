@@ -61,7 +61,7 @@ fun EinkDynamicsSettingsContent(viewModel: SettingsViewModel) {
     when (val picker = openPicker) {
         is OpenPicker.Refresh -> {
             val profile = profiles[picker.context] ?: EinkContextProfile()
-            val options = buildModeOptions(s.einkModeDeviceDefault, refreshModes)
+            val options = buildModeOptions(s.einkModeDeviceDefault, refreshModes) { refreshModeLabel(s, it) }
             PickerModal(
                 title = "${contextLabel(s, picker.context)} – ${s.einkAxisRefresh}",
                 options = options,
@@ -77,7 +77,7 @@ fun EinkDynamicsSettingsContent(viewModel: SettingsViewModel) {
         }
         is OpenPicker.Color -> {
             val profile = profiles[picker.context] ?: EinkContextProfile()
-            val options = buildModeOptions(s.einkModeDeviceDefault, colorModes)
+            val options = buildModeOptions(s.einkModeDeviceDefault, colorModes) { colorModeLabel(s, it) }
             PickerModal(
                 title = "${contextLabel(s, picker.context)} – ${s.einkAxisColor}",
                 options = options,
@@ -114,11 +114,20 @@ private const val KEY_DEVICE_DEFAULT = "__device_default__"
 private fun String.nullIfDeviceDefault(): String? =
     if (this == KEY_DEVICE_DEFAULT) null else this
 
-/** Prepend the "Device default" entry before the device-advertised modes. */
-private fun buildModeOptions(defaultLabel: String, modes: List<EinkModeOption>): List<ModeEntry> =
+/**
+ * Prepend the "Device default" entry before the device-advertised modes.
+ *
+ * [labelOf] maps each [EinkModeOption] to its display label — pass [refreshModeLabel] or
+ * [colorModeLabel] so that known mode ids show the i18n label instead of the raw device string.
+ */
+private fun buildModeOptions(
+    defaultLabel: String,
+    modes: List<EinkModeOption>,
+    labelOf: (EinkModeOption) -> String,
+): List<ModeEntry> =
     buildList {
         add(ModeEntry(KEY_DEVICE_DEFAULT, defaultLabel))
-        modes.forEach { add(ModeEntry(it.id, it.label)) }
+        modes.forEach { add(ModeEntry(it.id, labelOf(it))) }
     }
 
 /** Localised label for each [EinkContext]. */

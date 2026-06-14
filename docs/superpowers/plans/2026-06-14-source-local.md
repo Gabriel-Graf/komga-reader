@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-14-local-source-design.md` (read it first).
 
+> CBR decision (Task 0): **IN** — the app already renders downloaded Komga CBR via MuPDF whole-file (`ReaderContent.kt:30` "CBZ/CBR/PDF offline"; `KomgaFormat` maps `application/x-rar-compressed`→`CBR`). LocalSource handles CBR exactly like PDF: `pages()` empty → reader whole-file MuPDF render (no junrar, no zip-extract — RAR isn't zip). Confirm with a real `.cbr` sample in the E2E (Task 12); if MuPDF can't open it on-device, drop `cbr` from `BOOK_EXTENSIONS` then.
+
 ---
 
 ## File Structure
@@ -225,9 +227,9 @@ import com.komgareader.domain.model.BookFormat
 /** Recognized book extensions. CBR included iff Task 0 decided "in". */
 private val BOOK_EXTENSIONS: Map<String, BookFormat> = mapOf(
     "cbz" to BookFormat.CBZ,
+    "cbr" to BookFormat.CBR, // CBR IN (Task 0) — whole-file MuPDF, like PDF
     "pdf" to BookFormat.PDF,
     "epub" to BookFormat.EPUB,
-    // "cbr" to BookFormat.CBR,  // uncomment iff Task 0 decided CBR is in
 )
 
 private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp")

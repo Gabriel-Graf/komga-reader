@@ -81,6 +81,7 @@ class SettingsViewModelTest {
             noOpCoordinator(),
             mockk(relaxed = true),
             stubEinkController(),
+            mockk(relaxed = true),
         )
     }
 
@@ -95,6 +96,7 @@ class SettingsViewModelTest {
             noOpCoordinator(),
             mockk(relaxed = true),
             stubEinkController(),
+            mockk(relaxed = true),
         )
     }
 

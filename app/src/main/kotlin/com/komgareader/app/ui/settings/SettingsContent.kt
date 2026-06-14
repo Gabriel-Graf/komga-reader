@@ -161,6 +161,10 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
                 modal = null
                 pendingPlugin = plugin
             },
+            onPickLocalFolder = { name, uri ->
+                viewModel.saveLocalFolder(name, uri)
+                modal = null
+            },
         )
         is ConnectionModal.Edit -> EditConnectionModal(
             config = mode.config,
@@ -201,8 +205,10 @@ private fun AddConnectionModal(
     ) -> Unit,
     sourcePlugins: List<DiscoveredPlugin>,
     onPluginSelected: (DiscoveredPlugin) -> Unit,
+    onPickLocalFolder: (name: String, uri: String) -> Unit,
 ) {
     val s = LocalStrings.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var nameInput by remember { mutableStateOf("") }
     var urlInput by remember { mutableStateOf("") }
@@ -210,6 +216,20 @@ private fun AddConnectionModal(
     var usernameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
     var kindInput by remember { mutableStateOf(SourceKind.KOMGA) }
+
+    // SAF-Ordnerwahl für die lokale Quelle: persistierbare Leserechte sofort übernehmen,
+    // den Ordnernamen als Anzeigename verwenden und über onPickLocalFolder speichern (Parent schließt das Modal).
+    val pickFolder = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+            val folderName = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)?.name ?: "Local"
+            onPickLocalFolder(folderName, uri.toString())
+        }
+    }
 
     EinkModal(
         title = s.addServer,
@@ -219,8 +239,10 @@ private fun AddConnectionModal(
             onSave(nameInput, urlInput, apiKeyInput, usernameInput, passwordInput, kindInput, 0L)
         },
         dismissLabel = s.cancel,
-        // Plugin-Pfad: kein Speichern über EinkModal-Button — onPluginSelected übernimmt.
-        confirmEnabled = kindInput != SourceKind.PLUGIN && nameInput.isNotBlank() && urlInput.isNotBlank(),
+        // Plugin- und Lokal-Pfad: kein Speichern über EinkModal-Button — onPluginSelected bzw.
+        // der Ordner-Picker (onPickLocalFolder) übernimmt das Speichern und Schließen.
+        confirmEnabled = kindInput != SourceKind.PLUGIN && kindInput != SourceKind.LOCAL &&
+            nameInput.isNotBlank() && urlInput.isNotBlank(),
     ) {
         // Quellenart: Komga (REST), OPDS (Feed) oder Plugin als Segment-Selektor.
         SegmentedChoiceRow(
@@ -228,13 +250,23 @@ private fun AddConnectionModal(
             options = listOf(
                 SegmentOption(SourceKind.KOMGA.name, "Komga"),
                 SegmentOption(SourceKind.OPDS.name, "OPDS"),
+                SegmentOption(SourceKind.LOCAL.name, s.serverKindLocal),
                 SegmentOption(SourceKind.PLUGIN.name, s.serverKindPlugin),
             ),
             selectedKey = kindInput.name,
             onSelect = { kindInput = SourceKind.valueOf(it) },
         )
 
-        if (kindInput == SourceKind.PLUGIN) {
+        if (kindInput == SourceKind.LOCAL) {
+            // Lokaler-Ordner-Pfad: keine URL/Auth — nur einen SAF-Ordner wählen.
+            // Der Picker speichert und schließt das Modal selbst (kein EinkModal-Confirm).
+            EinkOutlinedButton(
+                onClick = { pickFolder.launch(null) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(s.localFolderPick)
+            }
+        } else if (kindInput == SourceKind.PLUGIN) {
             // Plugin-Pfad: Liste entdeckter Quellen-Plugins; leer → Hinweis.
             if (sourcePlugins.isEmpty()) {
                 Text(

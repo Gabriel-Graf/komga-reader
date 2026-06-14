@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.PluginCatalog
@@ -25,6 +26,7 @@ import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.usecase.ReaderPresetSink
 import com.komgareader.domain.usecase.applyReaderPreset
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -41,6 +43,7 @@ class SettingsViewModel @Inject constructor(
     private val coordinator: SyncCoordinator,
     private val catalog: PluginCatalog,
     private val einkController: EinkController,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -101,6 +104,15 @@ class SettingsViewModel @Inject constructor(
             servers.save(pluginServerConfig(plugin, values))
             coordinator.onServerChanged()
         }.let {}
+
+    /**
+     * Persists a local-folder source (kind = LOCAL): the SAF tree-uri is stored in [ServerConfig.baseUrl];
+     * a local folder needs no url/apiKey/credentials. The picker already took the persistable permission.
+     */
+    fun saveLocalFolder(name: String, treeUri: String) = viewModelScope.launch {
+        servers.save(ServerConfig(name = name, baseUrl = treeUri, kind = SourceKind.LOCAL))
+        coordinator.onServerChanged()
+    }.let {}
 
     fun applyReaderPreset(preset: ReaderPreset) {
         applyReaderPreset(
@@ -188,6 +200,15 @@ class SettingsViewModel @Inject constructor(
     /** Entfernt eine Server-Verbindung (per Rowid) und räumt die lokalen Sammlungs-Daten dieser Quelle auf. */
     fun removeServer(id: Long) = viewModelScope.launch {
         val cfg = servers.configs.first().firstOrNull { it.id == id }
+        // Local-folder source: release the persisted SAF permission so we don't leak grants.
+        if (cfg?.kind == SourceKind.LOCAL) {
+            runCatching {
+                context.contentResolver.releasePersistableUriPermission(
+                    android.net.Uri.parse(cfg.baseUrl),
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+        }
         servers.remove(id)
         cfg?.let { registration.sourceIdOf(it) }?.let { collections.removeSource(it) }
     }.let {}

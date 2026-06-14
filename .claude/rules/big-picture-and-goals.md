@@ -139,6 +139,16 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
      `PluginRepoClient.fetchText` lädt das README, `resolveRepoUrl` löst relative URLs). `license` wird in P1 nur
      **angezeigt** (Allowlist/Block = Font-Plugins P2). **Soll (späterer Slice):** Auto-Refresh/Update-Badge,
      Plugin-Icons, Signierung des Index selbst.
+   - **(d) Panel-Modelle (ML) — Ist: data-only Kategorie + Engine-Tausch gebaut (2026-06-14):** über die
+     generische data-only-Discovery kam die 5. Kategorie `PluginCategory.PANEL_MODEL` (ABI-Bump
+     `VERSION=2`→`3`). Ein PANEL_MODEL-Plugin shippt ein **binäres ONNX-Modell** als Asset
+     (`DATA_CATEGORY=PANEL_MODEL`, `DATA_ASSET=<modell>.onnx`, `ABI_VERSION=3`). Weil das Asset mehrere MB
+     groß ist, gibt es eine **binär-/metadaten-getrennte** Discovery (`DataPluginInfo`,
+     `discoverDataPluginInfos` metadata-only; `binaryDataPluginBytes` liest die Bytes lazy). Die Comic-
+     Panel-Erkennung selbst wurde aus dem In-Tree-Modul `:guided-view` (gelöscht) in die externe Lib
+     **comic-cutter** ausgelagert; der `PanelSourceProvider` wählt geometrisch (Default) oder ML
+     (`MlPanelSource`+ONNX, wenn `useMlDetection` an **und** ein PANEL_MODEL-Plugin installiert), degradiert
+     sauber. Details: Naht B + Naht-A-Panel-Modell-Item in `architecture-seams.md`.
    - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert
      `BrowsableSource`-Impls → `PluginHost.sourceFor(...)` → `SourceRegistration` → `SourceManager`.
      Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored) ist das erste
@@ -146,7 +156,8 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
      E2E gegen Live-Kavita noch offen (separater Task).
    - **(b) UI-Views — riskant, ZULETZT, eingeschränkt:** **kein** beliebiges Compose (Compiler-Kopplung,
      Crash reißt Host mit, Host-Rechte, E-Ink-Invarianten nicht erzwingbar). Stattdessen **deklarativ**:
-     Plugin liefert eine *Beschreibung* (Tap-Zonen→Aktion, Panel-Strategie wie der pure `guided-view`),
+     Plugin liefert eine *Beschreibung* (Tap-Zonen→Aktion, Panel-Strategie wie der pure Panel-Detektor
+     der `comic-cutter`-Lib),
      der **Host** rendert + steuert Refresh. Voraussetzung: erst die `Viewer`-Naht extrahieren
      (`shared-structure-before-variants.md`), die UI-Plugin ist dann deren 5. Impl, keine Parallel-Linie.
 

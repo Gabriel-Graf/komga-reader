@@ -48,7 +48,7 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 | `plugin-host` | Runtime-Loader (`PluginHost`, `AbiGate`, `DiscoveredPlugin`, TOFU-Pinning, `PathClassLoader`) | `app`-Schicht (UI); wird von Hilt in `app` bereitgestellt |
 | `render-core` | `Document`/`DocumentFactory` + MuPDF-JNI (Naht B) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx-SDK, HW-gated) | UI, Quellen |
-| `guided-view` | Panel-Erkennung (pure Kotlin XY-Cut) | Engine, UI |
+| ~~`guided-view`~~ | **entfernt** — Panel-Erkennung ist jetzt die externe Lib **comic-cutter** (`io.github.gabriel-graf:comic-cutter-jvm` + `comic-cutter-onnx-jvm`, Paket `com.panela.comiccutter.*`), verdrahtet über `PanelSourceProvider` (`app`). Geometrisch (`GeometricPanelSource`) per Default, ML (`MlPanelSource`+ONNX) bei `PANEL_MODEL`-Plugin (Naht B) | — |
 | `ui-api` | UI-Pack/Slot/Shell/Theme/Icon-**Verträge** (Capability-Surfaces, Slot-typealias, `UiSlotPack`/`ResolvedSlots`/`UiSlots`, `AppShellState`/`ShellPack`, `UiPack` + Theme-Packs + `DesignTokens`, Icon-Stack) + die **entkoppelten Built-ins** (Theme-Packs, Icon-Glyphen). DAG `domain → ui-api → app` (A1) | ViewModels, Netz, Quellen; hängt nur an `domain` + Compose |
 | `data` | Room-Impls, Sync-Queue, Download-Manager | UI |
 | `app` | Compose-UI, ViewModels, DI, Reader-Host, **gekoppelte Default-Renderer** (`DefaultSlots`/`DefaultHeader`/`DefaultShell`/`PhoneShell`/`buildSettingsSections`, `Theme.kt`-Host) | — (oberste Schicht) |
@@ -63,4 +63,4 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 - `@.claude/rules/roadmap-and-invariants.md` — Phasen P1–P4, was noch kommt, was nicht aus den Augen verloren werden darf
 - `@.claude/rules/shared-structure-before-variants.md` — Gemeinsames vor der N-ten Variante extrahieren (schon beim Planen mitdenken)
 
-> Lizenz: **AGPL-3.0-or-later** (MuPDF ist AGPL). Jede Verteilung legt den Quellcode offen. `LICENSE`/`NOTICE` im Root.
+> Lizenz: **AGPL-3.0-or-later** (MuPDF ist AGPL; comic-cutter ist ebenfalls AGPL-3.0). Jede Verteilung legt den Quellcode offen. `LICENSE`/`NOTICE` im Root.

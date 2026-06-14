@@ -95,11 +95,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Settings-Seite: Settings „Server hinzufügen" listet entdeckte Plugins, zeigt TOFU-Trust-Dialog
   (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
 - **Data-only Discovery generalisiert (Ist, 2026-06-12):** Die data-only-Mechanik ist jetzt
-  **kategorisiert**: `PluginCategory{COLOR_PRESET,READER_PRESET,LANGUAGE,UI_PACK}` (plugin-api, ABI
-  `VERSION=2`/`MIN_SUPPORTED=1`, additiv). Manifest-Keys `DATA_CATEGORY`+`DATA_ASSET` (mit
+  **kategorisiert**: `PluginCategory{COLOR_PRESET,READER_PRESET,LANGUAGE,UI_PACK,PANEL_MODEL}`
+  (plugin-api, ABI `VERSION=3`/`MIN_SUPPORTED=1`, additiv — `PANEL_MODEL` ist seit 2026-06-14 die
+  5. Kategorie, der `VERSION`-Bump 2→3 kam mit ihr). Manifest-Keys `DATA_CATEGORY`+`DATA_ASSET` (mit
   Legacy-Alias `COLOR_PRESETS`). `PluginHost.discoverDataPlugins(category)` ist die generische
-  Discovery (reiner `resolveDataPluginManifest`-Helfer); `discoverColorPresetPlugins()` ist nur
-  noch ein dünner Wrapper darüber (+ `parsePresetSpecs`). Reader-Preset-/Sprach-Plugins (Spec 2)
+  Discovery; der **geteilte private `scanDataPluginManifests`**-Helfer (über
+  `resolveDataPluginManifest`) trägt sie, und beide Metadata-Discovery-Methoden
+  (`discoverDataPlugins`/`discoverDataPluginInfos`) delegieren an ihn; `discoverColorPresetPlugins()`
+  ist nur noch ein dünner Wrapper darüber (+ `parsePresetSpecs`). Reader-Preset-/Sprach-Plugins (Spec 2)
   hängen sich als neue Kategorien ein, ohne Discovery-Umbau. **Distribution:** kein `/plugins/`
   im App-Repo — alle Plugins (gebaute APKs + `repo.json`-Index) leben im separaten
   Distributions-Repo `Gabriel-Graf/KomgaReaderPlugins` (`PluginRepoDefaults.OFFICIAL_URL`); der
@@ -136,8 +139,23 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   unverändert). Sample-APK `plugin/komga-ui-pack-sample/` (Standalone, gitignored). **Kein** ui-api-Code-ABI-
   Freeze in L2 (data-Packs linken kein ui-api — der Vertrag ist das JSON-Schema); Code-UI-Packs/externe
   per-Slot-Packs bleiben additives Soll.
-- **Font-Plugins (Ist, 2026-06-14, P2):** fünfte data-only Kategorie `PluginCategory.FONT` über
-  `discoverDataPlugins(FONT)` (additiv, `PluginAbi.VERSION` bleibt 2) — ein **extern installierbarer** APK
+- **Panel-Modell-Plugin (Ist, 2026-06-14, ML-Panel-Detektor):** fünfte data-only Kategorie
+  `PANEL_MODEL` (ABI-Bump `VERSION=2`→`3`). Ein PANEL_MODEL-Plugin ist ein **data-only APK**, das ein
+  binäres **ONNX-Modell** als Asset shippt (Manifest `DATA_CATEGORY=PANEL_MODEL`,
+  `DATA_ASSET=<modell>.onnx`, `ABI_VERSION=3`). **Besonderheit gegenüber den anderen data-Kategorien:**
+  das Asset ist mehrere MB groß, darf also **nie beim Scan** gelesen werden. Darum hat `plugin-host`
+  jetzt eine **Binär-/Metadaten-getrennte** Discovery: `DataPluginInfo` (nur Metadaten, keine
+  Asset-Bytes), `PluginHost.discoverDataPluginInfos(category)` (metadata-only, für Listen/UI) und
+  `PluginHost.binaryDataPluginBytes(category): ByteArray?` (liest das ONNX **lazy**, nur wenn wirklich
+  gebraucht). Der `PanelSourceProvider` (Naht B oben) verbraucht `binaryDataPluginBytes`. Repo-Schicht:
+  `PluginKind.PANEL_MODEL`, `pluginKindOf("panel_model")`, `PluginTypeFilter.PANEL_MODELS`. Discovery
+  metadata-only in `PluginCatalog`; der Plugins-Tab listet + filtert sie (Label „Panel-Modell", Filter
+  „Panel-Modelle"); das Plugin-Info-Modal kennt den neuen Kind. Persistierte Einstellung **`useMlDetection`**
+  (`SettingsRepository`, Default **true**, Room-Key `use_ml_detection`, **keine** Migration; Toggle in
+  Settings → Comic). Distribution wie die anderen Kategorien über `KomgaReaderPlugins` (`type:panel_model`,
+  `abiVersion:3`).
+- **Font-Plugins (Ist, 2026-06-14, P2):** sechste data-only Kategorie `PluginCategory.FONT` über
+  `discoverDataPlugins(FONT)` (additiv; `PluginAbi.VERSION` ist 3, von PANEL_MODEL gebumpt) — ein **extern installierbarer** APK
   liefert TTFs als Assets (Manifest `DATA_CATEGORY=FONT`/`DATA_ASSET=<index.json>`/`LICENSE=<SPDX>`,
   `android:hasCode="false"`, `assets/fonts/*.ttf`). `DiscoveredDataPlugin` trägt dafür jetzt `license` +
   `versionCode`; Manifest-Key `PluginManifestKeys.LICENSE` neu. `PluginHost.extractFontAsset(pkg, assetPath,
@@ -232,6 +250,34 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `ReaderEinkHolder`, `Viewer.refreshScheduler`-Property, `deviceManagedRefresh`-Setting,
   `ReaderPresetOverrides.deviceManagedRefresh`-Feld (Legacy-JSON-Key wird beim Lesen ignoriert),
   `enterFastMode`/`fullRefreshNow`/`fullRefreshIfNeeded` in `OnyxEinkController`.
+- **Panel-Erkennungs-Naht (Ist, 2026-06-14 — externe Lib + ML-Tausch):** Die Comic-Panel-Erkennung
+  (geführter Comic-Reader) sitzt **nicht mehr** im gelöschten In-Tree-Modul `:guided-view`, sondern
+  in der **veröffentlichten Lib `comic-cutter`** (`io.github.gabriel-graf:comic-cutter-jvm:0.3.1` +
+  `comic-cutter-onnx-jvm:0.3.1`, Paket `com.panela.comiccutter.*`; + `com.microsoft.onnxruntime:
+  onnxruntime-android` für die ML-Runtime). Die Lib ist der alte guided-view-Detektor als Artefakt
+  (identische Klassen `PanelDetector`/`PanelGeometry`/`NormRect`/`PanelRect`/`GuidedNavigator`/
+  `GuidedPosition`/`ReadingOrder`/`ReadingDirection`) **plus** ein ML-Stack (`PanelSource`,
+  `GeometricPanelSource`, `MlPanelSource`, `MlFilter`, `ModelRunner`, `OnnxModelRunner` —
+  Letztere im Unter-Paket `com.panela.comiccutter.onnx`). **Die Naht ist `PanelSource`:** der
+  `@Singleton` **`PanelSourceProvider`** (`app/ui/reader/PanelSourceProvider.kt`) liefert die zu
+  nutzende `com.panela.comiccutter.PanelSource` — `GeometricPanelSource()` per Default, oder
+  `MlPanelSource(OnnxModelRunner(bytes), MlFilter(...))`, wenn `SettingsRepository.useMlDetection`
+  an ist **und** ein `PANEL_MODEL`-Plugin installiert ist (`PluginHost.binaryDataPluginBytes`); jeder
+  Fehler (kein Plugin, ONNX-Init) **degradiert sauber** auf geometrisch, die gewählte Quelle wird
+  gecacht. `ComicReaderViewModel` injiziert den Provider; `ComicPageLoader.detect(page, panelSource)`
+  erkennt und **sortiert das Ergebnis in Lesereihenfolge** (`ReadingOrder.sort(panels,
+  LEFT_TO_RIGHT)` — die ML-Quelle liefert Confidence-Reihenfolge, geometrisch war schon sortiert →
+  idempotent). Alles dahinter (`PanelGeometry.normalize`, der Degenerate-Guard
+  `<2 Panels || maxAreaFraction>0.85`, `GuidedNavigator`-Stepping, die E-Ink-Dynamik-Verdrahtung)
+  ist **unverändert** — der Reader ist agnostisch gegen geometrisch-vs-ML.
+  **Verhaltens-Vorbehalt:** der geometrische `PanelDetector` der Lib hat einen anderen Algorithmus
+  als der alte In-Tree-Detektor (mit Merge-über-Split-Arbitrierung), darum können geometrische
+  Panel-*Ergebnisse* leicht von früher abweichen — erwartet, kein Regress.
+  **Dependency-Hinweis:** comic-cutter wird in der Entwicklung aus `mavenLocal()` aufgelöst
+  (content-gefiltert auf `io.github.gabriel-graf`); die öffentliche JitPack/Maven-Central-Koordinate
+  muss vor CI eingesetzt werden (TODO in `settings.gradle.kts`). Das `-jvm`-Artefakt wird direkt
+  gelinkt (die KMP-Wurzel publiziert nur jvm/js, kein android) — pures Kotlin/JVM, Android konsumiert
+  es; keine `abiFilters`. Dependency-Verification ist „trust-all-except-Onyx", daher keine neuen Pins.
 - **Reader / Viewer-Naht (Ist, 2026-06-08; aktualisiert 2026-06-13):** Es gibt den **`Viewer`**-Vertrag
   (`app/ui/reader/Viewer.kt`) — eine **Compose-Zustands**-Naht (chromeVisible-`StateFlow`,
   `toggleChrome`/`navigateTo`/`onPageSettled`), **nicht** das alte OO-`bind/onButton/teardown`
@@ -511,7 +557,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 
 - `domain` hat **keine** Android-/Netz-/Quellen-Abhängigkeit. Pure Kotlin, pure Unit-Tests.
 - Quellen-Module hängen nur von `domain` ab, nie voneinander, nie von `app`.
-- `render-core`, `eink-onyx`, `guided-view` hängen nicht von der UI ab.
+- `render-core`, `eink-onyx` hängen nicht von der UI ab. (Das frühere `guided-view` ist entfernt —
+  Panel-Erkennung ist jetzt die externe Lib `comic-cutter`, verdrahtet in `app` über `PanelSourceProvider`.)
 - `app` ist die imperative Shell (DI, ViewModels, Viewer-Host) — die einzige Schicht, die alles verdrahtet.
 - Wenn ein Feature einen neuen Cross-Modul-Import nötig zu machen scheint: erst prüfen, ob es nicht
   hinter eine bestehende Naht gehört.

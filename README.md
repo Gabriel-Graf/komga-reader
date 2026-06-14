@@ -42,7 +42,7 @@ packs — while the host keeps enforcing the E‑Ink correctness rules no pack c
 | Area | What works today |
 |---|---|
 | **Sources** | Komga (REST) and OPDS, **multiple servers at once, mixed**. Per‑work source resolution. Kavita via plugin. |
-| **Reading modes** | Paged comics, vertical **Webtoon** scroll, **Guided Comic** (panel‑by‑panel zoom, automatic panel detection), **Novel** EPUB reflow (crengine‑ng with hyphenation + bundled reading fonts). |
+| **Reading modes** | Paged comics, vertical **Webtoon** scroll, **Guided Comic** (panel‑by‑panel zoom, automatic panel detection via the comic‑cutter library — geometric by default, optional ONNX **ML** detector via a `PANEL_MODEL` plugin), **Novel** EPUB reflow (crengine‑ng with hyphenation + bundled reading fonts). |
 | **Devices** | Mono E‑Ink, colour E‑Ink (Kaleido), LCD phone/tablet — motion and accent‑colour gated **per device class** on two orthogonal axes. |
 | **E‑Ink** | Onyx refresh control (fast mode + device‑managed full refresh), no‑op fallback off‑device, no animations in E‑Ink mode. |
 | **Colour filter** | Per‑profile saturation / contrast / brightness applied to **both covers and reader pages** (Kaleido‑tuned built‑in profile). |
@@ -87,7 +87,6 @@ behind the interface — never a core change.** Full detail in
 | `render-core` | `Document` + MuPDF JNI (Seam B render) | UI |
 | `render-crengine` | crengine‑ng EPUB reflow engine (JNI, arm64‑v8a) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx SDK, hardware‑gated) | UI, sources |
-| `guided-view` | Pure‑Kotlin panel detection (XY‑cut) | engine, UI |
 | `ui-api` | UI pack / slot / shell / theme / icon **contracts** + decoupled built‑ins | ViewModels, network, sources |
 | `data` | Room persistence, sync queue, download manager | UI |
 | `plugin-api` · `plugin-host` · `plugin-sdk` | Plugin ABI contract, runtime loader (TOFU, `PathClassLoader`), shaded SDK jar | UI |
@@ -96,6 +95,11 @@ behind the interface — never a core change.** Full detail in
 The Gradle module graph **enforces** these boundaries: `domain` is pure Kotlin with only a
 coroutines dependency; every other module depends on `domain` (and `source-api` / `plugin-api`
 where relevant), never on `app`, never on each other across seams.
+
+Comic **panel detection** is no longer an in‑tree module — it lives in the published
+**comic‑cutter** library (`io.github.gabriel-graf:comic-cutter-jvm` + `comic-cutter-onnx-jvm`),
+wired in `app` via `PanelSourceProvider`: geometric detection by default, or an ONNX **ML**
+detector when a `PANEL_MODEL` plugin is installed and ML detection is enabled.
 
 ---
 
@@ -179,7 +183,6 @@ source-opds/       OPDS source
 render-core/       MuPDF render engine (JNI)
 render-crengine/   crengine-ng EPUB reflow engine (JNI, arm64-v8a, committed prefix)
 eink-onyx/         Onyx E-Ink refresh controller (hardware-gated)
-guided-view/       panel detection for guided comic reading
 ui-api/            UI pack / slot / shell / theme / icon contracts
 data/              Room persistence, sync queue, downloads
 plugin-api/        plugin ABI contract
@@ -219,14 +222,16 @@ respects them.
 ## License
 
 **AGPL‑3.0‑or‑later.** This app links MuPDF (AGPL) and crengine‑ng (GPL‑2.0‑or‑later) via JNI,
-so the combined work is AGPL. **Every distribution must make the complete source available.**
+and the comic‑cutter panel‑detection library (AGPL‑3.0), so the combined work is AGPL.
+**Every distribution must make the complete source available.**
 
 Full license text in [LICENSE](LICENSE); third‑party attributions in [NOTICE](NOTICE);
 native dependency provenance (versions, SPDX identifiers, build recipe) in
 [render-crengine/native/PROVENANCE.md](render-crengine/native/PROVENANCE.md).
 
-Bundled assets: MuPDF (AGPL), crengine‑ng (GPL‑2.0‑or‑later), Lucide icons (ISC), DejaVu Sans
-(Bitstream Vera), Literata & Bitter (OFL‑1.1), TeX hyphenation patterns (MIT / permissive).
+Bundled assets: MuPDF (AGPL), crengine‑ng (GPL‑2.0‑or‑later), comic‑cutter (AGPL‑3.0),
+ONNX Runtime (MIT), Lucide icons (ISC), DejaVu Sans (Bitstream Vera), Literata & Bitter
+(OFL‑1.1), TeX hyphenation patterns (MIT / permissive).
 
 Key UI dependency: [multiplatform-markdown-renderer](https://github.com/mikepenz/multiplatform-markdown-renderer)
 (Apache‑2.0, by Mike Penz) renders plugin READMEs in the in‑app plugin info modal.

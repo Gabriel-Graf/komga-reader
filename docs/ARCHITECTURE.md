@@ -41,7 +41,9 @@ The seams are where concrete implementations plug in.
 - `source-api` defines the Seam‑A contract and depends only on `domain`.
 - `source-komga`, `source-opds` depend on `domain` + `source-api`, never on each other, never on
   `app`.
-- `render-core`, `render-crengine`, `eink-onyx`, `guided-view` depend only on `domain`.
+- `render-core`, `render-crengine`, `eink-onyx` depend only on `domain`. (The former `guided-view`
+  module was removed; panel detection is now the external **comic-cutter** library, wired in `app`
+  via `PanelSourceProvider`.)
 - `ui-api` depends on `domain` + Compose — the DAG is `domain → ui-api → app`. It is the UI
   counterpart of `source-api`.
 - `data` depends on `domain` (+ `plugin-api` for preset import).
@@ -116,7 +118,11 @@ session, shared by all readers.
 
 Four reading modes (`ViewerType`: `PAGED`, `WEBTOON`, `NOVEL`, `COMIC`) are dispatched in
 `ReaderRoute.kt`. The **guided comic** reader (`ComicReaderScreen` + `ComicReaderViewModel`) does
-panel‑by‑panel zoom driven by the pure‑Kotlin XY‑cut panel detector in `guided-view`.
+panel‑by‑panel zoom. Panel detection comes from the published **comic‑cutter** library
+(`com.panela.comiccutter.*`) behind a `PanelSource` seam, chosen by `PanelSourceProvider`:
+`GeometricPanelSource` by default, or an ONNX‑backed `MlPanelSource` when ML detection is enabled
+(`useMlDetection`) and a `PANEL_MODEL` data‑plugin is installed. `ComicPageLoader` sorts the detected
+panels into reading order (`ReadingOrder.sort`); the reader is agnostic to geometric‑vs‑ML.
 
 ---
 
@@ -208,9 +214,9 @@ brightness before display:
 A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no downloaded `.dex`):
 
 - **`plugin-api`** (pure JVM): the ABI contract — `SourcePlugin`, `PluginMetadata`,
-  `ConfigSchema`, `PluginAbi` (two integers: `VERSION` / `MIN_SUPPORTED`),
-  `PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK, FONT }`. It `api(project(":source-api"))`,
-  re‑exporting the Seam‑A types.
+  `ConfigSchema`, `PluginAbi` (two integers: `VERSION` = 3 / `MIN_SUPPORTED` = 1),
+  `PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK, PANEL_MODEL, FONT }`. It
+  `api(project(":source-api"))`, re‑exporting the Seam‑A types.
 - **`plugin-host`** (Android lib): `PluginHost` discovers installed plugin APKs
   (`QUERY_ALL_PACKAGES`), `AbiGate` checks the two‑int range, and loading uses
   `PathClassLoader(sourceDir, nativeLibDir, hostClassLoader)`. **Trust model: TOFU** — a plugin
@@ -218,8 +224,13 @@ A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no download
   add.
 - **`plugin-sdk`**: a single **shaded** jar (`plugin-api` + `source-api` + `domain`, no
   relocation, clean POM) — the one `compileOnly` artifact external plugin authors link.
-- **Categories:** source plugins (e.g. Kavita, code APK) and data‑only packs (colour presets,
-  reader presets, languages, UI packs, fonts). Data‑only packs ship a JSON asset and `hasCode="false"`.
+  reader presets, languages, UI packs, **panel models**, fonts). Most data‑only packs ship a JSON
+  asset and `hasCode="false"`.
+- **Panel‑model plugins** (`PluginCategory.PANEL_MODEL`, data‑only): a pack ships a binary **ONNX**
+  model as its asset (multi‑MB); because of the asset size, `PluginHost` exposes a binary/metadata‑split
+  discovery (`discoverDataPluginInfos` for metadata‑only listing, `binaryDataPluginBytes` to read the
+  model bytes lazily) so scans never load the model. The comic reader's `PanelSourceProvider` consumes
+  it for ML panel detection (see Render seam).
 - **Font plugins** (`PluginCategory.FONT`, data‑only): an APK ships `assets/fonts/*.ttf` + an index
   asset (manifest `DATA_CATEGORY=FONT`, `DATA_ASSET`, `LICENSE=<SPDX>`). `PluginHost.extractFontAsset`
   copies the TTF to permanent version‑keyed storage (`filesDir/plugin-fonts/<pkg>/<versionCode>/…`),

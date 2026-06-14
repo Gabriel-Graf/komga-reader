@@ -9,7 +9,8 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
 - **Phase 1 / MVP — ✅ fertig:** Komga verbinden → Bibliothek → PagedViewer streamen → Boox-Tasten +
   Basis-Refresh → Progress-Sync. Beweist die ganze Pipeline.
 - **Phase 2 — ✅ fertig:** WebtoonViewer + EpubViewer · Download/Offline · Regal-Verwaltung
-  (mehrere Quellen, Typ-Tag) · OPDS-Quelle · Guided-View-Panel-Erkennung (`guided-view`, Detektor).
+  (mehrere Quellen, Typ-Tag) · OPDS-Quelle · geführter Comic-Reader inkl. Panel-Erkennung (heute
+  über die externe Lib **comic-cutter**; das frühere In-Tree-Modul `guided-view` ist entfernt).
 - **Phase 3 — offen:** Cover-Farbfilter (Kaleido-Sättigung/Kontrast vor Anzeige) · per-Region-Refresh-
   Feintuning · erweiterte E-Ink-Settings · **weiterer Server: Kavita** (`source-kavita` nach Naht A).
 - **Phase 4 — offen:** **Runtime-Plugin-Loader** (nutzer-installierbare Online-Quellen, Mihon-Modell) ·
@@ -17,8 +18,11 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
 
 ## Noch offen / nicht vergessen (auch außerhalb der Phasen)
 
-- **Guided-View-UI:** Detektor (`guided-view`, pure-Kotlin XY-Cut) ist fertig — es fehlt die UI
-  (Tap → Panel-Zoom → Weiter), hinter `Viewer`-Interface, engine-unabhängig.
+- **Geführter Comic-Reader — gebaut (Ist):** `ComicReaderScreen`/`ComicReaderViewModel` (Tap →
+  Panel-Zoom → Weiter, hinter `Viewer`-Naht). Die Panel-Erkennung liefert die externe Lib
+  **comic-cutter** über `PanelSourceProvider` — geometrisch per Default, **ML via ONNX** bei
+  installiertem `PANEL_MODEL`-Plugin + `useMlDetection`. (Das frühere „UI fehlt noch"-Item ist
+  damit erledigt — die UI ist längst da.)
 - **Bekannte Minor-Issues** (siehe [[project-komga-eink-reader]]): Reader fängt Volume-Tasten global ab
   (sollte nur im Reader); Streaming-PagedViewer nutzt Komga-fertige Seitenbilder via Coil, nicht MuPDF.
 - **Plugin-Bereitschaft wahren:** keine quellenspezifischen Annahmen ins `MediaSource`-Interface backen

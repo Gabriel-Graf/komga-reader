@@ -6,8 +6,11 @@ description: Use when touching the Guided Comic Reader in the Komga-Reader (View
 # Guided Comic Reader (Domain-/Reader-Regel)
 
 Comic-Lesemodus für E-Ink: im Kern Paged-Reader (volle Seite, Seitenblättern) +
-**Panel-für-Panel-Zoom**. Naht-konform — Detektor sitzt in `guided-view`, Pixel kommen
-aus Coil, Streaming bleibt. Volltext: `docs/superpowers/specs/2026-06-06-guided-comic-reader-design.md`.
+**Panel-für-Panel-Zoom**. Naht-konform — die Panel-Erkennung liefert die externe Lib **comic-cutter**
+(`io.github.gabriel-graf:comic-cutter-jvm` + `comic-cutter-onnx-jvm`, Paket `com.panela.comiccutter.*`)
+über die `PanelSource`-Naht (geometrisch ODER ML); Pixel kommen aus Coil, Streaming bleibt. Das frühere
+In-Tree-Modul `:guided-view` ist gelöscht. Volltext:
+`docs/superpowers/specs/2026-06-06-guided-comic-reader-design.md`.
 
 ## Auflösung — `ViewerType.COMIC`
 
@@ -25,19 +28,30 @@ wechselt von PAGED auf COMIC. App: `ViewerMode.COMIC`, `ReaderRoute` → `ComicR
 
 Kein Voll-Download fürs Streaming. Ablauf je Seite:
 Coil dekodiert die Komga-Seite → Bitmap abgreifen → auf ~1000px Breite **downscalen** →
-`RenderedPage` (ARGB-IntArray) → `PanelDetector.detect(page, direction)`.
+`RenderedPage` (ARGB-IntArray) → `ComicPageLoader.detect(page, panelSource)` ruft die vom
+`PanelSourceProvider` gelieferte `com.panela.comiccutter.PanelSource` auf und **sortiert** das Ergebnis
+mit `ReadingOrder.sort(panels, LEFT_TO_RIGHT)` in Lesereihenfolge. **Diese Sortierung ist Pflicht:** die
+ML-`PanelSource` liefert Panels in **Confidence-Reihenfolge**, nicht in Lesereihenfolge; die geometrische
+Quelle war schon sortiert → die Sortierung ist dort idempotent.
 Panel-Koordinaten liegen im Downscale-Raum → **zurückskalieren** auf Display-Größe
 (`PanelGeometry`) fürs Zoom-Rechteck. Detektion pro Seite **einmal**, gecacht
 (`Map<page, List<PanelRect>>`), auf `Dispatchers.Default`.
+
+**Welche `PanelSource`? (`PanelSourceProvider`, @Singleton):** `GeometricPanelSource()` per Default;
+`MlPanelSource(OnnxModelRunner(bytes), MlFilter(...))`, wenn `SettingsRepository.useMlDetection` an ist
+(Toggle in Settings → Comic, Default **true**) **und** ein `PANEL_MODEL`-Plugin (data-only APK mit
+ONNX-Modell-Asset) installiert ist (`PluginHost.binaryDataPluginBytes(PANEL_MODEL)`). Jeder Fehler
+(kein Plugin, ONNX-Init) **degradiert sauber** auf geometrisch; die gewählte Quelle wird gecacht. Der
+Reader ist **agnostisch** gegen geometrisch-vs-ML — nur die rohe Erkennung unterscheidet sich.
 
 Leserichtung: `Series.readingDirection` `LTR → LEFT_TO_RIGHT`, `RTL → RIGHT_TO_LEFT`,
 Default `LEFT_TO_RIGHT`. (VERTICAL/WEBTOON sind nie COMIC.)
 
 ## Der zentrale Punkt: „nächstes Panel" ist gelöst
 
-`PanelDetector` liefert Panels **bereits in Leserichtung sortiert**. Nächstes Panel =
-nächster Listenindex. **Keine eigene Richtungserkennung bauen** — das ist der häufigste
-Fehler. `GuidedNavigator` steppt nur durch die Liste und über Seitengrenzen.
+`ComicPageLoader` liefert Panels **in Leserichtung sortiert** (`ReadingOrder.sort`, s. o.). Nächstes
+Panel = nächster Listenindex. **Keine eigene Richtungserkennung bauen** — das ist der häufigste
+Fehler. `GuidedNavigator` steppt nur durch die sortierte Liste und über Seitengrenzen.
 
 ## Interaktion — zustandsabhängig
 
@@ -69,25 +83,23 @@ Panel-Wechsel/Zoom-Out = Bildwechsel → Full-Refresh über `OnyxRefresher`/`Ref
 (wie Seitenwechsel). Kein blindes Invalidieren. No-Op auf Nicht-Boox (HW-gated).
 E-Ink-Designsprache gilt ([[komga-eink-ui-polish]]): flach, 1.5px-Border, monochrom, keine Animation.
 
-## Detektor-Algorithmus (Flood-Fill + Connected-Components)
+## Detektor-Algorithmus — jetzt in der externen Lib `comic-cutter`
 
-`PanelDetector` arbeitet in Stufen (reines Kotlin, host-testbar, keine Android-Deps):
-Otsu-Binarisierung → Edge-Seed-Gutter-Flood (vom Seitenrand, Full-Bleed-Panels bleiben erhalten) →
-Component-Bounding-Boxes (RegionLabeling) → Min-Fläche-Filter → **Rahmen-Linien-Split** (`BorderLineSplit`)
-→ Bubble-Filter (`dropContainedSmall`) + Contained-Merge → Lesereihenfolge (Zeilen-Bänder, LTR/RTL).
-Units: `ImageBinarization` / `GutterFill` / `RegionLabeling` / `BorderLineSplit` / `ReadingOrder` / `PanelDetector`.
+Der Erkennungs-Algorithmus selbst lebt **nicht mehr im App-Repo** — er ist mit `:guided-view` ausgezogen
+in die Lib **comic-cutter** (`com.panela.comiccutter.*`). Zwei Quellen hinter der `PanelSource`-Naht:
+- **`GeometricPanelSource`** — der reine Flood-Fill/Connected-Components-Detektor (Profil-XY-Cut +
+  Flood-Fallback), funktional der Nachfolger des alten In-Tree-`PanelDetector`.
+- **`MlPanelSource`** — ein ONNX-Modell (`OnnxModelRunner` aus `comic-cutter-onnx-jvm`, Unter-Paket
+  `com.panela.comiccutter.onnx`) hinter `MlFilter` (Confidence-/Overlap-Schwellen). Modell-Bytes kommen
+  aus einem installierten `PANEL_MODEL`-Plugin.
 
-**Rahmen-Linien-Split (`BorderLineSplit`):** Der Weiß-Gutter-Flood trennt nur über **weiße** Gutter.
-Schwarz-umrandete, eng liegende Panels (z. B. Red Hood) verschmelzen sonst zu seitenbreiten Bändern.
-Darum wird jede seitenüberspannende Komponente rekursiv an **dünnen, durchgehend dunklen,
-von helleren Bändern umgebenen** achsenparallelen Rahmenlinien geschnitten. Der „heller-Nachbar"-Guard
-verhindert, dass uniform-dunkle Splash-Art zersplittert wird.
+**Verhaltens-Vorbehalt:** der geometrische Algorithmus der Lib weicht vom alten In-Tree-Detektor ab
+(er ergänzt eine Merge-über-Split-Arbitrierung). Geometrische Panel-*Ergebnisse* können also leicht von
+früher abweichen — das ist **erwartet, kein Regress**.
 
-**Bubble-Filter:** Kleine Boxen (< ~6 % Seitenfläche), die vollständig in einer größeren liegen
-(Sprechblasen = helle Inseln im Panel), werden verworfen — eine Blase ist nie ein Panel.
-
-**Degenerate-Guard (im ViewModel):** Liefert der Detektor <2 Panels ODER ein Panel belegt >85 % der
-Seitenfläche → Vollseite-Fallback (Seite verhält sich wie Paged, kein Panel-Zoom).
+**Degenerate-Guard (im ViewModel — host-seitig, unverändert):** Liefert die `PanelSource` <2 Panels ODER
+belegt ein Panel >85 % der Seitenfläche → Vollseite-Fallback (Seite verhält sich wie Paged, kein
+Panel-Zoom). Gilt für geometrisch UND ML gleich.
 
 **Letterbox-bewusste Tap/Zoom:** Tap-Koordinaten und Zoom-Rechteck rechnen gegen das
 Content-Rechteck (bei ContentScale.Fit: `contentW`×`contentH` innerhalb des Viewports), nicht
@@ -96,21 +108,28 @@ marginFraction)` liefert den korrekten Faktor inklusive Letterbox-Offset.
 
 ## Schnitt (was wohin)
 
-- `PanelDetector` — `guided-view`, vorhanden, nicht anfassen.
-- `GuidedNavigator` (Panel-Sequenz inkl. Seitengrenzen) + `PanelGeometry` (Skalierung,
-  hitTest, Zoom-Rechteck) — **pure**, TDD zuerst, isoliert testbar.
-- `ComicReaderViewModel` — Zustand, Detektion anstoßen, Cache, Toggle, Degenerate-Guard.
+- `PanelSource` (`GeometricPanelSource`/`MlPanelSource`), `PanelGeometry`, `GuidedNavigator`,
+  `ReadingOrder` — **extern in `comic-cutter`** (`com.panela.comiccutter.*`), nicht im App-Repo; nicht
+  forken, gegen die Lib programmieren.
+- `PanelSourceProvider` (`app/ui/reader`, @Singleton) — wählt geometrisch vs. ML, cacht, degradiert.
+- `ComicPageLoader` (`app/ui/reader`) — Coil-Pixel → `RenderedPage` → `panelSource.detect` →
+  `ReadingOrder.sort`.
+- `ComicReaderViewModel` — Zustand, Detektion anstoßen (injiziert `PanelSourceProvider`), Cache,
+  Toggle, Degenerate-Guard.
 - `ComicReaderScreen` — dünne Compose-Shell (Coil-Vollseite + gezoomtes Panel + Tap-Zonen).
 
 ## Anti-Pattern (sofort ablehnen)
 
-- Eigene „Richtungserkennung" fürs nächste Panel — der Detektor ordnet schon.
+- Eigene „Richtungserkennung" fürs nächste Panel — `ReadingOrder.sort` ordnet schon.
+- Die `ReadingOrder.sort`-Sortierung weglassen, weil „geometrisch war schon sortiert" — die ML-Quelle
+  liefert Confidence-Reihenfolge; ohne Sortierung springt Guided durcheinander.
 - MuPDF/Voll-Download für Comic-Pixel — Coil-Bitmap downscalen.
 - Animierter Panel-Pan/Zoom auf E-Ink.
 - Neuer `ContentType`-Wert — COMIC existiert.
 - Panel-Tap-Logik gegen un-zurückskalierte Downscale-Koordinaten (Treffer daneben).
 - Tap/Zoom gegen Viewport statt Content-Rechteck (Letterbox ignorieren) — Treffer und Zoom-Pivot stimmen nicht.
 
-Bezug: [[komga-viewer-type-resolution]], [[komga-eink-ui-polish]], `guided-view`-Modul, Naht B
-(`architecture-seams.md`). Tests: `GuidedNavigatorTest`, `PanelGeometryTest`,
-`ResolveViewerTypeTest` (COMIC-Stufen).
+Bezug: [[komga-viewer-type-resolution]], [[komga-eink-ui-polish]], `comic-cutter`-Lib (Panel-Erkennung,
+früher das gelöschte `:guided-view`-Modul), Naht B + Naht-A-Panel-Modell-Item (`architecture-seams.md`).
+`GuidedNavigator`/`PanelGeometry` werden in der `comic-cutter`-Lib getestet (nicht mehr im App-Repo);
+hier bleibt `ResolveViewerTypeTest` (COMIC-Stufen).

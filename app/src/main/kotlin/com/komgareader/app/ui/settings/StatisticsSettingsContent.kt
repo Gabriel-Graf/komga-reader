@@ -43,28 +43,30 @@ fun StatisticsSettingsContent(viewModel: SettingsViewModel) {
                 StatRow(label = s.statsTotalTime, value = s.statsDuration(totalMin / 60, totalMin % 60))
             }
 
-            // Per-reader breakdown
-            SettingsGroup(s.statsPerReader, query = "") {
-                val kindLabels = mapOf(
-                    ReaderKind.PAGED to s.statsReaderPaged,
-                    ReaderKind.WEBTOON to s.statsReaderWebtoon,
-                    ReaderKind.COMIC to s.statsReaderComic,
-                    ReaderKind.NOVEL to s.statsReaderNovel,
-                )
-                ReaderKind.entries.forEach { kind ->
-                    val ms = stats.perKindMs[kind] ?: 0L
-                    if (ms > 0L) {
-                        val min = (ms / 60_000L).toInt()
-                        StatRow(
-                            label = kindLabels[kind] ?: kind.name,
-                            value = s.statsDuration(min / 60, min % 60),
-                        )
+            // Per-reader breakdown — only shown when at least one kind has recorded time
+            if (ReaderKind.entries.any { (stats.perKindMs[it] ?: 0L) > 0L }) {
+                SettingsGroup(s.statsPerReader, query = "") {
+                    val kindLabels = mapOf(
+                        ReaderKind.PAGED to s.statsReaderPaged,
+                        ReaderKind.WEBTOON to s.statsReaderWebtoon,
+                        ReaderKind.COMIC to s.statsReaderComic,
+                        ReaderKind.NOVEL to s.statsReaderNovel,
+                    )
+                    ReaderKind.entries.forEach { kind ->
+                        val ms = stats.perKindMs[kind] ?: 0L
+                        if (ms > 0L) {
+                            val min = (ms / 60_000L).toInt()
+                            StatRow(
+                                label = kindLabels[kind] ?: kind.name,
+                                value = s.statsDuration(min / 60, min % 60),
+                            )
+                        }
                     }
                 }
             }
 
-            // Work counts
-            SettingsGroup(s.statsStarted, query = "") {
+            // Work counts — plain rows, no group title that would duplicate a row label
+            Column {
                 StatRow(label = s.statsStarted, value = stats.startedWorks.toString())
                 StatRow(label = s.statsFinished, value = stats.finishedWorks.toString())
             }

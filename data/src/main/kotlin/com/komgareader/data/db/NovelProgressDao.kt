@@ -28,7 +28,4 @@ interface NovelProgressDao {
 
     @Query("UPDATE novel_progress SET dirty = 0 WHERE sourceId = :sourceId AND bookId = :bookId")
     suspend fun markClean(sourceId: Long, bookId: String)
-
-    @Query("SELECT * FROM novel_progress")
-    fun observeAll(): Flow<List<NovelProgressEntity>>
 }

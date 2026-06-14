@@ -33,11 +33,25 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @BeforeEach
+    fun setUpDispatcher() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterEach
+    fun tearDownDispatcher() {
+        Dispatchers.resetMain()
+    }
 
     /** Fängt die zuletzt gespeicherte Verbindung ein — nur [save] ist hier relevant. */
     private class CapturingServerRepository : ServerRepository {
@@ -105,87 +119,67 @@ class SettingsViewModelTest {
 
     @Test
     fun `saveServer mit id 0 speichert eine neue Verbindung mit id 0`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        try {
-            val repo = CapturingServerRepository()
-            val vm = viewModel(repo)
+        val repo = CapturingServerRepository()
+        val vm = viewModel(repo)
 
-            vm.saveServer("Heim", "http://h", "", "", "", SourceKind.KOMGA, id = 0)
+        vm.saveServer("Heim", "http://h", "", "", "", SourceKind.KOMGA, id = 0)
 
-            assertEquals(0L, repo.saved?.id)
-            assertEquals("Heim", repo.saved?.name)
-        } finally {
-            Dispatchers.resetMain()
-        }
+        assertEquals(0L, repo.saved?.id)
+        assertEquals("Heim", repo.saved?.name)
     }
 
     @Test
     fun `saveServer mit id 7 speichert die bearbeitete Verbindung mit id 7`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        try {
-            val repo = CapturingServerRepository()
-            val vm = viewModel(repo)
+        val repo = CapturingServerRepository()
+        val vm = viewModel(repo)
 
-            vm.saveServer("Heim", "http://h", "", "", "", SourceKind.KOMGA, id = 7L)
+        vm.saveServer("Heim", "http://h", "", "", "", SourceKind.KOMGA, id = 7L)
 
-            assertEquals(7L, repo.saved?.id)
-        } finally {
-            Dispatchers.resetMain()
-        }
+        assertEquals(7L, repo.saved?.id)
     }
 
     @Test
     fun `Novel-Setter delegieren an das SettingsRepository`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        try {
-            val repo = CapturingSettingsRepository()
-            val vm = viewModel(repo)
+        val repo = CapturingSettingsRepository()
+        val vm = viewModel(repo)
 
-            vm.setNovelFontSizeEm(1.4f)
-            vm.setNovelLineHeight(1.3f)
-            vm.setNovelFontWeight(600)
-            vm.setNovelMarginPreset("WIDE")
-            vm.setNovelTextAlign("LEFT")
-            vm.setNovelHyphenationLang("de")
-            vm.setNovelFontFamily("Literata")
+        vm.setNovelFontSizeEm(1.4f)
+        vm.setNovelLineHeight(1.3f)
+        vm.setNovelFontWeight(600)
+        vm.setNovelMarginPreset("WIDE")
+        vm.setNovelTextAlign("LEFT")
+        vm.setNovelHyphenationLang("de")
+        vm.setNovelFontFamily("Literata")
 
-            assertEquals(1.4f, repo.novelFontSizeEmValue)
-            assertEquals(1.3f, repo.novelLineHeightValue)
-            assertEquals(600, repo.novelFontWeightValue)
-            assertEquals("WIDE", repo.novelMarginPresetValue)
-            assertEquals("LEFT", repo.novelTextAlignValue)
-            assertEquals("de", repo.novelHyphenationLangValue)
-            assertEquals("Literata", repo.novelFontFamilyValue)
-        } finally {
-            Dispatchers.resetMain()
-        }
+        assertEquals(1.4f, repo.novelFontSizeEmValue)
+        assertEquals(1.3f, repo.novelLineHeightValue)
+        assertEquals(600, repo.novelFontWeightValue)
+        assertEquals("WIDE", repo.novelMarginPresetValue)
+        assertEquals("LEFT", repo.novelTextAlignValue)
+        assertEquals("de", repo.novelHyphenationLangValue)
+        assertEquals("Literata", repo.novelFontFamilyValue)
     }
 
     @Test
     fun `Novel-Werte spiegeln die Flows des SettingsRepository`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        try {
-            val repo = CapturingSettingsRepository(
-                fontSizeEm = 1.6f,
-                lineHeight = 1.2f,
-                marginPreset = "NARROW",
-                fontFamily = "Bitter",
-                textAlign = "LEFT",
-                hyphenationLang = "en",
-                fontWeight = 700,
-            )
-            val vm = viewModel(repo)
+        val repo = CapturingSettingsRepository(
+            fontSizeEm = 1.6f,
+            lineHeight = 1.2f,
+            marginPreset = "NARROW",
+            fontFamily = "Bitter",
+            textAlign = "LEFT",
+            hyphenationLang = "en",
+            fontWeight = 700,
+        )
+        val vm = viewModel(repo)
 
-            assertEquals(1.6f, vm.novelFontSizeEm.value)
-            assertEquals(1.2f, vm.novelLineHeight.value)
-            assertEquals("NARROW", vm.novelMarginPreset.value)
-            assertEquals("Bitter", vm.novelFontFamily.value)
-            assertEquals("LEFT", vm.novelTextAlign.value)
-            assertEquals("en", vm.novelHyphenationLang.value)
-            assertEquals(700, vm.novelFontWeight.value)
-        } finally {
-            Dispatchers.resetMain()
-        }
+        assertEquals(1.6f, vm.novelFontSizeEm.value)
+        assertEquals(1.2f, vm.novelLineHeight.value)
+        assertEquals("NARROW", vm.novelMarginPreset.value)
+        assertEquals("Bitter", vm.novelFontFamily.value)
+        assertEquals("LEFT", vm.novelTextAlign.value)
+        assertEquals("en", vm.novelHyphenationLang.value)
+        assertEquals(700, vm.novelFontWeight.value)
     }
 }
 

@@ -363,5 +363,8 @@ class MapBackedStrings(
     override val statsReaderComic: String get() = overrides["statsReaderComic"] ?: fallback.statsReaderComic
     override val statsReaderNovel: String get() = overrides["statsReaderNovel"] ?: fallback.statsReaderNovel
     override val statsEmpty: String get() = overrides["statsEmpty"] ?: fallback.statsEmpty
-    override fun statsDuration(hours: Int, minutes: Int): String = fallback.statsDuration(hours, minutes)
+    override fun statsDuration(hours: Int, minutes: Int): String =
+        overrides["statsDuration"]
+            ?.replace("{hours}", hours.toString())?.replace("{minutes}", minutes.toString())
+            ?: fallback.statsDuration(hours, minutes)
 }

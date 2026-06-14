@@ -28,7 +28,7 @@ Legend: ✅ built & wired · 🟡 partial / model ahead of UX · 🟢 built, by�
 | Goal | State | One‑line verdict |
 |---|---|---|
 | **Multi‑reader** | ✅ | 4 reading modes (paged, webtoon, novel reflow, guided comic) behind a shared `Viewer` seam + `ReaderScaffold`. |
-| **Multi‑server / source‑agnostic** | ✅ | Komga + OPDS live and mixed; zero concrete‑source leakage into VMs/domain (verified). |
+| **Multi‑server / source‑agnostic** | ✅ | Komga + OPDS live and mixed; zero concrete‑source leakage into VMs/domain (verified). **Local device folders** as a source (`source-local`, SAF) — CBZ/PDF read on‑device, mixed with servers. |
 | **Multi‑device** | ✅ / 🟡 | `DisplayBehavior(allowsMotion, allowsAccentColor)` models the two axes correctly; mono/Kaleido/LCD behave right. `DisplayMode` is still a binary enum, but Kaleido's mono UI accent is a **deliberate** decision, not a gap — see below. |
 | **Plugins** | ✅ / 🟢 | Source + 5 data‑only categories real (colour presets, reader presets, languages, UI packs, fonts), TOFU‑pinned, SDK shipped. Arbitrary‑Compose UI plugins are deliberately **not** built (declarative‑only by design). |
 | **Modular UI** | 🟡 | Theme + shell + 8 region slots all built and wired. External packs are **deliberately declarative/data‑only**; today they cover theme / shell nav‑style / icons. The additive frontier is widening that declarative vocabulary to address individual chrome slots — **not** loading external code. |

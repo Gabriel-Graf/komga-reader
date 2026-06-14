@@ -68,6 +68,8 @@ interface ReflowableDocument : Document {
     fun title(): String = ""
     /** Autor(en) aus den Dokument-Metadaten ("" falls unbekannt) — für den Page-Header. */
     fun authors(): String = ""
+    /** BCP-47 content language from the document metadata ("" if unknown). Engine-neutral default. */
+    fun contentLanguage(): String = ""
 }
 
 /**

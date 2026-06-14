@@ -30,7 +30,7 @@ fun ReadingSessionEffect(
     currentPage: Int,
 ) {
     val holder = hiltViewModel<ReadingSessionHolder>()
-    DisposableEffect(bookRemoteId) {
+    DisposableEffect(readerKind, bookRemoteId, sourceId) {
         holder.tracker.enter(readerKind, bookRemoteId, sourceId)
         onDispose { holder.tracker.leave() }
     }

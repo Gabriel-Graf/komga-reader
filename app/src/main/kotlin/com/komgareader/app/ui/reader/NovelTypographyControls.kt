@@ -1,16 +1,24 @@
 package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
@@ -18,9 +26,14 @@ import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.PanelSectionHeader
 import com.komgareader.app.ui.components.StepperRow
+import com.komgareader.ui.icons.AppIcons
+import androidx.compose.ui.graphics.Color
 import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.theme.LocalDesignTokens
+import com.komgareader.domain.render.NovelFont
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
+import java.io.File
 
 /**
  * Die 7 Roman-Typografie-Einstellungen (Schriftgröße, Zeilenabstand, Schriftstärke,
@@ -51,6 +64,8 @@ fun NovelTypographyControls(
     fontFamily: String,
     onFontFamily: (String) -> Unit,
     modifier: Modifier = Modifier,
+    availableFonts: List<NovelFont> = NovelFonts.ALL,
+    fontFiles: Map<String, File> = emptyMap(),
 ) {
     val strings = LocalStrings.current
 
@@ -126,12 +141,21 @@ fun NovelTypographyControls(
 
         PanelDivider()
         PanelSectionHeader(strings.novelFontFamily)
-        // Schriftart: alle gebündelten Lese-Schriften aus der zentralen Registry ([NovelFonts]).
-        NovelFonts.ALL.forEach { font ->
-            ChoiceRow(
+        // Font picker: each option's label is rendered IN that font (live sample).
+        // ChoiceRow uses HighlightText which has no fontFamily param, so we use a local
+        // row composable that mirrors ChoiceRow's flat Onyx-look (selectable row, checkmark
+        // on the right) while applying the font's own face to the label Text.
+        val designTokens = LocalDesignTokens.current
+        availableFonts.forEach { font ->
+            val file = fontFiles[font.family]
+            val sampleFamily = remember(file) {
+                file?.let { runCatching { FontFamily(Font(it)) }.getOrNull() }
+            }
+            FontPickerRow(
                 label = font.label,
                 selected = fontFamily == font.family,
-                dense = true,
+                sampleFamily = sampleFamily,
+                accentTint = designTokens.accent,
                 onSelect = { onFontFamily(font.family) },
             )
         }
@@ -146,6 +170,46 @@ internal fun PanelDivider() {
         color = MaterialTheme.colorScheme.outlineVariant,
         modifier = Modifier.padding(vertical = 6.dp),
     )
+}
+
+/**
+ * A single font-picker row that mirrors [ChoiceRow]'s flat Onyx-look (dense selectable row
+ * with a checkmark on the right) but renders the label [Text] in [sampleFamily] so the user
+ * sees the font's own face. Falls back to the theme default when [sampleFamily] is null (font
+ * file not yet loaded or built-in font without a file). No animation — E-Ink invariant holds.
+ */
+@Composable
+private fun FontPickerRow(
+    label: String,
+    selected: Boolean,
+    sampleFamily: FontFamily?,
+    accentTint: Color,
+    onSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, onClick = onSelect)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            fontFamily = sampleFamily,
+            modifier = Modifier.weight(1f),
+        )
+        Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+            if (selected) {
+                Icon(
+                    AppIcons.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = accentTint,
+                )
+            }
+        }
+    }
 }
 
 @Composable

@@ -60,6 +60,8 @@ fun NovelReaderScreen(
     val progressPercent by novelVm.progressPercent.collectAsState()
     val bookTitle by novelVm.bookTitle.collectAsState()
     val bookAuthor by novelVm.bookAuthor.collectAsState()
+    val availableNovelFonts by novelVm.availableNovelFonts.collectAsState()
+    val fontSampleFiles by novelVm.fontSampleFiles.collectAsState()
     val strings = LocalStrings.current
     var typoPanelOpen by remember { mutableStateOf(false) }
     var tocPanelOpen by remember { mutableStateOf(false) }
@@ -82,6 +84,8 @@ fun NovelReaderScreen(
             onHyphenation = novelVm::setHyphenation,
             onFontWeight = novelVm::setFontWeight,
             onDismiss = { typoPanelOpen = false },
+            availableFonts = availableNovelFonts,
+            fontFiles = fontSampleFiles,
         )
         tocPanelOpen -> NovelTocPanel(
             chapters = chapters,

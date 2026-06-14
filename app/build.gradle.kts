@@ -84,6 +84,7 @@ dependencies {
     implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
     implementation(project(":source-opds"))
+    implementation(project(":source-local"))
     implementation(project(":render-core"))
     implementation(project(":render-crengine"))
     // Comic panel detection: comic-cutter (geometric + ML) as a published library (JitPack) + ONNX
@@ -104,6 +105,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.documentfile)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

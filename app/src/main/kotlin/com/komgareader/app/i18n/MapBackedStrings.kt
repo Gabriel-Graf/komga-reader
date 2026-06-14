@@ -345,6 +345,8 @@ class MapBackedStrings(
     override val novelGoToPlaceholder: String get() = overrides["novelGoToPlaceholder"] ?: fallback.novelGoToPlaceholder
     override val novelGoToAction: String get() = overrides["novelGoToAction"] ?: fallback.novelGoToAction
     override val serverKindPlugin: String get() = overrides["serverKindPlugin"] ?: fallback.serverKindPlugin
+    override val serverKindLocal: String get() = overrides["serverKindLocal"] ?: fallback.serverKindLocal
+    override val localFolderPick: String get() = overrides["localFolderPick"] ?: fallback.localFolderPick
     override val addServerSelectPlugin: String get() = overrides["addServerSelectPlugin"] ?: fallback.addServerSelectPlugin
     override val addServerNoSourcePlugins: String get() = overrides["addServerNoSourcePlugins"] ?: fallback.addServerNoSourcePlugins
     override val readerPresetApply: String get() = overrides["readerPresetApply"] ?: fallback.readerPresetApply

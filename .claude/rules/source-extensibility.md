@@ -42,6 +42,17 @@ anderen vergessen (bricht still bei Quellenwechsel).
 Beweis, dass das Muster trägt: `source-opds` existiert bereits genau so und teilt sich kein
 Komga-Wissen.
 
+Zweites Beispiel (Ist, 2026-06-14): **`source-local`** (`LocalSource`, `SourceKind.LOCAL`, id 0) liest
+einen SAF-Geräteordner als Quelle — genau nach diesem Rezept, plus zwei Besonderheiten, die jede
+gerätenahe oder rein-lokale Quelle betreffen: (1) das Modul ist eine **Android-Library** (nicht pur-JVM
+wie `source-opds`), weil es `Context`/SAF (`DocumentFile`) braucht — pure Logik (Parser/Mapper/Sortierung)
+bleibt trotzdem in plain-Kotlin-Klassen, JVM-unit-getestet; es hängt weiter nur an `domain`/`source-api`,
+**nie** an `render-core`/UI. (2) remoteIds müssen **opak** sein (keine `/`), weil die App sie als einzelne
+Nav-Pfadsegmente fädelt — `LocalSource` exponiert Base64-URL-kodierte remoteIds und dekodiert intern;
+quellenspezifische IDs mit Sonderzeichen (Pfade, Leerzeichen) immer kodieren. Lesen ohne seitenweises
+Streaming: `pages()` = `emptyList()` zurückgeben, dann rendert der Reader whole-file (s.
+`architecture-seams.md` „Reader-Lesepfad").
+
 ## Bezug
 
 Setzt `architecture-seams.md` (Naht A) voraus. Gehört zu [[project-komga-eink-reader]].

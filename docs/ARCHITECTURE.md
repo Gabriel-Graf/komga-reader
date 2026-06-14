@@ -39,8 +39,9 @@ The seams are where concrete implementations plug in.
 - `domain` is **pure Kotlin** — its only main dependency is `kotlinx-coroutines-core`. No
   Android, no network, no source module. This makes domain logic trivially unit‑testable.
 - `source-api` defines the Seam‑A contract and depends only on `domain`.
-- `source-komga`, `source-opds` depend on `domain` + `source-api`, never on each other, never on
-  `app`.
+- `source-komga`, `source-opds`, `source-local` depend on `domain` + `source-api`, never on each
+  other, never on `app`, never on `render-core`. `source-local` is the one Android‑library source
+  (it needs `Context`/SAF); its pure logic stays in plain‑Kotlin classes for JVM unit tests.
 - `render-core`, `render-crengine`, `eink-onyx` depend only on `domain`. (The former `guided-view`
   module was removed; panel detection is now the external **comic-cutter** library, wired in `app`
   via `PanelSourceProvider`.)
@@ -73,9 +74,16 @@ Contract: `source-api/.../source/MediaSource.kt`.
   (`series/{seriesId}/{sourceId}`, `reader/{bookId}/{sourceId}/…`) so every consumer resolves
   *per work*, not "the first/active" source. Komga REST and OPDS have been verified live and
   mixed.
+- **`LocalSource` (`SourceKind.LOCAL`, id 0)** turns a user‑picked SAF device folder into a source,
+  fully mixed with the rest. It is **renderer‑free**: a CBZ page *is* a stored image, so `openPage`
+  returns the raw zip entry (`java.util.zip`); for PDF/CBR/EPUB `pages()` returns empty and the
+  reader renders the whole file (Seam B). It exposes **opaque (Base64‑URL) remoteIds** because the
+  app threads ids through navigation as single path segments and local paths contain `/`. Folder
+  picking + persisted permission live in Settings; it is not a `SyncingSource` (progress stays
+  local). Verified on‑device (CBZ + PDF rendered, listing + restart persistence).
 
-Concrete source types (`KomgaSource`, `KomgaSourceProvider`, …) appear **only** in the
-`app/data` wiring layer — never in a ViewModel, a UI file, or `domain`.
+Concrete source types (`KomgaSource`, `KomgaSourceProvider`, `LocalSourceFactory`, …) appear **only**
+in the `app/data` wiring layer — never in a ViewModel, a UI file, or `domain`.
 
 ---
 

@@ -4,7 +4,8 @@ A native Android comic, manga, webtoon and e‑book reader built **E‑Ink‑fir
 [Onyx Boox](https://onyxboox.com) devices — but **source‑agnostic, device‑agnostic and
 modular** from day one.
 
-It speaks [Komga](https://komga.org) and OPDS natively, reads paged comics, vertical
+It speaks [Komga](https://komga.org) and OPDS natively, reads local device folders and
+paged comics, vertical
 webtoons, panel‑by‑panel "guided" comics and reflowable e‑books, and is built so that
 **new sources, new devices and even whole new UIs can be added behind stable seams —
 without touching the core.** Maximum flexibility is the explicit north‑star goal.
@@ -41,7 +42,7 @@ packs — while the host keeps enforcing the E‑Ink correctness rules no pack c
 
 | Area | What works today |
 |---|---|
-| **Sources** | Komga (REST) and OPDS, **multiple servers at once, mixed**. Per‑work source resolution. Kavita via plugin. |
+| **Sources** | Komga (REST) and OPDS, **multiple servers at once, mixed**. Per‑work source resolution. Kavita via plugin. **Local device folders** (pick a folder via SAF; CBZ/PDF/EPUB read like any other source). |
 | **Reading modes** | Paged comics, vertical **Webtoon** scroll, **Guided Comic** (panel‑by‑panel zoom, automatic panel detection via the comic‑cutter library — geometric by default, optional ONNX **ML** detector via a `PANEL_MODEL` plugin), **Novel** EPUB reflow (crengine‑ng with hyphenation + bundled reading fonts). |
 | **Devices** | Mono E‑Ink, colour E‑Ink (Kaleido), LCD phone/tablet — motion and accent‑colour gated **per device class** on two orthogonal axes. |
 | **E‑Ink** | Onyx refresh control (fast mode + device‑managed full refresh), no‑op fallback off‑device, no animations in E‑Ink mode. |
@@ -84,6 +85,7 @@ behind the interface — never a core change.** Full detail in
 | `domain` | Models, use‑cases, repository/render/eink interfaces, `ViewerType` | Android, network, any source, `source-api` |
 | `source-api` | Seam‑A contract (`MediaSource`, `SourceManager`, `SourceId`) | Android, network, UI |
 | `source-komga` · `source-opds` | Concrete `MediaSource` implementations | UI, other sources |
+| `source-local` | `LocalSource` — a picked device folder (SAF) as a source; renderer‑free (CBZ pages via `openPage` zip‑extract, PDF/CBR/EPUB whole‑file) | UI, other sources, `render-core` |
 | `render-core` | `Document` + MuPDF JNI (Seam B render) | UI |
 | `render-crengine` | crengine‑ng EPUB reflow engine (JNI, arm64‑v8a) | UI |
 | `eink-onyx` | `OnyxEinkController` (Onyx SDK, hardware‑gated) | UI, sources |
@@ -180,6 +182,7 @@ domain/            pure-Kotlin core (models, use-cases, interfaces)
 source-api/        Seam-A contract
 source-komga/      Komga REST source
 source-opds/       OPDS source
+source-local/      Local device-folder source (SAF)
 render-core/       MuPDF render engine (JNI)
 render-crengine/   crengine-ng EPUB reflow engine (JNI, arm64-v8a, committed prefix)
 eink-onyx/         Onyx E-Ink refresh controller (hardware-gated)

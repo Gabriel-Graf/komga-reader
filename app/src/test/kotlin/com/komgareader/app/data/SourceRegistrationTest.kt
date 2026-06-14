@@ -27,7 +27,7 @@ class SourceRegistrationTest {
     @Test
     fun `config setzt registriert komga-quelle mit deterministischer id`() {
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost)
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost, mockk(relaxed = true))
         val config = ServerConfig(name = "Heim", baseUrl = "http://h", apiKey = "k")
 
         val id = registration.activate(config)
@@ -40,7 +40,7 @@ class SourceRegistrationTest {
     @Test
     fun `opds-config registriert eine opds-quelle mit deterministischer id`() {
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost)
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost, mockk(relaxed = true))
         val config = ServerConfig(name = "Feed", baseUrl = "http://o/opds", kind = SourceKind.OPDS)
 
         val id = registration.activate(config)
@@ -55,7 +55,7 @@ class SourceRegistrationTest {
         // unverändert ist, darf die Quelle NICHT ab- und neu registriert werden — sonst gibt es
         // ein Fenster, in dem der Coil-Fetcher sources.get(id) == null sieht.
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost)
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost, mockk(relaxed = true))
         val config = ServerConfig(name = "Heim", baseUrl = "http://h", apiKey = "k")
 
         val id1 = registration.activate(config)!!
@@ -69,7 +69,7 @@ class SourceRegistrationTest {
     @Test
     fun `sync registriert mehrere quellen gleichzeitig und entfernt nicht mehr gelistete`() {
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost)
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost, mockk(relaxed = true))
         val a = ServerConfig(name = "A", baseUrl = "http://a", apiKey = "k")
         val b = ServerConfig(name = "B", baseUrl = "http://b", apiKey = "k")
 
@@ -87,7 +87,7 @@ class SourceRegistrationTest {
     @Test
     fun `null-config deaktiviert die zuvor aktive quelle`() {
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost)
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), noopPluginHost, mockk(relaxed = true))
         val id = registration.activate(ServerConfig("Heim", "http://h", apiKey = "k"))!!
 
         registration.activate(null)

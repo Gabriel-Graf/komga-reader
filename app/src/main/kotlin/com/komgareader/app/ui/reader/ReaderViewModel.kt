@@ -171,15 +171,30 @@ class ReaderViewModel @Inject constructor(
                 loadWebtoonStrip(source)
             } else {
                 val pages = source.pages(bookId)
-                val startPage = runCatching { (source as? SyncingSource)?.pullProgress(bookId) }
-                    .getOrNull()
-                    ?.let { progress -> (progress.page - 1).coerceIn(0, pages.size - 1) }
-                    ?: 0
-                _currentPage.value = startPage
-                _content.value = ReaderContent.Streamed(
-                    pages = pages.map { SourceImage(source.id, bookId, it.pageNumber) },
-                    initialPage = startPage,
-                )
+                if (pages.isEmpty()) {
+                    // Source cannot stream pages (OPDS, LocalSource PDF/CBR) → render whole file via MuPDF.
+                    val bytes = withContext(Dispatchers.IO) { source.downloadFile(bookId) }
+                    val ext = ".${format.name.lowercase()}"
+                    val doc = withContext(Dispatchers.IO) { documentFactory.open(bytes, ext) }
+                    document = doc
+                    val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
+                    val startPage = runCatching {
+                        (source as? SyncingSource)?.pullProgress(bookId)
+                            ?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
+                    }.getOrNull() ?: 0
+                    _currentPage.value = startPage
+                    _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
+                } else {
+                    val startPage = runCatching { (source as? SyncingSource)?.pullProgress(bookId) }
+                        .getOrNull()
+                        ?.let { progress -> (progress.page - 1).coerceIn(0, pages.size - 1) }
+                        ?: 0
+                    _currentPage.value = startPage
+                    _content.value = ReaderContent.Streamed(
+                        pages = pages.map { SourceImage(source.id, bookId, it.pageNumber) },
+                        initialPage = startPage,
+                    )
+                }
             }
         }.onFailure { e ->
             _content.value = ReaderContent.Error(uiErrorOf(e))

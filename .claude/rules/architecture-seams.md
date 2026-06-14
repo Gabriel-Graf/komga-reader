@@ -36,6 +36,26 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 - Quellen-übergreifende DB (`data`): jeder Datensatz trägt `sourceId`. `LocalSource` = id 0.
 - Runtime-Plugin-Loader (Phase 4) hängt sich genau hier ein — das Interface ist dafür schon stabil,
   also keine quellenspezifischen Annahmen ins Interface backen.
+- **LocalSource gebaut (Ist, 2026-06-14):** `SourceKind.LOCAL` ist real — Modul `:source-local`
+  (`LocalSource : BrowsableSource`, `id = SourceId.LOCAL = 0`) liest einen vom Nutzer gewählten
+  **SAF-Geräteordner** als Quelle, voll gemischt mit Komga/OPDS. Konvention: Unterordner = Serie,
+  Dateien darin = Bände (natürlich sortiert), lose Wurzeldateien = Ein-Band-Serie. **Renderer-frei**
+  (hängt **nicht** an `render-core`): eine CBZ-Seite *ist* eine gespeicherte Bilddatei, daher liefert
+  `openPage` den rohen Zip-Eintrag (`java.util.zip`, kein Decode); für PDF/CBR/EPUB gibt `pages()`
+  `emptyList()` zurück → der Reader rendert whole-file (s. u. „Reader-Lesepfad"). `SyncingSource`
+  wird **nicht** implementiert (kein Server zum Syncen — Fortschritt bleibt lokal). Metadaten
+  best-effort: Dateiname als Basis, `seriesDetail` reichert aus der **ersten** CBZ-`ComicInfo.xml`
+  an (ein Materialize, nicht pro Buch — sonst kopierte ein Listing jede Datei). **Wichtig — opake
+  remoteIds:** lokale Pfade enthalten `/`, die App fädelt remoteIds aber als einzelne Nav-Pfad-Segmente
+  → `LocalSource` exponiert **Base64-URL-kodierte** remoteIds und dekodiert intern auf den echten Pfad
+  (sonst crasht das Routing). `LocalFileCache` materialisiert SAF-Dateien einmalig in den App-Cache
+  (LRU) für Random-Access. Verdrahtung: `SourceKind.LOCAL`-Branch in `SourceRegistration`
+  (`LocalSourceFactory.create(context, name, treeUri)`, `@ApplicationContext`), Ordnerwahl in Settings
+  („Server hinzufügen" → Segment „Lokaler Ordner" → `ACTION_OPEN_DOCUMENT_TREE` +
+  `takePersistableUriPermission`, Release beim Entfernen). **E2E (Emulator, 2026-06-14):** Ordnerwahl →
+  Bibliothek (Serie+Bände+lose Werke) → CBZ-PAGED (Zip-Extrakt) + PDF (whole-file MuPDF) gerendert,
+  Persistenz über Neustart. (EPUB liefert Bytes korrekt; crengine-`.so` fehlt für x86_64-Emulator —
+  arm64-Boox unberührt.) V1 = ein Ordner; mehrere Ordner = additives Soll.
 - **Ist-Stand (2026-06-08): die Integrationsseite ist verdrahtet.** `SourceManager` wird in `app`
   über `SourceRegistration` aus der `ServerConfig` befüllt; `ActiveSource` (app/data) ist der
   agnostische Resolver für alle ViewModels. Bilder/Seiten **und** Cover fließen über die Naht
@@ -289,6 +309,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   implementiert **`Viewer`** statt einer Parallel-Linie. **Kein `refreshScheduler`** im `Viewer`
   (seit 2026-06-13 entfernt — E-Ink-Refresh läuft jetzt über den kontext-basierten
   `EinkContextController`-Pfad, nicht über die Viewer-Naht).
+- **Reader-Lesepfad: streamen vs. whole-file (Ist, aktualisiert 2026-06-14):** `ReaderViewModel.loadBook`
+  wählt **quellen-agnostisch**: liegt ein lokaler Download vor → `documentFactory.open(bytes)` (MuPDF,
+  `ReaderContent.Rendered`); sonst `source.pages(bookId)`. **Neu (2026-06-14):** ist `pages()` **leer**
+  (Quelle ohne seitenweises Streaming — OPDS, `LocalSource` für PDF/CBR), wird whole-file gelesen
+  (`source.downloadFile(bookId)` → `documentFactory.open` → `Rendered`) statt einer leeren `Streamed`-Liste.
+  Nur nicht-leeres `pages()` geht den Coil-`openPage`-Streaming-Pfad (`Streamed`). Diese eine Verzweigung
+  ist **quellen-agnostisch** (sie nennt keinen Quellentyp) und schaltet nebenbei OPDS-Lesen **ohne**
+  vorherigen Download frei.
 - **Geteilte Chrome-Shortcuts (Ist, 2026-06-10):** `ReaderScaffold`/`ReaderChromeOverlay` tragen
   jetzt `onHome`/`onSettings` und rendern oben rechts an **einer** Stelle die geteilten Buttons
   **[Home][Einstellungen]** (in dieser Reihenfolge), **danach** die reader-spezifischen `actions`

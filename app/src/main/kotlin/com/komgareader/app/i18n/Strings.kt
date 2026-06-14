@@ -361,6 +361,9 @@ interface Strings {
     val novelGoToAction: String
     // Feature A — Quellen-Plugin im Add-Server-Selektor
     val serverKindPlugin: String
+    // Lokaler-Ordner-Quelle (SAF) im Add-Server-Selektor
+    val serverKindLocal: String
+    val localFolderPick: String
     val addServerSelectPlugin: String
     val addServerNoSourcePlugins: String
     // Feature B — Reader-Preset
@@ -722,6 +725,8 @@ object StringsDe : Strings {
     override val novelGoToPlaceholder = "Seite oder %"
     override val novelGoToAction = "Springen"
     override val serverKindPlugin = "Plugin"
+    override val serverKindLocal = "Lokaler Ordner"
+    override val localFolderPick = "Ordner wählen"
     override val addServerSelectPlugin = "Quellen-Plugin wählen"
     override val addServerNoSourcePlugins = "Keine Quellen-Plugins installiert — im Plugins-Tab hinzufügen."
     override val readerPresetApply = "Preset anwenden"
@@ -1081,6 +1086,8 @@ object StringsEn : Strings {
     override val novelGoToPlaceholder = "Page or %"
     override val novelGoToAction = "Go"
     override val serverKindPlugin = "Plugin"
+    override val serverKindLocal = "Local folder"
+    override val localFolderPick = "Pick folder"
     override val addServerSelectPlugin = "Choose source plugin"
     override val addServerNoSourcePlugins = "No source plugins installed — add one in the Plugins tab."
     override val readerPresetApply = "Apply preset"

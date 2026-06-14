@@ -47,7 +47,7 @@ class SettingsViewModelTest {
     }
 
     private fun registration(): SourceRegistration =
-        SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true))
+        SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true), mockk(relaxed = true))
 
     /** No-Op-Koordinator — Tests prüfen nicht den Sync-Trigger, nur die Server-Persistenz. */
     private fun noOpCoordinator(): SyncCoordinator =
@@ -81,6 +81,7 @@ class SettingsViewModelTest {
             noOpCoordinator(),
             mockk(relaxed = true),
             stubEinkController(),
+            mockk(relaxed = true),
         )
     }
 
@@ -95,6 +96,7 @@ class SettingsViewModelTest {
             noOpCoordinator(),
             mockk(relaxed = true),
             stubEinkController(),
+            mockk(relaxed = true),
         )
     }
 

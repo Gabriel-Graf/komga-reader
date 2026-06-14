@@ -1,11 +1,14 @@
 package com.komgareader.app.data
 
+import android.content.Context
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceManager
 import com.komgareader.plugin.host.PluginHost
+import com.komgareader.source.local.LocalSourceFactory
 import com.komgareader.source.opds.OpdsSourceFactory
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,11 +23,13 @@ class SourceRegistration @Inject constructor(
     private val sources: SourceManager,
     private val komgaProvider: KomgaSourceProvider,
     private val pluginHost: PluginHost,
+    @ApplicationContext private val context: Context,
 ) {
     private val lock = Any()
     private var activeIds: Set<Long> = emptySet()
 
     private fun build(config: ServerConfig): BrowsableSource? = when (config.kind) {
+        SourceKind.LOCAL -> LocalSourceFactory.create(context, config.name, config.baseUrl)
         SourceKind.OPDS -> OpdsSourceFactory.create(
             name = config.name,
             catalogUrl = config.baseUrl,

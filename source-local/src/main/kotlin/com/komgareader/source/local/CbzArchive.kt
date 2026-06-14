@@ -23,7 +23,10 @@ class CbzArchive(private val file: File) {
 
     fun pageBytes(index: Int): ByteArray {
         val name = imageNames[index]
-        return ZipFile(file).use { zip -> zip.getInputStream(zip.getEntry(name)).readBytes() }
+        return ZipFile(file).use { zip ->
+            val entry = zip.getEntry(name) ?: throw java.io.IOException("Entry '$name' missing in ${file.name}")
+            zip.getInputStream(entry).readBytes()
+        }
     }
 
     /** First image entry bytes (cover), or empty if none. */
@@ -35,5 +38,13 @@ class CbzArchive(private val file: File) {
             .firstOrNull { it.name.substringAfterLast('/').equals("ComicInfo.xml", ignoreCase = true) }
             ?: return null
         zip.getInputStream(entry).readBytes().decodeToString()
+    }
+
+    /** Raw ComicInfo.xml bytes if present (case-insensitive), else null. Prefer this over [comicInfoXml] so the XML declaration drives decoding. */
+    fun comicInfoBytes(): ByteArray? = ZipFile(file).use { zip ->
+        val entry = zip.entries().asSequence()
+            .firstOrNull { it.name.substringAfterLast('/').equals("ComicInfo.xml", ignoreCase = true) }
+            ?: return null
+        zip.getInputStream(entry).readBytes()
     }
 }

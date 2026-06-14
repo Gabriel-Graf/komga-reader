@@ -33,4 +33,18 @@ class LocalMetadataParserTest {
         assertNull(parser.parse("not xml at all"))
         assertNull(parser.parse("<other/>"))
     }
+    @Test fun `xxe doctype payload does not resolve external entity`() {
+        val payload = """
+            <?xml version="1.0"?>
+            <!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+            <ComicInfo><Series>&xxe;</Series></ComicInfo>
+        """.trimIndent()
+        // disallow-doctype-decl makes this throw internally → parse returns null (no file read).
+        assertNull(parser.parse(payload))
+    }
+
+    @Test fun `oversized input is rejected`() {
+        val huge = "<ComicInfo><Series>" + "a".repeat(600_000) + "</Series></ComicInfo>"
+        assertNull(parser.parse(huge))
+    }
 }

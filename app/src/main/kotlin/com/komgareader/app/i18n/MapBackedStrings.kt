@@ -80,6 +80,10 @@ class MapBackedStrings(
     override val chooseFolder: String get() = overrides["chooseFolder"] ?: fallback.chooseFolder
     override val defaultFolder: String get() = overrides["defaultFolder"] ?: fallback.defaultFolder
     override val resetFolder: String get() = overrides["resetFolder"] ?: fallback.resetFolder
+    override val localFolderNotSet: String get() = overrides["localFolderNotSet"] ?: fallback.localFolderNotSet
+    override val sameFolderForBoth: String get() = overrides["sameFolderForBoth"] ?: fallback.sameFolderForBoth
+    override val sameFolderForBothHelp: String get() = overrides["sameFolderForBothHelp"] ?: fallback.sameFolderForBothHelp
+    override val useSameFolderForBoth: String get() = overrides["useSameFolderForBoth"] ?: fallback.useSameFolderForBoth
     override val sizeLabel: String get() = overrides["sizeLabel"] ?: fallback.sizeLabel
     override val formatLabel: String get() = overrides["formatLabel"] ?: fallback.formatLabel
     override val fileLabel: String get() = overrides["fileLabel"] ?: fallback.fileLabel

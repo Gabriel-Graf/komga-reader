@@ -29,6 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -51,6 +52,15 @@ class SettingsViewModel @Inject constructor(
     val shellLayoutMode =
         settings.shellLayoutMode.stateIn(viewModelScope, SharingStarted.Eagerly, ShellLayoutMode.AUTO.name)
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * SAF-Tree-URI des lokalen Ordners (die eine `SourceKind.LOCAL`-Quelle) oder null.
+     * Abgeleitet aus der Server-Liste — der lokale Ordner wird unter „Downloads" verwaltet,
+     * intern bleibt es eine LOCAL-Quelle.
+     */
+    val localFolderUri = servers.configs
+        .map { list -> list.firstOrNull { it.kind == SourceKind.LOCAL }?.baseUrl }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val guidedPanelOverlay = settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val useMlDetection = settings.useMlDetection.stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
@@ -109,10 +119,40 @@ class SettingsViewModel @Inject constructor(
      * Persists a local-folder source (kind = LOCAL): the SAF tree-uri is stored in [ServerConfig.baseUrl];
      * a local folder needs no url/apiKey/credentials. The picker already took the persistable permission.
      */
+    /**
+     * Setzt (oder ersetzt) den lokalen Ordner — die eine `SourceKind.LOCAL`-Quelle. Upsert über die
+     * bestehende Rowid, damit kein zweiter LOCAL-Eintrag entsteht (V1 = genau ein lokaler Ordner).
+     * Wird unter „Downloads" aufgerufen; die persistierbaren Leserechte nimmt die UI vor dem Aufruf.
+     */
     fun saveLocalFolder(name: String, treeUri: String) = viewModelScope.launch {
-        servers.save(ServerConfig(name = name, baseUrl = treeUri, kind = SourceKind.LOCAL))
+        val existingId = servers.configs.first().firstOrNull { it.kind == SourceKind.LOCAL }?.id ?: 0L
+        servers.save(ServerConfig(name = name, baseUrl = treeUri, kind = SourceKind.LOCAL, id = existingId))
         coordinator.onServerChanged()
     }.let {}
+
+    /** Entfernt den lokalen Ordner (LOCAL-Quelle): SAF-Recht freigeben, Eintrag + dessen Daten löschen. */
+    fun removeLocalFolder() = viewModelScope.launch {
+        val cfg = servers.configs.first().firstOrNull { it.kind == SourceKind.LOCAL } ?: return@launch
+        releaseTreePermission(cfg.baseUrl)
+        servers.remove(cfg.id)
+        registration.sourceIdOf(cfg)?.let { collections.removeSource(it) }
+    }.let {}
+
+    /** Setzt Download-Ordner UND lokalen Ordner auf denselben SAF-Ordner. */
+    fun setBothFolders(name: String, treeUri: String) {
+        setDownloadDir(treeUri)
+        saveLocalFolder(name, treeUri)
+    }
+
+    private fun releaseTreePermission(treeUri: String) {
+        runCatching {
+            context.contentResolver.releasePersistableUriPermission(
+                android.net.Uri.parse(treeUri),
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
+    }
 
     fun applyReaderPreset(preset: ReaderPreset) {
         applyReaderPreset(

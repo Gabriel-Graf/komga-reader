@@ -32,8 +32,8 @@ android {
         applicationId = "com.komgareader.app"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         testInstrumentationRunner = "com.komgareader.app.HiltTestRunner"
         buildConfigField("String", "KOMGA_TEST_API_KEY", "\"$komgaTestApiKey\"")
         buildConfigField("String", "KOMGA_TEST_BASE_URL", "\"$komgaTestBaseUrl\"")

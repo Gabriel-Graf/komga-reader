@@ -78,6 +78,9 @@ object CrengineNative {
     /** EPUB-Autor(en) aus den Dokument-Metadaten ("" falls unbekannt). */
     external fun nativeAuthors(handle: Long): String
 
+    /** EPUB document language from dc:language / xml:lang ("" if unknown). */
+    external fun nativeLanguage(handle: Long): String
+
     /** Stable xpointer of the current page top ("" if unavailable). */
     external fun nativeCurrentAnchor(handle: Long): String
 

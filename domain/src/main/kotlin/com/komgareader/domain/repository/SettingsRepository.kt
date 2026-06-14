@@ -12,6 +12,8 @@ interface SettingsRepository {
     val shellLayoutMode: Flow<String>  // "AUTO" | "COMPACT" | "EXPANDED" — Home-Skelett-Form-Faktor (Override)
     val downloadDir: Flow<String?>   // SAF-Tree-URI oder null (= interner App-Speicher)
     val guidedPanelOverlay: Flow<Boolean>   // Debug: erkannte Panel-Rahmen im Comic-Reader einblenden
+    /** Comic-Guided: Panel-Erkennung per ML-Modell-Plugin (PANEL_MODEL); aus = Geometrie-Fallback. Default true. */
+    val useMlDetection: Flow<Boolean>
     val activeColorProfileId: Flow<Long?>  // id des aktiven Farbfilter-Profils, null = noch keines gesetzt
     val webtoonOverlapPercent: Flow<Int>  // Überlappung zwischen Webtoon-Streifen in Prozent (0–50)
     val chapterViewMode: Flow<String>  // "LIST" | "GRID" — Kapitel als Textliste oder Cover-Gitter
@@ -41,6 +43,7 @@ interface SettingsRepository {
     suspend fun setShellLayoutMode(value: String)
     suspend fun setDownloadDir(uri: String?)
     suspend fun setGuidedPanelOverlay(value: Boolean)
+    suspend fun setUseMlDetection(value: Boolean)
     suspend fun setActiveColorProfileId(id: Long)
     suspend fun setWebtoonOverlapPercent(percent: Int)
     suspend fun setChapterViewMode(mode: String)

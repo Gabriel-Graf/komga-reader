@@ -149,6 +149,7 @@ class ReaderViewModelTest {
         override val activeUiPack: Flow<String> = flowOf("")
         override val lastSeenVersion: Flow<String> = flowOf("")
         override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
+        override val frontlightLevel: Flow<Int> = flowOf(-1)
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")
@@ -172,6 +173,7 @@ class ReaderViewModelTest {
         override suspend fun setActiveUiPack(packageName: String) = error("not used")
         override suspend fun setLastSeenVersion(version: String) = error("not used")
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) = error("not used")
+        override suspend fun setFrontlightLevel(level: Int) = error("not used")
     }
 
     private fun book(remoteId: String, pageCount: Int) = Book(

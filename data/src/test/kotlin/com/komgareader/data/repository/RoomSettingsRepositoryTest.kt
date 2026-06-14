@@ -126,4 +126,16 @@ class RoomSettingsRepositoryTest {
         repo.setUseMlDetection(true)
         assertEquals(true, repo.useMlDetection.first())
     }
+
+    @Test
+    fun `frontlight level defaults to -1 when unset`() = runTest {
+        assertEquals(-1, RoomSettingsRepository(FakeSettingsDao()).frontlightLevel.first())
+    }
+
+    @Test
+    fun `frontlight level round-trips`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        repo.setFrontlightLevel(42)
+        assertEquals(42, repo.frontlightLevel.first())
+    }
 }

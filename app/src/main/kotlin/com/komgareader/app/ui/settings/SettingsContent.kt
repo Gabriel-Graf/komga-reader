@@ -38,6 +38,8 @@ import androidx.compose.ui.platform.LocalAutofill
 import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -642,6 +644,15 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
     val textAlign by viewModel.novelTextAlign.collectAsState()
     val hyphenationLang by viewModel.novelHyphenationLang.collectAsState()
     val fontFamily by viewModel.novelFontFamily.collectAsState()
+    val availableNovelFonts by viewModel.availableNovelFonts.collectAsState()
+    val fontSampleFiles by viewModel.fontSampleFiles.collectAsState()
+
+    // Precompute FontFamily per family key to avoid rebuilding on each recomposition.
+    val fontFamilyMap = remember(fontSampleFiles) {
+        fontSampleFiles.mapValues { (_, file) ->
+            runCatching { FontFamily(Font(file)) }.getOrNull()
+        }
+    }
 
     // Genau EIN Modal gleichzeitig (E-Ink-Invariante).
     var showFontPicker by remember { mutableStateOf(false) }
@@ -705,9 +716,12 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
                 query = query,
             )
             // Schriftart: lange Liste → Wert+Chevron → Picker-Modal.
+            // Use availableNovelFonts for label lookup so plugin fonts show their real name.
+            val currentFontLabel = availableNovelFonts.firstOrNull { it.family == fontFamily }?.label
+                ?: NovelFonts.byFamily(fontFamily).label
             PickerRow(
                 label = s.novelFontFamily,
-                value = NovelFonts.byFamily(fontFamily).label,
+                value = currentFontLabel,
                 onClick = { showFontPicker = true },
                 query = query,
             )
@@ -717,13 +731,14 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
     if (showFontPicker) {
         PickerModal(
             title = s.novelFontFamily,
-            options = NovelFonts.ALL,
+            options = availableNovelFonts,
             selectedKey = fontFamily,
             keyOf = { it.family },
             labelOf = { it.label },
             onSelect = { viewModel.setNovelFontFamily(it) },
             onDismiss = { showFontPicker = false },
             closeLabel = s.close,
+            labelFontFamilyOf = { font -> fontFamilyMap[font.family] },
         )
     }
 }

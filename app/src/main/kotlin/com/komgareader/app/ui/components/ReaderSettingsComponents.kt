@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -185,6 +187,12 @@ fun PickerRow(
  * Persistenz-Schlüssel + Anzeigename. [descriptionOf] ist optional — wenn gesetzt und nicht
  * null, wird eine kleinere sekundäre Zeile unter dem Option-Label gerendert (nur im offenen
  * Picker sichtbar, nicht in der kollabierten [PickerRow]).
+ *
+ * [labelFontFamilyOf] is optional — when provided, each option's label is rendered in the
+ * returned [FontFamily] (live font sample). Falls back to the theme default when the resolver
+ * returns null. When non-null, [ChoiceRow] is bypassed so the label [Text] can carry a
+ * custom [fontFamily] (ChoiceRow delegates to HighlightText which has no fontFamily slot).
+ * All existing callers pass null implicitly and are unaffected.
  */
 @Composable
 fun <T> PickerModal(
@@ -197,12 +205,56 @@ fun <T> PickerModal(
     onDismiss: () -> Unit,
     closeLabel: String,
     descriptionOf: ((T) -> String?)? = null,
+    labelFontFamilyOf: ((T) -> FontFamily?)? = null,
 ) {
+    val accentTint = LocalDesignTokens.current.accent
     EinkInfoDialog(title = title, onDismiss = onDismiss, closeLabel = closeLabel) {
         options.forEach { option ->
             val key = keyOf(option)
             val description = descriptionOf?.invoke(option)
-            if (description != null) {
+            val customFont = labelFontFamilyOf?.invoke(option)
+            if (customFont != null) {
+                // Render label in the option's own font face — mirrors FontPickerRow in
+                // NovelTypographyControls. ChoiceRow/HighlightText has no fontFamily slot,
+                // so we use a flat Row that mirrors ChoiceRow's dense Onyx-look.
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(selected = key == selectedKey, onClick = {
+                                onSelect(key)
+                                onDismiss()
+                            })
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = labelOf(option),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontFamily = customFont,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                            if (key == selectedKey) {
+                                Icon(
+                                    AppIcons.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp),
+                                    tint = accentTint,
+                                )
+                            }
+                        }
+                    }
+                    if (description != null) {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
+                    }
+                }
+            } else if (description != null) {
                 Column {
                     ChoiceRow(
                         label = labelOf(option),

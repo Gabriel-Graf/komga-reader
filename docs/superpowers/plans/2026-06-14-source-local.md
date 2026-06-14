@@ -6,7 +6,7 @@
 
 **Architecture:** New Android-library module `:source-local` (depends only on `:domain` + `:source-api` + `androidx.documentfile`, **never `:render-core`**). CBZ pages stream via `openPage` (raw zip-entry extract, `java.util.zip`); PDF/CBR/EPUB read whole-file via `downloadFile` and are rendered by the existing render layer. One `SourceKind.LOCAL` branch in `SourceRegistration`, one general `ReaderViewModel` fallback, one Settings "Local folder" add-source segment.
 
-**Tech Stack:** Kotlin, coroutines, Android SAF (`DocumentFile`/`ContentResolver`), `java.util.zip`, JUnit5, Hilt, Jetpack Compose.
+**Tech Stack:** Kotlin, coroutines, Android SAF (`DocumentFile`/`ContentResolver`), `java.util.zip`, `kotlin.test` (Android-lib unit-test runner / JUnit4 platform, like `data` — no JUnit5), Hilt, Jetpack Compose. Run unit tests with `./gradlew :source-local:testDebugUnitTest`.
 
 **Spec:** `docs/superpowers/specs/2026-06-14-local-source-design.md` (read it first).
 
@@ -214,7 +214,7 @@ class LocalNamingTest {
 
 - [ ] **Step 2: Run, verify it fails.**
 
-Run: `./gradlew :source-local:test --tests "*LocalNamingTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*LocalNamingTest*"`
 Expected: FAIL (unresolved references).
 
 - [ ] **Step 3: Implement `LocalNaming.kt`.**
@@ -276,7 +276,7 @@ private fun compareNatural(a: String, b: String): Int {
 
 - [ ] **Step 4: Run, verify pass.**
 
-Run: `./gradlew :source-local:test --tests "*LocalNamingTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*LocalNamingTest*"`
 Expected: PASS.
 
 - [ ] **Step 5: Commit.**
@@ -340,7 +340,7 @@ class LocalMetadataParserTest {
 
 - [ ] **Step 2: Run, verify it fails.**
 
-Run: `./gradlew :source-local:test --tests "*LocalMetadataParserTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*LocalMetadataParserTest*"`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement `LocalMetadataParser.kt`.**
@@ -386,7 +386,7 @@ class LocalMetadataParser {
 
 - [ ] **Step 4: Run, verify pass.**
 
-Run: `./gradlew :source-local:test --tests "*LocalMetadataParserTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*LocalMetadataParserTest*"`
 Expected: PASS.
 
 - [ ] **Step 5: Commit.**
@@ -412,12 +412,18 @@ package com.komgareader.source.local
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.createTempDirectory
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class CbzArchiveTest {
-    private fun makeCbz(dir: File): File {
+    private val dir: File = createTempDirectory("cbz-test").toFile()
+
+    @AfterTest fun cleanup() { dir.deleteRecursively() }
+
+    private fun makeCbz(): File {
         val f = File(dir, "vol.cbz")
         ZipOutputStream(f.outputStream()).use { zip ->
             // intentionally out of order + a non-image entry
@@ -429,25 +435,25 @@ class CbzArchiveTest {
         return f
     }
 
-    @Test fun `image entries are listed in natural order, non-images excluded`(@TempDirFile dir: File) {
-        val cbz = CbzArchive(makeCbz(dir))
+    @Test fun `image entries are listed in natural order, non-images excluded`() {
+        val cbz = CbzArchive(makeCbz())
         assertEquals(3, cbz.pageCount())
         assertContentEquals("one".toByteArray(), cbz.pageBytes(0))
         assertContentEquals("two".toByteArray(), cbz.pageBytes(1))
         assertContentEquals("ten".toByteArray(), cbz.pageBytes(2))
     }
 
-    @Test fun `comicinfo bytes returned when present`(@TempDirFile dir: File) {
-        val cbz = CbzArchive(makeCbz(dir))
+    @Test fun `comicinfo bytes returned when present`() {
+        val cbz = CbzArchive(makeCbz())
         assertEquals("<ComicInfo/>", cbz.comicInfoXml())
     }
 }
 ```
-Note: JUnit5's temp-dir is `@TempDir` on a `File` parameter. Replace the placeholder annotation `@TempDirFile` with `@org.junit.jupiter.api.io.TempDir` and make the param `File` shared per test method (use a `@TempDir lateinit var dir: File` field instead if per-parameter injection is awkward). Adjust to the project's JUnit5 setup.
+Note: this module uses `kotlin.test` on the Android-library unit-test runner (JUnit4 platform — same as `data`). Do NOT use JUnit5 `@TempDir`/`@org.junit.jupiter.*`; use `kotlin.io.path.createTempDirectory` + `@AfterTest` cleanup as shown. Run unit tests with `./gradlew :source-local:testDebugUnitTest`.
 
 - [ ] **Step 2: Run, verify it fails.**
 
-Run: `./gradlew :source-local:test --tests "*CbzArchiveTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*CbzArchiveTest*"`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement `CbzArchive.kt`.**
@@ -497,7 +503,7 @@ class CbzArchive(private val file: File) {
 
 - [ ] **Step 4: Run, verify pass.**
 
-Run: `./gradlew :source-local:test --tests "*CbzArchiveTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*CbzArchiveTest*"`
 Expected: PASS.
 
 - [ ] **Step 5: Commit.**
@@ -577,7 +583,7 @@ class LocalLibraryMapperTest {
 
 - [ ] **Step 2: Run, verify it fails.**
 
-Run: `./gradlew :source-local:test --tests "*LocalLibraryMapperTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*LocalLibraryMapperTest*"`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement `LocalLibraryMapper.kt`.**
@@ -629,7 +635,7 @@ class LocalLibraryMapper {
 
 - [ ] **Step 4: Run, verify pass.**
 
-Run: `./gradlew :source-local:test --tests "*LocalLibraryMapperTest*"`
+Run: `./gradlew :source-local:testDebugUnitTest --tests "*LocalLibraryMapperTest*"`
 Expected: PASS.
 
 - [ ] **Step 5: Commit.**

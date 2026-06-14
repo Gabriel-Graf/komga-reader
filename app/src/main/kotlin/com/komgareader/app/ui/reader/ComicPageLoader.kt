@@ -7,37 +7,36 @@ import androidx.core.graphics.scale
 import coil.ImageLoader
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceImage
-import com.komgareader.domain.render.RenderedPage
-import com.komgareader.guidedview.PanelDetector
-import com.komgareader.guidedview.PanelRect
-import com.komgareader.guidedview.ReadingDirection
+import com.panela.comiccutter.PanelRect
+import com.panela.comiccutter.PanelSource
+import com.panela.comiccutter.model.RenderedPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Beschafft die Panel-Rechtecke einer Comic-Seite: Coil dekodiert das Seitenbild,
- * es wird auf [detectionWidth] runterskaliert (Flood-Fill/CC braucht keine volle Auflösung),
- * der [PanelDetector] liefert die in Leserichtung sortierten Panels.
+ * Obtains the panel rectangles of a comic page: Coil decodes the page image, it is downscaled to
+ * [detectionWidth] (the detector needs no full resolution), and the supplied [PanelSource] yields
+ * the panels in reading order (left-to-right; both [com.panela.comiccutter.GeometricPanelSource] and
+ * [com.panela.comiccutter.MlPanelSource] return that order).
  *
- * Panel-Koordinaten liegen im Downscale-Raum; die Compose-Schicht normalisiert sie
- * über die tatsächlichen Detektions-Maße (siehe [PageDetection]).
+ * Panel coordinates live in the downscale space; the Compose layer normalizes them against the
+ * actual detection dimensions (see [PageDetection]).
  */
 class ComicPageLoader(
     context: Context,
     private val imageLoader: ImageLoader,
-    private val detector: PanelDetector = PanelDetector(),
     private val detectionWidth: Int = 1000,
 ) {
     private val context: Context = context.applicationContext
 
     data class PageDetection(val panels: List<PanelRect>, val pageWidth: Int, val pageHeight: Int)
 
-    suspend fun detect(pageImage: SourceImage): PageDetection =
+    suspend fun detect(pageImage: SourceImage, panelSource: PanelSource): PageDetection =
         withContext(Dispatchers.Default) {
             val bitmap = decode(pageImage) ?: return@withContext PageDetection(emptyList(), 0, 0)
             val scaled = downscale(bitmap)
             val page = toRenderedPage(scaled)
-            val panels = detector.detect(page, ReadingDirection.LEFT_TO_RIGHT)
+            val panels = panelSource.detect(page)
             PageDetection(panels, page.width, page.height)
         }
 

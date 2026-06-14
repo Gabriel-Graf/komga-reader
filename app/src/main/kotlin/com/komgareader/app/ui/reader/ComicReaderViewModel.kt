@@ -8,10 +8,10 @@ import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.repository.SettingsRepository
-import com.komgareader.guidedview.GuidedNavigator
-import com.komgareader.guidedview.GuidedPosition
-import com.komgareader.guidedview.NormRect
-import com.komgareader.guidedview.PanelGeometry
+import com.panela.comiccutter.GuidedNavigator
+import com.panela.comiccutter.GuidedPosition
+import com.panela.comiccutter.NormRect
+import com.panela.comiccutter.PanelGeometry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +41,7 @@ class ComicReaderViewModel @Inject constructor(
     imageLoader: ImageLoader,
     private val bus: HardwareButtonBus,
     private val settings: SettingsRepository,
+    private val panelSourceProvider: PanelSourceProvider,
 ) : ViewModel(), Viewer {
 
     private val loader = ComicPageLoader(context, imageLoader)
@@ -86,7 +87,7 @@ class ComicReaderViewModel @Inject constructor(
     private suspend fun loadPanels(page: Int): List<NormRect> {
         if (page !in 0 until pageCount) return emptyList()
         panelCache[page]?.let { return it }
-        val det = loader.detect(pages[page])
+        val det = loader.detect(pages[page], panelSourceProvider.current())
         val norms = det.panels.map { PanelGeometry.normalize(it, det.pageWidth, det.pageHeight) }
         // Degenerate-Guard: weniger als 2 Panels ODER ein Panel >85 % Seitenfläche → Vollseite.
         val usable = if (norms.size < 2 || PanelGeometry.maxAreaFraction(norms) > 0.85f) emptyList() else norms

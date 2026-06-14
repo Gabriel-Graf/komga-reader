@@ -47,7 +47,7 @@ packs — while the host keeps enforcing the E‑Ink correctness rules no pack c
 | **E‑Ink** | Onyx refresh control (fast mode + device‑managed full refresh), no‑op fallback off‑device, no animations in E‑Ink mode. |
 | **Colour filter** | Per‑profile saturation / contrast / brightness applied to **both covers and reader pages** (Kaleido‑tuned built‑in profile). |
 | **Offline‑first** | Download manager, local read‑progress (`dirty` flag), background sync queue, bidirectional collection sync (last‑write‑wins). |
-| **Plugins** | Runtime‑installed source plugins (APK, TOFU‑pinned), plus data‑only packs: colour presets, reader presets, languages, and **UI packs**. |
+| **Plugins** | Runtime‑installed source plugins (APK, TOFU‑pinned), plus data‑only packs: colour presets, reader presets, languages, **UI packs**, and **reading fonts** (SPDX‑allowlisted, registered into crengine at runtime). |
 | **Modular UI** | Device‑class theme packs, form‑factor shell packs (bottom‑bar / drawer / floating nav), and 8 swappable chrome **region slots**. |
 | **i18n** | Type‑safe English + German, compile‑time parity, runtime language packs. |
 
@@ -148,8 +148,8 @@ Flexibility is the point, so extension is first‑class. See
 
 - **Add a source** (Komga‑like server): implement `MediaSource` / `BrowsableSource` in a new
   `source-*` module, or ship it as a **plugin APK** linking only `com.komgareader:plugin-sdk`.
-- **Ship a plugin**: source plugins, colour presets, reader presets, language packs and
-  **UI packs** install at runtime. The officially supported plugins live in the
+- **Ship a plugin**: source plugins, colour presets, reader presets, language packs,
+  **UI packs** and **font packs** install at runtime. The officially supported plugins live in the
   [`Gabriel-Graf/KomgaReaderPlugins`](https://github.com/Gabriel-Graf/KomgaReaderPlugins)
   **monorepo** — one source tree, one CI that builds, signs and releases them all, plus the
   `repo.json` index the app reads. Third-party plugins can live in any repo that serves a

@@ -30,7 +30,7 @@ Legend: ✅ built & wired · 🟡 partial / model ahead of UX · 🟢 built, by�
 | **Multi‑reader** | ✅ | 4 reading modes (paged, webtoon, novel reflow, guided comic) behind a shared `Viewer` seam + `ReaderScaffold`. |
 | **Multi‑server / source‑agnostic** | ✅ | Komga + OPDS live and mixed; zero concrete‑source leakage into VMs/domain (verified). |
 | **Multi‑device** | ✅ / 🟡 | `DisplayBehavior(allowsMotion, allowsAccentColor)` models the two axes correctly; mono/Kaleido/LCD behave right. `DisplayMode` is still a binary enum, but Kaleido's mono UI accent is a **deliberate** decision, not a gap — see below. |
-| **Plugins** | ✅ / 🟢 | Source + 4 data‑only categories real, TOFU‑pinned, SDK shipped. Arbitrary‑Compose UI plugins are deliberately **not** built (declarative‑only by design). |
+| **Plugins** | ✅ / 🟢 | Source + 5 data‑only categories real (colour presets, reader presets, languages, UI packs, fonts), TOFU‑pinned, SDK shipped. Arbitrary‑Compose UI plugins are deliberately **not** built (declarative‑only by design). |
 | **Modular UI** | 🟡 | Theme + shell + 8 region slots all built and wired. External packs are **deliberately declarative/data‑only**; today they cover theme / shell nav‑style / icons. The additive frontier is widening that declarative vocabulary to address individual chrome slots — **not** loading external code. |
 | **Colour filter** | ✅ | Per‑profile saturation/contrast/brightness on **both** covers and reader pages, for all sources. |
 | **Offline‑first** | ✅ | Download manager, local `dirty` progress, sync queue, bidirectional collection sync (LWW). |
@@ -70,9 +70,11 @@ wanted, the model already supports it with no rework — only the enum/mapping w
 
 ### Plugins — ✅ (source + data) / 🟢 (UI‑view deliberately deferred)
 `plugin-api` (ABI `VERSION=2` / `MIN_SUPPORTED=1`, `PluginCategory{COLOR_PRESET, READER_PRESET,
-LANGUAGE, UI_PACK}`), `plugin-host` (`PluginHost`, `AbiGate`, `PluginSignature` TOFU pinning,
+LANGUAGE, UI_PACK, FONT}`), `plugin-host` (`PluginHost`, `AbiGate`, `PluginSignature` TOFU pinning,
 `PathClassLoader`, `DataPluginManifest`), and a shaded `plugin-sdk` are all real. Source plugins
-(Kavita) and all four data‑only categories work and have E2E coverage. Arbitrary‑Compose UI
+(Kavita) and all five data‑only categories work and have E2E coverage. Font plugins register TTFs
+into crengine at runtime (`registerFont` / `nativeAddFont`) and are gated by a hard SPDX license
+allowlist (`FontLicensePolicy`). Arbitrary‑Compose UI
 plugins are **intentionally not built** (host‑crash + un‑enforceable E‑Ink invariants) — the
 declarative path is the chosen replacement. This is a correct decision, not a gap.
 

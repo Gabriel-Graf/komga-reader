@@ -86,6 +86,11 @@ Concrete source types (`KomgaSource`, `KomgaSourceProvider`, …) appear **only*
 - For reflowable novels, `ReflowableDocument` / `ReflowableDocumentFactory` is implemented by
   **crengine‑ng** (`render-crengine`, JNI, arm64‑v8a). It reflows EPUB text with hyphenation
   (bundled DE/EN TeX patterns) and bundled reading fonts (DejaVu Sans, Literata, Bitter).
+- **Runtime font registration:** `ReflowableDocumentFactory.registerFont(absolutePath): Boolean`
+  (default no‑op) keeps `domain` engine‑free; the crengine impl buffers pre‑boot paths in
+  `pendingFontPaths` (flushed into the single `nativeInit`) and registers live post‑boot via the
+  JNI `CrengineNative.nativeAddFont` → `fontMan->RegisterFont`. Font plugins (see below) install
+  TTFs at runtime, no app restart.
 - The render target is strictly separated from the view. A different engine plugs in behind
   these interfaces without touching the rest.
 
@@ -204,7 +209,7 @@ A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no download
 
 - **`plugin-api`** (pure JVM): the ABI contract — `SourcePlugin`, `PluginMetadata`,
   `ConfigSchema`, `PluginAbi` (two integers: `VERSION` / `MIN_SUPPORTED`),
-  `PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK }`. It `api(project(":source-api"))`,
+  `PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK, FONT }`. It `api(project(":source-api"))`,
   re‑exporting the Seam‑A types.
 - **`plugin-host`** (Android lib): `PluginHost` discovers installed plugin APKs
   (`QUERY_ALL_PACKAGES`), `AbiGate` checks the two‑int range, and loading uses
@@ -214,7 +219,13 @@ A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no download
 - **`plugin-sdk`**: a single **shaded** jar (`plugin-api` + `source-api` + `domain`, no
   relocation, clean POM) — the one `compileOnly` artifact external plugin authors link.
 - **Categories:** source plugins (e.g. Kavita, code APK) and data‑only packs (colour presets,
-  reader presets, languages, UI packs). Data‑only packs ship a JSON asset and `hasCode="false"`.
+  reader presets, languages, UI packs, fonts). Data‑only packs ship a JSON asset and `hasCode="false"`.
+- **Font plugins** (`PluginCategory.FONT`, data‑only): an APK ships `assets/fonts/*.ttf` + an index
+  asset (manifest `DATA_CATEGORY=FONT`, `DATA_ASSET`, `LICENSE=<SPDX>`). `PluginHost.extractFontAsset`
+  copies the TTF to permanent version‑keyed storage (`filesDir/plugin-fonts/<pkg>/<versionCode>/…`),
+  `PluginCatalog` merges license‑allowed fonts into `allNovelFonts` and registers them with crengine
+  (see Render seam). A **hard SPDX allowlist** (`FontLicensePolicy.isLicenseAllowed`: OFL‑1.1, Apache‑2.0,
+  CC0‑1.0, MIT, Ubuntu‑1.0) gates both repo install and sideload; the APK manifest license is authoritative.
 - **Distribution:** officially supported plugins live in the `Gabriel-Graf/KomgaReaderPlugins`
   **monorepo** (one source tree + one CI that builds, signs and releases all of them) and are
   published through its `repo.json` index. The in‑app repo browser installs from there and verifies
@@ -224,7 +235,8 @@ A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no download
   (header + optional license, an optional preview image, and the rendered `README.md`). Three optional
   generic `repo.json` fields back it — `previewUrl`, `readmeUrl`, `license` — usable by any plugin type.
   README markdown (with remote images) renders via `multiplatform-markdown-renderer` (Apache‑2.0); motion
-  is host‑gated for E‑Ink. `license` is shown here; allowlist enforcement is a later font‑plugin slice.
+  is host‑gated for E‑Ink. `license` is shown here; for font plugins it is additionally enforced against
+  the SPDX allowlist (see Font plugins above).
 
 **Deliberately not built — arbitrary UI‑view plugins (Compose code with host privileges).** A
 crash would take the host down, and the E‑Ink invariants couldn't be enforced. The chosen path is

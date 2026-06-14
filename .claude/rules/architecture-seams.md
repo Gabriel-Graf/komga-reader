@@ -136,6 +136,22 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   unverändert). Sample-APK `plugin/komga-ui-pack-sample/` (Standalone, gitignored). **Kein** ui-api-Code-ABI-
   Freeze in L2 (data-Packs linken kein ui-api — der Vertrag ist das JSON-Schema); Code-UI-Packs/externe
   per-Slot-Packs bleiben additives Soll.
+- **Font-Plugins (Ist, 2026-06-14, P2):** fünfte data-only Kategorie `PluginCategory.FONT` über
+  `discoverDataPlugins(FONT)` (additiv, `PluginAbi.VERSION` bleibt 2) — ein **extern installierbarer** APK
+  liefert TTFs als Assets (Manifest `DATA_CATEGORY=FONT`/`DATA_ASSET=<index.json>`/`LICENSE=<SPDX>`,
+  `android:hasCode="false"`, `assets/fonts/*.ttf`). `DiscoveredDataPlugin` trägt dafür jetzt `license` +
+  `versionCode`; Manifest-Key `PluginManifestKeys.LICENSE` neu. `PluginHost.extractFontAsset(pkg, assetPath,
+  destRoot)` extrahiert die TTF nach permanenten, versions-gekeyten Speicher
+  (`filesDir/plugin-fonts/<pkg>/<versionCode>/<basename>`, veraltete Versions-Verzeichnisse werden geprunt).
+  **Harter SPDX-Lizenz-Gate** (`FontLicensePolicy.isLicenseAllowed`, `data`, Allowlist {OFL-1.1, Apache-2.0,
+  CC0-1.0, MIT, Ubuntu-1.0}, case-insensitiv): Gate A beim Repo-Install (`PluginCatalog.install`, auf
+  `entry.license`), Gate B beim Sideload (Filter in `scanLocal`, auf Manifest-`DiscoveredDataPlugin.license`).
+  Nicht-gelistet → nie installiert/registriert; die APK-Lizenz ist autoritativ, `FontSpec.license` nur Anzeige.
+  Verdrahtung: `PluginCatalog` merged lizenz-erlaubte Plugin-Fonts in `allNovelFonts`
+  (= `NovelFonts.ALL` + Plugin-Fonts), bietet `fontDataPlugins` (roh) + `fontSampleFiles` (Familie→File);
+  ein verschwundenes Plugin setzt `novelFontFamily` auf den Default zurück. Repo-Index-Typ `font`→
+  `PluginKind.FONT`, Plugins-Tab-Filter `FONTS`. Die Render-Seite (crengine `registerFont`/`nativeAddFont`)
+  steht in Naht B unten.
 
 - **Collections-Sync bidirektional (Ist, 2026-06-10):** Sammlungen synchronisieren jetzt **push UND
   pull**. Der reine, pur-getestete `planCollectionSync` (`domain/usecase/CollectionSyncPlan.kt`)
@@ -174,6 +190,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`MupdfDocument` in `render-core`). Render-Target strikt von der View getrennt.
   Reicht MuPDFs Qualität nicht, klinkt sich eine andere Engine (crengine, Roman-Reflow) hinter
   `Document`/`ReflowableDocument` ein (Phase 4 / `novel-reflow-reader`) — ohne den Rest zu berühren.
+- **Runtime-Font-Registrierung (Ist, 2026-06-14, P2):** Plugin-TTFs (data-only Kategorie `FONT`, s. Naht A)
+  werden zur **Laufzeit** in den crengine-Font-Manager eingehängt — kein App-Neustart. `domain` bleibt
+  engine-frei über `ReflowableDocumentFactory.registerFont(absolutePath): Boolean` (Default no-op in
+  `domain/render/Document.kt`). Die crengine-Impl `CrengineDocumentFactory.registerFont` puffert vor dem
+  (einmaligen) `nativeInit`-Boot Pfade in `pendingFontPaths` (werden in den **einen** `nativeInit`-Aufruf
+  geflusht) und registriert nach dem Boot live via neuem JNI `CrengineNative.nativeAddFont`
+  (`render-crengine/.../cr3_bridge.cpp` → `fontMan->RegisterFont`). Ein zweites `nativeInit` ist verboten.
+  Verdrahtet in `PluginCatalog` (extrahiert TTF via `PluginHost.extractFontAsset`, ruft `registerFont`).
 - **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`

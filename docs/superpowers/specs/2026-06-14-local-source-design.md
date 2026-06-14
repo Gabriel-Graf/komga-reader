@@ -18,8 +18,14 @@ A real **`LocalSource`** behind Seam A (`MediaSource`), as foreseen in the archi
 (`SourceKind.LOCAL`, `SourceId.LOCAL = 0`). A device folder becomes a browsable, readable
 source. Because the whole app above the seam is source-agnostic (ViewModels resolve via
 `ActiveSource.get(sourceId)`, images flow through `openPage`/`coverBytes` Coil fetchers), local
-works read "like downloads" with **zero reader/UI/Coil changes** — the only new wiring is one
-`SourceKind.LOCAL` branch in `SourceRegistration`.
+works read "like downloads" with **almost no app changes** — the new wiring is one
+`SourceKind.LOCAL` branch in `SourceRegistration` plus one small, *general* reader fallback (see
+Reading Model) that also unlocks streaming-less sources (OPDS) without a prior download.
+
+**`LocalSource` stays a pure source — it never depends on `render-core`/MuPDF.** A "page" in a
+CBZ literally *is* a stored image file, so extracting it is byte-reading (a source job), not
+rendering. Formats whose pages require rendering (PDF, CBR) are not streamed by the source; the
+render layer renders them from the whole file (Seam B), keeping the two seams cleanly separated.
 
 ## Non-Goals (V1)
 
@@ -51,8 +57,10 @@ source-local/
 
 > `source-opds` is a pure-JVM module; `source-local` must be an **Android library** because it
 > needs `Context`/`ContentResolver`/SAF (`DocumentFile`). That is the only structural deviation
-> from the OPDS template. It still depends only on `:domain` + `:source-api` — never on `:app`,
-> never on other sources.
+> from the OPDS template. It still depends only on `:domain` + `:source-api` (+ `androidx.documentfile`)
+> — never on `:app`, never on other sources, **never on `:render-core`/MuPDF**. CBZ page extraction
+> uses only `java.util.zip` (JDK). Keep all pure logic (parser, mapping, sort) in plain Kotlin
+> classes so they stay JVM-unit-testable without instrumentation.
 
 ### Seam contract implemented
 
@@ -66,11 +74,11 @@ source-local/
 | `search(query, page)` | filter indexed series by title (case-insensitive) |
 | `books(seriesRemoteId)` | the files in that series folder, natural-sorted |
 | `seriesDetail(seriesRemoteId)` | series from the index (summary/genres if ComicInfo present, else null fields) |
-| `pages(bookRemoteId)` | page count via index; `PageRef(index, bookRemoteId, pageNumber, url="")` |
-| `openPage(ref)` | **per-page bytes** — see Reading Model |
-| `downloadFile(bookId, onProgress)` | **whole-file bytes** — see Reading Model |
-| `seriesIdOf(bookRemoteId)` | parent folder path (book remoteId is `<seriesPath>/<file>`) |
-| `coverBytes(remoteId, isSeriesCover)` | first page of the book (series cover = first book's first page) |
+| `pages(bookRemoteId)` | **CBZ**: one `PageRef(index, bookRemoteId, pageNumber=index+1, url="")` per image entry. **PDF/CBR/EPUB**: `emptyList()` (no per-file pages → reader renders whole-file, see Reading Model) |
+| `openPage(ref)` | **CBZ only**: raw image entry bytes from the cached zip (no decode). **else**: `throw UnsupportedOperationException` (never called — `pages()` is empty for those, like OPDS) |
+| `downloadFile(bookId, onProgress)` | **whole-file bytes** from the cached file (all formats) |
+| `seriesIdOf(bookRemoteId)` | parent folder path (book remoteId is `<seriesPath>/<file>`; loose file → its own series) |
+| `coverBytes(remoteId, isSeriesCover)` | **CBZ**: first image entry (raw). **PDF/CBR/EPUB**: `ByteArray(0)` (placeholder cover in V1 — no renderer in the source; see Covers) |
 
 **Not implemented:** `SyncingSource` (no server to sync to), `ContainerSource` (single implicit
 container in V1). `StubSource` fallback still applies if the folder/permission is lost.
@@ -111,29 +119,53 @@ cached until the next scan. No persistence of the index itself.
   stripped); `pageCount` from the index (cheap to obtain — see below).
 
 Page counts at scan time: for CBZ, count image entries in the zip central directory (cheap, no
-decode); for PDF, MuPDF `pageCount()` (cheap, indexes only); for EPUB, reflowable has no fixed
-page count — report 0/unknown and let the NOVEL reader drive progress by locator (existing path).
+decode, no renderer). For PDF/CBR/EPUB the source reports `pageCount = 0` — it has no renderer;
+the real count comes from the opened `Document` on the reader's whole-file `Rendered` path (PDF/CBR)
+or is locator-driven (EPUB/NOVEL), exactly as for OPDS/downloaded books today.
 
-## Reading Model (core decision — Hybrid, approved)
+## Reading Model (core decision — Hybrid, approved; renderer split corrected during planning)
 
-`LocalSource` is self-contained behind the seam. `LocalFileCache` copies a SAF file into the app
-cache once (LRU-evicted) so we get random access from a real `File`.
+`LocalSource` is a pure source (no renderer). `LocalFileCache` copies a SAF file into the app
+cache once (LRU-evicted, size-capped) so we get random access from a real `File`.
 
-- **`openPage(ref)`** (used by paged/webtoon/comic via the existing Coil `SourcePageFetcher`):
-  - **CBZ**: extract the raw image entry from the cached archive (`ZipFile`, O(1) by index) and
-    return its bytes **verbatim** — no decode/re-encode (best quality, lowest CPU/battery on
-    E-Ink).
-  - **PDF**: open with MuPDF from the cached file's bytes, render page `ref.index`, encode to
-    PNG/JPEG bytes.
-- **`downloadFile(bookId, onProgress)`** (used by the NOVEL/EPUB reader, which needs whole-file
-  bytes for crengine, and by the guided-comic whole-file path): return the full file bytes from
-  the cache (read once, progress callback over the read). This mirrors the OPDS path, which has
-  no `openPage` and reads via `downloadFile`.
-- **`coverBytes`**: page-1 bytes via the same per-format path as `openPage`.
+**Two paths, split by whether a "page" is a stored file or must be rendered:**
 
-Result: paged/webtoon/comic readers work through the standard agnostic `SourceImage → openPage`
-fetcher with no changes; novel works through the existing whole-file path. The reader stays
-source-agnostic.
+- **CBZ — streamed via the source (no renderer):** `pages()` returns one `PageRef` per image
+  entry (natural-sorted, image extensions only). The existing Coil `SourcePageFetcher` calls
+  `openPage(ref)`, which extracts the raw image entry from the cached zip (`ZipFile`, by index)
+  and returns its bytes **verbatim** — no decode/re-encode (best quality, lowest CPU/battery on
+  E-Ink). This is exactly how the paged/webtoon/comic readers already stream pages — **zero
+  reader change for CBZ.**
+- **PDF / CBR — rendered whole-file by the render layer (Seam B):** `pages()` returns
+  `emptyList()` (like OPDS). The source provides only `downloadFile` (whole-file bytes). The
+  reader renders pages from those bytes via the existing `DocumentFactory`/MuPDF
+  (`ReaderContent.Rendered`). MuPDF stays in `render-core`, not in the source.
+- **EPUB — whole-file (NOVEL reader):** resolves to `ViewerType.NOVEL`; `EpubBytesLoader` already
+  calls `downloadFile` directly. No change.
+- **`downloadFile(bookId, onProgress)`:** full file bytes from the cache (read once, progress over
+  the read). Mirrors the OPDS path.
+
+### The one general reader change (Task in plan)
+
+Today `ReaderViewModel.loadBook` uses the whole-file `Rendered` path **only when a `DownloadEntity`
+exists**, otherwise it builds a `Streamed` list from `pages()`. When `pages()` is empty and the
+book is not downloaded (OPDS today; LocalSource PDF/CBR), reading currently fails. Fix it
+generally: **when `source.pages(bookId)` is empty and no local download exists, fetch
+`source.downloadFile(bookId)` and render whole-file (`documentFactory.open(bytes, ext)` →
+`Rendered`).** This is a small, source-agnostic improvement — it also lets OPDS books read without
+a prior explicit download. It is the only reader behavior change; it special-cases no source type.
+
+## Covers
+
+Covers load through the existing agnostic `SourceCoverFetcher → coverBytes` path (no local cover
+shortcut — that would break agnosticism). Since the source has no renderer:
+
+- **CBZ**: real cover = first image entry (raw zip extract). Series cover = its first book's first
+  entry.
+- **PDF / CBR / EPUB**: `coverBytes` returns `ByteArray(0)` → the UI shows its placeholder. V1
+  limitation, documented. (Rendering a PDF/EPUB cover would require MuPDF/crengine inside the
+  source, which we forbid. A future enricher in the render layer could fill these without touching
+  the seam.)
 
 ## Folder Selection, Wiring & Settings
 
@@ -178,9 +210,10 @@ source-agnostic.
 
 ## Risks
 
-- **CBR/RAR**: MuPDF RAR support depends on the build. Plan task 0 verifies it on the actual
-  `render-core` build; if unsupported, CBR is dropped from the recognized extensions in V1 (no
-  `junrar` dependency added). CBZ/PDF/EPUB are unaffected.
+- **CBR/RAR**: handled like PDF — `pages()` empty → whole-file MuPDF render (no `junrar`, no zip
+  extract, since `java.util.zip` can't read RAR). Whether it reads at all depends on MuPDF's RAR
+  support in the `render-core` build. Plan Task 0 verifies it; if unsupported, CBR is dropped from
+  the recognized extensions in V1. CBZ/PDF/EPUB are unaffected.
 - **Large files on E-Ink**: `LocalFileCache` copies whole files into the app cache for random
   access. Bound the cache (LRU + size cap) and evict; document the trade-off. Per-page CBZ
   extraction after the one-time copy is cheap.
@@ -192,9 +225,11 @@ source-agnostic.
 
 ## Definition of Done
 
-- `source-local` module builds; `LocalSource` implements `BrowsableSource`.
-- One `SourceKind.LOCAL` branch in `SourceRegistration`; no other `:app`/`:domain` change beyond
-  the add-source UI segment.
+- `source-local` module builds; `LocalSource` implements `BrowsableSource`; depends only on
+  `:domain` + `:source-api` + `androidx.documentfile` (no `:render-core`).
+- One `SourceKind.LOCAL` branch in `SourceRegistration` (+ `Context` injected there); the
+  add-source UI gains a "Local folder" segment; one general `ReaderViewModel` fallback
+  (`pages()` empty + not downloaded → whole-file render). No other `:app`/`:domain` change.
 - Settings can add/remove a local folder (SAF, persisted permission).
 - Pure unit tests green (parser, mapping, sort, page-count).
 - E2E green on the emulator (library listing, three readers, covers, progress across restart),

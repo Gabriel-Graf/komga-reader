@@ -21,6 +21,12 @@ dependencyResolutionManagement {
         }
         google()
         mavenCentral()
+        // comic-cutter panel-detection library. Currently resolved from mavenLocal during development;
+        // content-filtered to its group (this repo can deliver nothing else). TODO: swap for the public
+        // JitPack/Maven-Central coordinate before CI/release.
+        mavenLocal {
+            content { includeGroup("io.github.gabriel-graf") }
+        }
     }
 }
 rootProject.name = "komga-reader"

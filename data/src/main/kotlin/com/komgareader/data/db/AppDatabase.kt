@@ -11,9 +11,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
         NovelProgressEntity::class,
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
-        PluginRepoEntity::class,
+        PluginRepoEntity::class, ReadingSessionEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun novelProgressDao(): NovelProgressDao
     abstract fun collectionDao(): CollectionDao
     abstract fun pluginRepoDao(): PluginRepoDao
+    abstract fun readingSessionDao(): ReadingSessionDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -336,6 +337,28 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
                 "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `url` TEXT NOT NULL, `name` TEXT)",
         )
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_plugin_repos_url` ON `plugin_repos` (`url`)")
+    }
+}
+
+/**
+ * v17 → v18: `reading_session`-Tabelle (lokaler Lese-Sitzungs-Log für die Lesestatistik).
+ * **Nicht-destruktiv** — reines `CREATE TABLE`, keine Bestandsdaten, kein `ALTER`, kein Recreate.
+ * Das Schema bildet exakt das vom Entity erzeugte ab (autoGenerate-PK →
+ * `INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL`, Non-Null-Spalten → `… NOT NULL`), damit Rooms
+ * Validierung sauber läuft und `fallbackToDestructiveMigration` NICHT greift (das würde die ganze
+ * DB löschen). Kein Server-Sync — die Tabelle bleibt rein lokal.
+ */
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `reading_session` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`readerKind` TEXT NOT NULL, " +
+                "`bookRemoteId` TEXT NOT NULL, " +
+                "`sourceId` INTEGER NOT NULL, " +
+                "`startTs` INTEGER NOT NULL, " +
+                "`durationMs` INTEGER NOT NULL)",
+        )
     }
 }
 

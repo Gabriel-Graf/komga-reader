@@ -70,6 +70,8 @@ class EinkContextControllerTest {
         override suspend fun setActiveUiPack(packageName: String) {}
         override suspend fun setLastSeenVersion(version: String) {}
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
+        override val frontlightLevel: Flow<Int> = flowOf(-1)
+        override suspend fun setFrontlightLevel(level: Int) {}
     }
 
     private fun controllerWith(eink: EinkController) = EinkContextController(

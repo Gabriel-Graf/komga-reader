@@ -10,6 +10,7 @@ import com.komgareader.app.ui.components.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,6 +48,13 @@ fun ReaderRoute(
     // Declare the current reader context so the E-Ink controller applies the right profile.
     // Re-evaluated on mode toggle and content change (Novel/Webtoon/Comic/Paged).
     EinkContextEffect(einkContextFor(mode, isNovel = content is ReaderContent.Novel))
+
+    // Shared long-press shortcut handler (all reader types): long VOLUME_UP → Home,
+    // long VOLUME_DOWN → manual full refresh. One place, not per reader VM.
+    val shortcuts: ReaderShortcutsViewModel = hiltViewModel()
+    LaunchedEffect(Unit) {
+        shortcuts.homeRequests.collect { onHome() }
+    }
 
     when (val c = content) {
         is ReaderContent.Loading -> {

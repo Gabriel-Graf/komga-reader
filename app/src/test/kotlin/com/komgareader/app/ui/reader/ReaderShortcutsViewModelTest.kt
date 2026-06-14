@@ -1,23 +1,34 @@
-package com.komgareader.app.data
+package com.komgareader.app.ui.reader
 
+import com.komgareader.app.data.EinkContextController
+import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.eink.RecordingEinkController
+import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.eink.EinkContext
 import com.komgareader.domain.eink.EinkContextProfile
-import com.komgareader.domain.eink.EinkController
+import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.eink.RefreshMode
-import com.komgareader.domain.eink.Region
-import com.komgareader.domain.eink.EinkCapabilities
-import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-class EinkContextControllerTest {
+@OptIn(ExperimentalCoroutinesApi::class)
+class ReaderShortcutsViewModelTest {
 
     // ---------------------------------------------------------------
     // Helpers
@@ -72,42 +83,75 @@ class EinkContextControllerTest {
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
     }
 
-    private fun controllerWith(eink: EinkController) = EinkContextController(
-        controller = eink,
-        settings = StubSettings(),
-    )
+    private fun makeVm(bus: HardwareButtonBus, rec: RecordingEinkController): ReaderShortcutsViewModel =
+        ReaderShortcutsViewModel(bus, EinkContextController(rec, StubSettings()))
 
     // ---------------------------------------------------------------
     // Tests
     // ---------------------------------------------------------------
 
     @Test
-    fun `manualFullRefresh issues a FULL refresh`() = runTest {
-        val fake = RecordingEinkController()
-        controllerWith(fake).manualFullRefresh()
-        assertEquals(RefreshMode.FULL, fake.lastRefreshMode)
-    }
+    fun `long volume up emits a home request`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val bus = HardwareButtonBus()
+            val vm = makeVm(bus, RecordingEinkController())
 
-    @Test
-    fun `manualFullRefresh passes a zero region`() = runTest {
-        val fake = RecordingEinkController()
-        controllerWith(fake).manualFullRefresh()
-        assertEquals(Region(0, 0, 0, 0), fake.lastRefreshRegion)
-    }
+            val received = mutableListOf<Unit>()
+            val collector = launch { vm.homeRequests.collect { received.add(it) } }
+            // yield so collector coroutine subscribes before we emit
+            yield()
 
-    @Test
-    fun `manualFullRefresh on no-eink device does not throw`() = runTest {
-        val noOp = object : EinkController {
-            override val capabilities = EinkCapabilities(hasEink = false, canColor = false, canInvert = false)
-            override val buttonEvents: Flow<ButtonEvent> = emptyFlow()
-            override fun refresh(region: Region, mode: RefreshMode) {}
-            override fun setContrast(level: Int) {}
-            override fun setInverted(inverted: Boolean) {}
-            override fun applyRefreshMode(id: String?) {}
-            override fun applyColorMode(id: String?) {}
-            override fun defaultProfile(context: EinkContext) = EinkContextProfile()
+            bus.emit(ButtonEvent(HardwareButton.VOLUME_UP, PressKind.LONG))
+            advanceUntilIdle()
+
+            assertTrue(received.isNotEmpty(), "Expected a home request to be emitted")
+            collector.cancel()
+        } finally {
+            Dispatchers.resetMain()
         }
-        // Must not throw — NoOp simply absorbs the call
-        controllerWith(noOp).manualFullRefresh()
+    }
+
+    @Test
+    fun `long volume down triggers a full refresh`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val bus = HardwareButtonBus()
+            val rec = RecordingEinkController()
+            val vm = makeVm(bus, rec)
+            // Collect homeRequests to keep the vm coroutine active
+            val collector = launch { vm.homeRequests.collect {} }
+
+            bus.emit(ButtonEvent(HardwareButton.VOLUME_DOWN, PressKind.LONG))
+            advanceUntilIdle()
+
+            assertEquals(RefreshMode.FULL, rec.lastRefreshMode)
+            collector.cancel()
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `short press is ignored by the shortcut layer`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val bus = HardwareButtonBus()
+            val rec = RecordingEinkController()
+            val vm = makeVm(bus, rec)
+
+            val received = mutableListOf<Unit>()
+            val collector = launch { vm.homeRequests.collect { received.add(it) } }
+
+            bus.emit(ButtonEvent(HardwareButton.VOLUME_UP, PressKind.SHORT))
+            bus.emit(ButtonEvent(HardwareButton.VOLUME_DOWN, PressKind.SHORT))
+            advanceUntilIdle()
+
+            assertTrue(received.isEmpty(), "Short presses must not emit home requests")
+            assertNull(rec.lastRefreshMode, "Short presses must not trigger a refresh")
+            collector.cancel()
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 }

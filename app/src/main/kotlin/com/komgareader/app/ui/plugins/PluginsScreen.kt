@@ -78,6 +78,7 @@ fun PluginsScreen(
     val languageDataPlugins by viewModel.languageDataPlugins.collectAsState()
     val readerPresetDataPlugins by viewModel.readerPresetDataPlugins.collectAsState()
     val uiPackDataPlugins by viewModel.uiPackDataPlugins.collectAsState()
+    val fontDataPlugins by viewModel.fontDataPlugins.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val repos by viewModel.repos.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -105,6 +106,7 @@ fun PluginsScreen(
     fun languageFor(pkg: String): DiscoveredDataPlugin? = languageDataPlugins.firstOrNull { it.packageName == pkg }
     fun readerPresetFor(pkg: String): DiscoveredDataPlugin? = readerPresetDataPlugins.firstOrNull { it.packageName == pkg }
     fun uiPackFor(pkg: String): DiscoveredDataPlugin? = uiPackDataPlugins.firstOrNull { it.packageName == pkg }
+    fun fontFor(pkg: String): DiscoveredDataPlugin? = fontDataPlugins.firstOrNull { it.packageName == pkg }
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -182,7 +184,17 @@ fun PluginsScreen(
                         onUninstall = { uninstall(up.packageName) },
                     )
                 }
-                PluginKind.FONT -> { /* font plugins are data-only; no installed handler yet */ }
+                PluginKind.FONT -> fontFor(item.packageName)?.let { fp ->
+                    DataPluginRow(
+                        title = fp.displayName,
+                        typeLabel = s.pluginTabFontLabel,
+                        abiLabel = s.pluginAbiLabel,
+                        abiVersion = fp.abiVersion,
+                        uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
+                        onUninstall = { uninstall(fp.packageName) },
+                    )
+                }
             }
         }
         if (visible.showDivider) {

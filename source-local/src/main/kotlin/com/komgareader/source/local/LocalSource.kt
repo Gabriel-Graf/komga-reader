@@ -4,6 +4,7 @@ import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.SourceKind
+import com.komgareader.domain.repository.DownloadedBook
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.PageRef
 import com.komgareader.domain.source.PagedResult
@@ -38,6 +39,29 @@ class LocalSource internal constructor(
 
     /** Drop the cached index so the next access rescans (on-start / manual reload). */
     suspend fun refresh() = indexLock.withLock { cached = null }
+
+    /**
+     * All indexed books as [DownloadedBook]s so the wiring layer can register local works in the
+     * downloads table — they then carry the "downloaded" badge and read via the offline path like
+     * any download. `localPath` is the real SAF document URI of the file (O(1), no findFile walk);
+     * ids are the same opaque (encoded) remoteIds the rest of the app sees. `totalPages = 0` (the
+     * reader gets the real count when it opens the document). Pure index read — no file I/O.
+     */
+    suspend fun asDownloadedBooks(): List<DownloadedBook> = index().series.flatMap { series ->
+        series.books.map { book ->
+            DownloadedBook(
+                bookRemoteId = encode(book.remoteId),
+                sourceId = id,
+                seriesRemoteId = encode(series.remoteId),
+                title = book.title,
+                format = book.format.name.lowercase(),
+                localPath = scanner.documentUri(book.remoteId).orEmpty(),
+                totalPages = 0,
+                seriesTitle = series.title,
+                seriesCoverUrl = null,
+            )
+        }
+    }
 
     override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> =
         PagedResult(index().series.map { it.toSeries() }, hasNextPage = false)

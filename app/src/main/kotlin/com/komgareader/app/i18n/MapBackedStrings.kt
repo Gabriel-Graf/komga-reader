@@ -70,6 +70,9 @@ class MapBackedStrings(
     override val downloaded: String get() = overrides["downloaded"] ?: fallback.downloaded
     override val downloadedShort: String get() = overrides["downloadedShort"] ?: fallback.downloadedShort
     override val removeDownload: String get() = overrides["removeDownload"] ?: fallback.removeDownload
+    override val deleteLocalFileTitle: String get() = overrides["deleteLocalFileTitle"] ?: fallback.deleteLocalFileTitle
+    override val deleteLocalFileWarning: String get() = overrides["deleteLocalFileWarning"] ?: fallback.deleteLocalFileWarning
+    override val deleteLocalFileConfirm: String get() = overrides["deleteLocalFileConfirm"] ?: fallback.deleteLocalFileConfirm
     override val loading: String get() = overrides["loading"] ?: fallback.loading
     override val statusRead: String get() = overrides["statusRead"] ?: fallback.statusRead
     override val resumeHere: String get() = overrides["resumeHere"] ?: fallback.resumeHere

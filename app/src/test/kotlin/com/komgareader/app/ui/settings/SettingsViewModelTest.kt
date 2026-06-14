@@ -56,6 +56,7 @@ class SettingsViewModelTest {
             pullOnlySync = {},
             scanLocal = {},
             fetchRepos = {},
+            syncLocalDownloads = {},
             displayMode = { "EINK" },
         )
 

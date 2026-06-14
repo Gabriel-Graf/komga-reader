@@ -72,6 +72,7 @@ import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.app.ui.components.AnchoredMenuPopup
 import com.komgareader.app.ui.components.EinkInfoDialog
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceCover
@@ -81,6 +82,7 @@ import com.komgareader.app.i18n.localizedContentType
 import com.komgareader.app.i18n.localizedSeriesStatus
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.ContentType
+import com.komgareader.domain.source.SourceId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,6 +106,8 @@ fun SeriesDetailScreen(
     var typeMenuOpen by remember { mutableStateOf(false) }
     var burgerAnchor by remember { mutableStateOf(IntOffset.Zero) }
     var showAddToCollection by remember { mutableStateOf(false) }
+    // Entfernen eines LOKALEN Werks löscht die ECHTE Datei auf dem Gerät → erst Warn-Modal bestätigen.
+    var pendingLocalDelete by remember { mutableStateOf<LocalDelete?>(null) }
 
     // Fehler-Events als Snackbar anzeigen
     LaunchedEffect(Unit) {
@@ -181,10 +185,22 @@ fun SeriesDetailScreen(
                             onOpenBook = onOpenBook,
                             onOpenChapter = viewModel::onOpenChapter,
                             onDownload = viewModel::download,
-                            onRemoveDownload = viewModel::removeDownload,
+                            onRemoveDownload = { id ->
+                                if (current.books.firstOrNull()?.sourceId == SourceId.LOCAL) {
+                                    pendingLocalDelete = LocalDelete.One(id)
+                                } else {
+                                    viewModel.removeDownload(id)
+                                }
+                            },
                             onDownloadAll = { viewModel.downloadAll(current.books) },
                             onCancelDownload = viewModel::cancelDownloadAll,
-                            onRemoveAll = { viewModel.removeAll(current.books) },
+                            onRemoveAll = {
+                                if (current.books.firstOrNull()?.sourceId == SourceId.LOCAL) {
+                                    pendingLocalDelete = LocalDelete.All
+                                } else {
+                                    viewModel.removeAll(current.books)
+                                }
+                            },
                             onSetRead = viewModel::setRead,
                             onOpenTypeMenu = { typeMenuOpen = true },
                             onTypeMenuAnchor = { burgerAnchor = it },
@@ -224,6 +240,32 @@ fun SeriesDetailScreen(
             onDismiss = { showAddToCollection = false },
         )
     }
+
+    // Warnung vor dem Löschen LOKALER Dateien: anders als ein Server-Download ist das die echte
+    // Datei im Geräteordner — sie wird unwiderruflich entfernt (kein Papierkorb).
+    pendingLocalDelete?.let { target ->
+        EinkModal(
+            title = s.deleteLocalFileTitle,
+            onDismiss = { pendingLocalDelete = null },
+            confirmLabel = s.deleteLocalFileConfirm,
+            onConfirm = {
+                when (target) {
+                    is LocalDelete.One -> viewModel.removeDownload(target.bookRemoteId)
+                    LocalDelete.All -> (state as? SeriesDetailUiState.Content)?.let { viewModel.removeAll(it.books) }
+                }
+                pendingLocalDelete = null
+            },
+            dismissLabel = s.cancel,
+        ) {
+            Text(s.deleteLocalFileWarning)
+        }
+    }
+}
+
+/** Ziel einer bestätigungspflichtigen Löschung lokaler Dateien (ein Werk oder die ganze Serie). */
+private sealed interface LocalDelete {
+    data class One(val bookRemoteId: String) : LocalDelete
+    data object All : LocalDelete
 }
 
 @Composable

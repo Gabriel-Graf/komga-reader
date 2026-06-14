@@ -136,6 +136,8 @@ class SettingsViewModel @Inject constructor(
         releaseTreePermission(cfg.baseUrl)
         servers.remove(cfg.id)
         registration.sourceIdOf(cfg)?.let { collections.removeSource(it) }
+        // Mirror the change into the downloads table (the local rows are now stale → cleared).
+        coordinator.onServerChanged()
     }.let {}
 
     /** Setzt Download-Ordner UND lokalen Ordner auf denselben SAF-Ordner. */

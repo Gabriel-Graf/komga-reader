@@ -2,6 +2,7 @@ package com.komgareader.source.local
 
 import android.content.Context
 import android.net.Uri
+import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 
 /**
@@ -41,4 +42,15 @@ class LocalFolderScanner(private val context: Context, private val rootTreeUri: 
         }
         return node.uri
     }
+
+    /**
+     * O(1) content-URI for a child relative path, built from the tree document id (no `findFile`
+     * walk) — for bulk use (download-table sync). The SAF child document id is
+     * `<treeDocId>/<relativePath>`. Returns a readable document URI for the granted tree.
+     */
+    fun documentUri(relativePath: String): String? = runCatching {
+        val treeDocId = DocumentsContract.getTreeDocumentId(rootTreeUri)
+        val childDocId = "$treeDocId/$relativePath"
+        DocumentsContract.buildDocumentUriUsingTree(rootTreeUri, childDocId).toString()
+    }.getOrNull()
 }

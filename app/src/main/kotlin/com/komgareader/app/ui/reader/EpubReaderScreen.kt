@@ -17,11 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.komgareader.domain.model.ReaderKind
 
 @Composable
 fun EpubReaderScreen(
     pageCount: Int,
     initialPage: Int,
+    readerKind: ReaderKind,
+    bookRemoteId: String,
+    sourceId: Long,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onSettings: () -> Unit,
@@ -30,6 +34,8 @@ fun EpubReaderScreen(
     val requestedPage by viewModel.requestedPage.collectAsState()
 
     val pagerState = rememberPagerState(initialPage = initialPage) { pageCount }
+
+    ReadingSessionEffect(readerKind, bookRemoteId, sourceId, pagerState.currentPage)
 
     // Button-Navigation: angeforderte Seite vom ViewModel scrollen
     LaunchedEffect(requestedPage) {

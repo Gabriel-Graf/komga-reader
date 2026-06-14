@@ -9,6 +9,7 @@ import com.komgareader.domain.source.PageRef
 import com.komgareader.domain.source.PagedResult
 import com.komgareader.domain.source.SourceFilter
 import java.io.File
+import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -48,10 +49,10 @@ class LocalSource internal constructor(
         )
 
     override suspend fun books(seriesRemoteId: String): List<Book> =
-        index().series(seriesRemoteId)?.let { s -> s.books.map { it.toBook(s.title) } }.orEmpty()
+        index().series(decode(seriesRemoteId))?.let { s -> s.books.map { it.toBook(s.title) } }.orEmpty()
 
     override suspend fun seriesDetail(seriesRemoteId: String): Series? {
-        val s = index().series(seriesRemoteId) ?: return null
+        val s = index().series(decode(seriesRemoteId)) ?: return null
         val base = s.toSeries()
         // Enrich from the first CBZ's ComicInfo only (one materialize, cached). Best-effort.
         val firstCbz = s.books.firstOrNull { it.format == BookFormat.CBZ } ?: return base
@@ -69,15 +70,17 @@ class LocalSource internal constructor(
     }
 
     override suspend fun pages(bookRemoteId: String): List<PageRef> {
-        val book = index().book(bookRemoteId) ?: return emptyList()
+        val realPath = decode(bookRemoteId)
+        val book = index().book(realPath) ?: return emptyList()
         if (book.format != BookFormat.CBZ) return emptyList() // PDF/CBR/EPUB → whole-file render
-        val cbz = withContext(Dispatchers.IO) { cbzOf(bookRemoteId) } ?: return emptyList()
+        val cbz = withContext(Dispatchers.IO) { cbzOf(realPath) } ?: return emptyList()
         val count = withContext(Dispatchers.IO) { cbz.pageCount() }
+        // PageRef carries the opaque (encoded) id back so openPage roundtrips the same token.
         return (0 until count).map { i -> PageRef(index = i, bookRemoteId = bookRemoteId, pageNumber = i + 1, url = "") }
     }
 
     override suspend fun openPage(ref: PageRef): ByteArray {
-        val cbz = withContext(Dispatchers.IO) { cbzOf(ref.bookRemoteId) }
+        val cbz = withContext(Dispatchers.IO) { cbzOf(decode(ref.bookRemoteId)) }
             ?: throw UnsupportedOperationException("LocalSource streams CBZ pages only")
         return withContext(Dispatchers.IO) { cbz.pageBytes(ref.index) }
     }
@@ -86,42 +89,60 @@ class LocalSource internal constructor(
         bookRemoteId: String,
         onProgress: (read: Long, total: Long) -> Unit,
     ): ByteArray = withContext(Dispatchers.IO) {
-        val file = materialize(bookRemoteId) ?: error("Local file not found: $bookRemoteId")
+        val file = materialize(decode(bookRemoteId)) ?: error("Local file not found: $bookRemoteId")
         file.readBytes().also { onProgress(it.size.toLong(), it.size.toLong()) }
     }
 
-    override suspend fun seriesIdOf(bookRemoteId: String): String =
-        index().series.firstOrNull { s -> s.books.any { it.remoteId == bookRemoteId } }?.remoteId
-            ?: bookRemoteId
+    override suspend fun seriesIdOf(bookRemoteId: String): String {
+        val realPath = decode(bookRemoteId)
+        val series = index().series.firstOrNull { s -> s.books.any { it.remoteId == realPath } }
+        return series?.let { encode(it.remoteId) } ?: bookRemoteId
+    }
 
     override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray {
-        val bookId = if (isSeriesCover) index().series(remoteId)?.books?.firstOrNull()?.remoteId else remoteId
-        bookId ?: return ByteArray(0)
-        val cbz = withContext(Dispatchers.IO) { cbzOf(bookId) } ?: return ByteArray(0)
+        val realBookPath = if (isSeriesCover) {
+            index().series(decode(remoteId))?.books?.firstOrNull()?.remoteId
+        } else {
+            decode(remoteId)
+        }
+        realBookPath ?: return ByteArray(0)
+        val cbz = withContext(Dispatchers.IO) { cbzOf(realBookPath) } ?: return ByteArray(0)
         return withContext(Dispatchers.IO) { cbz.coverBytes() }
     }
 
-    // --- helpers ---
-    private suspend fun materialize(bookRemoteId: String): File? {
-        val uri = scanner.uriOf(bookRemoteId) ?: return null
-        return withContext(Dispatchers.IO) { cache.materialize(uri, bookRemoteId) }
+    // --- helpers (operate on REAL relative paths; the seam exposes only encoded ids) ---
+
+    /**
+     * Domain remoteIds must be opaque (no '/') because the app threads them through navigation
+     * routes as single path segments. Local relative paths like "Berserk/v01.cbz" contain '/',
+     * so we expose them URL-safe Base64-encoded and decode at every seam entry point.
+     */
+    private fun encode(realPath: String): String =
+        Base64.getUrlEncoder().withoutPadding().encodeToString(realPath.toByteArray())
+
+    private fun decode(id: String): String =
+        runCatching { String(Base64.getUrlDecoder().decode(id)) }.getOrDefault(id)
+
+    private suspend fun materialize(realPath: String): File? {
+        val uri = scanner.uriOf(realPath) ?: return null
+        return withContext(Dispatchers.IO) { cache.materialize(uri, realPath) }
     }
 
-    private suspend fun cbzOf(bookRemoteId: String): CbzArchive? {
-        val book = index().book(bookRemoteId) ?: return null
+    private suspend fun cbzOf(realPath: String): CbzArchive? {
+        val book = index().book(realPath) ?: return null
         if (book.format != BookFormat.CBZ) return null
-        val file = materialize(bookRemoteId) ?: return null
+        val file = materialize(realPath) ?: return null
         return CbzArchive(file)
     }
 
     private fun LocalSeries.toSeries(): Series =
-        Series(id = 0L, sourceId = this@LocalSource.id, remoteId = remoteId, title = title)
+        Series(id = 0L, sourceId = this@LocalSource.id, remoteId = encode(remoteId), title = title)
 
     private fun LocalBook.toBook(seriesTitle: String): Book = Book(
         id = 0L,
         sourceId = this@LocalSource.id,
         seriesId = 0L,
-        remoteId = remoteId,
+        remoteId = encode(remoteId),
         title = title,
         format = format,
         pageCount = 0, // real count comes from the opened Document (reader) / pages() for CBZ

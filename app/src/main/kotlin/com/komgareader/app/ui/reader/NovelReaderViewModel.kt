@@ -18,6 +18,7 @@ import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.ReflowableDocument
 import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.render.SearchHit
+import com.komgareader.domain.render.resolveHyphenationLang
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -86,10 +87,18 @@ class NovelReaderViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(NovelUiState())
     val uiState: StateFlow<NovelUiState> = _uiState.asStateFlow()
 
+    /** EPUB content language read once after open() — drives "auto" hyphenation resolution. */
+    private val _docLanguage = MutableStateFlow("")
+
     /**
      * Globale Roman-Typografie als [ReflowConfig], aus den sechs persistierten
      * Settings-Flows über den reinen [NovelSettings]-Mapper zusammengesetzt.
      * Single Source of Truth — die UI liest hier, schreibt über die Setter.
+     *
+     * The inner [combine] also takes [_docLanguage] so that when the hyphenation
+     * setting is "auto", [resolveHyphenationLang] maps it to the document's language
+     * (or "" = off when the language is unsupported or unknown). Explicit settings
+     * ("", "de", "en") pass through unchanged.
      */
     val reflowConfig: StateFlow<ReflowConfig> = combine(
         settings.novelFontSizeEm,
@@ -100,7 +109,10 @@ class NovelReaderViewModel @Inject constructor(
             settings.novelTextAlign,
             settings.novelHyphenationLang,
             settings.novelFontWeight,
-        ) { align, hyph, weight -> Triple(align, hyph, weight) },
+            _docLanguage,
+        ) { align, hyph, weight, docLang ->
+            Triple(align, resolveHyphenationLang(hyph, docLang), weight)
+        },
     ) { fontSizeEm, lineHeight, marginPreset, fontFamily, alignHyphWeight ->
         NovelSettings(
             fontSizeEm = fontSizeEm,
@@ -198,21 +210,27 @@ class NovelReaderViewModel @Inject constructor(
                 val local = novelProgress.get(routeSourceId, bookId)
                 val savedAnchor = local?.anchor?.takeIf { it.isNotEmpty() }
                 val fallbackFraction = local?.fraction ?: bytesLoader.startProgressFraction(bookId, routeSourceId)
-                // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
-                // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
-                val initialConfig = reflowConfig.first()
-                appliedConfig = initialConfig
                 // Initialisierung vollständig unter der Document-Sperre abschließen — öffnen,
                 // umschichten, Position wiederherstellen, Kapitel laden + Startseiten sondieren —
                 // BEVOR die Re-Layout-Beobachtung anläuft. So kann kein Re-Layout gleichzeitig
                 // mit der Kapitel-Sondierung am nicht-thread-sicheren Dokument arbeiten.
                 documentMutex.withLock {
                     val doc = withContext(Dispatchers.IO) {
-                        documentFactory.open(bytes, ".epub", viewportWidth, viewportHeight).also {
-                            it.applyLayout(initialConfig)
-                            if (savedAnchor != null) it.seekToAnchor(savedAnchor)
-                            else it.seekToProgress(fallbackFraction)
-                        }
+                        documentFactory.open(bytes, ".epub", viewportWidth, viewportHeight)
+                    }
+                    // Read the document's declared language and publish it so that
+                    // reflowConfig (with "auto" hyphenation) can resolve to the right
+                    // language BEFORE we call reflowConfig.first() below.
+                    _docLanguage.value = withContext(Dispatchers.IO) { doc.contentLanguage() }
+                    // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
+                    // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
+                    // _docLanguage is already set above, so "auto" resolves correctly here.
+                    val initialConfig = reflowConfig.first()
+                    appliedConfig = initialConfig
+                    withContext(Dispatchers.IO) {
+                        doc.applyLayout(initialConfig)
+                        if (savedAnchor != null) doc.seekToAnchor(savedAnchor)
+                        else doc.seekToProgress(fallbackFraction)
                     }
                     document = doc
                     lastSavedAnchor = savedAnchor

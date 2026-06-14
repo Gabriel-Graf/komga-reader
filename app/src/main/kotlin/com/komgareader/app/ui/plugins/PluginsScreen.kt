@@ -182,6 +182,8 @@ fun PluginsScreen(
                         onUninstall = { uninstall(up.packageName) },
                     )
                 }
+                // PANEL_MODEL: binary asset plugin — no in-list UI yet (Phase 1, additive).
+                PluginKind.PANEL_MODEL -> Unit
             }
         }
         if (visible.showDivider) {
@@ -408,6 +410,7 @@ private fun RepoRow(row: BrowserRow, onInfo: () -> Unit, onInstall: () -> Unit) 
         PluginKind.LANGUAGE -> s.pluginTabLanguageLabel
         PluginKind.READER_PRESET -> s.pluginTabReaderPresetLabel
         PluginKind.UI_PACK -> s.pluginTabUiPackLabel
+        PluginKind.PANEL_MODEL -> s.pluginTabPanelModelLabel
     }
     Row(
         modifier = Modifier

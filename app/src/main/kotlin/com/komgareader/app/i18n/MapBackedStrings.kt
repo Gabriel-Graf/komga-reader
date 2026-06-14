@@ -194,6 +194,7 @@ class MapBackedStrings(
     override val pluginTabLanguageLabel: String get() = overrides["pluginTabLanguageLabel"] ?: fallback.pluginTabLanguageLabel
     override val pluginTabReaderPresetLabel: String get() = overrides["pluginTabReaderPresetLabel"] ?: fallback.pluginTabReaderPresetLabel
     override val pluginTabUiPackLabel: String get() = overrides["pluginTabUiPackLabel"] ?: fallback.pluginTabUiPackLabel
+    override val pluginTabPanelModelLabel: String get() = overrides["pluginTabPanelModelLabel"] ?: fallback.pluginTabPanelModelLabel
     override val pluginTabEmpty: String get() = overrides["pluginTabEmpty"] ?: fallback.pluginTabEmpty
     override val pluginSectionInstalled: String get() = overrides["pluginSectionInstalled"] ?: fallback.pluginSectionInstalled
     override val pluginSectionAvailable: String get() = overrides["pluginSectionAvailable"] ?: fallback.pluginSectionAvailable

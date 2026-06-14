@@ -24,6 +24,14 @@ val komgaTestBaseUrl: String =
         ?: System.getenv("KOMGA_TEST_BASE_URL")?.takeIf { it.isNotBlank() }
         ?: "http://10.0.2.2:25600/api/v1/"
 
+// Release signing. Credentials live in the gitignored `keystore.properties` (never committed); the
+// keystore itself is also gitignored. If the file is absent (CI / fresh clones), the release build is
+// left unsigned rather than failing — only local release builds with the keystore are installable.
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.komgareader.app"
     compileSdk = 34
@@ -38,8 +46,21 @@ android {
         buildConfigField("String", "KOMGA_TEST_API_KEY", "\"$komgaTestApiKey\"")
         buildConfigField("String", "KOMGA_TEST_BASE_URL", "\"$komgaTestBaseUrl\"")
     }
+    signingConfigs {
+        if (keystorePropsFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
-        release { isMinifyEnabled = false }
+        release {
+            isMinifyEnabled = false
+            if (keystorePropsFile.exists()) signingConfig = signingConfigs.getByName("release")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

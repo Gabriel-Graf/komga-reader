@@ -65,7 +65,6 @@ dependencies {
     implementation(project(":source-opds"))
     implementation(project(":render-core"))
     implementation(project(":render-crengine"))
-    implementation(project(":guided-view"))
     // Comic panel detection: comic-cutter (geometric + ML) as a published library + ONNX runtime for
     // the ML path. The -jvm artifact is linked directly (the KMP root publishes only jvm/js variants,
     // no android); it is pure Kotlin/JVM so Android consumes it. onnx-jvm pulls the desktop onnxruntime

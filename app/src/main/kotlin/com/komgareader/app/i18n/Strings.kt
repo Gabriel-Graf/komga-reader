@@ -61,6 +61,9 @@ interface Strings {
     val downloaded: String
     val downloadedShort: String
     val removeDownload: String
+    val deleteLocalFileTitle: String
+    val deleteLocalFileWarning: String
+    val deleteLocalFileConfirm: String
     val loading: String
     val statusRead: String
     val resumeHere: String
@@ -438,6 +441,10 @@ object StringsDe : Strings {
     override val downloaded = "Heruntergeladen ✓"
     override val downloadedShort = "Gespeichert"
     override val removeDownload = "Entfernen"
+    override val deleteLocalFileTitle = "Lokale Datei löschen?"
+    override val deleteLocalFileWarning =
+        "Dies ist eine lokale Datei in deinem Ordner — sie wird unwiderruflich vom Gerät gelöscht, nicht nur aus der Bibliothek entfernt."
+    override val deleteLocalFileConfirm = "Datei löschen"
     override val loading = "Lädt…"
     override val statusRead = "Gelesen"
     override val resumeHere = "Hier aufgehört"
@@ -803,6 +810,10 @@ object StringsEn : Strings {
     override val downloaded = "Downloaded ✓"
     override val downloadedShort = "Saved"
     override val removeDownload = "Remove"
+    override val deleteLocalFileTitle = "Delete local file?"
+    override val deleteLocalFileWarning =
+        "This is a local file in your folder — it will be permanently deleted from the device, not just removed from the library."
+    override val deleteLocalFileConfirm = "Delete file"
     override val loading = "Loading…"
     override val statusRead = "Read"
     override val resumeHere = "Stopped here"

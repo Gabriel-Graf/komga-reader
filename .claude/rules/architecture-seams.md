@@ -61,6 +61,19 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Bibliothek (Serie+Bände+lose Werke) → CBZ-PAGED (Zip-Extrakt) + PDF (whole-file MuPDF) gerendert,
   Persistenz über Neustart. (EPUB liefert Bytes korrekt; crengine-`.so` fehlt für x86_64-Emulator —
   arm64-Boox unberührt.) V1 = ein Ordner; mehrere Ordner = additives Soll.
+- **Lokale Werke = „heruntergeladen" (Ist, 2026-06-14):** Werke der LOCAL-Quelle werden in die
+  **Download-Tabelle** gespiegelt (User-Entscheidung: lokal == heruntergeladen). `LocalSource.asDownloadedBooks()`
+  baut `DownloadedBook`s (sourceId=0, `localPath` = echte SAF-Document-URI via O(1)
+  `LocalFolderScanner.documentUri`, ids = die opaken encodeten remoteIds, `totalPages=0`); der `@Singleton`
+  **`LocalDownloadSync`** (app/data) **reconciliert** die Tabelle (upsert alle, stale sourceId=0-Zeilen löschen;
+  Ordner weg → alle sourceId=0-Zeilen weg) und läuft über `SyncCoordinator.onAppStart`/`onServerChanged`/
+  `onManualReload`. Folge: lokale Werke tragen das **Lokal/Download-Badge** (`isLocal` aus der Download-Tabelle)
+  und lesen über den **Offline-Pfad** (`documentFactory.open` aus der content-URI) statt `openPage` — der
+  CBZ-Zip-Extrakt-Pfad wird für lokale Werke dadurch unbenutzt (bleibt für andere streamlose Quellen). **Löschen
+  eines lokalen Werks löscht die ECHTE Datei** (kein Papierkorb) — `SeriesDetailScreen` fängt das Entfernen für
+  sourceId=0 ab und zeigt erst ein **Warn-`EinkModal`** („Lokale Datei löschen?"), bestätigt → `removeDownload`/
+  `removeAll` → `DownloadManager.delete` → `DocumentFile.delete`. „Alle herunterladen" überspringt lokale Werke
+  automatisch (`!in localBookIds`). E2E-verifiziert (Badge + Warn-Modal + Abbrechen lässt Datei intakt).
 - **Ist-Stand (2026-06-08): die Integrationsseite ist verdrahtet.** `SourceManager` wird in `app`
   über `SourceRegistration` aus der `ServerConfig` befüllt; `ActiveSource` (app/data) ist der
   agnostische Resolver für alle ViewModels. Bilder/Seiten **und** Cover fließen über die Naht

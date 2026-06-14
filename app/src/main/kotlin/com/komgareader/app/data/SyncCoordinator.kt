@@ -23,17 +23,20 @@ class SyncCoordinator(
     private val pullOnlySync: suspend () -> Unit,
     private val scanLocal: suspend () -> Unit,
     private val fetchRepos: suspend () -> Unit,
+    private val syncLocalDownloads: suspend () -> Unit,
     private val displayMode: suspend () -> String,
 ) {
     @Inject constructor(
         sync: CollectionSyncManager,
         catalog: PluginCatalog,
+        localDownloads: LocalDownloadSync,
         settings: SettingsRepository,
     ) : this(
         fullSync = { sync.fullSync() },
         pullOnlySync = { sync.pullOnlySync() },
         scanLocal = { catalog.scanLocal() },
         fetchRepos = { catalog.fetchRepos() },
+        syncLocalDownloads = { localDownloads.sync() },
         displayMode = { settings.displayMode.first() },
     )
 
@@ -49,15 +52,20 @@ class SyncCoordinator(
         runCatching { fullSync() }
         runCatching { scanLocal() }
         runCatching { fetchRepos() }
+        runCatching { syncLocalDownloads() }
     }
 
-    /** Server hinzugefügt/aktualisiert/entfernt → dessen Sammlungen NUR pullen. */
-    suspend fun onServerChanged() { runCatching { pullOnlySync() } }
+    /** Server hinzugefügt/aktualisiert/entfernt (auch lokaler Ordner) → Sammlungen pullen + lokale Downloads spiegeln. */
+    suspend fun onServerChanged() {
+        runCatching { pullOnlySync() }
+        runCatching { syncLocalDownloads() }
+    }
 
-    /** Reload-Button im Plugins-Tab: Repo neu holen + lokal neu scannen. */
+    /** Reload-Button im Plugins-Tab: Repo neu holen + lokal neu scannen + lokale Downloads spiegeln. */
     suspend fun onManualReload() {
         runCatching { fetchRepos() }
         runCatching { scanLocal() }
+        runCatching { syncLocalDownloads() }
     }
 
     /**

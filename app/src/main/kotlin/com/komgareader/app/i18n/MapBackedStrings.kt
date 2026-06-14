@@ -337,6 +337,7 @@ class MapBackedStrings(
     override val novelAlignLeft: String get() = overrides["novelAlignLeft"] ?: fallback.novelAlignLeft
     override val novelAlignJustify: String get() = overrides["novelAlignJustify"] ?: fallback.novelAlignJustify
     override val novelHyphenation: String get() = overrides["novelHyphenation"] ?: fallback.novelHyphenation
+    override val novelHyphenationAuto: String get() = overrides["novelHyphenationAuto"] ?: fallback.novelHyphenationAuto
     override val novelHyphenationOff: String get() = overrides["novelHyphenationOff"] ?: fallback.novelHyphenationOff
     override val novelHyphenationDe: String get() = overrides["novelHyphenationDe"] ?: fallback.novelHyphenationDe
     override val novelHyphenationEn: String get() = overrides["novelHyphenationEn"] ?: fallback.novelHyphenationEn

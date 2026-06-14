@@ -51,6 +51,7 @@ import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginKind
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.host.DataPluginInfo
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
@@ -78,6 +79,7 @@ fun PluginsScreen(
     val languageDataPlugins by viewModel.languageDataPlugins.collectAsState()
     val readerPresetDataPlugins by viewModel.readerPresetDataPlugins.collectAsState()
     val uiPackDataPlugins by viewModel.uiPackDataPlugins.collectAsState()
+    val panelModelDataPlugins by viewModel.panelModelDataPlugins.collectAsState()
     val fontDataPlugins by viewModel.fontDataPlugins.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val repos by viewModel.repos.collectAsState()
@@ -106,6 +108,7 @@ fun PluginsScreen(
     fun languageFor(pkg: String): DiscoveredDataPlugin? = languageDataPlugins.firstOrNull { it.packageName == pkg }
     fun readerPresetFor(pkg: String): DiscoveredDataPlugin? = readerPresetDataPlugins.firstOrNull { it.packageName == pkg }
     fun uiPackFor(pkg: String): DiscoveredDataPlugin? = uiPackDataPlugins.firstOrNull { it.packageName == pkg }
+    fun panelModelFor(pkg: String): DataPluginInfo? = panelModelDataPlugins.firstOrNull { it.packageName == pkg }
     fun fontFor(pkg: String): DiscoveredDataPlugin? = fontDataPlugins.firstOrNull { it.packageName == pkg }
 
     Column(
@@ -182,6 +185,17 @@ fun PluginsScreen(
                         uninstallLabel = s.pluginUninstall,
                         onInfo = { viewModel.openInfoForInstalled(item) },
                         onUninstall = { uninstall(up.packageName) },
+                    )
+                }
+                PluginKind.PANEL_MODEL -> panelModelFor(item.packageName)?.let { model ->
+                    DataPluginRow(
+                        title = model.displayName,
+                        typeLabel = s.pluginTabPanelModelLabel,
+                        abiLabel = s.pluginAbiLabel,
+                        abiVersion = model.abiVersion,
+                        uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
+                        onUninstall = { uninstall(model.packageName) },
                     )
                 }
                 PluginKind.FONT -> fontFor(item.packageName)?.let { fp ->
@@ -422,6 +436,7 @@ private fun RepoRow(row: BrowserRow, onInfo: () -> Unit, onInstall: () -> Unit) 
         PluginKind.LANGUAGE -> s.pluginTabLanguageLabel
         PluginKind.READER_PRESET -> s.pluginTabReaderPresetLabel
         PluginKind.UI_PACK -> s.pluginTabUiPackLabel
+        PluginKind.PANEL_MODEL -> s.pluginTabPanelModelLabel
         PluginKind.FONT -> s.pluginTabFontLabel
     }
     Row(

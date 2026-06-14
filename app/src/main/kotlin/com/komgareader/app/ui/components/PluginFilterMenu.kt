@@ -44,6 +44,10 @@ fun PluginFilterMenu(
             onSelect(PluginTypeFilter.UI_PACKS); onDismiss()
         }
         HorizontalDivider()
+        FilterRow(label = s.pluginFilterPanelModels, checked = selected == PluginTypeFilter.PANEL_MODELS) {
+            onSelect(PluginTypeFilter.PANEL_MODELS); onDismiss()
+        }
+        HorizontalDivider()
         FilterRow(label = s.pluginFilterFonts, checked = selected == PluginTypeFilter.FONTS) {
             onSelect(PluginTypeFilter.FONTS); onDismiss()
         }

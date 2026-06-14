@@ -90,6 +90,11 @@ class RepoIndexParserTest {
         assertEquals(PluginKind.SOURCE, pluginKindOf("garbage"))
     }
 
+    @Test fun `maps panel_model type to PANEL_MODEL kind`() {
+        assertEquals(PluginKind.PANEL_MODEL, pluginKindOf("panel_model"))
+        assertEquals(PluginKind.PANEL_MODEL, pluginKindOf("PANEL_MODEL"))
+    }
+
     @Test fun fontTypeMapsToFontKind() {
         assertEquals(PluginKind.FONT, pluginKindOf("font"))
         assertEquals(PluginKind.FONT, pluginKindOf("FONT"))

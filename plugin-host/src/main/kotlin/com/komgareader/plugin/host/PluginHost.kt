@@ -49,31 +49,73 @@ class PluginHost(private val context: Context) {
      * Plugin-Code ausgeführt. Paket-Sicht via app-Manifest-`QUERY_ALL_PACKAGES`. Die JSON-Interpretation
      * macht der Aufrufer (z.B. [discoverColorPresetPlugins] → [parsePresetSpecs]).
      */
-    fun discoverDataPlugins(category: PluginCategory): List<DiscoveredDataPlugin> {
+    fun discoverDataPlugins(category: PluginCategory): List<DiscoveredDataPlugin> =
+        scanDataPluginManifests(category).mapNotNull { s ->
+            val json = runCatching {
+                context.createPackageContext(s.packageName, 0)
+                    .assets.open(s.assetName).bufferedReader().use { it.readText() }
+            }.getOrNull() ?: return@mapNotNull null
+            DiscoveredDataPlugin(s.packageName, s.category, s.abi, s.assetName, s.label, json, s.license, s.versionCode)
+        }
+
+    /**
+     * Wie [discoverDataPlugins], aber OHNE das Asset zu lesen — nur Identität/ABI/Asset-Name. Für
+     * Kategorien mit großen Binär-Assets (PANEL_MODEL): das Listing soll nie mehrere MB pro Scan laden.
+     */
+    fun discoverDataPluginInfos(category: PluginCategory): List<DataPluginInfo> =
+        scanDataPluginManifests(category)
+            .map { s -> DataPluginInfo(s.packageName, s.category, s.abi, s.assetName, s.label) }
+
+    private data class ScannedDataPlugin(
+        val packageName: String,
+        val category: PluginCategory,
+        val abi: Int,
+        val assetName: String,
+        val label: String,
+        /** SPDX license identifier from the plugin manifest (empty when not declared). */
+        val license: String = "",
+        /** Android versionCode of the plugin APK; 0 when unavailable. */
+        val versionCode: Long = 0,
+    )
+
+    /**
+     * Reiner Manifest-Scan aller installierten, ABI-kompatiblen data-only Plugins einer [category]:
+     * getInstalledPackages → [resolveDataPluginManifest] → Kategorie-Filter → [readAbiVersion] →
+     * [AbiGate] → Label-Fallback. Liest KEIN Asset. Geteilte Basis von [discoverDataPlugins]
+     * (liest danach das JSON) und [discoverDataPluginInfos] (überspringt das Asset).
+     */
+    private fun scanDataPluginManifests(category: PluginCategory): List<ScannedDataPlugin> {
         val pm = context.packageManager
-        val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
-        return packages.mapNotNull { pkg ->
+        return pm.getInstalledPackages(PackageManager.GET_META_DATA).mapNotNull { pkg ->
             val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
-            val resolved = resolveDataPluginManifest(
+            val (resolvedCategory, assetName) = resolveDataPluginManifest(
                 dataCategory = meta.getString(PluginManifestKeys.DATA_CATEGORY),
                 dataAsset = meta.getString(PluginManifestKeys.DATA_ASSET),
                 legacyColorPresets = meta.getString(PluginManifestKeys.COLOR_PRESETS),
             ) ?: return@mapNotNull null
-            val (resolvedCategory, assetName) = resolved
             if (resolvedCategory != category) return@mapNotNull null
             val abi = readAbiVersion(meta) ?: return@mapNotNull null
             if (!AbiGate.isCompatible(abi)) return@mapNotNull null
-            val json = runCatching {
-                context.createPackageContext(pkg.packageName, 0)
-                    .assets.open(assetName).bufferedReader().use { it.readText() }
-            }.getOrNull() ?: return@mapNotNull null
-            val label = pkg.applicationInfo?.let { appInfo ->
-                runCatching { pm.getApplicationLabel(appInfo).toString() }.getOrNull()?.ifBlank { null }
-            } ?: pkg.packageName
+            val label = pkg.applicationInfo
+                ?.let { runCatching { pm.getApplicationLabel(it).toString() }.getOrNull()?.ifBlank { null } }
+                ?: pkg.packageName
             val license = meta.getString(PluginManifestKeys.LICENSE)?.trim().orEmpty()
             @Suppress("DEPRECATION") val versionCode = pkg.versionCode.toLong()
-            DiscoveredDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, json, license, versionCode)
+            ScannedDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, license, versionCode)
         }
+    }
+
+    /**
+     * Liest die rohen Asset-Bytes des ersten installierten, ABI-kompatiblen data-only Plugins der
+     * [category] (via `createPackageContext(pkg, 0)`, Flags 0 = nur Ressourcen, KEIN Code). null,
+     * wenn keines installiert ist oder das Asset nicht lesbar ist. Für binäre Assets (ONNX-Modell).
+     */
+    fun binaryDataPluginBytes(category: PluginCategory): ByteArray? {
+        val info = discoverDataPluginInfos(category).firstOrNull() ?: return null
+        return runCatching {
+            context.createPackageContext(info.packageName, 0)
+                .assets.open(info.assetName).use { it.readBytes() }
+        }.getOrNull()
     }
 
     /**

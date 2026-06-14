@@ -5,4 +5,4 @@ package com.komgareader.plugin
  * laufen über [com.komgareader.plugin.host.PluginManifestKeys.ENTRY_CLASS] und haben hier
  * KEINEN Eintrag. Neue Kategorie hinzufügen = additiv, kein ABI-Bruch.
  */
-enum class PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK, FONT }
+enum class PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK, PANEL_MODEL, FONT }

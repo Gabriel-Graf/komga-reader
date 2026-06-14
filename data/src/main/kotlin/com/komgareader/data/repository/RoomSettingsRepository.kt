@@ -23,6 +23,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.observe(KEY_SHELL_LAYOUT).map { it ?: ShellLayoutMode.AUTO.name }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)
     override val guidedPanelOverlay: Flow<Boolean> = dao.observe(KEY_PANEL_OVERLAY).map { it == "true" }
+    // Default true: abwesender Schlüssel oder jeder Wert außer "false" → ML-Erkennung aktiv.
+    override val useMlDetection: Flow<Boolean> = dao.observe(KEY_USE_ML).map { it != "false" }
     override val activeColorProfileId: Flow<Long?> = dao.observe(KEY_ACTIVE_COLOR_PROFILE)
         .map { it?.toLongOrNull() }
     override val webtoonOverlapPercent: Flow<Int> =
@@ -67,6 +69,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         else dao.put(SettingEntity(KEY_DOWNLOAD_DIR, uri))
     }
     override suspend fun setGuidedPanelOverlay(value: Boolean) = dao.put(SettingEntity(KEY_PANEL_OVERLAY, value.toString()))
+    override suspend fun setUseMlDetection(value: Boolean) = dao.put(SettingEntity(KEY_USE_ML, value.toString()))
     override suspend fun setWebtoonOverlapPercent(percent: Int) =
         dao.put(SettingEntity(KEY_WEBTOON_OVERLAP, percent.toString()))
     override suspend fun setChapterViewMode(mode: String) =
@@ -112,6 +115,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_SHELL_LAYOUT = "shell_layout_mode"
         const val KEY_DOWNLOAD_DIR = "download_dir"
         const val KEY_PANEL_OVERLAY = "guided_panel_overlay"
+        const val KEY_USE_ML = "use_ml_detection"
         const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"
         const val KEY_WEBTOON_OVERLAP = "webtoon_overlap_percent"
         const val KEY_LIBRARIES_VIEW_MODE = "libraries_view_mode"

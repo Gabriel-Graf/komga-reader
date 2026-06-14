@@ -192,6 +192,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val shellLayoutMode: Flow<String> = flowOf("AUTO")
     override val downloadDir: Flow<String?> = flowOf(null)
     override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
+    override val useMlDetection: Flow<Boolean> = flowOf(true)
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
     override val webtoonOverlapPercent: Flow<Int> = flowOf(25)
     override val chapterViewMode: Flow<String> = flowOf("LIST")
@@ -214,6 +215,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setShellLayoutMode(value: String) {}
     override suspend fun setDownloadDir(uri: String?) {}
     override suspend fun setGuidedPanelOverlay(value: Boolean) {}
+    override suspend fun setUseMlDetection(value: Boolean) {}
     override suspend fun setActiveColorProfileId(id: Long) {}
     override suspend fun setWebtoonOverlapPercent(percent: Int) {}
     override suspend fun setChapterViewMode(mode: String) {}
@@ -259,6 +261,7 @@ private class CapturingSettingsRepository(
     override val shellLayoutMode: Flow<String> = flowOf("AUTO")
     override val downloadDir: Flow<String?> = flowOf(null)
     override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
+    override val useMlDetection: Flow<Boolean> = flowOf(true)
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
     override val webtoonOverlapPercent: Flow<Int> = flowOf(25)
     override val chapterViewMode: Flow<String> = flowOf("LIST")
@@ -281,6 +284,7 @@ private class CapturingSettingsRepository(
     override suspend fun setShellLayoutMode(value: String) {}
     override suspend fun setDownloadDir(uri: String?) {}
     override suspend fun setGuidedPanelOverlay(value: Boolean) {}
+    override suspend fun setUseMlDetection(value: Boolean) {}
     override suspend fun setActiveColorProfileId(id: Long) {}
     override suspend fun setWebtoonOverlapPercent(percent: Int) {}
     override suspend fun setChapterViewMode(mode: String) {}

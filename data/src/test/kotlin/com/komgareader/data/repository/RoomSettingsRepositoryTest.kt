@@ -116,4 +116,14 @@ class RoomSettingsRepositoryTest {
         repo.setNovelHyphenationLang("de")
         assertEquals("de", repo.novelHyphenationLang.first())
     }
+
+    @Test
+    fun `useMlDetection defaults true and round-trips`() = runTest {
+        val repo = RoomSettingsRepository(FakeSettingsDao())
+        assertEquals(true, repo.useMlDetection.first())   // Default true (Schlüssel fehlt)
+        repo.setUseMlDetection(false)
+        assertEquals(false, repo.useMlDetection.first())
+        repo.setUseMlDetection(true)
+        assertEquals(true, repo.useMlDetection.first())
+    }
 }

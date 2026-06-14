@@ -194,6 +194,7 @@ class MapBackedStrings(
     override val pluginTabLanguageLabel: String get() = overrides["pluginTabLanguageLabel"] ?: fallback.pluginTabLanguageLabel
     override val pluginTabReaderPresetLabel: String get() = overrides["pluginTabReaderPresetLabel"] ?: fallback.pluginTabReaderPresetLabel
     override val pluginTabUiPackLabel: String get() = overrides["pluginTabUiPackLabel"] ?: fallback.pluginTabUiPackLabel
+    override val pluginTabPanelModelLabel: String get() = overrides["pluginTabPanelModelLabel"] ?: fallback.pluginTabPanelModelLabel
     override val pluginTabEmpty: String get() = overrides["pluginTabEmpty"] ?: fallback.pluginTabEmpty
     override val pluginSectionInstalled: String get() = overrides["pluginSectionInstalled"] ?: fallback.pluginSectionInstalled
     override val pluginSectionAvailable: String get() = overrides["pluginSectionAvailable"] ?: fallback.pluginSectionAvailable
@@ -216,6 +217,7 @@ class MapBackedStrings(
     override val pluginFilterLanguages: String get() = overrides["pluginFilterLanguages"] ?: fallback.pluginFilterLanguages
     override val pluginFilterReaderPresets: String get() = overrides["pluginFilterReaderPresets"] ?: fallback.pluginFilterReaderPresets
     override val pluginFilterUiPacks: String get() = overrides["pluginFilterUiPacks"] ?: fallback.pluginFilterUiPacks
+    override val pluginFilterPanelModels: String get() = overrides["pluginFilterPanelModels"] ?: fallback.pluginFilterPanelModels
     override val pluginTabFontLabel: String get() = overrides["pluginTabFontLabel"] ?: fallback.pluginTabFontLabel
     override val pluginFilterFonts: String get() = overrides["pluginFilterFonts"] ?: fallback.pluginFilterFonts
     override val repoBrowserTitle: String get() = overrides["repoBrowserTitle"] ?: fallback.repoBrowserTitle
@@ -245,6 +247,7 @@ class MapBackedStrings(
     override val readerSettings: String get() = overrides["readerSettings"] ?: fallback.readerSettings
     override val settingsGuidedDebug: String get() = overrides["settingsGuidedDebug"] ?: fallback.settingsGuidedDebug
     override val readerPanelOverlay: String get() = overrides["readerPanelOverlay"] ?: fallback.readerPanelOverlay
+    override val readerUseMlDetection: String get() = overrides["readerUseMlDetection"] ?: fallback.readerUseMlDetection
     override val settingsColorFilter: String get() = overrides["settingsColorFilter"] ?: fallback.settingsColorFilter
     override val colorFilterSummary: String get() = overrides["colorFilterSummary"] ?: fallback.colorFilterSummary
     override val colorFilterProfiles: String get() = overrides["colorFilterProfiles"] ?: fallback.colorFilterProfiles

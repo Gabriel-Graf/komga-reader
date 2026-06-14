@@ -208,6 +208,7 @@ interface Strings {
     val pluginTabLanguageLabel: String     // Typ-Label „Sprache"
     val pluginTabReaderPresetLabel: String // Typ-Label „Reader-Preset"
     val pluginTabUiPackLabel: String       // Typ-Label „UI-Pack"
+    val pluginTabPanelModelLabel: String   // Typ-Label „Panel-Modell"
     val pluginTabFontLabel: String         // Typ-Label „Schriftart"
     val pluginFilterAll: String           // Chip-Label „Alle"
     val pluginFilterSources: String       // Chip-Label „Quellen"
@@ -215,6 +216,7 @@ interface Strings {
     val pluginFilterLanguages: String     // Chip-Label „Sprachen"
     val pluginFilterReaderPresets: String // Chip-Label „Reader-Presets"
     val pluginFilterUiPacks: String       // Chip-Label „UI-Packs"
+    val pluginFilterPanelModels: String   // Chip-Label „Panel-Modelle"
     val pluginFilterFonts: String         // Chip-Label „Schriften"
     // Plugin-Repo-Browser (P2)
     val repoBrowserTitle: String
@@ -249,6 +251,7 @@ interface Strings {
     // Guided-View (Debug)
     val settingsGuidedDebug: String
     val readerPanelOverlay: String
+    val readerUseMlDetection: String
     // Farbfilter
     val settingsColorFilter: String
     val colorFilterSummary: String
@@ -579,6 +582,7 @@ object StringsDe : Strings {
     override val pluginTabLanguageLabel = "Sprache"
     override val pluginTabReaderPresetLabel = "Reader-Preset"
     override val pluginTabUiPackLabel = "UI-Pack"
+    override val pluginTabPanelModelLabel = "Panel-Modell"
     override val pluginTabFontLabel = "Schriftart"
     override val pluginFilterAll = "Alle"
     override val pluginFilterSources = "Quellen"
@@ -586,6 +590,7 @@ object StringsDe : Strings {
     override val pluginFilterLanguages = "Sprachen"
     override val pluginFilterReaderPresets = "Reader-Presets"
     override val pluginFilterUiPacks = "UI-Packs"
+    override val pluginFilterPanelModels = "Panel-Modelle"
     override val pluginFilterFonts = "Schriften"
     // Plugin-Repo-Browser (P2)
     override val repoBrowserTitle = "Plugins entdecken"
@@ -617,6 +622,7 @@ object StringsDe : Strings {
     // Guided-View (Debug)
     override val settingsGuidedDebug = "Guided-View (Debug)"
     override val readerPanelOverlay = "Erkannte Panel-Rahmen einblenden"
+    override val readerUseMlDetection = "Panel-Erkennung per ML-Modell (aus = Geometrie-Fallback)"
     // Farbfilter
     override val settingsColorFilter = "Farbfilter"
     override val colorFilterSummary = "Bilder fürs E-Ink-Display anpassen"
@@ -935,6 +941,7 @@ object StringsEn : Strings {
     override val pluginTabLanguageLabel = "Language"
     override val pluginTabReaderPresetLabel = "Reader preset"
     override val pluginTabUiPackLabel = "UI pack"
+    override val pluginTabPanelModelLabel = "Panel model"
     override val pluginTabFontLabel = "Font"
     override val pluginFilterAll = "All"
     override val pluginFilterSources = "Sources"
@@ -942,6 +949,7 @@ object StringsEn : Strings {
     override val pluginFilterLanguages = "Languages"
     override val pluginFilterReaderPresets = "Reader presets"
     override val pluginFilterUiPacks = "UI packs"
+    override val pluginFilterPanelModels = "Panel models"
     override val pluginFilterFonts = "Fonts"
     // Plugin repo browser (P2)
     override val repoBrowserTitle = "Discover plugins"
@@ -973,6 +981,7 @@ object StringsEn : Strings {
     // Guided view (debug)
     override val settingsGuidedDebug = "Guided view (debug)"
     override val readerPanelOverlay = "Show detected panel borders"
+    override val readerUseMlDetection = "ML model panel detection (off = geometric fallback)"
     // Color filter
     override val settingsColorFilter = "Color Filter"
     override val colorFilterSummary = "Tune images for the e-ink display"

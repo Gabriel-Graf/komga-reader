@@ -36,6 +36,7 @@ import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.plugin.PluginAbi
+import com.komgareader.plugin.host.DataPluginInfo
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
@@ -117,6 +118,13 @@ class PluginCatalog @Inject constructor(
     private val _uiPackDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
     val uiPackDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _uiPackDataPlugins.asStateFlow()
 
+    /**
+     * Metadaten installierter PANEL_MODEL-Plugins (metadata-only, kein Asset-Read).
+     * Große ONNX-Assets werden erst lazy über [PluginHost.binaryDataPluginBytes] geladen.
+     */
+    private val _panelModelDataPlugins = MutableStateFlow<List<DataPluginInfo>>(emptyList())
+    val panelModelDataPlugins: StateFlow<List<DataPluginInfo>> = _panelModelDataPlugins.asStateFlow()
+
     // Raw discovered font plugins (Plugins tab; includes license-blocked ones so they stay uninstallable-visible).
     private val _fontDataPlugins = MutableStateFlow<List<DiscoveredDataPlugin>>(emptyList())
     val fontDataPlugins: StateFlow<List<DiscoveredDataPlugin>> = _fontDataPlugins.asStateFlow()
@@ -158,7 +166,7 @@ class PluginCatalog @Inject constructor(
             _readerPresetDataPlugins.value,
             _uiPackDataPlugins.value,
             _fontDataPlugins.value,
-        )
+        ) + _panelModelDataPlugins.value.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PANEL_MODEL) }
 
     /**
      * Lokaler APK-Scan (kein Netz): Quellen + Presets neu entdecken, danach Verwaistes prunen
@@ -190,6 +198,11 @@ class PluginCatalog @Inject constructor(
                 .onFailure { Log.w("PluginCatalog", "discoverUiPackPlugins failed", it) }
                 .getOrDefault(emptyList())
         }
+        val rawPanelModels = withContext(Dispatchers.IO) {
+            runCatching { pluginHost.discoverDataPluginInfos(PluginCategory.PANEL_MODEL) }
+                .onFailure { Log.w("PluginCatalog", "discoverPanelModelPlugins failed", it) }
+                .getOrDefault(emptyList())
+        }
         val rawFonts = withContext(Dispatchers.IO) {
             runCatching { pluginHost.discoverDataPlugins(PluginCategory.FONT) }
                 .onFailure { Log.w("PluginCatalog", "discoverFontPlugins failed", it) }
@@ -200,6 +213,7 @@ class PluginCatalog @Inject constructor(
         _languageDataPlugins.value = rawLanguages
         _readerPresetDataPlugins.value = rawReaderPresets
         _uiPackDataPlugins.value = rawUiPacks
+        _panelModelDataPlugins.value = rawPanelModels
         _languagePlugins.value = rawLanguages.mapNotNull { parseLanguageSpec(it.assetJson, it.abiVersion) }
         _readerPresetPlugins.value = rawReaderPresets.flatMap { parseReaderPresetSpecs(it.assetJson, it.abiVersion).orEmpty() }
         _uiPackPlugins.value = rawUiPacks

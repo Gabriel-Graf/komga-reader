@@ -45,9 +45,7 @@ import com.komgareader.app.ui.settings.SettingsRoute
 import com.komgareader.app.ui.settings.SettingsViewModel
 import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
-import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.eink.EinkController
-import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.displayBehaviorFor
 import com.komgareader.app.ui.components.AuroraSeriesTile
@@ -90,17 +88,44 @@ class MainActivity : ComponentActivity() {
         if (!granted) requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
+    // Tracks volume keys whose gesture was already consumed by a long press, so the following
+    // key-up does not also emit a short (page-turn) event.
+    private val longPressConsumed = mutableSetOf<Int>()
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
-            KeyEvent.KEYCODE_VOLUME_UP -> {
-                buttonBus.emit(ButtonEvent(HardwareButton.PAGE_PREV))
-                true
-            }
-            KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                buttonBus.emit(ButtonEvent(HardwareButton.PAGE_NEXT))
-                true
+            KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                // First down of the gesture: enable long-press tracking so onKeyLongPress fires.
+                if (event != null && event.repeatCount == 0) event.startTracking()
+                true // consume; the actual emit happens on long-press or key-up
             }
             else -> super.onKeyDown(keyCode, event)
+        }
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
+        val emitted = com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = true)
+        return if (emitted != null) {
+            buttonBus.emit(emitted)
+            longPressConsumed.add(keyCode)
+            true
+        } else {
+            super.onKeyLongPress(keyCode, event)
+        }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                if (longPressConsumed.remove(keyCode)) {
+                    true // long press already handled this gesture
+                } else {
+                    com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = false)
+                        ?.let { buttonBus.emit(it) }
+                    true
+                }
+            }
+            else -> super.onKeyUp(keyCode, event)
         }
     }
 

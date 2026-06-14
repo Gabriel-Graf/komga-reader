@@ -246,6 +246,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`MupdfDocument` in `render-core`). Render-Target strikt von der View getrennt.
   Reicht MuPDFs Qualität nicht, klinkt sich eine andere Engine (crengine, Roman-Reflow) hinter
   `Document`/`ReflowableDocument` ein (Phase 4 / `novel-reflow-reader`) — ohne den Rest zu berühren.
+- **Dokumentsprache + Auto-Silbentrennung (Ist, 2026-06-15):** `ReflowableDocument.contentLanguage(): String`
+  (Default `""`, engine-neutral) liefert die EPUB-`dc:language` über das neue JNI `nativeLanguage`
+  (wrappt `LVDocView::getLanguage`, gespiegelt an `nativeTitle` in `cr3_bridge.cpp`). Der Roman-Reader löst
+  damit den Silbentrennungs-Wert **`"auto"`** über den **reinen** `resolveHyphenationLang(setting, docLang)`
+  (`domain/render`, „auto" → normalisierte unterstützte Doc-Sprache {de,en} oder „" = aus; explizite Werte
+  unverändert; `SUPPORTED_HYPHENATION` spiegelt `ReflowCss.PATTERN_DICTS`). `NovelReaderViewModel` liest
+  `contentLanguage()` **einmal beim Öffnen** und baut die initiale `ReflowConfig` **deterministisch** mit
+  bereits aufgelöster Silbentrennung (kein Stale-Read der `combine`-StateFlow → kein Doppel-Relayout/
+  E-Ink-Flash). UI: „Automatisch" in beiden Hyphenation-Pickern (Settings + In-Reader), i18n
+  `novelHyphenationAuto` (de+en).
 - **Runtime-Font-Registrierung (Ist, 2026-06-14, P2):** Plugin-TTFs (data-only Kategorie `FONT`, s. Naht A)
   werden zur **Laufzeit** in den crengine-Font-Manager eingehängt — kein App-Neustart. `domain` bleibt
   engine-frei über `ReflowableDocumentFactory.registerFont(absolutePath): Boolean` (Default no-op in

@@ -217,6 +217,7 @@ class MapBackedStrings(
     override val pluginFilterLanguages: String get() = overrides["pluginFilterLanguages"] ?: fallback.pluginFilterLanguages
     override val pluginFilterReaderPresets: String get() = overrides["pluginFilterReaderPresets"] ?: fallback.pluginFilterReaderPresets
     override val pluginFilterUiPacks: String get() = overrides["pluginFilterUiPacks"] ?: fallback.pluginFilterUiPacks
+    override val pluginFilterPanelModels: String get() = overrides["pluginFilterPanelModels"] ?: fallback.pluginFilterPanelModels
     override val repoBrowserTitle: String get() = overrides["repoBrowserTitle"] ?: fallback.repoBrowserTitle
     override val repoBrowserOpen: String get() = overrides["repoBrowserOpen"] ?: fallback.repoBrowserOpen
     override val repoBrowserSearch: String get() = overrides["repoBrowserSearch"] ?: fallback.repoBrowserSearch
@@ -243,6 +244,7 @@ class MapBackedStrings(
     override val readerSettings: String get() = overrides["readerSettings"] ?: fallback.readerSettings
     override val settingsGuidedDebug: String get() = overrides["settingsGuidedDebug"] ?: fallback.settingsGuidedDebug
     override val readerPanelOverlay: String get() = overrides["readerPanelOverlay"] ?: fallback.readerPanelOverlay
+    override val readerUseMlDetection: String get() = overrides["readerUseMlDetection"] ?: fallback.readerUseMlDetection
     override val settingsColorFilter: String get() = overrides["settingsColorFilter"] ?: fallback.settingsColorFilter
     override val colorFilterSummary: String get() = overrides["colorFilterSummary"] ?: fallback.colorFilterSummary
     override val colorFilterProfiles: String get() = overrides["colorFilterProfiles"] ?: fallback.colorFilterProfiles

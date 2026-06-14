@@ -215,6 +215,7 @@ interface Strings {
     val pluginFilterLanguages: String     // Chip-Label „Sprachen"
     val pluginFilterReaderPresets: String // Chip-Label „Reader-Presets"
     val pluginFilterUiPacks: String       // Chip-Label „UI-Packs"
+    val pluginFilterPanelModels: String   // Chip-Label „Panel-Modelle"
     // Plugin-Repo-Browser (P2)
     val repoBrowserTitle: String
     val repoBrowserOpen: String
@@ -247,6 +248,7 @@ interface Strings {
     // Guided-View (Debug)
     val settingsGuidedDebug: String
     val readerPanelOverlay: String
+    val readerUseMlDetection: String
     // Farbfilter
     val settingsColorFilter: String
     val colorFilterSummary: String
@@ -584,6 +586,7 @@ object StringsDe : Strings {
     override val pluginFilterLanguages = "Sprachen"
     override val pluginFilterReaderPresets = "Reader-Presets"
     override val pluginFilterUiPacks = "UI-Packs"
+    override val pluginFilterPanelModels = "Panel-Modelle"
     // Plugin-Repo-Browser (P2)
     override val repoBrowserTitle = "Plugins entdecken"
     override val repoBrowserOpen = "Plugins entdecken"
@@ -613,6 +616,7 @@ object StringsDe : Strings {
     // Guided-View (Debug)
     override val settingsGuidedDebug = "Guided-View (Debug)"
     override val readerPanelOverlay = "Erkannte Panel-Rahmen einblenden"
+    override val readerUseMlDetection = "Panel-Erkennung per ML-Modell (aus = Geometrie-Fallback)"
     // Farbfilter
     override val settingsColorFilter = "Farbfilter"
     override val colorFilterSummary = "Bilder fürs E-Ink-Display anpassen"
@@ -938,6 +942,7 @@ object StringsEn : Strings {
     override val pluginFilterLanguages = "Languages"
     override val pluginFilterReaderPresets = "Reader presets"
     override val pluginFilterUiPacks = "UI packs"
+    override val pluginFilterPanelModels = "Panel models"
     // Plugin repo browser (P2)
     override val repoBrowserTitle = "Discover plugins"
     override val repoBrowserOpen = "Discover plugins"
@@ -967,6 +972,7 @@ object StringsEn : Strings {
     // Guided view (debug)
     override val settingsGuidedDebug = "Guided view (debug)"
     override val readerPanelOverlay = "Show detected panel borders"
+    override val readerUseMlDetection = "ML model panel detection (off = geometric fallback)"
     // Color filter
     override val settingsColorFilter = "Color Filter"
     override val colorFilterSummary = "Tune images for the e-ink display"

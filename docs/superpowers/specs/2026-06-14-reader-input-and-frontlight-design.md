@@ -71,30 +71,23 @@ data class ButtonEvent(val button: HardwareButton, val press: PressKind = PressK
   device never emits LONG, so the shortcuts simply don't exist there — graceful
   degradation, no branching on device type.
 
-### 2. Touch gesture → declarative reader-chrome (`ReaderTapZones`)
+### 2. Touch gesture → host edge strips in `DefaultReaderScaffold`
 
-`ReaderTapZones` is the host-owned, declarative tap surface (geometry = host,
-action = data; sub-project A1b). Extend the sealed vocabulary additively:
+**Revised during planning (2026-06-15), as built.** The original idea was a new
+`ReaderTapZones.EdgeSwipe` case. That was dropped: the paged reader's content is a
+`HorizontalPager`, so any full-width horizontal-drag recognizer would steal page
+swipes. Brightness is also not a per-screen action but a host-enforced device
+capability (like the E-Ink scrim). So the edge-swipe lives **entirely in
+`DefaultReaderScaffold`**, not in `ReaderTapZones` (which was left unchanged):
 
-```kotlin
-sealed interface ReaderTapZones {
-    data class HorizontalThirds(...) : ReaderTapZones        // existing
-    data class EdgeSwipe(                                     // new
-        val onLeftEdge: () -> Unit,
-        val onRightEdge: () -> Unit,
-        val thirds: HorizontalThirds,   // taps still dispatch to thirds
-    ) : ReaderTapZones
-}
-```
-
-- The host (`DefaultReaderScaffold`) owns recognition: a drag that **starts
-  within an edge margin (~8% of width)** and moves horizontally toward center is
-  an edge swipe → `onLeftEdge`/`onRightEdge`; anything else falls through to the
-  tap-thirds dispatch (prev/chrome/next). Pointer handling stays keyed on `Unit`
-  with `rememberUpdatedState`, as today, so page turns don't restart the
-  recognizer.
-- The pure dispatch (edge vs third from a normalized x-fraction + drag flag) is
-  unit-testable without Compose, like the existing `ReaderTapZonesTest`.
+- Two **thin (~24dp) edge strips** (left + right), rendered only when the device
+  advertises a frontlight (`EinkController.capabilities.brightnessRange != null`).
+  Each strip detects an **inward** horizontal drag (left strip: `dragAmount > 0`,
+  right strip: `dragAmount < 0`) and opens the brightness bar at that edge.
+- Thin by design: the central area (the pager) is untouched, so page swipes keep
+  working; only a swipe starting within the narrow edge strip opens brightness.
+- On a NoOp device `brightnessRange` is null → the whole block is skipped, so the
+  emulator path is unchanged. No `ReaderTapZones` change, no per-screen wiring.
 - Comic keeps `tapZones = null` (own hit-test) — unaffected.
 
 ### 3. Frontlight → device-seam capability (`EinkController`)

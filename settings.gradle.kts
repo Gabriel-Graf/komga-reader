@@ -21,11 +21,11 @@ dependencyResolutionManagement {
         }
         google()
         mavenCentral()
-        // comic-cutter panel-detection library. Currently resolved from mavenLocal during development;
-        // content-filtered to its group (this repo can deliver nothing else). TODO: swap for the public
-        // JitPack/Maven-Central coordinate before CI/release.
-        mavenLocal {
-            content { includeGroup("io.github.gabriel-graf") }
+        // comic-cutter panel-detection library, published via JitPack. Content-filtered to the JitPack
+        // groups (com.github.Gabriel-Graf[.ComicCutter]) so this repo can deliver nothing else.
+        maven {
+            url = uri("https://jitpack.io")
+            content { includeGroupByRegex("com\\.github\\.Gabriel-Graf.*") }
         }
     }
 }

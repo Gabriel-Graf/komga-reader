@@ -65,13 +65,13 @@ dependencies {
     implementation(project(":source-opds"))
     implementation(project(":render-core"))
     implementation(project(":render-crengine"))
-    // Comic panel detection: comic-cutter (geometric + ML) as a published library + ONNX runtime for
-    // the ML path. The -jvm artifact is linked directly (the KMP root publishes only jvm/js variants,
-    // no android); it is pure Kotlin/JVM so Android consumes it. onnx-jvm pulls the desktop onnxruntime
-    // transitively — excluded and replaced by onnxruntime-android (the ML path degrades gracefully to
-    // the geometric detector on ABIs/devices without the native runtime).
-    implementation("io.github.gabriel-graf:comic-cutter-jvm:0.3.1")
-    implementation("io.github.gabriel-graf:comic-cutter-onnx-jvm:0.3.1") {
+    // Comic panel detection: comic-cutter (geometric + ML) as a published library (JitPack) + ONNX
+    // runtime for the ML path. The -jvm artifact is linked directly (the KMP root publishes only
+    // jvm/js variants, no android); it is pure Kotlin/JVM so Android consumes it. onnx-jvm pulls the
+    // desktop onnxruntime transitively — excluded and replaced by onnxruntime-android (the ML path
+    // degrades gracefully to the geometric detector on ABIs/devices without the native runtime).
+    implementation("com.github.Gabriel-Graf.ComicCutter:comic-cutter-jvm:0.3.1")
+    implementation("com.github.Gabriel-Graf.ComicCutter:comic-cutter-onnx-jvm:0.3.1") {
         exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime")
     }
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")

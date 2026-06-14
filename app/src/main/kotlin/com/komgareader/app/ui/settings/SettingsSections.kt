@@ -122,6 +122,15 @@ fun buildSettingsSections(
         )
         add(
             SettingsSection(
+                id = SettingsSectionId.STATISTICS,
+                icon = AppIcons.Stats,
+                title = s.statsTitle,
+                searchTerms = listOf(s.statsTitle, s.statsTotalTime, s.statsStarted, s.statsFinished),
+                content = { StatisticsSettingsContent(viewModel) },
+            ),
+        )
+        add(
+            SettingsSection(
                 id = SettingsSectionId.ABOUT,
                 icon = AppIcons.Info,
                 title = s.settingsAbout,

@@ -370,6 +370,19 @@ interface Strings {
     fun readerPresetConfirmBody(name: String): String
     // Feature C — Sprache
     val languagePluginInstalledHint: String
+    // Statistics
+    val statsTitle: String
+    val statsTotalTime: String
+    val statsPerReader: String
+    val statsStarted: String
+    val statsFinished: String
+    val statsReaderPaged: String
+    val statsReaderWebtoon: String
+    val statsReaderComic: String
+    val statsReaderNovel: String
+    val statsEmpty: String
+    /** Human-readable duration, e.g. "3 Std 12 Min" / "3 h 12 min". */
+    fun statsDuration(hours: Int, minutes: Int): String
 }
 
 object StringsDe : Strings {
@@ -729,6 +742,18 @@ object StringsDe : Strings {
     override val readerPresetConfirmTitle = "Preset anwenden?"
     override fun readerPresetConfirmBody(name: String) = "„$name“ überschreibt die betroffenen Reader-Einstellungen."
     override val languagePluginInstalledHint = "Installiert über Plugin"
+    override val statsTitle = "Statistik"
+    override val statsTotalTime = "Gesamtlesezeit"
+    override val statsPerReader = "Nach Lesemodus"
+    override val statsStarted = "Begonnene Werke"
+    override val statsFinished = "Abgeschlossene Werke"
+    override val statsReaderPaged = "Seiten"
+    override val statsReaderWebtoon = "Webtoon"
+    override val statsReaderComic = "Comic (geführt)"
+    override val statsReaderNovel = "Roman"
+    override val statsEmpty = "Noch keine Lesezeit erfasst."
+    override fun statsDuration(hours: Int, minutes: Int) =
+        if (hours > 0) "$hours Std $minutes Min" else "$minutes Min"
 }
 
 object StringsEn : Strings {
@@ -1088,6 +1113,18 @@ object StringsEn : Strings {
     override val readerPresetConfirmTitle = "Apply preset?"
     override fun readerPresetConfirmBody(name: String) = "\"$name\" overwrites the affected reader settings."
     override val languagePluginInstalledHint = "Installed via plugin"
+    override val statsTitle = "Statistics"
+    override val statsTotalTime = "Total reading time"
+    override val statsPerReader = "By reader mode"
+    override val statsStarted = "Started works"
+    override val statsFinished = "Finished works"
+    override val statsReaderPaged = "Paged"
+    override val statsReaderWebtoon = "Webtoon"
+    override val statsReaderComic = "Comic (guided)"
+    override val statsReaderNovel = "Novel"
+    override val statsEmpty = "No reading time recorded yet."
+    override fun statsDuration(hours: Int, minutes: Int) =
+        if (hours > 0) "$hours h $minutes min" else "$minutes min"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

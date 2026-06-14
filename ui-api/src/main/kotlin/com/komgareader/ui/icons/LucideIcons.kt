@@ -85,4 +85,5 @@ object LucideIcons {
     val Type: ImageVector by lazy { lucide("Type", "M4 7L4 4L20 4L20 7 M9 20L15 20 M12 4L12 20") }
     val X: ImageVector by lazy { lucide("X", "M18 6L6 18 M6 6L18 18") }
     val BookmarkFilled: ImageVector by lazy { lucideFilled("BookmarkFilled", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
+    val BarChart3: ImageVector by lazy { lucide("BarChart3", "M3 3V21 M21 21H3 M7 16V11 M12 16V5 M17 16V8") }
 }

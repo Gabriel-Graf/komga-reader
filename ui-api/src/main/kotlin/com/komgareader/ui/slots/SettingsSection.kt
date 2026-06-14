@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Die einzelnen Settings-Sektionen. Reihenfolge = Sidebar-/Accordion-Reihenfolge. */
-enum class SettingsSectionId { CONNECTION, APPEARANCE, COLOR_FILTER, READER, EINK_DYNAMICS, DOWNLOADS, LANGUAGE, ABOUT }
+enum class SettingsSectionId { CONNECTION, APPEARANCE, COLOR_FILTER, READER, EINK_DYNAMICS, DOWNLOADS, LANGUAGE, STATISTICS, ABOUT }
 
 /**
  * Eine Settings-Sektion: Metadaten + such-Terme + ihr Inhalt.

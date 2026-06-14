@@ -15,9 +15,12 @@ import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.model.UserCollection
 import com.komgareader.domain.render.NovelFonts
+import com.komgareader.domain.model.ReadingSession
+import com.komgareader.domain.model.ReadingStats
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.CollectionSyncLink
 import com.komgareader.domain.repository.ColorProfileRepository
+import com.komgareader.domain.repository.ReadingStatsRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -81,6 +84,7 @@ class SettingsViewModelTest {
             noOpCoordinator(),
             mockk(relaxed = true),
             stubEinkController(),
+            StubReadingStatsRepository(),
         )
     }
 
@@ -95,6 +99,7 @@ class SettingsViewModelTest {
             noOpCoordinator(),
             mockk(relaxed = true),
             stubEinkController(),
+            StubReadingStatsRepository(),
         )
     }
 
@@ -317,6 +322,13 @@ private class StubCollectionRepository : CollectionRepository {
     override suspend fun updateSyncLink(link: CollectionSyncLink) {}
     override suspend fun get(collectionId: Long): UserCollection? = null
     override suspend fun removeSource(sourceId: Long) {}
+}
+
+/** Minimal-Stub: always returns empty stats; record is a no-op. */
+private class StubReadingStatsRepository : ReadingStatsRepository {
+    override suspend fun record(session: ReadingSession) {}
+    override fun observeStats(): kotlinx.coroutines.flow.Flow<ReadingStats> =
+        flowOf(ReadingStats())
 }
 
 /** Minimal-Stub: aktives Profil ist OFF; Schreib-Operationen werden im Test nicht ausgeübt. */

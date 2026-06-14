@@ -385,3 +385,25 @@ val SEED_CALLBACK = object : RoomDatabase.Callback() {
         if (isEmpty) seedColorProfiles(db)
     }
 }
+
+/**
+ * v17 → v18: `reading_session`-Tabelle (lokaler Lese-Sitzungs-Log für die Lesestatistik).
+ * **Nicht-destruktiv** — reines `CREATE TABLE`, keine Bestandsdaten, kein `ALTER`, kein Recreate.
+ * Das Schema bildet exakt das vom Entity erzeugte ab (autoGenerate-PK →
+ * `INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL`, Non-Null-Spalten → `… NOT NULL`), damit Rooms
+ * Validierung sauber läuft und `fallbackToDestructiveMigration` NICHT greift (das würde die ganze
+ * DB löschen). Kein Server-Sync — die Tabelle bleibt rein lokal.
+ */
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `reading_session` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`readerKind` TEXT NOT NULL, " +
+                "`bookRemoteId` TEXT NOT NULL, " +
+                "`sourceId` INTEGER NOT NULL, " +
+                "`startTs` INTEGER NOT NULL, " +
+                "`durationMs` INTEGER NOT NULL)",
+        )
+    }
+}

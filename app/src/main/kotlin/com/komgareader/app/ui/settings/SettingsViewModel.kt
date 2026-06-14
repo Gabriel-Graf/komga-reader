@@ -20,7 +20,9 @@ import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.KomgaUrl
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.ReadingStatsRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.model.ReadingStats
 import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.usecase.ReaderPresetSink
 import com.komgareader.domain.usecase.applyReaderPreset
@@ -41,9 +43,13 @@ class SettingsViewModel @Inject constructor(
     private val coordinator: SyncCoordinator,
     private val catalog: PluginCatalog,
     private val einkController: EinkController,
+    private val readingStats: ReadingStatsRepository,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
+    val statsState: kotlinx.coroutines.flow.StateFlow<ReadingStats> =
+        readingStats.observeStats()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReadingStats())
     val displayMode = settings.displayMode.stateIn(viewModelScope, SharingStarted.Eagerly, "EINK")
     val shellLayoutMode =
         settings.shellLayoutMode.stateIn(viewModelScope, SharingStarted.Eagerly, ShellLayoutMode.AUTO.name)

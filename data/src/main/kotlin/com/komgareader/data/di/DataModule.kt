@@ -32,6 +32,7 @@ import com.komgareader.data.repository.RoomReadingStatsRepository
 import com.komgareader.data.repository.RoomSeriesOverrideRepository
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.repository.RoomSettingsRepository
+import com.komgareader.data.repository.RoomReadingStatsRepository
 import com.komgareader.data.repository.RoomShelfRepository
 import com.komgareader.data.security.CredentialStore
 import com.komgareader.data.security.KeystoreCredentialStore
@@ -44,6 +45,7 @@ import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.CollectionRepository
 import com.komgareader.domain.repository.ColorProfileRepository
+import com.komgareader.domain.repository.ReadingStatsRepository
 import com.komgareader.domain.repository.ShelfRepository
 import dagger.Module
 import dagger.Provides
@@ -129,6 +131,14 @@ object DataModule {
     @Provides @Singleton
     fun collectionRepository(db: AppDatabase): CollectionRepository =
         RoomCollectionRepository(db.collectionDao())
+
+    @Provides @Singleton
+    fun readingStatsRepository(db: AppDatabase): ReadingStatsRepository =
+        RoomReadingStatsRepository(
+            sessions = db.readingSessionDao(),
+            readProgress = db.readProgressDao(),
+            novelProgress = db.novelProgressDao(),
+        )
 
     @Provides @Singleton
     fun pluginRepoDao(db: AppDatabase): com.komgareader.data.db.PluginRepoDao = db.pluginRepoDao()

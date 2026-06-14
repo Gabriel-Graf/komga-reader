@@ -44,6 +44,7 @@ fun PluginInfoModal(
         PluginKind.LANGUAGE -> s.pluginTabLanguageLabel
         PluginKind.READER_PRESET -> s.pluginTabReaderPresetLabel
         PluginKind.UI_PACK -> s.pluginTabUiPackLabel
+        PluginKind.PANEL_MODEL -> s.pluginTabPanelModelLabel
     }
 
     // Synthesized installed entries (not in any repo) have a blank version -> show the type only.

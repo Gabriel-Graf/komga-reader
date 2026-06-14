@@ -192,6 +192,7 @@ fun PluginsScreen(
                         abiLabel = s.pluginAbiLabel,
                         abiVersion = model.abiVersion,
                         uninstallLabel = s.pluginUninstall,
+                        onInfo = { viewModel.openInfoForInstalled(item) },
                         onUninstall = { uninstall(model.packageName) },
                     )
                 }

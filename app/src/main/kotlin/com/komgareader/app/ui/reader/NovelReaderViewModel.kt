@@ -12,6 +12,7 @@ import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.render.Chapter
+import com.komgareader.domain.render.Hyphenation
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
@@ -219,13 +220,23 @@ class NovelReaderViewModel @Inject constructor(
                         documentFactory.open(bytes, ".epub", viewportWidth, viewportHeight)
                     }
                     // Read the document's declared language and publish it so that
-                    // reflowConfig (with "auto" hyphenation) can resolve to the right
-                    // language BEFORE we call reflowConfig.first() below.
-                    _docLanguage.value = withContext(Dispatchers.IO) { doc.contentLanguage() }
-                    // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
-                    // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
-                    // _docLanguage is already set above, so "auto" resolves correctly here.
-                    val initialConfig = reflowConfig.first()
+                    // the combine inside reflowConfig can resolve "auto" hyphenation
+                    // once it catches up. We also resolve it eagerly below to avoid
+                    // a stale first applyLayout (the combine propagates asynchronously,
+                    // so reflowConfig.first() still carries the pre-docLanguage value).
+                    val docLang = withContext(Dispatchers.IO) { doc.contentLanguage() }
+                    _docLanguage.value = docLang
+                    // Build the initial config synchronously: take the raw settings,
+                    // resolve hyphenation with the just-read docLang, and override.
+                    // This guarantees that the first applyLayout already uses the correct
+                    // hyphenation, so when the combine catches up and reflowConfig emits
+                    // the same resolved value, cfg == appliedConfig holds and
+                    // observeReflowConfig does NOT fire a redundant relayout.
+                    val rawConfig = reflowConfig.first()
+                    val resolvedHyph = resolveHyphenationLang(settings.novelHyphenationLang.first(), docLang)
+                    val initialConfig = rawConfig.copy(
+                        hyphenation = if (resolvedHyph.isBlank()) Hyphenation.Off else Hyphenation.Language(resolvedHyph),
+                    )
                     appliedConfig = initialConfig
                     withContext(Dispatchers.IO) {
                         doc.applyLayout(initialConfig)

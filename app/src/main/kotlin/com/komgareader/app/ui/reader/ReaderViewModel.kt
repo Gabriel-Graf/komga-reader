@@ -12,6 +12,7 @@ import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
@@ -235,6 +236,8 @@ class ReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
+            // Long presses are reader shortcuts (Home / refresh), handled by ReaderShortcutsViewModel.
+            if (event.press == PressKind.LONG) return@collect
             // Im Comic-Modus übernimmt der ComicReaderViewModel die Tasten.
             if (viewerMode.value == ViewerMode.COMIC) return@collect
             // Im Webtoon-Modus bedeutet eine Taste einen Frame-Sprung (Pixel-Scroll),

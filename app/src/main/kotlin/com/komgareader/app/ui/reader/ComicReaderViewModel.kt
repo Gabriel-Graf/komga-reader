@@ -7,6 +7,7 @@ import coil.ImageLoader
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.repository.SettingsRepository
 import com.panela.comiccutter.GuidedNavigator
 import com.panela.comiccutter.GuidedPosition
@@ -158,6 +159,8 @@ class ComicReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
+            // Long presses are reader shortcuts (Home / refresh), handled by ReaderShortcutsViewModel.
+            if (event.press == PressKind.LONG) return@collect
             if (pageCount == 0) return@collect
             val forward = when (event.button) {
                 HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN -> true

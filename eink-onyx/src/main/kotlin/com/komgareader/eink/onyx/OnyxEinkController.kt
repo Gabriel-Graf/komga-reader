@@ -10,6 +10,7 @@ import com.komgareader.domain.eink.EinkModeOption
 import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.domain.eink.Region
 import com.onyx.android.sdk.api.device.epd.EpdController
+import com.onyx.android.sdk.api.device.epd.UpdateMode
 import com.onyx.android.sdk.api.device.epd.UpdateOption
 import kotlinx.coroutines.flow.Flow
 
@@ -57,7 +58,14 @@ class OnyxEinkController(
     // ---------------------------------------------------------------
 
     override fun refresh(region: Region, mode: RefreshMode) {
-        Log.d(TAG, "refresh($region, $mode) — delegated to EinkWise context control")
+        if (mode != RefreshMode.FULL) {
+            Log.d(TAG, "refresh($region, $mode) — non-full delegated to EinkWise context control")
+            return
+        }
+        // Manual GC full update to clear ghosting. applyTransientUpdate is View-free and triggers
+        // a one-shot screen repaint at the requested UpdateMode, independent of app-scope settings.
+        runCatching { EpdController.applyTransientUpdate(UpdateMode.GC) }
+            .onFailure { Log.e(TAG, "applyTransientUpdate(GC) failed", it) }
     }
 
     override fun setContrast(level: Int) {

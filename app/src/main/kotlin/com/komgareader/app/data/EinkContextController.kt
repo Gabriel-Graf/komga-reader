@@ -2,6 +2,8 @@ package com.komgareader.app.data
 
 import com.komgareader.domain.eink.EinkContext
 import com.komgareader.domain.eink.EinkController
+import com.komgareader.domain.eink.RefreshMode
+import com.komgareader.domain.eink.Region
 import com.komgareader.domain.eink.resolveEinkProfile
 import com.komgareader.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
@@ -24,5 +26,10 @@ class EinkContextController @Inject constructor(
         val resolved = resolveEinkProfile(override, controller.defaultProfile(context))
         controller.applyRefreshMode(resolved.refreshModeId)
         controller.applyColorMode(resolved.colorModeId)
+    }
+
+    /** User-triggered GC full refresh to clear E-Ink ghosting. No-op on non-E-Ink devices. */
+    fun manualFullRefresh() {
+        controller.refresh(Region(0, 0, 0, 0), RefreshMode.FULL)
     }
 }

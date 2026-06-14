@@ -9,15 +9,20 @@ import coil.request.ImageRequest
 import com.komgareader.app.data.coil.SourceImage
 import com.panela.comiccutter.PanelRect
 import com.panela.comiccutter.PanelSource
+import com.panela.comiccutter.ReadingDirection
+import com.panela.comiccutter.ReadingOrder
 import com.panela.comiccutter.model.RenderedPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * Obtains the panel rectangles of a comic page: Coil decodes the page image, it is downscaled to
- * [detectionWidth] (the detector needs no full resolution), and the supplied [PanelSource] yields
- * the panels in reading order (left-to-right; both [com.panela.comiccutter.GeometricPanelSource] and
- * [com.panela.comiccutter.MlPanelSource] return that order).
+ * [detectionWidth] (the detector needs no full resolution), and the supplied [PanelSource] detects
+ * panels which are then sorted into left-to-right reading order via [ReadingOrder].
+ *
+ * The geometric source already returns panels in LTR order; the ML source returns them in confidence
+ * (score) order after NMS. Sorting after detection is safe for both: re-sorting an already-ordered
+ * list with the same key is idempotent (stable sort).
  *
  * Panel coordinates live in the downscale space; the Compose layer normalizes them against the
  * actual detection dimensions (see [PageDetection]).
@@ -36,7 +41,8 @@ class ComicPageLoader(
             val bitmap = decode(pageImage) ?: return@withContext PageDetection(emptyList(), 0, 0)
             val scaled = downscale(bitmap)
             val page = toRenderedPage(scaled)
-            val panels = panelSource.detect(page)
+            val raw = panelSource.detect(page)
+            val panels = ReadingOrder.sort(raw, ReadingDirection.LEFT_TO_RIGHT)
             PageDetection(panels, page.width, page.height)
         }
 

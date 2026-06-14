@@ -69,6 +69,8 @@ class SettingsViewModelTest {
         override fun applyRefreshMode(id: String?) {}
         override fun applyColorMode(id: String?) {}
         override fun defaultProfile(context: EinkContext) = EinkContextProfile()
+        override fun setBrightness(level: Int) {}
+        override fun brightness(): Int = 0
     }
 
     private fun viewModel(servers: ServerRepository): SettingsViewModel {

@@ -1,5 +1,6 @@
 package com.komgareader.eink.onyx
 
+import android.content.Context
 import android.util.Log
 import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.eink.EinkCapabilities
@@ -9,6 +10,7 @@ import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.EinkModeOption
 import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.domain.eink.Region
+import com.onyx.android.sdk.api.device.FrontLightController
 import com.onyx.android.sdk.api.device.epd.EpdController
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 import com.onyx.android.sdk.api.device.epd.UpdateOption
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 class OnyxEinkController(
     private val buttonEvents_: Flow<ButtonEvent>,
     private val appPackageName: String,
+    private val appContext: Context,
 ) : EinkController {
 
     // canColor = true: correct for Onyx Boox Go Color 7 Gen2 (Kaleido screen). The EpdController API
@@ -49,6 +52,11 @@ class OnyxEinkController(
             EinkModeOption(COLOR_ON, "Colour", "Onyx colour enhancement on."),
             EinkModeOption(COLOR_MONO, "Mono", "Greyscale, colour off."),
         ),
+        // FrontLightController.getBrightnessMinimum/Maximum(Context) return the device-specific
+        // range at runtime but cannot be called safely before the SDK is fully initialised.
+        // 0..255 is the standard Android / Onyx Go Color 7 Gen2 frontlight range; verify on device
+        // with FrontLightController.getBrightnessMinimum(ctx)..getBrightnessMaximum(ctx).
+        brightnessRange = 0..255,
     )
 
     override val buttonEvents: Flow<ButtonEvent> = buttonEvents_
@@ -110,6 +118,22 @@ class OnyxEinkController(
         val refresh = if (context == EinkContext.WEBTOON) REFRESH_SPEED else REFRESH_HD
         return EinkContextProfile(refreshModeId = refresh, colorModeId = COLOR_SYSTEM)
     }
+
+    // ---------------------------------------------------------------
+    // Frontlight brightness (Naht B — device capability)
+    // ---------------------------------------------------------------
+
+    private var brightnessLevel = 0
+
+    override fun setBrightness(level: Int) {
+        val range = capabilities.brightnessRange ?: return
+        val clamped = level.coerceIn(range)
+        runCatching { FrontLightController.setBrightness(appContext, clamped) }
+            .onFailure { Log.e(TAG, "setBrightness($clamped) failed", it) }
+        brightnessLevel = clamped
+    }
+
+    override fun brightness(): Int = brightnessLevel
 
     companion object {
         private const val TAG = "OnyxEinkController"

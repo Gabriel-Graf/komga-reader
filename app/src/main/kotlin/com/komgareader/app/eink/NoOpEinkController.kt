@@ -20,4 +20,6 @@ class NoOpEinkController @Inject constructor(bus: HardwareButtonBus) : EinkContr
     override fun applyRefreshMode(id: String?) { /* No-Op */ }
     override fun applyColorMode(id: String?) { /* No-Op */ }
     override fun defaultProfile(context: EinkContext) = EinkContextProfile()
+    override fun setBrightness(level: Int) { /* No-Op */ }
+    override fun brightness(): Int = 0
 }

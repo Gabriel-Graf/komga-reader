@@ -51,6 +51,7 @@ import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginKind
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.host.DataPluginInfo
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
@@ -78,6 +79,7 @@ fun PluginsScreen(
     val languageDataPlugins by viewModel.languageDataPlugins.collectAsState()
     val readerPresetDataPlugins by viewModel.readerPresetDataPlugins.collectAsState()
     val uiPackDataPlugins by viewModel.uiPackDataPlugins.collectAsState()
+    val panelModelDataPlugins by viewModel.panelModelDataPlugins.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val repos by viewModel.repos.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -105,6 +107,7 @@ fun PluginsScreen(
     fun languageFor(pkg: String): DiscoveredDataPlugin? = languageDataPlugins.firstOrNull { it.packageName == pkg }
     fun readerPresetFor(pkg: String): DiscoveredDataPlugin? = readerPresetDataPlugins.firstOrNull { it.packageName == pkg }
     fun uiPackFor(pkg: String): DiscoveredDataPlugin? = uiPackDataPlugins.firstOrNull { it.packageName == pkg }
+    fun panelModelFor(pkg: String): DataPluginInfo? = panelModelDataPlugins.firstOrNull { it.packageName == pkg }
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -182,8 +185,16 @@ fun PluginsScreen(
                         onUninstall = { uninstall(up.packageName) },
                     )
                 }
-                // PANEL_MODEL: binary asset plugin — no in-list UI yet (Phase 1, additive).
-                PluginKind.PANEL_MODEL -> Unit
+                PluginKind.PANEL_MODEL -> panelModelFor(item.packageName)?.let { model ->
+                    DataPluginRow(
+                        title = model.displayName,
+                        typeLabel = s.pluginTabPanelModelLabel,
+                        abiLabel = s.pluginAbiLabel,
+                        abiVersion = model.abiVersion,
+                        uninstallLabel = s.pluginUninstall,
+                        onUninstall = { uninstall(model.packageName) },
+                    )
+                }
             }
         }
         if (visible.showDivider) {

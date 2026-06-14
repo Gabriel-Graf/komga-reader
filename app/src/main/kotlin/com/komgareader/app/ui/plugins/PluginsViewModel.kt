@@ -11,6 +11,7 @@ import com.komgareader.data.plugin.repo.BrowsableEntry
 import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.InstalledEntry
+import com.komgareader.data.plugin.repo.PluginKind
 import com.komgareader.data.plugin.repo.PluginTypeFilter
 import com.komgareader.data.plugin.repo.RepoPluginEntry
 import com.komgareader.data.plugin.repo.RepoSource
@@ -21,6 +22,7 @@ import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.host.DataPluginInfo
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
@@ -55,6 +57,7 @@ class PluginsViewModel @Inject constructor(
     val languageDataPlugins = catalog.languageDataPlugins
     val readerPresetDataPlugins = catalog.readerPresetDataPlugins
     val uiPackDataPlugins = catalog.uiPackDataPlugins
+    val panelModelDataPlugins: StateFlow<List<DataPluginInfo>> = catalog.panelModelDataPlugins
     val loading = catalog.loading
     val error = catalog.error
 
@@ -133,6 +136,7 @@ class PluginsViewModel @Inject constructor(
             catalog.languageDataPlugins,
             catalog.readerPresetDataPlugins,
             catalog.uiPackDataPlugins,
+            catalog.panelModelDataPlugins,
             catalog.discovered,
             _query,
             _typeFilter,
@@ -142,10 +146,13 @@ class PluginsViewModel @Inject constructor(
             val langs = arr[2] as List<DiscoveredDataPlugin>
             val rPresets = arr[3] as List<DiscoveredDataPlugin>
             val uiPacks = arr[4] as List<DiscoveredDataPlugin>
-            val disc = arr[5] as List<BrowserRow>
-            val q = arr[6] as String
-            val f = arr[7] as PluginTypeFilter
-            visibleRows(installedEntriesOf(srcs, presets, langs, rPresets, uiPacks), disc, q, f)
+            val panelModels = arr[5] as List<DataPluginInfo>
+            val disc = arr[6] as List<BrowserRow>
+            val q = arr[7] as String
+            val f = arr[8] as PluginTypeFilter
+            val installedEntries = installedEntriesOf(srcs, presets, langs, rPresets, uiPacks) +
+                panelModels.map { InstalledEntry(it.packageName, it.displayName, PluginKind.PANEL_MODEL) }
+            visibleRows(installedEntries, disc, q, f)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VisibleRows(emptyList(), emptyList(), false))
 
     /** Tab-`onResume`: lokaler Re-Scan über den Koordinator (kein Netz) — entdeckt Install/Uninstall,

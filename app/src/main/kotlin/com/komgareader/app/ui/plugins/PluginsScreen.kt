@@ -219,6 +219,7 @@ fun PluginsScreen(
             val msg = when (code) {
                 "fingerprint" -> s.repoBrowserErrorFingerprint
                 "download" -> s.repoBrowserErrorDownload
+                "license_blocked" -> s.repoBrowserErrorLicenseBlocked
                 else -> s.repoBrowserErrorInstall
             }
             EinkInfoDialog(title = s.repoBrowserErrorTitle, onDismiss = { viewModel.dismissError() }, closeLabel = s.close) {

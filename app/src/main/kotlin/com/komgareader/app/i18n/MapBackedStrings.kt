@@ -235,6 +235,7 @@ class MapBackedStrings(
     override val repoBrowserErrorFingerprint: String get() = overrides["repoBrowserErrorFingerprint"] ?: fallback.repoBrowserErrorFingerprint
     override val repoBrowserErrorDownload: String get() = overrides["repoBrowserErrorDownload"] ?: fallback.repoBrowserErrorDownload
     override val repoBrowserErrorInstall: String get() = overrides["repoBrowserErrorInstall"] ?: fallback.repoBrowserErrorInstall
+    override val repoBrowserErrorLicenseBlocked: String get() = overrides["repoBrowserErrorLicenseBlocked"] ?: fallback.repoBrowserErrorLicenseBlocked
     override val readerPanelModeOn: String get() = overrides["readerPanelModeOn"] ?: fallback.readerPanelModeOn
     override val readerPanelModeOff: String get() = overrides["readerPanelModeOff"] ?: fallback.readerPanelModeOff
     override val readerTapHint: String get() = overrides["readerTapHint"] ?: fallback.readerTapHint

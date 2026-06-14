@@ -234,6 +234,7 @@ interface Strings {
     val repoBrowserErrorFingerprint: String
     val repoBrowserErrorDownload: String
     val repoBrowserErrorInstall: String
+    val repoBrowserErrorLicenseBlocked: String
     // Comic-Reader
     /** Angezeigt, wenn Panel-Modus AUS ist (Tippen schaltet ihn AN). */
     val readerPanelModeOn: String
@@ -604,6 +605,7 @@ object StringsDe : Strings {
     override val repoBrowserErrorFingerprint = "Signatur passt nicht zum Repo-Eintrag — Installation abgebrochen."
     override val repoBrowserErrorDownload = "Download fehlgeschlagen."
     override val repoBrowserErrorInstall = "Installation konnte nicht gestartet werden."
+    override val repoBrowserErrorLicenseBlocked = "Schrift-Lizenz nicht erlaubt — nicht installiert."
     // Comic-Reader
     override val readerPanelModeOn = "Panel-Modus an"
     override val readerPanelModeOff = "Panel-Modus aus"
@@ -959,6 +961,7 @@ object StringsEn : Strings {
     override val repoBrowserErrorFingerprint = "Signature does not match the repo entry — installation aborted."
     override val repoBrowserErrorDownload = "Download failed."
     override val repoBrowserErrorInstall = "Could not start installation."
+    override val repoBrowserErrorLicenseBlocked = "Font license not allowed — not installed."
     // Comic reader
     override val readerPanelModeOn = "Panel mode on"
     override val readerPanelModeOff = "Panel mode off"

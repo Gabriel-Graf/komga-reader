@@ -27,7 +27,7 @@ class ActiveSourceTest {
 
     private fun activeSource(vararg configs: ServerConfig): ActiveSource {
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), mockk(relaxed = true))
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), mockk(relaxed = true), mockk(relaxed = true))
         return ActiveSource(sources, FakeServerRepository(configs.toList()), registration)
     }
 

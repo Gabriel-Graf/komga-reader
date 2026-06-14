@@ -84,6 +84,7 @@ dependencies {
     implementation(project(":eink-onyx"))
     implementation(project(":source-komga"))
     implementation(project(":source-opds"))
+    implementation(project(":source-local"))
     implementation(project(":render-core"))
     implementation(project(":render-crengine"))
     // Comic panel detection: comic-cutter (geometric + ML) as a published library (JitPack) + ONNX

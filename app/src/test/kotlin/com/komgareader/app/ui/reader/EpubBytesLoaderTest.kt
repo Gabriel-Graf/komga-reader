@@ -69,7 +69,7 @@ class EpubBytesLoaderTest {
     private class FakeActiveSource(private val source: BrowsableSource?) : ActiveSource(
         sources = SourceManager(),
         servers = FakeServerRepository(),
-        registration = SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true)),
+        registration = SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true), mockk(relaxed = true)),
     ) {
         override suspend fun current(): BrowsableSource? = source
         override suspend fun get(sourceId: Long): BrowsableSource? = source?.takeIf { it.id == sourceId }

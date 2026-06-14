@@ -80,7 +80,7 @@ class GroupBrowseViewModelTest {
     private class FakeActiveSource(private val sources: List<BrowsableSource>) : ActiveSource(
         sources = SourceManager(),
         servers = FakeServerRepository(null),
-        registration = SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true)),
+        registration = SourceRegistration(SourceManager(), KomgaSourceProvider(), mockk(relaxed = true), mockk(relaxed = true)),
     ) {
         constructor(source: BrowsableSource?) : this(listOfNotNull(source))
         override suspend fun current(): BrowsableSource? = sources.firstOrNull()

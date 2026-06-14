@@ -71,6 +71,10 @@ interface Strings {
     val chooseFolder: String
     val defaultFolder: String
     val resetFolder: String
+    val localFolderNotSet: String
+    val sameFolderForBoth: String
+    val sameFolderForBothHelp: String
+    val useSameFolderForBoth: String
     val sizeLabel: String
     val formatLabel: String
     val fileLabel: String
@@ -446,6 +450,10 @@ object StringsDe : Strings {
     override val chooseFolder = "Ordner wählen"
     override val defaultFolder = "Standard (intern)"
     override val resetFolder = "Zurücksetzen"
+    override val localFolderNotSet = "Nicht gesetzt"
+    override val sameFolderForBoth = "Gemeinsamer Ordner"
+    override val sameFolderForBothHelp = "Denselben Ordner für Downloads und lokale Werke verwenden"
+    override val useSameFolderForBoth = "Ordner für beide wählen"
     override val sizeLabel = "Größe"
     override val formatLabel = "Format"
     override val fileLabel = "Datei"
@@ -807,6 +815,10 @@ object StringsEn : Strings {
     override val chooseFolder = "Choose Folder"
     override val defaultFolder = "Default (internal)"
     override val resetFolder = "Reset"
+    override val localFolderNotSet = "Not set"
+    override val sameFolderForBoth = "Shared folder"
+    override val sameFolderForBothHelp = "Use the same folder for downloads and local works"
+    override val useSameFolderForBoth = "Pick folder for both"
     override val sizeLabel = "Size"
     override val formatLabel = "Format"
     override val fileLabel = "File"

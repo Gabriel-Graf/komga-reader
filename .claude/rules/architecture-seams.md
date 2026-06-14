@@ -50,9 +50,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   → `LocalSource` exponiert **Base64-URL-kodierte** remoteIds und dekodiert intern auf den echten Pfad
   (sonst crasht das Routing). `LocalFileCache` materialisiert SAF-Dateien einmalig in den App-Cache
   (LRU) für Random-Access. Verdrahtung: `SourceKind.LOCAL`-Branch in `SourceRegistration`
-  (`LocalSourceFactory.create(context, name, treeUri)`, `@ApplicationContext`), Ordnerwahl in Settings
-  („Server hinzufügen" → Segment „Lokaler Ordner" → `ACTION_OPEN_DOCUMENT_TREE` +
-  `takePersistableUriPermission`, Release beim Entfernen). **E2E (Emulator, 2026-06-14):** Ordnerwahl →
+  (`LocalSourceFactory.create(context, name, treeUri)`, `@ApplicationContext`). **Ordnerwahl in
+  Settings → Downloads** (nicht im Server-Dialog — UX-Entscheidung 2026-06-14: ein lokaler Ordner ist
+  kein Server, daher aus der „Verbundene Server"-Liste **ausgeblendet** via `kind != LOCAL`-Filter):
+  Gruppe „Lokaler Ordner" (`ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`, **Upsert** über
+  die eine LOCAL-Rowid → kein zweiter Eintrag, Release beim Entfernen) neben „Download-Ordner" + einem
+  „Gemeinsamer Ordner"-Button (`SettingsViewModel.setBothFolders` setzt beide Pfade gleich). Beide Pfade
+  werden **voll qualifiziert** angezeigt (`treeUriToDisplayPath`: SAF-Tree-URI → `/storage/emulated/0/…`).
+  **E2E (Emulator, 2026-06-14):** Ordnerwahl →
   Bibliothek (Serie+Bände+lose Werke) → CBZ-PAGED (Zip-Extrakt) + PDF (whole-file MuPDF) gerendert,
   Persistenz über Neustart. (EPUB liefert Bytes korrekt; crengine-`.so` fehlt für x86_64-Emulator —
   arm64-Boox unberührt.) V1 = ein Ordner; mehrere Ordner = additives Soll.

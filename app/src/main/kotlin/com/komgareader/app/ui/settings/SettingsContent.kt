@@ -749,14 +749,21 @@ private fun WebtoonScope(viewModel: SettingsViewModel, query: String) {
     }
 }
 
-/** Scope „Comic (Guided)": Panel-Rahmen einblenden. */
+/** Scope „Comic (Guided)": ML-Erkennung + Panel-Rahmen einblenden. */
 @Composable
 private fun ComicScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
+    val useMlDetection by viewModel.useMlDetection.collectAsState()
     val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
     Column {
         ScopeHeader(s.settingsScopeComic)
         Column(Modifier.padding(start = SettingsGroupIndent)) {
+            SwitchRow(
+                label = s.readerUseMlDetection,
+                checked = useMlDetection,
+                onCheckedChange = { viewModel.setUseMlDetection(it) },
+                query = query,
+            )
             SwitchRow(
                 label = s.readerPanelOverlay,
                 checked = panelOverlay,

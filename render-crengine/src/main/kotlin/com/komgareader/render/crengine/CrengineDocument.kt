@@ -97,6 +97,8 @@ class CrengineDocument(
 
     override fun authors(): String = CrengineNative.nativeAuthors(handle)
 
+    override fun contentLanguage(): String = CrengineNative.nativeLanguage(handle)
+
     override fun currentAnchor(): String = CrengineNative.nativeCurrentAnchor(handle)
 
     override fun currentPage(): Int = CrengineNative.nativeCurrentPage(handle)

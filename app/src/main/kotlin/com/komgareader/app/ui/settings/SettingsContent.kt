@@ -713,6 +713,7 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
             SegmentedChoiceRow(
                 label = s.novelHyphenation,
                 options = listOf(
+                    SegmentOption("auto", s.novelHyphenationAuto),
                     SegmentOption("", s.novelHyphenationOff),
                     SegmentOption("de", s.novelHyphenationDe),
                     SegmentOption("en", s.novelHyphenationEn),

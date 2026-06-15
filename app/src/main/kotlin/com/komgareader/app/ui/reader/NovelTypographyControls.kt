@@ -121,6 +121,12 @@ fun NovelTypographyControls(
         PanelDivider()
         PanelSectionHeader(strings.novelHyphenation)
         ChoiceRow(
+            label = strings.novelHyphenationAuto,
+            selected = hyphenationLang == "auto",
+            dense = true,
+            onSelect = { onHyphenation("auto") },
+        )
+        ChoiceRow(
             label = strings.novelHyphenationOff,
             selected = hyphenationLang.isBlank(),
             dense = true,

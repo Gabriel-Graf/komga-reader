@@ -10,13 +10,16 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.render.Chapter
+import com.komgareader.domain.render.Hyphenation
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.ReflowableDocument
 import com.komgareader.domain.render.ReflowableDocumentFactory
 import com.komgareader.domain.render.SearchHit
+import com.komgareader.domain.render.resolveHyphenationLang
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -85,10 +88,18 @@ class NovelReaderViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(NovelUiState())
     val uiState: StateFlow<NovelUiState> = _uiState.asStateFlow()
 
+    /** EPUB content language read once after open() — drives "auto" hyphenation resolution. */
+    private val _docLanguage = MutableStateFlow("")
+
     /**
      * Globale Roman-Typografie als [ReflowConfig], aus den sechs persistierten
      * Settings-Flows über den reinen [NovelSettings]-Mapper zusammengesetzt.
      * Single Source of Truth — die UI liest hier, schreibt über die Setter.
+     *
+     * The inner [combine] also takes [_docLanguage] so that when the hyphenation
+     * setting is "auto", [resolveHyphenationLang] maps it to the document's language
+     * (or "" = off when the language is unsupported or unknown). Explicit settings
+     * ("", "de", "en") pass through unchanged.
      */
     val reflowConfig: StateFlow<ReflowConfig> = combine(
         settings.novelFontSizeEm,
@@ -99,7 +110,10 @@ class NovelReaderViewModel @Inject constructor(
             settings.novelTextAlign,
             settings.novelHyphenationLang,
             settings.novelFontWeight,
-        ) { align, hyph, weight -> Triple(align, hyph, weight) },
+            _docLanguage,
+        ) { align, hyph, weight, docLang ->
+            Triple(align, resolveHyphenationLang(hyph, docLang), weight)
+        },
     ) { fontSizeEm, lineHeight, marginPreset, fontFamily, alignHyphWeight ->
         NovelSettings(
             fontSizeEm = fontSizeEm,
@@ -197,21 +211,37 @@ class NovelReaderViewModel @Inject constructor(
                 val local = novelProgress.get(routeSourceId, bookId)
                 val savedAnchor = local?.anchor?.takeIf { it.isNotEmpty() }
                 val fallbackFraction = local?.fraction ?: bytesLoader.startProgressFraction(bookId, routeSourceId)
-                // Auf den ersten real persistierten Wert warten (nicht den Eagerly-Default),
-                // damit beim Öffnen sofort mit der gespeicherten Typografie umgeschichtet wird.
-                val initialConfig = reflowConfig.first()
-                appliedConfig = initialConfig
                 // Initialisierung vollständig unter der Document-Sperre abschließen — öffnen,
                 // umschichten, Position wiederherstellen, Kapitel laden + Startseiten sondieren —
                 // BEVOR die Re-Layout-Beobachtung anläuft. So kann kein Re-Layout gleichzeitig
                 // mit der Kapitel-Sondierung am nicht-thread-sicheren Dokument arbeiten.
                 documentMutex.withLock {
                     val doc = withContext(Dispatchers.IO) {
-                        documentFactory.open(bytes, ".epub", viewportWidth, viewportHeight).also {
-                            it.applyLayout(initialConfig)
-                            if (savedAnchor != null) it.seekToAnchor(savedAnchor)
-                            else it.seekToProgress(fallbackFraction)
-                        }
+                        documentFactory.open(bytes, ".epub", viewportWidth, viewportHeight)
+                    }
+                    // Read the document's declared language and publish it so that
+                    // the combine inside reflowConfig can resolve "auto" hyphenation
+                    // once it catches up. We also resolve it eagerly below to avoid
+                    // a stale first applyLayout (the combine propagates asynchronously,
+                    // so reflowConfig.first() still carries the pre-docLanguage value).
+                    val docLang = withContext(Dispatchers.IO) { doc.contentLanguage() }
+                    _docLanguage.value = docLang
+                    // Build the initial config synchronously: take the raw settings,
+                    // resolve hyphenation with the just-read docLang, and override.
+                    // This guarantees that the first applyLayout already uses the correct
+                    // hyphenation, so when the combine catches up and reflowConfig emits
+                    // the same resolved value, cfg == appliedConfig holds and
+                    // observeReflowConfig does NOT fire a redundant relayout.
+                    val rawConfig = reflowConfig.first()
+                    val resolvedHyph = resolveHyphenationLang(settings.novelHyphenationLang.first(), docLang)
+                    val initialConfig = rawConfig.copy(
+                        hyphenation = if (resolvedHyph.isBlank()) Hyphenation.Off else Hyphenation.Language(resolvedHyph),
+                    )
+                    appliedConfig = initialConfig
+                    withContext(Dispatchers.IO) {
+                        doc.applyLayout(initialConfig)
+                        if (savedAnchor != null) doc.seekToAnchor(savedAnchor)
+                        else doc.seekToProgress(fallbackFraction)
                     }
                     document = doc
                     lastSavedAnchor = savedAnchor
@@ -462,6 +492,8 @@ class NovelReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
+            // Long presses are reader shortcuts (Home / refresh), handled by ReaderShortcutsViewModel.
+            if (event.press == PressKind.LONG) return@collect
             when (event.button) {
                 HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN -> nextPage()
                 HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP -> prevPage()

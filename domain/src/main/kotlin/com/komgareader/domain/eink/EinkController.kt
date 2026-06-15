@@ -11,7 +11,10 @@ data class Region(val x: Int, val y: Int, val width: Int, val height: Int)
 /** Physische Geräte-Taste. */
 enum class HardwareButton { PAGE_NEXT, PAGE_PREV, VOLUME_UP, VOLUME_DOWN }
 
-data class ButtonEvent(val button: HardwareButton)
+/** Press duration class, so a held button can mean a different action than a tap. */
+enum class PressKind { SHORT, LONG }
+
+data class ButtonEvent(val button: HardwareButton, val press: PressKind = PressKind.SHORT)
 
 /** Device capabilities at runtime (Boox vs. generic tablet). */
 data class EinkCapabilities(
@@ -22,6 +25,8 @@ data class EinkCapabilities(
     val refreshModes: List<EinkModeOption> = emptyList(),
     /** System colour modes this device can switch; empty = axis unsupported. */
     val colorModes: List<EinkModeOption> = emptyList(),
+    /** Frontlight brightness range, or null if the device has no controllable frontlight. */
+    val brightnessRange: IntRange? = null,
 )
 
 /**
@@ -44,4 +49,10 @@ interface EinkController {
 
     /** Device-specific sane default profile for the given context (app stores only overrides). */
     fun defaultProfile(context: EinkContext): EinkContextProfile
+
+    /** Sets the frontlight brightness, clamped to [EinkCapabilities.brightnessRange]; no-op if null. */
+    fun setBrightness(level: Int)
+
+    /** Current frontlight brightness (0 if unsupported). */
+    fun brightness(): Int
 }

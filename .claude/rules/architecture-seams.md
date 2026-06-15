@@ -246,6 +246,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`MupdfDocument` in `render-core`). Render-Target strikt von der View getrennt.
   Reicht MuPDFs Qualität nicht, klinkt sich eine andere Engine (crengine, Roman-Reflow) hinter
   `Document`/`ReflowableDocument` ein (Phase 4 / `novel-reflow-reader`) — ohne den Rest zu berühren.
+- **Dokumentsprache + Auto-Silbentrennung (Ist, 2026-06-15):** `ReflowableDocument.contentLanguage(): String`
+  (Default `""`, engine-neutral) liefert die EPUB-`dc:language` über das neue JNI `nativeLanguage`
+  (wrappt `LVDocView::getLanguage`, gespiegelt an `nativeTitle` in `cr3_bridge.cpp`). Der Roman-Reader löst
+  damit den Silbentrennungs-Wert **`"auto"`** über den **reinen** `resolveHyphenationLang(setting, docLang)`
+  (`domain/render`, „auto" → normalisierte unterstützte Doc-Sprache {de,en} oder „" = aus; explizite Werte
+  unverändert; `SUPPORTED_HYPHENATION` spiegelt `ReflowCss.PATTERN_DICTS`). `NovelReaderViewModel` liest
+  `contentLanguage()` **einmal beim Öffnen** und baut die initiale `ReflowConfig` **deterministisch** mit
+  bereits aufgelöster Silbentrennung (kein Stale-Read der `combine`-StateFlow → kein Doppel-Relayout/
+  E-Ink-Flash). UI: „Automatisch" in beiden Hyphenation-Pickern (Settings + In-Reader), i18n
+  `novelHyphenationAuto` (de+en).
 - **Runtime-Font-Registrierung (Ist, 2026-06-14, P2):** Plugin-TTFs (data-only Kategorie `FONT`, s. Naht A)
   werden zur **Laufzeit** in den crengine-Font-Manager eingehängt — kein App-Neustart. `domain` bleibt
   engine-frei über `ReflowableDocumentFactory.registerFont(absolutePath): Boolean` (Default no-op in
@@ -260,6 +270,29 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (hasEink/canColor/canInvert, `refreshModes: List<EinkModeOption>`, `colorModes: List<EinkModeOption>`;
   leere Liste = Achse nicht unterstützt, UI blendet Sektion aus) — siehe Big-Picture-Doku zur
   Geräteklassen-Frage.
+- **Reader-Input + Frontlight (Ist, 2026-06-15 — Hardware-Tasten, manueller Refresh, Helligkeit):**
+  Drei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
+  (NoOp inert). (1) **Press-Art:** `ButtonEvent` trägt jetzt `press: PressKind {SHORT, LONG}`
+  (Default SHORT, quell-kompatibel). `MainActivity` klassifiziert kurze/lange Volume-Drücke über
+  den Android-Long-Press-Lifecycle (`startTracking`/`onKeyLongPress`/`onKeyUp`, Schwelle = System);
+  der pure `volumeButtonEvent(keyCode, longPress)` mappt: kurz → `PAGE_PREV`/`PAGE_NEXT` (Blättern
+  unverändert), lang → `VOLUME_UP`/`VOLUME_DOWN` mit `LONG`. Alle drei Reader-VMs ignorieren LONG
+  fürs Blättern; der geteilte `ReaderShortcutsViewModel` (eine Stelle, nicht pro-VM) mappt
+  `VOLUME_UP,LONG` → **Home** (`homeRequests`-Flow, von `ReaderRoute` an `onHome` gehängt) und
+  `VOLUME_DOWN,LONG` → **manueller Full-Refresh**. (2) **Manueller GC-Refresh:** `EinkController.refresh`
+  ist auf Onyx jetzt **real** für `RefreshMode.FULL` (`EpdController.applyTransientUpdate(UpdateMode.GC)`
+  — `repaintEveryThing` existiert in SDK 1.3.5 **nicht**); `EinkContextController.manualFullRefresh()`
+  ist der agnostische Auslöser (NoOp = no-op). (3) **Frontlight:** neue Capability
+  `EinkCapabilities.brightnessRange: IntRange?` (null = kein Frontlight → UI versteckt) +
+  `EinkController.setBrightness(level)`/`brightness()`. Onyx nutzt
+  `FrontLightController.setBrightness(context, level)` (via javap bestätigt; Range `0..255` hardcoded —
+  Device-Tuning via `getBrightnessMinimum/Maximum` offen). Bedienung: **zwei dünne Randstreifen**
+  (links/rechts, ~24dp) in `DefaultReaderScaffold`, **nur** wenn `brightnessRange != null`, fangen den
+  Einwärts-Wisch und öffnen die host-gerenderte, flache, animationsfreie `BrightnessBar` (diskrete
+  Stufen). **Bewusst NICHT über `ReaderTapZones`** (ein Full-Width-Drag-Detektor würde die
+  `HorizontalPager`-Blätter-Wische klauen; Helligkeit ist host-erzwungene Device-Capability, kein
+  per-Screen-Action). Pegel persistiert (`SettingsRepository.frontlightLevel`, -1 = ungesetzt, keine
+  Migration). **Boox-Verifikation offen** (Tasten/Refresh/Frontlight auf echter HW).
 - **E-Ink-Refresh + Farbe (Ist, 2026-06-13 — kontext-basierter EinkWise-Pfad):**
   Der Refresh-Modus und der System-Farbmodus werden **je Lese-Kontext** über das Onyx-EinkWise-API
   angewendet. Kerntypen in `domain/eink/`:

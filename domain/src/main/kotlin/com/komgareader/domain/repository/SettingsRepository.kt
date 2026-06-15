@@ -37,6 +37,8 @@ interface SettingsRepository {
     val lastSeenVersion: Flow<String>
     /** Per-context E-Ink mode overrides; unset axes fall back to the device default. */
     val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>>
+    /** Persisted frontlight brightness level (0–100). -1 = never set (leave device current). */
+    val frontlightLevel: Flow<Int>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -60,4 +62,5 @@ interface SettingsRepository {
     suspend fun setActiveUiPack(packageName: String)
     suspend fun setLastSeenVersion(version: String)
     suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile)
+    suspend fun setFrontlightLevel(level: Int)
 }

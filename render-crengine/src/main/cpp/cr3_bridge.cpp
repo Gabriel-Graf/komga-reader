@@ -333,6 +333,16 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeAuthors(
     return env->NewStringUTF(UnicodeToUtf8(view->getAuthors()).c_str());
 }
 
+/* EPUB document language from dc:language / xml:lang ("" if unknown). */
+JNIEXPORT jstring JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeLanguage(
+        JNIEnv* env, jobject /*thiz*/, jlong handle) {
+    auto* view = reinterpret_cast<LVDocView*>(handle);
+    if (view == nullptr)
+        return env->NewStringUTF("");
+    return env->NewStringUTF(UnicodeToUtf8(view->getLanguage()).c_str());
+}
+
 /* Stable xpointer of the top of the current page ("" if unavailable). */
 JNIEXPORT jstring JNICALL
 Java_com_komgareader_render_crengine_CrengineNative_nativeCurrentAnchor(

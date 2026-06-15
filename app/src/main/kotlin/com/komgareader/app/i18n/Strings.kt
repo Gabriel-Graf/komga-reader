@@ -347,6 +347,7 @@ interface Strings {
     val novelAlignLeft: String
     val novelAlignJustify: String
     val novelHyphenation: String
+    val novelHyphenationAuto: String
     val novelHyphenationOff: String
     val novelHyphenationDe: String
     val novelHyphenationEn: String
@@ -738,6 +739,7 @@ object StringsDe : Strings {
     override val novelAlignLeft = "Linksbündig"
     override val novelAlignJustify = "Blocksatz"
     override val novelHyphenation = "Silbentrennung"
+    override val novelHyphenationAuto = "Automatisch"
     override val novelHyphenationOff = "Aus"
     override val novelHyphenationDe = "Deutsch"
     override val novelHyphenationEn = "Englisch"
@@ -1119,6 +1121,7 @@ object StringsEn : Strings {
     override val novelAlignLeft = "Left"
     override val novelAlignJustify = "Justify"
     override val novelHyphenation = "Hyphenation"
+    override val novelHyphenationAuto = "Automatic"
     override val novelHyphenationOff = "Off"
     override val novelHyphenationDe = "German"
     override val novelHyphenationEn = "English"

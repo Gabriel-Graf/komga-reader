@@ -86,6 +86,8 @@ class SettingsViewModelTest {
         override fun applyRefreshMode(id: String?) {}
         override fun applyColorMode(id: String?) {}
         override fun defaultProfile(context: EinkContext) = EinkContextProfile()
+        override fun setBrightness(level: Int) {}
+        override fun brightness(): Int = 0
     }
 
     private fun viewModel(servers: ServerRepository): SettingsViewModel {
@@ -211,6 +213,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val activeUiPack: Flow<String> = flowOf("")
     override val lastSeenVersion: Flow<String> = flowOf("")
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
+    override val frontlightLevel: Flow<Int> = flowOf(-1)
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -234,6 +237,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setLastSeenVersion(version: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
+    override suspend fun setFrontlightLevel(level: Int) {}
 }
 
 /**
@@ -280,6 +284,7 @@ private class CapturingSettingsRepository(
     override val activeUiPack: Flow<String> = flowOf("")
     override val lastSeenVersion: Flow<String> = flowOf("")
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
+    override val frontlightLevel: Flow<Int> = flowOf(-1)
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -303,6 +308,7 @@ private class CapturingSettingsRepository(
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setLastSeenVersion(version: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
+    override suspend fun setFrontlightLevel(level: Int) {}
 }
 
 /** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */

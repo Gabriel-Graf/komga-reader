@@ -112,6 +112,7 @@ object AppModule {
             OnyxEinkController(
                 buttonEvents_ = bus.events,
                 appPackageName = ctx.packageName,
+                appContext = ctx,
             )
         } else {
             NoOpEinkController(bus)

@@ -8,6 +8,9 @@ import com.komgareader.plugin.host.PluginHost
 import io.mockk.mockk
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
+import com.komgareader.domain.eink.ButtonEvent
+import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.eink.PressKind
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.BookFormat
@@ -146,6 +149,7 @@ class ReaderViewModelTest {
         override val activeUiPack: Flow<String> = flowOf("")
         override val lastSeenVersion: Flow<String> = flowOf("")
         override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
+        override val frontlightLevel: Flow<Int> = flowOf(-1)
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")
@@ -169,6 +173,7 @@ class ReaderViewModelTest {
         override suspend fun setActiveUiPack(packageName: String) = error("not used")
         override suspend fun setLastSeenVersion(version: String) = error("not used")
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) = error("not used")
+        override suspend fun setFrontlightLevel(level: Int) = error("not used")
     }
 
     private fun book(remoteId: String, pageCount: Int) = Book(
@@ -185,12 +190,13 @@ class ReaderViewModelTest {
         downloadBook: DownloadedBook? = null,
         localBytes: ByteArray = ByteArray(0),
         documentFactory: DocumentFactory = FakeDocumentFactory(FakeDocument(0)),
+        bus: HardwareButtonBus = HardwareButtonBus(),
     ): ReaderViewModel = ReaderViewModel(
         savedStateHandle = SavedStateHandle(
             mapOf("bookId" to "b1", "sourceId" to sourceId, "format" to "CBZ", "viewerMode" to mode, "stream" to stream),
         ),
         active = active,
-        bus = HardwareButtonBus(),
+        bus = bus,
         downloadRepository = FakeDownloads(downloadBook),
         localBookBytes = FakeLocalBookBytes(localBytes),
         documentFactory = documentFactory,
@@ -274,6 +280,49 @@ class ReaderViewModelTest {
             val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Rendered
             assertEquals(3, content.pageCount)
             assertEquals("BYTES", factory.openedWith)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `long press events do not turn the page`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val bus = HardwareButtonBus()
+            val vm = readerVm(FakeSource(pageCount = 5), mode = "PAGED", bus = bus)
+
+            // Wait until the content is loaded (5 streamed pages).
+            vm.content.first { it !is ReaderContent.Loading }
+
+            val pageBefore = vm.requestedPage.value
+
+            // Emit a long-press — must NOT turn the page.
+            bus.emit(ButtonEvent(HardwareButton.VOLUME_DOWN, PressKind.LONG))
+            // Let coroutines drain.
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(pageBefore, vm.requestedPage.value, "Long press must not change requestedPage")
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun `short press events do turn the page`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val bus = HardwareButtonBus()
+            val vm = readerVm(FakeSource(pageCount = 5), mode = "PAGED", bus = bus)
+
+            // Wait until the content is loaded.
+            vm.content.first { it !is ReaderContent.Loading }
+
+            // Emit a short PAGE_NEXT press — must advance to page 1.
+            bus.emit(ButtonEvent(HardwareButton.PAGE_NEXT, PressKind.SHORT))
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(1, vm.requestedPage.value, "Short press must advance requestedPage")
         } finally {
             Dispatchers.resetMain()
         }

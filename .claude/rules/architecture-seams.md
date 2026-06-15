@@ -580,6 +580,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     unangetastet. Swap-Beweis: `app/src/debug/kotlin/com/komgareader/app/ui/reader/ReaderChromeSlotPreview.kt`
     (`AlternativeReaderChrome`: Status-Fuß oben statt unten, Tap-Hints/Start-Hinweis weggelassen — nur
     Debug/Preview).
+    - **Bottom-Sheet-Capability (Ist, 2026-06-15):** `ReaderScaffoldState` trägt zusätzlich ein
+      **optionales** `bottomSheet: ReaderBottomSheet?` (`:ui-api`, Felder `expanded`/`onExpandedChange`/
+      `peekLabel`/`content`; `null` = keins, Default). Die **Mechanik gehört dem Host**: `DefaultReaderScaffold`
+      rendert (an *einer* Stelle, neben Tap-Zonen + Frontlight-Streifen) über `BoxScope.ReaderBottomSheetLayer`
+      (`app/ui/reader/ReaderBottomSheet.kt`) den Aufwärts-Wisch am unteren Rand (nur vertikaler Drag konsumiert
+      → Blätter-Taps bleiben durch), den ein-/ausklappbaren Peek-Balken (nur bei `chromeVisible`), den Scrim
+      (`readerOverlayScrim`) und den vollbreiten, höhen-gedeckelten Container; der **Reader liefert nur
+      `content`**. **E-Ink host-erzwungen** (`LocalEinkMode`): instant auf/zu auf E-Ink, `slide`+`fade` nur auf
+      Phone. **Einziger Consumer: der Novel-Reader** — Typografie + TOC als zwei Tabs (`NovelSettingsSheet` mit
+      `NovelSheetTab{TYPOGRAPHY,TOC}`, wiederverwendet `NovelTypographyControls` + das extrahierte `NovelTocList`),
+      die die zwei zentrierten Modale (`NovelTypoPanel` gelöscht, `NovelTocPanel`→`NovelTocList`) **ersetzen**;
+      die zwei alten Top-Icons sind entfernt, Suche + Lesezeichen bleiben. Paged/Comic/Webtoon/Epub übergeben
+      `null`. Swap-Beweis: `ReaderBottomSheetPreview.kt` (Peek + Expanded). **Runtime gerätegebunden** (echte
+      Wisch-Geste + crengine-Novel-Render arm64) — auf Boox noch zu verifizieren (Soll).
   `UiSlotPack(header, homeHeader, dialog, settings, tiles, overlay, detail, readerChrome)` (Vertrag
   jetzt im Modul `:ui-api`, `com.komgareader.ui.slots`) · `ResolvedSlots(…, detail, readerChrome)` (ui-api) ·
   **app-`DefaultSlots`** mit allen acht gekoppelten Default-Impls (Onyx-Look, bleibt in `:app`).

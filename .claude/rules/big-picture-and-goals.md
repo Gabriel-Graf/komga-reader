@@ -271,7 +271,9 @@ bisher gebaut ist, sind **erste Nähte**, kein abgeschlossener Zustand — der S
   `HeaderSearch` aus) · die achte Region **readerChrome** (das **ganze Reader-Gerüst** `ReaderScaffold`
   hinter `ReaderChromeSlot`/`ReaderScaffoldState` — Sub-Projekt **C1**; die Reader-Engines + die
   `Viewer`-Naht (Naht B) bleiben Core/draußen, die Surface trägt nur die abgeleiteten
-  `chromeVisible`/`onToggleChrome`, nicht den `Viewer`) · **Shell-Pack** für das Home-Skelett
+  `chromeVisible`/`onToggleChrome`, nicht den `Viewer`; **erweitert 2026-06-15 um die optionale
+  `bottomSheet`-Capability** — host-besessene Swipe-/Peek-/Scrim-Mechanik, reader-gelieferter Inhalt,
+  einziger Consumer der Novel-Reader mit Typografie+TOC als zwei Tabs statt zwei Modalen) · **Shell-Pack** für das Home-Skelett
   (`AppShellState`/`DeclarativeShell`+`ShellDescriptor`, Form-Faktor; L1: eine deskriptor-getriebene
   `DeclarativeShell` statt zwei bespoke Built-ins) · **Icon-Pack-Infra** (`I1`): `AppIcons.*`
   delegiert über `ActiveIconPack`/`IconKey` ans aktive Icon-Pack (Default = `DefaultIconPack`, die heutige

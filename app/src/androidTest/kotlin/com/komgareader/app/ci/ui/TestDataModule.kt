@@ -114,4 +114,22 @@ object TestDataModule {
     @Provides @Singleton
     fun pluginRepoClient(): com.komgareader.data.plugin.repo.PluginRepoClient =
         com.komgareader.data.plugin.repo.PluginRepoClient(okhttp3.OkHttpClient())
+
+    // Bindings neuerer Features (spiegeln DataModule) — sonst fehlen sie im Test-Graph,
+    // weil dieses Modul DataModule komplett ersetzt (@TestInstallIn replaces).
+    @Provides @Singleton
+    fun novelBookmarkRepository(db: AppDatabase): com.komgareader.domain.repository.NovelBookmarkRepository =
+        com.komgareader.data.repository.RoomNovelBookmarkRepository(db.novelBookmarkDao())
+
+    @Provides @Singleton
+    fun readingStatsRepository(db: AppDatabase): com.komgareader.domain.repository.ReadingStatsRepository =
+        com.komgareader.data.repository.RoomReadingStatsRepository(
+            sessions = db.readingSessionDao(),
+            readProgress = db.readProgressDao(),
+            novelProgress = db.novelProgressDao(),
+        )
+
+    @Provides @Singleton
+    fun githubReleaseClient(): com.komgareader.data.update.GithubReleaseClient =
+        com.komgareader.data.update.GithubReleaseClient(okhttp3.OkHttpClient())
 }

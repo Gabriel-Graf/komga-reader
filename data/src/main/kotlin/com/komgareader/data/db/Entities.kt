@@ -90,6 +90,26 @@ data class NovelProgressEntity(
     val updatedAt: Long,
 )
 
+/**
+ * Local-only in-text bookmark in a reflowable novel ([NovelBookmarkEntity] mirrors
+ * [com.komgareader.domain.model.NovelBookmark]). Never synced. Scoped per [sourceId] +
+ * [bookId]; [xpointer] is the crengine xpointer, [snippet] the captured surrounding text.
+ */
+@Entity(
+    tableName = "novel_bookmark",
+    indices = [Index(value = ["sourceId", "bookId"])],
+)
+data class NovelBookmarkEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val sourceId: Long,
+    val bookId: String,
+    val xpointer: String,
+    val number: Int,
+    val label: String?,
+    val snippet: String,
+    val createdAt: Long,
+)
+
 /** Lokal gespeichertes Buch (Download-Eintrag). */
 @Entity(tableName = "downloads")
 data class DownloadEntity(

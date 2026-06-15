@@ -9,11 +9,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         SettingEntity::class, ServerEntity::class, DownloadEntity::class, ShelfEntity::class,
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
-        NovelProgressEntity::class,
+        NovelProgressEntity::class, NovelBookmarkEntity::class,
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
         PluginRepoEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun readProgressDao(): ReadProgressDao
     abstract fun colorProfileDao(): ColorProfileDao
     abstract fun novelProgressDao(): NovelProgressDao
+    abstract fun novelBookmarkDao(): NovelBookmarkDao
     abstract fun collectionDao(): CollectionDao
     abstract fun pluginRepoDao(): PluginRepoDao
 }
@@ -336,6 +337,29 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
                 "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `url` TEXT NOT NULL, `name` TEXT)",
         )
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_plugin_repos_url` ON `plugin_repos` (`url`)")
+    }
+}
+
+/**
+ * v17 → v18: `novel_bookmark`-Tabelle (lokale Roman-Lesezeichen, nie synchronisiert).
+ * **Nicht-destruktiv** — reines `CREATE TABLE` (+ Index auf `sourceId`/`bookId`), keine
+ * Bestandsdaten, kein `ALTER`. Das Schema (inkl. Index-Name) bildet exakt das vom Entity
+ * erzeugte ab, damit Rooms Validierung sauber läuft und `fallbackToDestructiveMigration`
+ * NICHT greift (das würde die ganze DB löschen).
+ */
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `novel_bookmark` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`sourceId` INTEGER NOT NULL, `bookId` TEXT NOT NULL, " +
+                "`xpointer` TEXT NOT NULL, `number` INTEGER NOT NULL, " +
+                "`label` TEXT, `snippet` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_novel_bookmark_sourceId_bookId` " +
+                "ON `novel_bookmark` (`sourceId`, `bookId`)",
+        )
     }
 }
 

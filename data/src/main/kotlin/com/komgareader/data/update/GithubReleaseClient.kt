@@ -35,16 +35,34 @@ class GithubReleaseClient(private val http: OkHttpClient) {
         }.getOrNull()
     }
 
-    /** Downloads [url] to [dest]; true on success. On failure [dest] is deleted. */
-    suspend fun download(url: String, dest: File): Boolean = withContext(Dispatchers.IO) {
-        runCatching {
-            http.newCall(Request.Builder().url(url).header("User-Agent", "komga-reader-app").build())
-                .execute().use { resp ->
-                    if (!resp.isSuccessful) return@use false
-                    val body = resp.body ?: return@use false
-                    dest.outputStream().use { out -> body.byteStream().copyTo(out) }
-                    true
-                }
-        }.getOrElse { dest.delete(); false }
-    }
+    /**
+     * Downloads [url] to [dest]; true on success. On failure [dest] is deleted. [onProgress] reports
+     * the downloaded fraction `0f..1f` as bytes arrive (only when the server sends a content length;
+     * the release APK is large, so the UI needs this to not look frozen).
+     */
+    suspend fun download(url: String, dest: File, onProgress: (Float) -> Unit = {}): Boolean =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                http.newCall(Request.Builder().url(url).header("User-Agent", "komga-reader-app").build())
+                    .execute().use { resp ->
+                        if (!resp.isSuccessful) return@use false
+                        val body = resp.body ?: return@use false
+                        val total = body.contentLength()
+                        body.byteStream().use { input ->
+                            dest.outputStream().use { out ->
+                                val buffer = ByteArray(64 * 1024)
+                                var copied = 0L
+                                while (true) {
+                                    val read = input.read(buffer)
+                                    if (read < 0) break
+                                    out.write(buffer, 0, read)
+                                    copied += read
+                                    if (total > 0) onProgress((copied.toFloat() / total).coerceIn(0f, 1f))
+                                }
+                            }
+                        }
+                        true
+                    }
+            }.getOrElse { dest.delete(); false }
+        }
 }

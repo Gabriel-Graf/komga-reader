@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.AppUpdateController
 import com.komgareader.app.data.AppUpdateInstaller
 import com.komgareader.app.data.AppUpdateState
+import com.komgareader.app.data.UpdateInstall
 import com.komgareader.data.update.ReleaseInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,14 @@ class AppUpdateViewModel @Inject constructor(
     private val _installing = MutableStateFlow(false)
     val installing: StateFlow<Boolean> = _installing.asStateFlow()
 
+    /** Download progress `0f..1f` while [installing]; null when not downloading. */
+    private val _progress = MutableStateFlow<Float?>(null)
+    val progress: StateFlow<Float?> = _progress.asStateFlow()
+
+    /** Outcome of the last install attempt (shown as a status line); null until an attempt finishes. */
+    private val _result = MutableStateFlow<UpdateInstall?>(null)
+    val result: StateFlow<UpdateInstall?> = _result.asStateFlow()
+
     /** Trigger a check (app start + "Check for updates" button). */
     fun check() = viewModelScope.launch { controller.check() }
 
@@ -38,13 +47,22 @@ class AppUpdateViewModel @Inject constructor(
 
     fun dismissReleaseNotes() = controller.dismissReleaseNotes()
 
-    /** Download the APK + start the install (OS dialog). [installing] drives the button label meanwhile. */
+    /**
+     * Download the APK + start the install (OS dialog). [installing]/[progress] drive the live label;
+     * [result] surfaces the outcome so a failure / missing permission is never silent.
+     */
     fun install(release: ReleaseInfo) = viewModelScope.launch {
         _installing.value = true
+        _result.value = null
+        _progress.value = 0f
         try {
-            installer.downloadAndInstall(release)
+            _result.value = installer.downloadAndInstall(release) { _progress.value = it }
         } finally {
             _installing.value = false
+            _progress.value = null
         }
     }
+
+    /** Clear the last result line (e.g. when the user retries or leaves). */
+    fun clearResult() { _result.value = null }
 }

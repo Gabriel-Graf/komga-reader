@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.BuildConfig
 import com.komgareader.app.data.AppUpdateState
+import com.komgareader.app.data.UpdateInstall
 import com.komgareader.data.update.ReleaseInfo
 import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.app.i18n.Language
@@ -921,6 +922,8 @@ fun AboutContent(query: String, viewModel: AppUpdateViewModel = hiltViewModel())
     val s = LocalStrings.current
     val updateState by viewModel.state.collectAsState()
     val installing by viewModel.installing.collectAsState()
+    val progress by viewModel.progress.collectAsState()
+    val installResult by viewModel.result.collectAsState()
     SettingsGroup(s.appName, query) {
         HighlightText(
             s.aboutDevice, query, MaterialTheme.typography.bodySmall,
@@ -935,6 +938,8 @@ fun AboutContent(query: String, viewModel: AppUpdateViewModel = hiltViewModel())
         UpdateSection(
             state = updateState,
             installing = installing,
+            progress = progress,
+            result = installResult,
             query = query,
             onCheck = { viewModel.check() },
             onInstall = { viewModel.install(it) },
@@ -974,6 +979,8 @@ private fun AboutLinkRow(label: String, displayUrl: String, query: String) {
 private fun UpdateSection(
     state: AppUpdateState,
     installing: Boolean,
+    progress: Float?,
+    result: UpdateInstall?,
     query: String,
     onCheck: () -> Unit,
     onInstall: (ReleaseInfo) -> Unit,
@@ -991,10 +998,22 @@ private fun UpdateSection(
                 MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
             )
             Spacer(Modifier.height(8.dp))
+            // While downloading show "Lädt… NN %" (the APK is large — without the percent it looks frozen).
+            val pct = progress?.let { " ${(it * 100).toInt()} %" }.orEmpty()
             EinkOutlinedButton(onClick = { onInstall(state.release) }, enabled = !installing) {
                 Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (installing) s.aboutDownloading else s.aboutInstallUpdate)
+                Text(if (installing) s.aboutDownloading + pct else s.aboutInstallUpdate)
+            }
+            // Surface the outcome so a failure / missing permission is never silent.
+            if (!installing) {
+                when (result) {
+                    UpdateInstall.STARTED -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutUpdateStarted, query) }
+                    UpdateInstall.NO_APK -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutUpdateNoApk, query) }
+                    UpdateInstall.FAILED -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutUpdateFailed, query) }
+                    UpdateInstall.NEEDS_PERMISSION -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutUpdateNeedsPermission, query) }
+                    null -> Unit
+                }
             }
         } else {
             EinkOutlinedButton(onClick = onCheck, enabled = state != AppUpdateState.Checking) {

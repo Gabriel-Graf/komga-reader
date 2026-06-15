@@ -144,6 +144,7 @@ fun BoxScope.ReaderInfoBar(
     dividerOnTop: Boolean,
     start: @Composable () -> Unit,
     end: @Composable () -> Unit,
+    center: (@Composable () -> Unit)? = null,
 ) {
     val divider = MaterialTheme.colorScheme.outlineVariant
     Column(Modifier.align(align).fillMaxWidth()) {
@@ -156,10 +157,18 @@ fun BoxScope.ReaderInfoBar(
                 .padding(horizontal = BAR_INSET, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // [start] füllt die Breite (linksbündig, kürzt mit …); [end] sitzt damit
-            // bündig am rechten Rand — mit demselben Abstand wie [start] links (BAR_INSET).
-            Box(Modifier.weight(1f)) { start() }
-            end()
+            if (center != null) {
+                // Mit Mittel-Slot: [start] links, [center] zentriert, [end] rechtsbündig.
+                // Beide Seiten gleich gewichtet → der Balken bleibt mittig.
+                Box(Modifier.weight(1f)) { start() }
+                center()
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) { end() }
+            } else {
+                // [start] füllt die Breite (linksbündig, kürzt mit …); [end] sitzt damit
+                // bündig am rechten Rand — mit demselben Abstand wie [start] links (BAR_INSET).
+                Box(Modifier.weight(1f)) { start() }
+                end()
+            }
         }
         if (!dividerOnTop) Hairline(divider)
     }

@@ -157,12 +157,23 @@ class NovelReaderViewModel @Inject constructor(
      * Kapitel aus der Seite. Muss nach jedem Re-Layout neu berechnet werden, weil
      * sich die Seitenzuordnung der (stabilen) Anker mit der Typografie verschiebt.
      */
-    private var chapterStartPages: List<Int> = emptyList()
+    private val _chapterStartPages = MutableStateFlow<List<Int>>(emptyList())
 
     private val _currentChapterTitle = MutableStateFlow<String?>(null)
 
     /** Titel des Kapitels, in dem die aktuelle Seite liegt (oder `null`, falls keins). */
     val currentChapterTitle: StateFlow<String?> = _currentChapterTitle.asStateFlow()
+
+    /**
+     * Kapitel-Startpositionen als Bruchteil 0–1 des Buchs (Startseite / letzte Seite) im
+     * **aktuellen** Layout — die Punkte auf dem Fortschrittsbalken des Page-Footers.
+     */
+    val chapterFractions: StateFlow<List<Float>> =
+        combine(_chapterStartPages, _uiState) { starts, ui ->
+            val last = (ui.pageCount - 1).toFloat()
+            if (last <= 0f) emptyList()
+            else starts.map { (it / last).coerceIn(0f, 1f) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Werktitel + Autor aus den EPUB-Metadaten — für den eigenen Page-Header (links). */
     private val _bookTitle = MutableStateFlow("")
@@ -352,10 +363,10 @@ class NovelReaderViewModel @Inject constructor(
     private suspend fun recomputeChapterStartPagesLocked(doc: ReflowableDocument) {
         val list = _chapters.value
         if (list.isEmpty()) {
-            chapterStartPages = emptyList()
+            _chapterStartPages.value = emptyList()
             return
         }
-        chapterStartPages = withContext(Dispatchers.IO) {
+        _chapterStartPages.value = withContext(Dispatchers.IO) {
             val keep = doc.currentAnchor()
             val pages = list.map { chapter ->
                 if (chapter.anchor.isEmpty()) {
@@ -373,7 +384,7 @@ class NovelReaderViewModel @Inject constructor(
     /** Setzt [currentChapterTitle] auf das letzte Kapitel, dessen Startseite ≤ aktueller Seite liegt. */
     private fun refreshCurrentChapter() {
         val list = _chapters.value
-        val starts = chapterStartPages
+        val starts = _chapterStartPages.value
         if (list.isEmpty() || starts.size != list.size) {
             _currentChapterTitle.value = null
             return

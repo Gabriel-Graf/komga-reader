@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -76,7 +79,7 @@ fun NovelReaderScreen(
     val reflowConfig by novelVm.reflowConfig.collectAsState()
     val chapters by novelVm.chapters.collectAsState()
     val currentChapterTitle by novelVm.currentChapterTitle.collectAsState()
-    val progressPercent by novelVm.progressPercent.collectAsState()
+    val chapterFractions by novelVm.chapterFractions.collectAsState()
     val bookTitle by novelVm.bookTitle.collectAsState()
     val bookAuthor by novelVm.bookAuthor.collectAsState()
     val availableNovelFonts by novelVm.availableNovelFonts.collectAsState()
@@ -173,10 +176,10 @@ fun NovelReaderScreen(
         persistentBars = {
             NovelPageHeader(author = bookAuthor, title = bookTitle)
             NovelPageFooter(
-                progressPercent = progressPercent,
                 currentPage = state.currentPage,
                 pageCount = state.pageCount,
                 chapterTitle = currentChapterTitle,
+                chapterFractions = chapterFractions,
             )
         },
         bottomSheet = ReaderBottomSheet(
@@ -311,25 +314,82 @@ private fun BoxScope.NovelPageHeader(author: String, title: String) {
 }
 
 /**
- * Dauerhafter **Page-Footer** unten: links das aktuelle Kapitel, rechts Seite X / N · %.
+ * Dauerhafter **Page-Footer** unten: links das aktuelle Kapitel, **mittig** der
+ * KOReader-artige Fortschrittsbalken (Pill mit Kapitel-Punkten), rechts Seite X / N.
  * Aus derselben geteilten [ReaderInfoBar] (DRY mit dem Header), Hairline-Trennlinie nach
  * oben zur Seite. Alle Texte lokalisiert ([LocalStrings]).
  */
 @Composable
 private fun BoxScope.NovelPageFooter(
-    progressPercent: Int,
     currentPage: Int,
     pageCount: Int,
     chapterTitle: String?,
+    chapterFractions: List<Float>,
 ) {
-    val pageLabel = "${currentPage + 1} / ${pageCount.coerceAtLeast(1)} · $progressPercent %"
+    val last = (pageCount - 1).coerceAtLeast(1)
+    val progress = (currentPage.toFloat() / last).coerceIn(0f, 1f)
+    val pageLabel = "${currentPage + 1} / ${pageCount.coerceAtLeast(1)}"
     ReaderInfoBar(
         align = Alignment.BottomCenter,
         dividerOnTop = true,
         start = { ReaderInfoText(chapterTitle.orEmpty()) },
+        center = {
+            NovelProgressBar(
+                progress = progress,
+                chapterFractions = chapterFractions,
+            )
+        },
         end = { ReaderInfoText(pageLabel) },
     )
 }
+
+/**
+ * KOReader-artiger Fortschrittsbalken: ein längliches **Oval (Pill)** als Track, gefüllt von
+ * links bis [progress]. Auf dem Balken sitzen kleine **Kapitel-Punkte** ([chapterFractions],
+ * je Startposition 0–1), die in die Linie übergehen — bereits gelesene liegen in der schwarzen
+ * Füllung, kommende auf dem hellen Track.
+ *
+ * **E-Ink (Pflicht):** monochrom schwarz, **keine Animation** — der Füllstand folgt direkt der
+ * Seite (sofortiger State-Wechsel). Track-Hairline = [outlineVariant], Füllung/Punkte = Schwarz.
+ */
+@Composable
+private fun NovelProgressBar(
+    progress: Float,
+    chapterFractions: List<Float>,
+) {
+    val track = MaterialTheme.colorScheme.outlineVariant
+    Canvas(
+        Modifier
+            .width(BAR_WIDTH)
+            .height(BAR_HEIGHT),
+    ) {
+        val h = size.height
+        val w = size.width
+        val r = h / 2f
+        val radius = CornerRadius(r, r)
+        // Track-Pill (heller Hintergrund über die volle Breite).
+        drawRoundRect(color = track, cornerRadius = radius)
+        // Gefüllter Anteil (schwarz), als eigene Pill bis progress*w.
+        val fillW = (w * progress).coerceIn(0f, w)
+        if (fillW > 0f) {
+            drawRoundRect(
+                color = Color.Black,
+                size = Size(fillW.coerceAtLeast(h), h),
+                cornerRadius = radius,
+            )
+        }
+        // Kapitel-Punkte auf der Mittellinie: in der Füllung „verschwinden" sie (gleiche Farbe),
+        // auf dem hellen Track heben sie sich als schwarze Punkte ab.
+        val dotR = h * 0.35f
+        chapterFractions.forEach { f ->
+            val cx = (r + (w - 2f * r) * f.coerceIn(0f, 1f))
+            drawCircle(color = Color.Black, radius = dotR, center = Offset(cx, h / 2f))
+        }
+    }
+}
+
+private val BAR_WIDTH = 180.dp
+private val BAR_HEIGHT = 8.dp
 
 /**
  * Zeichnet die Bookmark-Marker über die gerenderte Seite. Die Rects kommen aus der

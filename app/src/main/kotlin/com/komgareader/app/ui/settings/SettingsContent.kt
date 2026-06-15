@@ -53,8 +53,10 @@ import com.komgareader.data.update.ReleaseInfo
 import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.app.i18n.Language
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.app.ui.components.AnimatedAppIcon
 import com.komgareader.app.ui.components.ChoiceRow
 import com.komgareader.app.ui.components.CompactStepperRow
+import com.komgareader.app.ui.components.IconAnimation
 import com.komgareader.app.ui.components.SettingsRow
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.plugins.AddPluginSourceModals
@@ -1001,7 +1003,13 @@ private fun UpdateSection(
             // While downloading show "Lädt… NN %" (the APK is large — without the percent it looks frozen).
             val pct = progress?.let { " ${(it * 100).toInt()} %" }.orEmpty()
             EinkOutlinedButton(onClick = { onInstall(state.release) }, enabled = !installing) {
-                Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                AnimatedAppIcon(
+                    imageVector = AppIcons.Download,
+                    animation = IconAnimation.BobVertical,
+                    running = installing,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(if (installing) s.aboutDownloading + pct else s.aboutInstallUpdate)
             }
@@ -1017,7 +1025,13 @@ private fun UpdateSection(
             }
         } else {
             EinkOutlinedButton(onClick = onCheck, enabled = state != AppUpdateState.Checking) {
-                Icon(AppIcons.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                AnimatedAppIcon(
+                    imageVector = AppIcons.Refresh,
+                    animation = IconAnimation.SpinClockwise,
+                    running = state == AppUpdateState.Checking,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(s.aboutCheckUpdates)
             }

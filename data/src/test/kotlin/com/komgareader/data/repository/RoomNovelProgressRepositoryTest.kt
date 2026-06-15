@@ -2,6 +2,8 @@ package com.komgareader.data.repository
 
 import com.komgareader.data.db.NovelProgressDao
 import com.komgareader.data.db.NovelProgressEntity
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,6 +14,7 @@ import kotlin.test.assertTrue
 private class FakeNovelProgressDao : NovelProgressDao {
     val rows = mutableListOf<NovelProgressEntity>()
     private fun key(e: NovelProgressEntity) = e.sourceId to e.bookId
+    override fun observeAll(): Flow<List<NovelProgressEntity>> = flowOf(rows.toList())
     override suspend fun upsert(entry: NovelProgressEntity) {
         rows.removeAll { it.sourceId == entry.sourceId && it.bookId == entry.bookId }
         rows.add(entry)

@@ -1,0 +1,68 @@
+# Nightly integration suite — separate pipeline from the fast push CI (ci.yml).
+#
+# Runs the `ci.*` androidTest package against the Komga/Kavita Docker fixtures on an Android
+# emulator. This is heavy (~10-15 min, emulator boot), so it does NOT run on push/PR — it runs
+# on a nightly schedule + on-demand (workflow_dispatch).
+#
+# WHY x86_64 here even though the app is arm64-v8a only (render-crengine ships native libs only
+# for arm64): the **API-30 x86_64 google_apis** system image bundles ARM→x86_64 binary translation,
+# so the arm64 `libcr3bridge.so` loads and runs on a normal (KVM-accelerated, SDK-preinstalled)
+# ubuntu-latest runner. Verified: `:render-crengine:connectedDebugAndroidTest` (the arm64 crengine
+# JNI) passes on this image, and AGP's `connectedAndroidTest` install extracts the arm64 libs
+# correctly (the device abilist includes arm64-v8a; only a plain `installDebug` needs `--abi`).
+# This replaces the abandoned native-arm64-runner path (hosted arm64 + setup-android was flaky).
+name: Integration (nightly)
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # daily 03:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned NDK + CMake (render-crengine arm64 JNI)
+        run: sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Start Komga + Kavita fixtures
+        run: tools/ci-fixtures/up.sh
+      # The Komga/OPDS `ci.*` tests are self-contained (CiKomga uses static fixture Basic-Auth on
+      # fixed ports). PluginKavitaCiTest needs the Kavita plugin APK pre-installed; that APK lives in
+      # a separate (gitignored) repo and isn't provisioned on the throwaway CI emulator, so it skips
+      # via its own assumeTrue (no kavitaUrl/kavitaKey passed).
+      - name: Integration tests (ci.* on an ARM-translation x86_64 emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          disable-animations: true
+          script: >
+            ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
+            -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci
+      - name: Tear down fixtures
+        if: always()
+        run: tools/ci-fixtures/down.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-reports
+          path: app/build/reports/androidTests/

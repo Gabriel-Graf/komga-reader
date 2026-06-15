@@ -264,6 +264,23 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   geflusht) und registriert nach dem Boot live via neuem JNI `CrengineNative.nativeAddFont`
   (`render-crengine/.../cr3_bridge.cpp` → `fontMan->RegisterFont`). Ein zweites `nativeInit` ist verboten.
   Verdrahtet in `PluginCatalog` (extrahiert TTF via `PluginHost.extractFontAsset`, ruft `registerFont`).
+- **Roman-Wort-Lesezeichen (Ist, 2026-06-15 — Runtime-Verifikation gerätegebunden offen):** Tippe ein
+  Wort im Roman-Reader (crengine-Reflow-Pfad), um an genau diesem Wort ein nummeriertes Lesezeichen zu
+  setzen/entfernen (liste/umbenennen/löschen/anspringen; Marker auf der Seite gezeichnet). Die Render-Naht
+  bekam dafür zwei neue, engine-neutrale Methoden auf `ReflowableDocument`:
+  `wordAt(x, y): WordHit?` + `rectsFor(xpointers: List<String>): Map<String, IntRect>` (Default no-op in
+  `domain/render/Document.kt`; neue engine-neutrale Typen `WordHit`/`IntRect` ebenda). Die crengine-Impl
+  `CrengineDocument.wordAt`/`rectsFor` ruft zwei neue JNI `CrengineNative.nativeXPointerAtPoint` /
+  `nativeRectsForXPointers` (`render-crengine/.../cr3_bridge.cpp`); das Anspringen nutzt das bestehende
+  `goToAnchor`/`seekToAnchor`. **Lokal-only** (kein Server hat Wort-Lesezeichen): Room-Tabelle
+  `novel_bookmark` (`NovelBookmarkEntity`, `NovelBookmarkDao`, domain `NovelBookmarkRepository`,
+  `RoomNovelBookmarkRepository`), `AppDatabase` 18 → 19 (`MIGRATION_18_19`) — bewusst **nicht** in der
+  Sync-Queue. Die Tap-Verdrahtung läuft über die deklarative `ReaderTapZones`-Naht (A1b): Lesezeichen-Modus
+  → `tapZones = null` (der Reader macht den Wort-Hit-Test selbst, wie Comic), sonst `HorizontalThirds`.
+  Marker-Stil (`BookmarkMarkerStyle{UNDERLINE,MARGIN}`, Setting `bookmark_marker_style`) ist eine
+  Einstellung. **Ist-Vorbehalt:** compile- + unit-verifiziert, `:app:assembleDebug` grün, aber das
+  Runtime-Wort-Tap-/Marker-Verhalten ist **gerätegebunden noch nicht verifiziert** — die crengine-`.so`
+  ist arm64-only und fehlt auf dem x86_64-Emulator; nur eine echte arm64-Boox kann den JNI-Pfad ausführen.
 - **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`

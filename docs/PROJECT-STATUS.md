@@ -47,6 +47,15 @@ overlay / refresh. The **guided comic reader is built** (`ComicReaderScreen` +
 or an ONNX **ML** detector when a `PANEL_MODEL` data‑plugin is installed and `useMlDetection` is on.
 The former in‑tree `guided-view` module has been removed.
 
+The novel reader gained **tap‑a‑word bookmarks** (Ist 2026-06-15): two new engine‑neutral render‑seam
+methods `ReflowableDocument.wordAt` / `rectsFor` (crengine JNI `nativeXPointerAtPoint` /
+`nativeRectsForXPointers`), a **local‑only** `novel_bookmark` Room table (`AppDatabase` v18,
+deliberately off the sync queue), a `BookmarkMarkerStyle{UNDERLINE,MARGIN}` setting, and tap wiring via
+the declarative `ReaderTapZones` seam (bookmark mode → `tapZones = null`, reader hit‑tests words itself).
+Built and compile/unit‑verified (`:app:assembleDebug` green); the **runtime word‑tap / marker behaviour
+is device‑verification pending** — the crengine `.so` is arm64‑only, so the JNI path only runs on a real
+arm64 Boox, not the x86 emulator.
+
 ### Multi‑server / source‑agnostic — ✅
 This is the strongest result. A grep of `app/` and `domain/` finds **no** `KomgaSource`,
 `*SourceProvider`, `*SourceFactory` or `AuthHeaders` in any ViewModel or domain type (the single

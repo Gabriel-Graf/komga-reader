@@ -40,6 +40,12 @@ data class Chapter(val title: String, val anchor: String, val depth: Int)
 /** Treffer der Volltextsuche: stabiler Anker zur Fundstelle + Kontext-Schnipsel. */
 data class SearchHit(val anchor: String, val snippet: String)
 
+/** A rectangle in page-relative pixels (origin = top-left of the rendered page bitmap). */
+data class IntRect(val left: Int, val top: Int, val right: Int, val bottom: Int)
+
+/** A word hit from a tap: its stable xpointer, the word text, and its page-relative rect. */
+data class WordHit(val xpointer: String, val word: String, val rect: IntRect)
+
 /**
  * Reflowbares Dokument (Roman): Re-Layout, TOC, stabile Anker, Suche. Engine-neutral,
  * sodass die konkrete EPUB-Engine später dahinter treten kann, ohne Reader/UI zu berühren.
@@ -70,6 +76,18 @@ interface ReflowableDocument : Document {
     fun authors(): String = ""
     /** BCP-47 content language from the document metadata ("" if unknown). Engine-neutral default. */
     fun contentLanguage(): String = ""
+
+    /**
+     * The word at page-relative pixel ([x],[y]) on the currently rendered page, or
+     * null if no word is there. Default no-op so non-crengine engines need no change.
+     */
+    fun wordAt(x: Int, y: Int): WordHit? = null
+
+    /**
+     * Page-relative rects for the [xpointers] that fall on the currently rendered
+     * page (others omitted). Used to draw bookmark markers. Default empty.
+     */
+    fun rectsFor(xpointers: List<String>): Map<String, IntRect> = emptyMap()
 }
 
 /**

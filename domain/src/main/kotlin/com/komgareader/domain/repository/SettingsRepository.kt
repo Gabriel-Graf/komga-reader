@@ -10,6 +10,8 @@ interface SettingsRepository {
     val language: Flow<String>       // "de" | "en"
     val displayMode: Flow<String>    // "EINK" | "SMARTPHONE"
     val shellLayoutMode: Flow<String>  // "AUTO" | "COMPACT" | "EXPANDED" — Home-Skelett-Form-Faktor (Override)
+    /** "UNDERLINE" | "MARGIN" — how novel bookmarks are marked on the page. */
+    val bookmarkMarkerStyle: Flow<String>
     val downloadDir: Flow<String?>   // SAF-Tree-URI oder null (= interner App-Speicher)
     val guidedPanelOverlay: Flow<Boolean>   // Debug: erkannte Panel-Rahmen im Comic-Reader einblenden
     /** Comic-Guided: Panel-Erkennung per ML-Modell-Plugin (PANEL_MODEL); aus = Geometrie-Fallback. Default true. */
@@ -43,6 +45,7 @@ interface SettingsRepository {
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
     suspend fun setShellLayoutMode(value: String)
+    suspend fun setBookmarkMarkerStyle(value: String)
     suspend fun setDownloadDir(uri: String?)
     suspend fun setGuidedPanelOverlay(value: Boolean)
     suspend fun setUseMlDetection(value: Boolean)

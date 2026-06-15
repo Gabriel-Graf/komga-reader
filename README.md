@@ -43,7 +43,7 @@ packs — while the host keeps enforcing the E‑Ink correctness rules no pack c
 | Area | What works today |
 |---|---|
 | **Sources** | Komga (REST) and OPDS, **multiple servers at once, mixed**. Per‑work source resolution. Kavita via plugin. **Local device folders** (pick a folder via SAF; CBZ/PDF/EPUB read like any other source). |
-| **Reading modes** | Paged comics, vertical **Webtoon** scroll, **Guided Comic** (panel‑by‑panel zoom, automatic panel detection via the comic‑cutter library — geometric by default, optional ONNX **ML** detector via a `PANEL_MODEL` plugin), **Novel** EPUB reflow (crengine‑ng with hyphenation + bundled reading fonts). |
+| **Reading modes** | Paged comics, vertical **Webtoon** scroll, **Guided Comic** (panel‑by‑panel zoom, automatic panel detection via the comic‑cutter library — geometric by default, optional ONNX **ML** detector via a `PANEL_MODEL` plugin), **Novel** EPUB reflow (crengine‑ng with hyphenation + bundled reading fonts, tap‑a‑word **bookmarks** with on‑page markers). |
 | **Devices** | Mono E‑Ink, colour E‑Ink (Kaleido), LCD phone/tablet — motion and accent‑colour gated **per device class** on two orthogonal axes. |
 | **E‑Ink** | Onyx refresh control (fast mode + device‑managed full refresh), no‑op fallback off‑device, no animations in E‑Ink mode. |
 | **Colour filter** | Per‑profile saturation / contrast / brightness applied to **both covers and reader pages** (Kaleido‑tuned built‑in profile). |

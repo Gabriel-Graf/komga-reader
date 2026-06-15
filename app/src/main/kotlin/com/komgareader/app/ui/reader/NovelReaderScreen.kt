@@ -1,17 +1,21 @@
 package com.komgareader.app.ui.reader
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -31,10 +38,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.text.style.TextAlign
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.common.label
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.domain.model.ReaderKind
+import com.komgareader.domain.model.BookmarkMarkerStyle
+import com.komgareader.domain.model.NovelBookmark
+import com.komgareader.domain.render.IntRect
 import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.ReaderTapZones
 
 /**
  * Roman-Reader (ViewerType.NOVEL): zeigt eine **reflowte** EPUB-Seite, die der
@@ -66,10 +78,15 @@ fun NovelReaderScreen(
     val bookAuthor by novelVm.bookAuthor.collectAsState()
     val availableNovelFonts by novelVm.availableNovelFonts.collectAsState()
     val fontSampleFiles by novelVm.fontSampleFiles.collectAsState()
+    val bookmarks by novelVm.bookmarksFlow.collectAsState()
+    val bookmarkMode by novelVm.bookmarkMode.collectAsState()
+    val markerStyleName by novelVm.markerStyle.collectAsState()
     val strings = LocalStrings.current
     var typoPanelOpen by remember { mutableStateOf(false) }
     var tocPanelOpen by remember { mutableStateOf(false) }
     var searchPanelOpen by remember { mutableStateOf(false) }
+    var bookmarkPanelOpen by remember { mutableStateOf(false) }
+    var renameId by remember { mutableStateOf<Long?>(null) }
 
     ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.currentPage)
 
@@ -106,6 +123,23 @@ fun NovelReaderScreen(
             onGoToProgress = novelVm::goToProgress,
             onDismiss = { searchPanelOpen = false },
         )
+        bookmarkPanelOpen -> NovelBookmarkPanel(
+            bookmarks = bookmarks,
+            onJump = novelVm::jumpToBookmark,
+            onRename = { renameId = it },
+            onDelete = novelVm::deleteBookmark,
+            onDismiss = { bookmarkPanelOpen = false },
+        )
+    }
+
+    // Bookmark-Label umbenennen (E-Ink-Dialog mit einem Textfeld).
+    renameId?.let { id ->
+        val existing = bookmarks.firstOrNull { it.id == id }
+        BookmarkRenameDialog(
+            initial = existing?.label.orEmpty(),
+            onConfirm = { novelVm.renameBookmark(id, it); renameId = null },
+            onDismiss = { renameId = null },
+        )
     }
 
     ReaderScaffold(
@@ -118,7 +152,23 @@ fun NovelReaderScreen(
         onPrev = novelVm::prevPage,
         onNext = novelVm::nextPage,
         background = Color.White,
+        tapZones = if (bookmarkMode) {
+            null
+        } else {
+            ReaderTapZones.HorizontalThirds(novelVm::prevPage, novelVm::toggleChrome, novelVm::nextPage)
+        },
+        showTapZoneHints = !bookmarkMode,
         actions = {
+            IconButton(onClick = { novelVm.toggleBookmarkMode() }) {
+                Icon(
+                    if (bookmarkMode) AppIcons.BookmarkFilled else AppIcons.Bookmark,
+                    contentDescription = strings.novelBookmarkMode,
+                    tint = Color.White,
+                )
+            }
+            IconButton(onClick = { bookmarkPanelOpen = true }) {
+                Icon(AppIcons.ListView, contentDescription = strings.novelBookmarks, tint = Color.White)
+            }
             IconButton(onClick = { tocPanelOpen = true }) {
                 Icon(
                     AppIcons.TableOfContents,
@@ -201,13 +251,35 @@ fun NovelReaderScreen(
                     ) {
                         value = novelVm.renderPage(state.currentPage)
                     }
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (bookmarkMode) {
+                                    Modifier.pointerInput(state.currentPage, bookmarkMode) {
+                                        detectTapGestures { offset ->
+                                            novelVm.onWordTap(offset.x.toInt(), offset.y.toInt())
+                                        }
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         if (bmp != null) {
                             FilteredReaderImage(
                                 bitmap = bmp!!,
                                 contentDescription = "Seite ${state.currentPage + 1}",
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier.fillMaxSize(),
+                            )
+                            BookmarkMarkers(
+                                novelVm = novelVm,
+                                bookmarks = bookmarks,
+                                currentPage = state.currentPage,
+                                layoutGeneration = state.layoutGeneration,
+                                markerStyleName = markerStyleName,
                             )
                         } else {
                             LoadingIndicator()
@@ -254,4 +326,76 @@ private fun BoxScope.NovelPageFooter(
         start = { ReaderInfoText(chapterTitle.orEmpty()) },
         end = { ReaderInfoText(pageLabel) },
     )
+}
+
+/**
+ * Zeichnet die Bookmark-Marker über die gerenderte Seite. Die Rects kommen aus der
+ * crengine-Engine ([NovelReaderViewModel.bookmarkRectsForCurrentPage]) im selben Pixel-Raum
+ * wie die 1:1 dargestellte Seiten-Bitmap. **Monochrom schwarz, keine Animation** (E-Ink):
+ * je nach [BookmarkMarkerStyle] entweder ein Margin-Balken links oder eine Unterstreichung.
+ */
+@Composable
+private fun BookmarkMarkers(
+    novelVm: NovelReaderViewModel,
+    bookmarks: List<NovelBookmark>,
+    currentPage: Int,
+    layoutGeneration: Int,
+    markerStyleName: String,
+) {
+    val rects by produceState(
+        initialValue = emptyMap<String, IntRect>(),
+        currentPage,
+        layoutGeneration,
+        bookmarks,
+    ) {
+        value = novelVm.bookmarkRectsForCurrentPage()
+    }
+    if (rects.isEmpty()) return
+    val margin = markerStyleName == BookmarkMarkerStyle.MARGIN.name
+    Canvas(Modifier.fillMaxSize()) {
+        rects.values.forEach { r ->
+            if (margin) {
+                drawRect(
+                    color = Color.Black,
+                    topLeft = Offset(0f, r.top.toFloat()),
+                    size = Size(8f, (r.bottom - r.top).toFloat()),
+                )
+            } else {
+                drawRect(
+                    color = Color.Black,
+                    topLeft = Offset(r.left.toFloat(), (r.bottom - 3).toFloat()),
+                    size = Size((r.right - r.left).toFloat(), 3f),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Umbenennen-Dialog für ein Bookmark-Label: ein einzelnes Textfeld im [EinkModal]
+ * (gleiche E-Ink-Form wie das Sammlung-Umbenennen). Ein leerer Wert ist erlaubt
+ * (= kein Label); das VM interpretiert `null`/leer als „kein Label".
+ */
+@Composable
+private fun BookmarkRenameDialog(
+    initial: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val strings = LocalStrings.current
+    var label by remember { mutableStateOf(initial) }
+    EinkModal(
+        title = strings.novelBookmarkRename,
+        onDismiss = onDismiss,
+        confirmLabel = strings.save,
+        onConfirm = { onConfirm(label.trim()) },
+        dismissLabel = strings.cancel,
+    ) {
+        OutlinedTextField(
+            value = label,
+            onValueChange = { label = it },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }

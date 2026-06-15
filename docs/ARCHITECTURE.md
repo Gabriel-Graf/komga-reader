@@ -101,6 +101,12 @@ in the `app/data` wiring layer — never in a ViewModel, a UI file, or `domain`.
   `pendingFontPaths` (flushed into the single `nativeInit`) and registers live post‑boot via the
   JNI `CrengineNative.nativeAddFont` → `fontMan->RegisterFont`. Font plugins (see below) install
   TTFs at runtime, no app restart.
+- **Novel word bookmarks (Ist 2026-06-15):** `ReflowableDocument` gained `wordAt(x, y): WordHit?` and
+  `rectsFor(xpointers): Map<String, IntRect>` (default no‑op; engine‑neutral `WordHit`/`IntRect`).
+  The crengine impl maps them to two new JNI methods (`CrengineNative.nativeXPointerAtPoint` /
+  `nativeRectsForXPointers`); jumping reuses `goToAnchor`/`seekToAnchor`. This powers tap‑a‑word
+  bookmarks in the novel reader. *Runtime behaviour is device‑verification pending* — the crengine
+  `.so` is arm64‑only, so the JNI word‑tap path only runs on a real arm64 Boox, not the x86 emulator.
 - The render target is strictly separated from the view. A different engine plugs in behind
   these interfaces without touching the rest.
 
@@ -210,6 +216,10 @@ brightness before display:
 - Room persistence in `data`, **schema v18**. Every record carries a `sourceId` (local source =
   id 0), so a source going away degrades to `StubSource` with no schema change.
 - Offline‑first read progress: local `dirty` flag → background sync queue.
+- **Local‑only data that no server mirrors stays off the sync queue by design.** The novel
+  word‑bookmark table `novel_bookmark` (`NovelBookmarkEntity` / `NovelBookmarkDao` /
+  `RoomNovelBookmarkRepository`, `AppDatabase` v19, `MIGRATION_18_19`) is deliberately not synced —
+  neither Komga nor OPDS has per‑word bookmarks.
 - Bidirectional collection sync: the pure `planCollectionSync` use‑case decides per link by
   **last‑write‑wins (UTC)**; the `CollectionSyncManager` shell lists sources agnostically via
   `ActiveSource`. A central `SyncCoordinator` bundles app‑start / server‑changed / manual‑reload /

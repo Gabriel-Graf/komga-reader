@@ -74,6 +74,7 @@ import com.komgareader.app.ui.components.SwitchRow
 import com.komgareader.ui.icons.AppIcons
 import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
+import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.model.ShellLayoutMode
@@ -650,6 +651,7 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
     val textAlign by viewModel.novelTextAlign.collectAsState()
     val hyphenationLang by viewModel.novelHyphenationLang.collectAsState()
     val fontFamily by viewModel.novelFontFamily.collectAsState()
+    val bookmarkMarkerStyle by viewModel.bookmarkMarkerStyle.collectAsState()
     val availableNovelFonts by viewModel.availableNovelFonts.collectAsState()
     val fontSampleFiles by viewModel.fontSampleFiles.collectAsState()
 
@@ -720,6 +722,16 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
                 ),
                 selectedKey = hyphenationLang,
                 onSelect = { viewModel.setNovelHyphenationLang(it) },
+                query = query,
+            )
+            SegmentedChoiceRow(
+                label = s.novelBookmarks,
+                options = listOf(
+                    SegmentOption(BookmarkMarkerStyle.UNDERLINE.name, s.novelBookmarkMarkerUnderline),
+                    SegmentOption(BookmarkMarkerStyle.MARGIN.name, s.novelBookmarkMarkerMargin),
+                ),
+                selectedKey = bookmarkMarkerStyle,
+                onSelect = { viewModel.setBookmarkMarkerStyle(it) },
                 query = query,
             )
             // Schriftart: lange Liste → Wert+Chevron → Picker-Modal.

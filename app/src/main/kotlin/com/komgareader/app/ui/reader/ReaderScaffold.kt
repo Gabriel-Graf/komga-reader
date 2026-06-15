@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.ui.slots.LocalResolvedSlots
+import com.komgareader.ui.slots.ReaderBottomSheet
 import com.komgareader.ui.slots.ReaderOverlayState
 import com.komgareader.ui.slots.ReaderScaffoldState
 import com.komgareader.ui.slots.ReaderTapZones
@@ -68,6 +69,7 @@ fun ReaderScaffold(
     footer: (@Composable BoxScope.() -> Unit)? = null,
     persistentBars: (@Composable BoxScope.() -> Unit)? = null,
     showTapZoneHints: Boolean = true,
+    bottomSheet: ReaderBottomSheet? = null,
     content: @Composable () -> Unit,
 ) {
     val chromeVisible by chrome.chromeVisible.collectAsState()
@@ -86,6 +88,7 @@ fun ReaderScaffold(
         footer = footer,
         persistentBars = persistentBars,
         showTapZoneHints = showTapZoneHints,
+        bottomSheet = bottomSheet,
         content = content,
     )
     // `modifier` ist Host-Layout — als Box-Wrapper um den Slot, nicht in der Surface; der Renderer
@@ -227,6 +230,13 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
         val footer = state.footer
         if (footer != null && state.chromeVisible) {
             footer.invoke(this)
+        }
+
+        // Optional bottom sheet (host-owned mechanics, reader-provided content). Sits above the
+        // footer/overlay; the scrim + motion are host-/E-Ink-enforced.
+        val sheet = state.bottomSheet
+        if (sheet != null) {
+            ReaderBottomSheetLayer(sheet = sheet, chromeVisible = state.chromeVisible)
         }
 
         // Liegt zuoberst, weicht aber dem Chrome (sonst überlappten Top-Leiste und Hinweis).

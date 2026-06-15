@@ -39,7 +39,7 @@ import java.io.File
  * Die 7 Roman-Typografie-Einstellungen (Schriftgröße, Zeilenabstand, Schriftstärke,
  * Seitenränder, Ausrichtung, Silbentrennung, Schriftart) als **stateless** Reader-Panel-
  * Komponente — reine UI (Werte rein, Callbacks raus), ohne Bezug auf ein ViewModel oder
- * einen Dialog-Rahmen. Genutzt im In-Reader-Panel ([NovelTypoPanel]).
+ * einen Dialog-Rahmen. Genutzt im Typografie-Tab des Settings-Bottom-Sheets ([NovelSettingsSheet]).
  *
  * Arbeitet mit den **persistierten Primitiven** (Preset-/Code-Strings); Ranges und Presets
  * aus [NovelSettings] (SSOT — geteilt mit der Settings-Screen-Darstellung

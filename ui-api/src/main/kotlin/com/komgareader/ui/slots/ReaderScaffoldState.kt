@@ -22,6 +22,22 @@ import androidx.compose.ui.graphics.Color
  * Chrome-Pack kann sie nicht berühren. Auch der E-Ink-Scrim und die Animation-Gating-Pfade bleiben
  * host-/Core-erzwungen, nicht Teil hiervon.
  */
+/**
+ * Optional bottom-sheet capability of the reader chrome. The HOST owns the open mechanics
+ * (upward bottom-edge swipe, an expandable peek bar shown while chrome is visible, scrim,
+ * expand/collapse) and ENFORCES the E-Ink invariants (no motion on E-Ink); the reader supplies
+ * only [content] (arbitrary — e.g. a tabbed panel). `null` on [ReaderScaffoldState] = no bottom
+ * sheet for this reader (default; Paged/Comic/Webtoon/Epub).
+ */
+data class ReaderBottomSheet(
+    val expanded: Boolean,
+    val onExpandedChange: (Boolean) -> Unit,
+    /** Label of the collapsed peek bar (only shown while the chrome is visible). */
+    val peekLabel: String,
+    /** Reader-provided body (the tabs live here — the host does not know about them). */
+    val content: @Composable () -> Unit,
+)
+
 data class ReaderScaffoldState(
     val chromeVisible: Boolean,
     val onToggleChrome: () -> Unit,
@@ -47,5 +63,10 @@ data class ReaderScaffoldState(
      * (Comic/Webtoon) setzen `false` — ihre Hints passen nicht zur eigenen Gesten-Logik.
      */
     val showTapZoneHints: Boolean = true,
+    /**
+     * Optional bottom sheet (content reader-provided, mechanics host-owned). `null` = none.
+     * Host-enforced E-Ink invariants: instant on E-Ink, animated only on phone.
+     */
+    val bottomSheet: ReaderBottomSheet? = null,
     val content: @Composable () -> Unit,
 )

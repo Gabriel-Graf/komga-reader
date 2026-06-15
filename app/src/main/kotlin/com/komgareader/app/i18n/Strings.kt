@@ -364,6 +364,7 @@ interface Strings {
     val novelProgressPercent: String
     val novelPageOfCount: String
     // Roman-Inhaltsverzeichnis
+    val novelSettings: String
     val novelToc: String
     val novelTocEmpty: String
     // Roman-Lesezeichen
@@ -772,6 +773,7 @@ object StringsDe : Strings {
     override val hyphenationLanguageTitle = "Trennsprache"
     override val novelProgressPercent = "Fortschritt"
     override val novelPageOfCount = "Seite"
+    override val novelSettings = "Einstellungen"
     override val novelToc = "Inhaltsverzeichnis"
     override val novelTocEmpty = "Kein Inhaltsverzeichnis vorhanden."
     override val novelBookmarks = "Lesezeichen"
@@ -1171,6 +1173,7 @@ object StringsEn : Strings {
     override val hyphenationLanguageTitle = "Hyphenation language"
     override val novelProgressPercent = "Progress"
     override val novelPageOfCount = "Page"
+    override val novelSettings = "Settings"
     override val novelToc = "Table of contents"
     override val novelTocEmpty = "No table of contents available."
     override val novelBookmarks = "Bookmarks"

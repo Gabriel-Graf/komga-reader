@@ -18,12 +18,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +48,7 @@ import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.NovelBookmark
 import com.komgareader.domain.render.IntRect
 import com.komgareader.ui.icons.AppIcons
+import com.komgareader.ui.slots.ReaderBottomSheet
 import com.komgareader.ui.slots.ReaderTapZones
 
 /**
@@ -82,8 +85,8 @@ fun NovelReaderScreen(
     val bookmarkMode by novelVm.bookmarkMode.collectAsState()
     val markerStyleName by novelVm.markerStyle.collectAsState()
     val strings = LocalStrings.current
-    var typoPanelOpen by remember { mutableStateOf(false) }
-    var tocPanelOpen by remember { mutableStateOf(false) }
+    var sheetExpanded by remember { mutableStateOf(false) }
+    var sheetTab by rememberSaveable { mutableStateOf(NovelSheetTab.TYPOGRAPHY) }
     var searchPanelOpen by remember { mutableStateOf(false) }
     var bookmarkPanelOpen by remember { mutableStateOf(false) }
     var renameId by remember { mutableStateOf<Long?>(null) }
@@ -97,24 +100,6 @@ fun NovelReaderScreen(
 
     // Max. ein Dialog gleichzeitig über dem Reader (E-Ink-Designsprache): exklusive Verzweigung.
     when {
-        typoPanelOpen -> NovelTypoPanel(
-            config = reflowConfig,
-            onFontSizeEm = novelVm::setFontSizeEm,
-            onLineHeight = novelVm::setLineHeight,
-            onMargin = novelVm::setMargin,
-            onFontFamily = novelVm::setFontFamily,
-            onTextAlign = novelVm::setTextAlign,
-            onHyphenation = novelVm::setHyphenation,
-            onFontWeight = novelVm::setFontWeight,
-            onDismiss = { typoPanelOpen = false },
-            availableFonts = availableNovelFonts,
-            fontFiles = fontSampleFiles,
-        )
-        tocPanelOpen -> NovelTocPanel(
-            chapters = chapters,
-            onChapterSelected = novelVm::goToAnchor,
-            onDismiss = { tocPanelOpen = false },
-        )
         searchPanelOpen -> NovelSearchPanel(
             pageCount = state.pageCount,
             onSearch = novelVm::search,
@@ -131,6 +116,9 @@ fun NovelReaderScreen(
             onDismiss = { bookmarkPanelOpen = false },
         )
     }
+
+    // Hardware back closes the bottom sheet first.
+    BackHandler(sheetExpanded) { sheetExpanded = false }
 
     // Bookmark-Label umbenennen (E-Ink-Dialog mit einem Textfeld).
     renameId?.let { id ->
@@ -169,24 +157,10 @@ fun NovelReaderScreen(
             IconButton(onClick = { bookmarkPanelOpen = true }) {
                 Icon(AppIcons.ListView, contentDescription = strings.novelBookmarks, tint = Color.White)
             }
-            IconButton(onClick = { tocPanelOpen = true }) {
-                Icon(
-                    AppIcons.TableOfContents,
-                    contentDescription = strings.novelToc,
-                    tint = Color.White,
-                )
-            }
             IconButton(onClick = { searchPanelOpen = true }) {
                 Icon(
                     AppIcons.Search,
                     contentDescription = strings.novelSearch,
-                    tint = Color.White,
-                )
-            }
-            IconButton(onClick = { typoPanelOpen = true }) {
-                Icon(
-                    AppIcons.Typography,
-                    contentDescription = strings.novelTypography,
                     tint = Color.White,
                 )
             }
@@ -202,6 +176,32 @@ fun NovelReaderScreen(
                 chapterTitle = currentChapterTitle,
             )
         },
+        bottomSheet = ReaderBottomSheet(
+            expanded = sheetExpanded,
+            onExpandedChange = { sheetExpanded = it },
+            peekLabel = strings.novelSettings,
+            content = {
+                NovelSettingsSheet(
+                    selectedTab = sheetTab,
+                    onTabChange = { sheetTab = it },
+                    config = reflowConfig,
+                    onFontSizeEm = novelVm::setFontSizeEm,
+                    onLineHeight = novelVm::setLineHeight,
+                    onFontWeight = novelVm::setFontWeight,
+                    onMargin = novelVm::setMargin,
+                    onTextAlign = novelVm::setTextAlign,
+                    onHyphenation = novelVm::setHyphenation,
+                    onFontFamily = novelVm::setFontFamily,
+                    chapters = chapters,
+                    onChapterSelected = { anchor ->
+                        novelVm.goToAnchor(anchor)
+                        sheetExpanded = false
+                    },
+                    availableFonts = availableNovelFonts,
+                    fontFiles = fontSampleFiles,
+                )
+            },
+        ),
     ) {
         // Der Viewport gibt erst hier seine Pixel-Größe her: damit öffnet das VM das
         // EPUB und schichtet es passend um (idempotent).

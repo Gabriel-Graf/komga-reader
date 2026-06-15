@@ -341,6 +341,8 @@ class MapBackedStrings(
     override val novelHyphenationOff: String get() = overrides["novelHyphenationOff"] ?: fallback.novelHyphenationOff
     override val novelHyphenationDe: String get() = overrides["novelHyphenationDe"] ?: fallback.novelHyphenationDe
     override val novelHyphenationEn: String get() = overrides["novelHyphenationEn"] ?: fallback.novelHyphenationEn
+    override val novelHyphenationLanguage: String get() = overrides["novelHyphenationLanguage"] ?: fallback.novelHyphenationLanguage
+    override val hyphenationLanguageTitle: String get() = overrides["hyphenationLanguageTitle"] ?: fallback.hyphenationLanguageTitle
     override val novelProgressPercent: String get() = overrides["novelProgressPercent"] ?: fallback.novelProgressPercent
     override val novelPageOfCount: String get() = overrides["novelPageOfCount"] ?: fallback.novelPageOfCount
     override val novelToc: String get() = overrides["novelToc"] ?: fallback.novelToc

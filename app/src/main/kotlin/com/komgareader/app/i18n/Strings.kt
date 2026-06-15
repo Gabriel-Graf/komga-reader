@@ -351,6 +351,8 @@ interface Strings {
     val novelHyphenationOff: String
     val novelHyphenationDe: String
     val novelHyphenationEn: String
+    val novelHyphenationLanguage: String
+    val hyphenationLanguageTitle: String
     // Roman-Status-Fuß
     val novelProgressPercent: String
     val novelPageOfCount: String
@@ -743,6 +745,8 @@ object StringsDe : Strings {
     override val novelHyphenationOff = "Aus"
     override val novelHyphenationDe = "Deutsch"
     override val novelHyphenationEn = "Englisch"
+    override val novelHyphenationLanguage = "Sprache"
+    override val hyphenationLanguageTitle = "Trennsprache"
     override val novelProgressPercent = "Fortschritt"
     override val novelPageOfCount = "Seite"
     override val novelToc = "Inhaltsverzeichnis"
@@ -1125,6 +1129,8 @@ object StringsEn : Strings {
     override val novelHyphenationOff = "Off"
     override val novelHyphenationDe = "German"
     override val novelHyphenationEn = "English"
+    override val novelHyphenationLanguage = "Language"
+    override val hyphenationLanguageTitle = "Hyphenation language"
     override val novelProgressPercent = "Progress"
     override val novelPageOfCount = "Page"
     override val novelToc = "Table of contents"

@@ -256,6 +256,19 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   bereits aufgelöster Silbentrennung (kein Stale-Read der `combine`-StateFlow → kein Doppel-Relayout/
   E-Ink-Flash). UI: „Automatisch" in beiden Hyphenation-Pickern (Settings + In-Reader), i18n
   `novelHyphenationAuto` (de+en).
+  **Erweitert (Ist, 2026-06-15, Sprachauswahl):** Default ist jetzt **`"auto"`**
+  (`RoomSettingsRepository`, `?: "auto"`, keine Migration). Die unterstützten Trennsprachen sind **domain-SSOT**:
+  `HyphenationLanguages.SUPPORTED` (24 Basis-Codes ar…uk) — `resolveHyphenationLang` nutzt sie statt des alten
+  harten `{de,en}`. `ReflowCss.PATTERN_DICTS` (jetzt `internal`) mappt **genau diese Codes** → `.pattern`-Dateiname;
+  `CrengineDocumentFactory.HYPH_PATTERNS` ist daraus **abgeleitet** (`PATTERN_DICTS.values`), und ein
+  render-Unit-Test (`HyphenationParityTest`) sichert `PATTERN_DICTS.keys == HyphenationLanguages.SUPPORTED`. Die
+  **vollen ~24 crengine-`.pattern`** liegen als App-Assets (`app/src/main/assets/hyph/`, Combo-/Pinyin-Dateien
+  ausgelassen); `HyphMan::initDictionaries` registriert sie beim Start (native Seite unverändert). UI: geteiltes
+  `HyphenationPicker` (Composable, an **beiden** Orten) = Chips **Automatisch/Aus** + Chip **Sprache** → öffnet das
+  `HyphenationLanguageModal` (`EinkInfoDialog`, scrollende Liste, `Locale`-lokalisierte Namen, alphabetisch). Reine
+  Helfer `hyphenationModeOf(value)` (AUTO/OFF/LANGUAGE) steuert die Chip-Auswahl. i18n `novelHyphenationLanguage`/
+  `hyphenationLanguageTitle` (de+en). Eine Trennsprache hinzufügen = 1 Asset + 1 `PATTERN_DICTS`-Eintrag + 1
+  `SUPPORTED`-Eintrag, Paritätstest fängt Vergessenes.
 - **Runtime-Font-Registrierung (Ist, 2026-06-14, P2):** Plugin-TTFs (data-only Kategorie `FONT`, s. Naht A)
   werden zur **Laufzeit** in den crengine-Font-Manager eingehängt — kein App-Neustart. `domain` bleibt
   engine-frei über `ReflowableDocumentFactory.registerFont(absolutePath): Boolean` (Default no-op in

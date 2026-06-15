@@ -72,6 +72,29 @@ private data class SettingsSizing(
 private val SizingMedium = SettingsSizing(220.dp, 28.dp, 16.sp, EinkTokens.screenPadding)
 private val SizingExpanded = SettingsSizing(280.dp, 32.dp, 20.sp, 24.dp)
 
+// E-Ink: section titles a notch larger for legibility (faint at the default size on slow panels).
+private val SizingMediumEink = SizingMedium.copy(labelSize = 18.sp)
+private val SizingExpandedEink = SizingExpanded.copy(labelSize = 22.sp)
+
+/**
+ * On E-Ink the whole settings subtree reads at a larger, heavier scale — the Material/LCD sizes
+ * look faint and small on the slow grey panel. Scoped to settings only (a local [MaterialTheme]),
+ * so the rest of the app is untouched. Weights stay at or above the global [EinkTypography] floor.
+ */
+@Composable
+private fun einkSettingsTypography(): androidx.compose.material3.Typography {
+    val t = MaterialTheme.typography
+    return t.copy(
+        bodyLarge = t.bodyLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.Medium),
+        bodyMedium = t.bodyMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+        bodySmall = t.bodySmall.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+        titleSmall = t.titleSmall.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+        titleMedium = t.titleMedium.copy(fontSize = 19.sp, fontWeight = FontWeight.SemiBold),
+        labelLarge = t.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
+        labelMedium = t.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+    )
+}
+
 /**
  * Adaptiver Settings-Host — dünner Wrapper: baut die [SettingsState]-Surface und delegiert an die
  * `settings`-Region der Slot-Naht. [query] (live) filtert im Default-Pack auf Treffer-Sektionen,
@@ -103,25 +126,45 @@ fun SettingsScreen(
 @Composable
 fun DefaultSettings(state: SettingsState) {
     val s = LocalStrings.current
+    val eink = LocalEinkMode.current
     val visible = if (state.query.isBlank()) {
         state.sections
     } else {
         state.sections.filter { sectionMatches(it.searchTerms, state.query) }
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (visible.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(s.searchNoResults, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
+    // E-Ink: render the whole settings subtree at the larger, heavier scale (scoped MaterialTheme).
+    val body = @Composable {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            if (visible.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(s.searchNoResults, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
+                }
+                return@BoxWithConstraints
             }
-            return@BoxWithConstraints
+            val medium = if (eink) SizingMediumEink else SizingMedium
+            if (maxWidth < 600.dp) {
+                SettingsAccordion(visible, state.query, medium, state.initialSectionId)
+            } else {
+                val sizing = if (maxWidth >= 900.dp) {
+                    if (eink) SizingExpandedEink else SizingExpanded
+                } else {
+                    medium
+                }
+                SettingsMasterDetail(visible, state.query, sizing, state.initialSectionId)
+            }
         }
-        if (maxWidth < 600.dp) {
-            SettingsAccordion(visible, state.query, SizingMedium, state.initialSectionId)
-        } else {
-            val sizing = if (maxWidth >= 900.dp) SizingExpanded else SizingMedium
-            SettingsMasterDetail(visible, state.query, sizing, state.initialSectionId)
-        }
+    }
+
+    if (eink) {
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme,
+            shapes = MaterialTheme.shapes,
+            typography = einkSettingsTypography(),
+            content = body,
+        )
+    } else {
+        body()
     }
 }
 

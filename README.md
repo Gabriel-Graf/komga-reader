@@ -50,6 +50,7 @@ packs — while the host keeps enforcing the E‑Ink correctness rules no pack c
 | **Offline‑first** | Download manager, local read‑progress (`dirty` flag), background sync queue, bidirectional collection sync (last‑write‑wins). |
 | **Plugins** | Runtime‑installed source plugins (APK, TOFU‑pinned), plus data‑only packs: colour presets, reader presets, languages, **UI packs**, and **reading fonts** (SPDX‑allowlisted, registered into crengine at runtime). |
 | **Modular UI** | Device‑class theme packs, form‑factor shell packs (bottom‑bar / drawer / floating nav), and 8 swappable chrome **region slots**. |
+| **Reading statistics** | Local reading‑time tracking per reader type (`ReaderKind`: paged, webtoon, comic, novel), started / finished work counts (derived from existing progress tables, no extra tracking), idle‑capped per‑page deltas (no battery‑draining timer). Visible in Settings → Statistics. |
 | **i18n** | Type‑safe English + German, compile‑time parity, runtime language packs. |
 
 See the [Feature status matrix](docs/PROJECT-STATUS.md#1-goal-by-goal-scorecard) for the

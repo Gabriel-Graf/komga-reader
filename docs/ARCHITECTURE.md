@@ -207,13 +207,21 @@ brightness before display:
 
 ## 8. Data, sync & offline
 
-- Room persistence in `data`. Every record carries a `sourceId` (local source = id 0), so a
-  source going away degrades to `StubSource` with no schema change.
+- Room persistence in `data`, **schema v18**. Every record carries a `sourceId` (local source =
+  id 0), so a source going away degrades to `StubSource` with no schema change.
 - Offline‑first read progress: local `dirty` flag → background sync queue.
 - Bidirectional collection sync: the pure `planCollectionSync` use‑case decides per link by
   **last‑write‑wins (UTC)**; the `CollectionSyncManager` shell lists sources agnostically via
   `ActiveSource`. A central `SyncCoordinator` bundles app‑start / server‑changed / manual‑reload /
   tab triggers, gated by device class (E‑Ink syncs less aggressively).
+- **Reading statistics** (local, no server sync): domain models `ReaderKind` / `ReadingSession` /
+  `ReadingStats` / `ReadingTimeCaps` / `ReadingStatsAggregator` (pure, unit‑tested) and
+  `ReadingStatsRepository` interface live in `domain`. `RoomReadingStatsRepository` (`data`) stores
+  sessions in the `reading_session` Room table (`MIGRATION_17_18`, v18 `CREATE TABLE`) and derives
+  started/finished work counts from the existing progress tables (no new tracking columns).
+  `ReadingSessionTracker` (`app`, `@Singleton`) is event‑driven with capped per‑page deltas — no
+  background timer, E‑Ink battery‑safe. `ReadingSessionEffect` composable wires it into each reader
+  screen. Settings → Statistics section surfaces the aggregated totals.
 
 ---
 

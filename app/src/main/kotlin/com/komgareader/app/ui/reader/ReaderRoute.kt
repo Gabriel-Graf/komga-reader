@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.ui.common.label
 import com.komgareader.domain.eink.EinkContext
+import com.komgareader.domain.model.ReaderKind
 
 private fun einkContextFor(mode: ViewerMode, isNovel: Boolean): EinkContext = when {
     isNovel -> EinkContext.NOVEL
@@ -75,6 +76,9 @@ fun ReaderRoute(
         }
         is ReaderContent.Novel -> {
             NovelReaderScreen(
+                readerKind = ReaderKind.NOVEL,
+                bookRemoteId = viewModel.bookRemoteId,
+                sourceId = viewModel.sourceId,
                 onBack = onBack,
                 onHome = onHome,
                 onSettings = onSettings,
@@ -84,6 +88,9 @@ fun ReaderRoute(
             EpubReaderScreen(
                 pageCount = c.pageCount,
                 initialPage = c.initialPage,
+                readerKind = ReaderKind.PAGED,
+                bookRemoteId = viewModel.bookRemoteId,
+                sourceId = viewModel.sourceId,
                 onBack = onBack,
                 onHome = onHome,
                 onSettings = onSettings,
@@ -95,6 +102,9 @@ fun ReaderRoute(
                 ViewerMode.PAGED -> PagedReaderScreen(
                     pages = c.pages,
                     initialPage = c.initialPage,
+                    readerKind = ReaderKind.PAGED,
+                    bookRemoteId = viewModel.bookRemoteId,
+                    sourceId = viewModel.sourceId,
                     onBack = onBack,
                     onHome = onHome,
                     onSettings = onSettings,
@@ -104,6 +114,9 @@ fun ReaderRoute(
                 ViewerMode.WEBTOON -> WebtoonReaderScreen(
                     pages = c.pages,
                     initialPage = c.initialPage,
+                    readerKind = ReaderKind.WEBTOON,
+                    bookRemoteId = viewModel.bookRemoteId,
+                    sourceId = viewModel.sourceId,
                     displayMode = displayMode,
                     frameSteps = viewModel.frameStep,
                     chrome = viewModel,
@@ -116,6 +129,9 @@ fun ReaderRoute(
                 ViewerMode.COMIC -> ComicReaderScreen(
                     pages = c.pages,
                     initialPage = c.initialPage,
+                    readerKind = ReaderKind.COMIC,
+                    bookRemoteId = viewModel.bookRemoteId,
+                    sourceId = viewModel.sourceId,
                     onBack = onBack,
                     onHome = onHome,
                     onSettings = onSettings,
@@ -128,6 +144,9 @@ fun ReaderRoute(
                 ViewerMode.PAGED -> PagedReaderScreen(
                     pages = c.pages,
                     initialPage = c.initialPage,
+                    readerKind = ReaderKind.PAGED,
+                    bookRemoteId = viewModel.bookRemoteId,
+                    sourceId = viewModel.sourceId,
                     onBack = onBack,
                     onHome = onHome,
                     onSettings = onSettings,
@@ -137,6 +156,9 @@ fun ReaderRoute(
                 ViewerMode.WEBTOON -> WebtoonReaderScreen(
                     pages = c.pages,
                     initialPage = c.initialPage,
+                    readerKind = ReaderKind.WEBTOON,
+                    bookRemoteId = viewModel.bookRemoteId,
+                    sourceId = viewModel.sourceId,
                     displayMode = displayMode,
                     frameSteps = viewModel.frameStep,
                     chrome = viewModel,
@@ -149,6 +171,9 @@ fun ReaderRoute(
                 ViewerMode.COMIC -> ComicReaderScreen(
                     pages = c.pages,
                     initialPage = c.initialPage,
+                    readerKind = ReaderKind.COMIC,
+                    bookRemoteId = viewModel.bookRemoteId,
+                    sourceId = viewModel.sourceId,
                     onBack = onBack,
                     onHome = onHome,
                     onSettings = onSettings,

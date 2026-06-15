@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 /**
  * DAO für den Roman-Lesefortschritt (Xpointer-Anker + grober Anteil). Offline-first:
@@ -12,6 +13,9 @@ import androidx.room.Query
  */
 @Dao
 interface NovelProgressDao {
+
+    @Query("SELECT * FROM novel_progress")
+    fun observeAll(): Flow<List<NovelProgressEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entry: NovelProgressEntity)

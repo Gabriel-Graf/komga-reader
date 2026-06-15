@@ -23,6 +23,13 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
   **comic-cutter** über `PanelSourceProvider` — geometrisch per Default, **ML via ONNX** bei
   installiertem `PANEL_MODEL`-Plugin + `useMlDetection`. (Das frühere „UI fehlt noch"-Item ist
   damit erledigt — die UI ist längst da.)
+- **Lesestatistik — gebaut (Ist, 2026-06-15):** Lokales Zeittracking pro Reader-Typ
+  (`ReaderKind{PAGED,WEBTOON,COMIC,NOVEL}`), gecappte Per-Seite-Deltas (kein Hintergrund-Timer —
+  E-Ink-Akku), started/finished-Zähler aus vorhandenen Progress-Tabellen abgeleitet (kein neues
+  Tracking). Domain-Modelle `ReadingSession`/`ReadingStats`/`ReadingTimeCaps`/`ReadingStatsAggregator`
+  (pure, unit-getestet); Room-Tabelle `reading_session` (`MIGRATION_17_18`, Schema v18);
+  `ReadingSessionTracker` (@Singleton, app/data); `ReadingSessionEffect` in jedem Reader-Screen;
+  Settings → Statistik (`SettingsSectionId.STATISTICS`). Kein Server-Sync — rein lokal.
 - **Bekannte Minor-Issues** (siehe [[project-komga-eink-reader]]): Reader fängt Volume-Tasten global ab
   (sollte nur im Reader); Streaming-PagedViewer nutzt Komga-fertige Seitenbilder via Coil, nicht MuPDF.
 - **Plugin-Bereitschaft wahren:** keine quellenspezifischen Annahmen ins `MediaSource`-Interface backen

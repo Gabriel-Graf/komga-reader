@@ -130,3 +130,18 @@ data class PluginRepoEntity(
     val url: String,
     val name: String? = null,
 )
+
+/**
+ * One finished reading session (append-only log). [readerKind] is a
+ * [com.komgareader.domain.model.ReaderKind] name; time aggregates are derived from these rows.
+ * Local-only — never synced to a server.
+ */
+@Entity(tableName = "reading_session")
+data class ReadingSessionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val readerKind: String,
+    val bookRemoteId: String,
+    val sourceId: Long,
+    val startTs: Long,
+    val durationMs: Long,
+)

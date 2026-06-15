@@ -362,4 +362,18 @@ class MapBackedStrings(
     override fun readerPresetConfirmBody(name: String): String =
         overrides["readerPresetConfirmBody"]?.replace("{name}", name) ?: fallback.readerPresetConfirmBody(name)
     override val languagePluginInstalledHint: String get() = overrides["languagePluginInstalledHint"] ?: fallback.languagePluginInstalledHint
+    override val statsTitle: String get() = overrides["statsTitle"] ?: fallback.statsTitle
+    override val statsTotalTime: String get() = overrides["statsTotalTime"] ?: fallback.statsTotalTime
+    override val statsPerReader: String get() = overrides["statsPerReader"] ?: fallback.statsPerReader
+    override val statsStarted: String get() = overrides["statsStarted"] ?: fallback.statsStarted
+    override val statsFinished: String get() = overrides["statsFinished"] ?: fallback.statsFinished
+    override val statsReaderPaged: String get() = overrides["statsReaderPaged"] ?: fallback.statsReaderPaged
+    override val statsReaderWebtoon: String get() = overrides["statsReaderWebtoon"] ?: fallback.statsReaderWebtoon
+    override val statsReaderComic: String get() = overrides["statsReaderComic"] ?: fallback.statsReaderComic
+    override val statsReaderNovel: String get() = overrides["statsReaderNovel"] ?: fallback.statsReaderNovel
+    override val statsEmpty: String get() = overrides["statsEmpty"] ?: fallback.statsEmpty
+    override fun statsDuration(hours: Int, minutes: Int): String =
+        overrides["statsDuration"]
+            ?.replace("{hours}", hours.toString())?.replace("{minutes}", minutes.toString())
+            ?: fallback.statsDuration(hours, minutes)
 }

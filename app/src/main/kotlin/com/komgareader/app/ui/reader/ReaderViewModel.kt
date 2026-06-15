@@ -59,6 +59,11 @@ class ReaderViewModel @Inject constructor(
 
     /** Quelle dieses Werks (Naht A) — aus der Navigation, nicht „die erste/aktive". */
     private val routeSourceId: Long = checkNotNull(savedStateHandle["sourceId"])
+
+    /** Route-scoped identity, identical for every reader of this book (used by stats tracking). */
+    val bookRemoteId: String get() = bookId
+    val sourceId: Long get() = routeSourceId
+
     private val format: BookFormat = runCatching {
         BookFormat.valueOf(savedStateHandle.get<String>("format") ?: "CBZ")
     }.getOrDefault(BookFormat.CBZ)

@@ -30,6 +30,7 @@ import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
+import com.komgareader.domain.model.ReaderKind
 import com.komgareader.ui.icons.AppIcons
 import com.panela.comiccutter.PanelGeometry
 
@@ -52,6 +53,9 @@ import com.panela.comiccutter.PanelGeometry
 fun ComicReaderScreen(
     pages: List<SourceImage>,
     initialPage: Int,
+    readerKind: ReaderKind,
+    bookRemoteId: String,
+    sourceId: Long,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onSettings: () -> Unit,
@@ -69,6 +73,8 @@ fun ComicReaderScreen(
     }
 
     val state by comicVm.uiState.collectAsState()
+
+    ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.position.page)
     val showOverlay by comicVm.showPanelOverlay.collectAsState()
     val pagerState = rememberPagerState(initialPage = initialPage) { pageCount }
 

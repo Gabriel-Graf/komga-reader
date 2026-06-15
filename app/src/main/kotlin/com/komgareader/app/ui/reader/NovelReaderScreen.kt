@@ -33,6 +33,7 @@ import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.common.label
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
+import com.komgareader.domain.model.ReaderKind
 import com.komgareader.ui.icons.AppIcons
 
 /**
@@ -48,6 +49,9 @@ import com.komgareader.ui.icons.AppIcons
  */
 @Composable
 fun NovelReaderScreen(
+    readerKind: ReaderKind,
+    bookRemoteId: String,
+    sourceId: Long,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onSettings: () -> Unit,
@@ -66,6 +70,8 @@ fun NovelReaderScreen(
     var typoPanelOpen by remember { mutableStateOf(false) }
     var tocPanelOpen by remember { mutableStateOf(false) }
     var searchPanelOpen by remember { mutableStateOf(false) }
+
+    ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.currentPage)
 
     // Report page settle for progress tracking; refresh is device-managed via EinkContext.
     LaunchedEffect(state.currentPage) {

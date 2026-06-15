@@ -19,6 +19,7 @@ import com.komgareader.data.db.MIGRATION_13_14
 import com.komgareader.data.db.MIGRATION_14_15
 import com.komgareader.data.db.MIGRATION_15_16
 import com.komgareader.data.db.MIGRATION_16_17
+import com.komgareader.data.db.MIGRATION_17_18
 import com.komgareader.data.db.SEED_CALLBACK
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.data.download.LocalBookBytes
@@ -27,6 +28,7 @@ import com.komgareader.data.repository.RoomColorProfileRepository
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomNovelProgressRepository
 import com.komgareader.data.repository.RoomReadProgressRepository
+import com.komgareader.data.repository.RoomReadingStatsRepository
 import com.komgareader.data.repository.RoomSeriesOverrideRepository
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.repository.RoomSettingsRepository
@@ -36,6 +38,7 @@ import com.komgareader.data.security.KeystoreCredentialStore
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.ReadProgressRepository
+import com.komgareader.domain.repository.ReadingStatsRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -60,7 +63,7 @@ object DataModule {
                 MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
                 MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
                 MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
-                MIGRATION_15_16, MIGRATION_16_17,
+                MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
             )
             .addCallback(SEED_CALLBACK)
             .fallbackToDestructiveMigration()
@@ -103,6 +106,14 @@ object DataModule {
     @Provides @Singleton
     fun novelProgressRepository(db: AppDatabase): NovelProgressRepository =
         RoomNovelProgressRepository(db.novelProgressDao())
+
+    @Provides @Singleton
+    fun readingStatsRepository(db: AppDatabase): ReadingStatsRepository =
+        RoomReadingStatsRepository(
+            sessions = db.readingSessionDao(),
+            readProgress = db.readProgressDao(),
+            novelProgress = db.novelProgressDao(),
+        )
 
     @Provides @Singleton
     fun colorProfileRepository(

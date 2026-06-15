@@ -16,11 +16,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
+import com.komgareader.domain.model.ReaderKind
 
 @Composable
 fun PagedReaderScreen(
     pages: List<SourceImage>,
     initialPage: Int,
+    readerKind: ReaderKind,
+    bookRemoteId: String,
+    sourceId: Long,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onSettings: () -> Unit,
@@ -34,6 +38,8 @@ fun PagedReaderScreen(
     if (pageCount == 0) return
 
     val pagerState = rememberPagerState(initialPage = initialPage) { pageCount }
+
+    ReadingSessionEffect(readerKind, bookRemoteId, sourceId, pagerState.currentPage)
 
     // Button-Navigation: angeforderte Seite vom ViewModel scrollen
     LaunchedEffect(requestedPage) {

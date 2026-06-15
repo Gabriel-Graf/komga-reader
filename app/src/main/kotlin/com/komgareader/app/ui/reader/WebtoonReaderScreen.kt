@@ -29,6 +29,7 @@ import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.ReaderKind
 import com.komgareader.ui.slots.ReaderTapZones
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -54,6 +55,9 @@ private const val FRAME_OVERLAP = 0.30f
 fun WebtoonReaderScreen(
     pages: List<SourceImage>,
     initialPage: Int,
+    readerKind: ReaderKind,
+    bookRemoteId: String,
+    sourceId: Long,
     displayMode: DisplayMode,
     frameSteps: Flow<Int>,
     chrome: Viewer,
@@ -68,6 +72,8 @@ fun WebtoonReaderScreen(
     val scope = rememberCoroutineScope()
     val pageCount = pages.size
     val eink = displayMode == DisplayMode.EINK
+
+    ReadingSessionEffect(readerKind, bookRemoteId, sourceId, listState.firstVisibleItemIndex)
 
     // Platzhalter-Höhe für noch nicht geladene Seiten: ≈ ein Bildschirm. Damit
     // reserviert jedes Item Platz, bevor das Bild da ist — die LazyColumn

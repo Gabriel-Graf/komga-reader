@@ -75,6 +75,9 @@ interface Strings {
     val externalOpenImport: String
     val externalOpenReadOnly: String
     val externalOpenRemember: String
+    val externalOpenSetting: String
+    val externalOpenAsk: String
+    val externalOpenUnsupported: String
     val chooseFolder: String
     val defaultFolder: String
     val resetFolder: String
@@ -485,6 +488,9 @@ object StringsDe : Strings {
     override val externalOpenImport = "Importieren"
     override val externalOpenReadOnly = "Nur lesen"
     override val externalOpenRemember = "Auswahl merken"
+    override val externalOpenSetting = "Externe Dateien öffnen"
+    override val externalOpenAsk = "Fragen"
+    override val externalOpenUnsupported = "Dateiformat nicht unterstützt"
     override val chooseFolder = "Ordner wählen"
     override val defaultFolder = "Standard (intern)"
     override val resetFolder = "Zurücksetzen"
@@ -879,6 +885,9 @@ object StringsEn : Strings {
     override val externalOpenImport = "Import"
     override val externalOpenReadOnly = "Read only"
     override val externalOpenRemember = "Remember choice"
+    override val externalOpenSetting = "Open external files"
+    override val externalOpenAsk = "Ask"
+    override val externalOpenUnsupported = "File format not supported"
     override val chooseFolder = "Choose Folder"
     override val defaultFolder = "Default (internal)"
     override val resetFolder = "Reset"

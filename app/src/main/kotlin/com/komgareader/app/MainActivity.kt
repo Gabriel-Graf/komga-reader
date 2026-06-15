@@ -2,10 +2,12 @@ package com.komgareader.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -15,8 +17,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import coil.Coil
 import coil.ImageLoader
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,9 +30,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import com.komgareader.app.data.ExternalBookOpener
+import com.komgareader.app.data.ExternalOpenTarget
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.resolveStrings
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.LocalColorProfile
 import com.komgareader.app.ui.components.LocalDisplayBehavior
 import com.komgareader.app.ui.components.LocalEinkMode
@@ -47,12 +59,14 @@ import com.komgareader.app.ui.theme.KomgaReaderTheme
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.ExternalOpenBehavior
 import com.komgareader.domain.model.displayBehaviorFor
 import com.komgareader.app.ui.components.AuroraSeriesTile
 import com.komgareader.ui.icons.ActiveIconPack
 import com.komgareader.ui.icons.DefaultIconPack
 import com.komgareader.ui.slots.UiSlotPack
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -72,6 +86,27 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var imageLoader: ImageLoader
 
     @Inject lateinit var syncCoordinator: com.komgareader.app.data.SyncCoordinator
+
+    /** Wires an externally-opened book file into the reader (ephemeral open + optional import). */
+    @Inject lateinit var externalOpener: ExternalBookOpener
+
+    /**
+     * The content:// URI of a VIEW intent waiting to be handled. Compose-observable so the
+     * ephemeral-open driver in [setContent] reacts whether the intent arrived at cold start
+     * ([onCreate]) or while the activity was already running ([onNewIntent]).
+     */
+    private val pendingExternalUri = mutableStateOf<Uri?>(null)
+
+    private fun captureViewIntent(intent: android.content.Intent?) {
+        if (intent?.action == android.content.Intent.ACTION_VIEW) {
+            intent.data?.let { pendingExternalUri.value = it }
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        captureViewIntent(intent)
+    }
 
     /**
      * Lets us post the "update installed — tap to open" notification (the reliable relaunch path,
@@ -150,6 +185,7 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enterFullscreen()
         ensureNotificationPermission()
+        captureViewIntent(intent)
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeModeStr by settingsViewModel.themeMode.collectAsState()
@@ -324,6 +360,107 @@ class MainActivity : ComponentActivity() {
                         // Bibliotheks-Tab). Über den Reader gepusht → Zurück landet im selben Reader.
                         composable("settings") {
                             SettingsRoute(onBack = { nav.popBackStack() })
+                        }
+                    }
+
+                    // --- External book open (VIEW intent) driver -------------------------------
+                    // Captured by captureViewIntent; here we prepare the ephemeral reader route,
+                    // navigate, and then honour the configured behaviour (read-only / import /
+                    // ask). The prompt is the shared EinkModal.
+                    val externalBehavior by settingsViewModel.externalOpenBehavior.collectAsState()
+                    var promptTarget by remember { mutableStateOf<ExternalOpenTarget?>(null) }
+                    var promptUri by remember { mutableStateOf<Uri?>(null) }
+                    val externalScope = rememberCoroutineScope()
+                    val externalStrings = LocalStrings.current
+
+                    // Fallback when no folder is configured yet: let the user pick one, then import.
+                    // The picked tree becomes both the download and local folder (setBothFolders).
+                    val importPicker = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.OpenDocumentTree(),
+                    ) { tree: Uri? ->
+                        val uri = promptUri
+                        if (tree != null && uri != null) {
+                            contentResolver.takePersistableUriPermission(
+                                tree,
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                            )
+                            settingsViewModel.setBothFolders(
+                                tree.lastPathSegment?.substringAfterLast('/') ?: "Ordner", tree.toString(),
+                            )
+                            val fileName = promptTarget?.fileName ?: "buch"
+                            promptTarget = null
+                            promptUri = null
+                            externalScope.launch {
+                                externalOpener.importToFolder(uri, tree, fileName)
+                                syncCoordinator.onManualReload()
+                            }
+                        }
+                    }
+
+                    LaunchedEffect(pendingExternalUri.value) {
+                        val uri = pendingExternalUri.value ?: return@LaunchedEffect
+                        pendingExternalUri.value = null
+                        val target = externalOpener.prepareEphemeral(uri)
+                        if (target == null) return@LaunchedEffect // unsupported file: silently ignore
+                        nav.navigate(target.route)
+                        when (runCatching { ExternalOpenBehavior.valueOf(externalBehavior) }
+                            .getOrDefault(ExternalOpenBehavior.ASK)) {
+                            ExternalOpenBehavior.READ_ONLY -> {}
+                            ExternalOpenBehavior.IMPORT -> {
+                                val folder = externalOpener.configuredFolder()
+                                if (folder != null) {
+                                    externalOpener.importToFolder(uri, folder, target.fileName)
+                                    syncCoordinator.onManualReload()
+                                } else {
+                                    promptUri = uri
+                                    promptTarget = target
+                                }
+                            }
+                            ExternalOpenBehavior.ASK -> {
+                                promptUri = uri
+                                promptTarget = target
+                            }
+                        }
+                    }
+
+                    promptTarget?.let { target ->
+                        var rememberChoice by remember(target) { mutableStateOf(false) }
+                        EinkModal(
+                            title = externalStrings.externalOpenTitle,
+                            onDismiss = {
+                                if (rememberChoice) {
+                                    settingsViewModel.setExternalOpenBehavior(ExternalOpenBehavior.READ_ONLY.name)
+                                }
+                                promptTarget = null
+                                promptUri = null
+                            },
+                            onConfirm = {
+                                if (rememberChoice) {
+                                    settingsViewModel.setExternalOpenBehavior(ExternalOpenBehavior.IMPORT.name)
+                                }
+                                val uri = promptUri
+                                val fileName = target.fileName
+                                promptTarget = null
+                                if (uri != null) externalScope.launch {
+                                    val folder = externalOpener.configuredFolder()
+                                    if (folder != null) {
+                                        externalOpener.importToFolder(uri, folder, fileName)
+                                        syncCoordinator.onManualReload()
+                                        promptUri = null
+                                    } else {
+                                        // No folder yet: keep promptUri for the picker callback.
+                                        importPicker.launch(null)
+                                    }
+                                }
+                            },
+                            confirmLabel = externalStrings.externalOpenImport,
+                            dismissLabel = externalStrings.externalOpenReadOnly,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = rememberChoice, onCheckedChange = { rememberChoice = it })
+                                Text(externalStrings.externalOpenRemember)
+                            }
                         }
                     }
                     }

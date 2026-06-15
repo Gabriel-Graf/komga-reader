@@ -57,7 +57,17 @@ jobs:
       - name: Build signed release APK (version from tag)
         run: |
           VERSION_NAME="${TAG#v}"
-          ./gradlew :app:assembleRelease --no-daemon --stacktrace -PversionName="$VERSION_NAME" -PversionCode="${{ github.run_number }}"
+          # comic-cutter resolves from JitPack, which intermittently fronts requests with a Cloudflare
+          # 403 under load. A release build must not fail on that transient — retry with backoff.
+          for attempt in 1 2 3 4 5; do
+            if ./gradlew :app:assembleRelease --no-daemon --stacktrace -PversionName="$VERSION_NAME" -PversionCode="${{ github.run_number }}"; then
+              exit 0
+            fi
+            echo "Attempt ${attempt} failed (likely transient JitPack/Cloudflare 403); retrying in 30s"
+            sleep 30
+          done
+          echo "Release build still failing after 5 attempts"
+          exit 1
       - name: Locate + name the APK
         id: apk
         run: |

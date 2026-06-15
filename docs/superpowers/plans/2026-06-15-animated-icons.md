@@ -1,5 +1,12 @@
 # Animated Icons Implementation Plan
 
+> **As-shipped reconciliation (2026-06-15):** `main` independently gained update download
+> progress (`feat/update-flow-feedback`) during this work. Only the non-duplicated part shipped —
+> **Task 4 (`AnimatedAppIcon`)** plus wiring the existing About update icons to it (refresh spins
+> on `Checking`, download bobs on `installing`). Tasks 1–3 and the percent-display of Task 5 were
+> **dropped as redundant** (main already has Float progress + a `"Lädt… NN %"` label). See the
+> design doc's reconciliation note.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add a central, E-Ink-gated `AnimatedAppIcon` building block and use it for the About-screen update flow — the refresh icon spins while checking, the download icon bobs while installing, and the install button shows the real download percentage left of the icon.

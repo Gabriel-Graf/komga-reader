@@ -1,8 +1,20 @@
 # Animated Icons (central, E-Ink-gated) — Design
 
 Date: 2026-06-15
-Status: Approved (brainstorming)
+Status: Shipped (reconciled — see note below)
 Scope: one implementation plan.
+
+> **As-shipped reconciliation (2026-06-15).** While this was being built, a parallel
+> branch (`feat/update-flow-feedback`) independently landed update download progress on
+> `main`: `AppUpdateViewModel.progress: StateFlow<Float?>`, `GithubReleaseClient.download(…,
+> onProgress: (Float) -> Unit)`, a result/permission-gate, and a `"Lädt… NN %"` label in the
+> install button. To avoid duplication, **only the non-overlapping part of this spec shipped**:
+> the central `AnimatedAppIcon` + `IconAnimation` + pure `iconAnimationPlan`, wired to animate
+> the existing About update icons (refresh spins while `Checking`, download bobs while
+> `installing`). **Dropped as redundant:** the Int `downloadPercent`, an Int `onProgress` on the
+> client, a VM `downloadProgress: StateFlow<Int?>`, and the "percent left of the icon" placement
+> (the existing Float progress + `"Lädt… NN %"` label is kept). Sections 1 + the icon-usage parts
+> of 2/3 describe what shipped; the progress-plumbing parts of section 3 did not.
 
 ## Goal
 

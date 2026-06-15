@@ -48,13 +48,25 @@ or an ONNX **ML** detector when a `PANEL_MODEL` data‑plugin is installed and `
 The former in‑tree `guided-view` module has been removed.
 
 The novel reader gained **tap‑a‑word bookmarks** (Ist 2026-06-15): two new engine‑neutral render‑seam
-methods `ReflowableDocument.wordAt` / `rectsFor` (crengine JNI `nativeXPointerAtPoint` /
+methods `ReflowableDocument.wordAt(page, …)` / `rectsFor(page, …)` (crengine JNI `nativeXPointerAtPoint` /
 `nativeRectsForXPointers`), a **local‑only** `novel_bookmark` Room table (`AppDatabase` v19 via
 `MIGRATION_18_19`, deliberately off the sync queue), a `BookmarkMarkerStyle{UNDERLINE,MARGIN}` setting, and tap wiring via
 the declarative `ReaderTapZones` seam (bookmark mode → `tapZones = null`, reader hit‑tests words itself).
 Built and compile/unit‑verified (`:app:assembleDebug` green); the **runtime word‑tap / marker behaviour
 is device‑verification pending** — the crengine `.so` is arm64‑only, so the JNI path only runs on a real
 arm64 Boox, not the x86 emulator.
+
+**Novel‑reader polish (2026-06-16).** A batch of fixes/refinements: (1) the word‑bookmark seam became
+**page‑aware** (`wordAt`/`rectsFor` take a `page` index → native `goToPage` before the hit‑test) to fix a
+render‑cache page‑desync where taps resolved the wrong page; (2) the Onyx **frontlight** now drives an
+**index‑based `BaseBrightnessProvider`** (cold/CTM/FL per `BrightnessController.getBrightnessType`) instead
+of the legacy `FrontLightController.setBrightness`, which is a silent no‑op on the split warm/cold Go Color 7
+(this was "brightness does nothing"); (3) the brightness control is now a **floating rounded pill** inset
+from the edge; (4) a read‑only **Buttons** settings section lists the hardware long‑press shortcuts (gated by
+the new `EinkCapabilities.hasHardwareButtons`); (5) the novel reader excludes the screen's **back‑gesture
+edges** (`Modifier.systemGestureExclusion`; the system home swipe‑up is an OS guarantee and cannot be
+disabled); (6) the typography/TOC bottom sheet no longer dims the page (transparent dismisser → live
+preview). Frontlight + gesture behaviour remain **device‑verification pending** on a real Boox.
 
 ### Multi‑server / source‑agnostic — ✅
 This is the strongest result. A grep of `app/` and `domain/` finds **no** `KomgaSource`,

@@ -49,7 +49,8 @@ import com.komgareader.ui.theme.EinkTokens
  * 3. Expanded sheet + scrim (expanded): a full-width, bottom-anchored, flat container.
  *
  * E-Ink host-enforced ([LocalEinkMode]): instant open/close on E-Ink, slide + fade only on phone
- * (animation-gating). Scrim opaque on E-Ink via [readerOverlayScrim].
+ * (animation-gating). The outside-tap dismisser is transparent (no dimming) so the page stays
+ * visible for live preview while the sheet is open.
  */
 @Composable
 fun BoxScope.ReaderBottomSheetLayer(sheet: ReaderBottomSheet, chromeVisible: Boolean) {
@@ -109,23 +110,28 @@ fun BoxScope.ReaderBottomSheetLayer(sheet: ReaderBottomSheet, chromeVisible: Boo
 // Plain composable (NOT a BoxScope extension): it is also called inside AnimatedVisibility's content
 // lambda (AnimatedVisibilityScope), where a BoxScope receiver would not resolve. It uses fillMaxSize
 // only — no align — so no BoxScope is needed.
+//
+// Deliberately a TRANSPARENT tap-catcher, not a dimming scrim: while the sheet is open the user must
+// see the reader update live behind it (e.g. typography changes observed in real time, novel-reader
+// request 2026-06-16). It only intercepts an outside tap to dismiss — no darkening over the page.
 @Composable
 private fun Scrim(onTap: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(readerOverlayScrim(Color.Black, 0.45f))
             .pointerInput(Unit) { detectTapGestures { onTap() } },
     )
 }
 
+// Collapsed peek bar — black with white text/grabber so it matches the rest of the reader chrome
+// (DefaultReaderOverlay), not the white settings surface (novel-reader request 2026-06-16). Background
+// over readerOverlayScrim: solid black on E-Ink, slightly translucent on phone.
 @Composable
 private fun ReaderBottomSheetPeek(label: String, onExpand: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline)
+            .background(readerOverlayScrim(Color.Black, 0.45f))
             .clickable(onClick = onExpand)
             .pointerInput(Unit) {
                 detectVerticalDragGestures { change, dragAmount ->
@@ -135,12 +141,12 @@ private fun ReaderBottomSheetPeek(label: String, onExpand: () -> Unit, modifier:
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(width = 32.dp, height = 3.dp).background(MaterialTheme.colorScheme.outline))
+        Box(Modifier.size(width = 32.dp, height = 3.dp).background(Color.White))
         Spacer(Modifier.height(4.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = Color.White,
         )
     }
 }

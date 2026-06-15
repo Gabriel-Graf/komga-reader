@@ -308,11 +308,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Wort im Roman-Reader (crengine-Reflow-Pfad), um an genau diesem Wort ein nummeriertes Lesezeichen zu
   setzen/entfernen (liste/umbenennen/löschen/anspringen; Marker auf der Seite gezeichnet). Die Render-Naht
   bekam dafür zwei neue, engine-neutrale Methoden auf `ReflowableDocument`:
-  `wordAt(x, y): WordHit?` + `rectsFor(xpointers: List<String>): Map<String, IntRect>` (Default no-op in
+  `wordAt(page, x, y): WordHit?` + `rectsFor(page, xpointers): Map<String, IntRect>` (Default no-op in
   `domain/render/Document.kt`; neue engine-neutrale Typen `WordHit`/`IntRect` ebenda). Die crengine-Impl
   `CrengineDocument.wordAt`/`rectsFor` ruft zwei neue JNI `CrengineNative.nativeXPointerAtPoint` /
   `nativeRectsForXPointers` (`render-crengine/.../cr3_bridge.cpp`); das Anspringen nutzt das bestehende
-  `goToAnchor`/`seekToAnchor`. **Lokal-only** (kein Server hat Wort-Lesezeichen): Room-Tabelle
+  `goToAnchor`/`seekToAnchor`. **Page-aware (2026-06-16, Desync-Fix):** beide Methoden tragen einen
+  `page`-Index; die native Seite wird vor dem Hit-Test per `goToPage(page)` darauf gesetzt — sonst lag
+  die native „current page" nach Rück-Navigation **hinter** der angezeigten Seite (VM-`renderPage` cached
+  und ruft bei Cache-Hit kein natives `goToPage`), der Tap traf die falsche/keine Seite, der Marker fehlte.
+  Der native Hit-Test ist zusätzlich whitespace-tolerant (Retry an kleinen Offsets) und loggt jeden
+  Fehl-Schritt (`adb logcat -s cr3bridge`). **Lokal-only** (kein Server hat Wort-Lesezeichen): Room-Tabelle
   `novel_bookmark` (`NovelBookmarkEntity`, `NovelBookmarkDao`, domain `NovelBookmarkRepository`,
   `RoomNovelBookmarkRepository`), `AppDatabase` 18 → 19 (`MIGRATION_18_19`) — bewusst **nicht** in der
   Sync-Queue. Die Tap-Verdrahtung läuft über die deklarative `ReaderTapZones`-Naht (A1b): Lesezeichen-Modus
@@ -325,8 +330,9 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`
   (hasEink/canColor/canInvert, `refreshModes: List<EinkModeOption>`, `colorModes: List<EinkModeOption>`;
-  leere Liste = Achse nicht unterstützt, UI blendet Sektion aus) — siehe Big-Picture-Doku zur
-  Geräteklassen-Frage.
+  leere Liste = Achse nicht unterstützt, UI blendet Sektion aus; `brightnessRange: IntRange?` = Frontlight-
+  Index-Raum oder null; `hasHardwareButtons: Boolean` = physische Tasten, Onyx=true/NoOp=false) — siehe
+  Big-Picture-Doku zur Geräteklassen-Frage.
 - **Reader-Input + Frontlight (Ist, 2026-06-15 — Hardware-Tasten, manueller Refresh, Helligkeit):**
   Drei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
   (NoOp inert). (1) **Press-Art:** `ButtonEvent` trägt jetzt `press: PressKind {SHORT, LONG}`
@@ -341,15 +347,31 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   — `repaintEveryThing` existiert in SDK 1.3.5 **nicht**); `EinkContextController.manualFullRefresh()`
   ist der agnostische Auslöser (NoOp = no-op). (3) **Frontlight:** neue Capability
   `EinkCapabilities.brightnessRange: IntRange?` (null = kein Frontlight → UI versteckt) +
-  `EinkController.setBrightness(level)`/`brightness()`. Onyx nutzt
-  `FrontLightController.setBrightness(context, level)` (via javap bestätigt; Range `0..255` hardcoded —
-  Device-Tuning via `getBrightnessMinimum/Maximum` offen). Bedienung: **zwei dünne Randstreifen**
-  (links/rechts, ~24dp) in `DefaultReaderScaffold`, **nur** wenn `brightnessRange != null`, fangen den
-  Einwärts-Wisch und öffnen die host-gerenderte, flache, animationsfreie `BrightnessBar` (diskrete
-  Stufen). **Bewusst NICHT über `ReaderTapZones`** (ein Full-Width-Drag-Detektor würde die
-  `HorizontalPager`-Blätter-Wische klauen; Helligkeit ist host-erzwungene Device-Capability, kein
-  per-Screen-Action). Pegel persistiert (`SettingsRepository.frontlightLevel`, -1 = ungesetzt, keine
-  Migration). **Boox-Verifikation offen** (Tasten/Refresh/Frontlight auf echter HW).
+  `EinkController.setBrightness(level)`/`brightness()`. **Onyx (korrigiert 2026-06-16 — index-Provider):**
+  das Frontlight läuft über einen **index-basierten `BaseBrightnessProvider`**, NICHT über das legacy
+  `FrontLightController.setBrightness` (das ist auf dem Go Color 7 ein **stiller No-Op** — Split-Warm/Kalt-
+  Licht, `hasFLBrightness()==false`, via 1.3.5-Bytecode bestätigt — die Ur-Ursache des „Helligkeit bewirkt
+  nichts"). `BrightnessController.getBrightnessType(ctx)` wählt den Provider (WARM_AND_COLD→`ColdBrightness
+  Provider`, CTM→`CTMBrightnessProvider`, FL→`FLBrightnessProvider`, NONE→kein Frontlight); `brightnessRange
+  = 0..provider.maxIndex` (Index-Raum, lazy abgeleitet, **0 = aus** via `provider.close()`, sonst
+  `open()`+`setIndex`). Bedienung: **zwei dünne Randstreifen** (links/rechts, ~24dp) in
+  `DefaultReaderScaffold`, **nur** wenn `brightnessRange != null`, fangen den Einwärts-Wisch und öffnen die
+  host-gerenderte, flache, animationsfreie `BrightnessBar` — seit 2026-06-16 ein **schwebender, kurzer,
+  abgerundeter Pill** mit Rand-Abstand (diskrete Stufen, ≤16 über den Index-Raum). **Bewusst NICHT über
+  `ReaderTapZones`** (ein Full-Width-Drag-Detektor würde die `HorizontalPager`-Blätter-Wische klauen;
+  Helligkeit ist host-erzwungene Device-Capability, kein per-Screen-Action). Pegel persistiert
+  (`SettingsRepository.frontlightLevel`, -1 = ungesetzt, keine Migration). **Boox-Verifikation offen**
+  (Tasten/Refresh/Frontlight auf echter HW; `adb logcat -s OnyxEinkController` zeigt den gewählten Typ + ok).
+- **Reader-Gesten + Tasten-Übersicht (Ist, 2026-06-16, Novel-Reader-Politur):** (4) **System-Gesten-Ausschluss:**
+  `ReaderScaffoldState.gestureExclusion` (host-erzwungen, opt-in pro Reader) legt zwei volle Rand-Streifen mit
+  `Modifier.systemGestureExclusion()` an → Rand-Wisch geht an den Reader statt System-Zurück (OS-Cap 200dp/Kante,
+  reine Markierung ohne `pointerInput` → klaut keine Taps). **Nur Novel-Reader** (`gestureExclusion = true`). Der
+  **System-Home-Wisch (von unten) lässt sich NICHT** deaktivieren (OS-Garantie) — nur die Zurück-Kanten. (5)
+  **Tasten-Übersicht:** read-only Settings-Sektion `SettingsSectionId.BUTTONS` (`ButtonsSettingsContent`) zeigt die
+  zwei Long-Press-Belegungen (lang Lauter→Home, lang Leiser→Full-Refresh), gegated über
+  `EinkCapabilities.hasHardwareButtons` (nicht über `displayMode` — Tasten sind physisch). (6) **Bottom-Sheet-Politur:**
+  der Sheet-„Scrim" ist ein **transparenter** Tap-Dismisser (kein Abdunkeln → Live-Vorschau der Reflow-Änderungen),
+  die zugeklappte Peek-Leiste ist **schwarz/weiß** wie `DefaultReaderOverlay`.
 - **E-Ink-Refresh + Farbe (Ist, 2026-06-13 — kontext-basierter EinkWise-Pfad):**
   Der Refresh-Modus und der System-Farbmodus werden **je Lese-Kontext** über das Onyx-EinkWise-API
   angewendet. Kerntypen in `domain/eink/`:

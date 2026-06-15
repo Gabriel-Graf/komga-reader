@@ -27,6 +27,8 @@ data class EinkCapabilities(
     val colorModes: List<EinkModeOption> = emptyList(),
     /** Frontlight brightness range, or null if the device has no controllable frontlight. */
     val brightnessRange: IntRange? = null,
+    /** True if the device exposes physical buttons the reader remaps (e.g. Onyx volume keys). */
+    val hasHardwareButtons: Boolean = false,
 )
 
 /**

@@ -109,12 +109,15 @@ in the `app/data` wiring layer — never in a ViewModel, a UI file, or `domain`.
   `pendingFontPaths` (flushed into the single `nativeInit`) and registers live post‑boot via the
   JNI `CrengineNative.nativeAddFont` → `fontMan->RegisterFont`. Font plugins (see below) install
   TTFs at runtime, no app restart.
-- **Novel word bookmarks (Ist 2026-06-15):** `ReflowableDocument` gained `wordAt(x, y): WordHit?` and
-  `rectsFor(xpointers): Map<String, IntRect>` (default no‑op; engine‑neutral `WordHit`/`IntRect`).
-  The crengine impl maps them to two new JNI methods (`CrengineNative.nativeXPointerAtPoint` /
-  `nativeRectsForXPointers`); jumping reuses `goToAnchor`/`seekToAnchor`. This powers tap‑a‑word
-  bookmarks in the novel reader. *Runtime behaviour is device‑verification pending* — the crengine
-  `.so` is arm64‑only, so the JNI word‑tap path only runs on a real arm64 Boox, not the x86 emulator.
+- **Novel word bookmarks (Ist 2026-06-15; page‑aware desync fix 2026-06-16):** `ReflowableDocument` gained
+  `wordAt(page, x, y): WordHit?` and `rectsFor(page, xpointers): Map<String, IntRect>` (default no‑op;
+  engine‑neutral `WordHit`/`IntRect`). The crengine impl maps them to two new JNI methods
+  (`CrengineNative.nativeXPointerAtPoint` / `nativeRectsForXPointers`); jumping reuses `goToAnchor`/`seekToAnchor`.
+  The `page` index seeks the native view to the displayed page before the hit‑test — otherwise the cached
+  `renderPage` path leaves the native "current page" behind the shown page after back‑navigation, so a tap
+  resolved the wrong page (or none). The native hit‑test is whitespace‑tolerant and logs each miss
+  (`adb logcat -s cr3bridge`). *Runtime behaviour is device‑verification pending* — the crengine `.so` is
+  arm64‑only, so the JNI word‑tap path only runs on a real arm64 Boox, not the x86 emulator.
 - The render target is strictly separated from the view. A different engine plugs in behind
   these interfaces without touching the rest.
 

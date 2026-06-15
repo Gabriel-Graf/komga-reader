@@ -3,6 +3,7 @@ package com.komgareader.app.ui.reader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.RowScope
@@ -70,6 +71,7 @@ fun ReaderScaffold(
     persistentBars: (@Composable BoxScope.() -> Unit)? = null,
     showTapZoneHints: Boolean = true,
     bottomSheet: ReaderBottomSheet? = null,
+    gestureExclusion: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val chromeVisible by chrome.chromeVisible.collectAsState()
@@ -89,6 +91,7 @@ fun ReaderScaffold(
         persistentBars = persistentBars,
         showTapZoneHints = showTapZoneHints,
         bottomSheet = bottomSheet,
+        gestureExclusion = gestureExclusion,
         content = content,
     )
     // `modifier` ist Host-Layout — als Box-Wrapper um den Slot, nicht in der Surface; der Renderer
@@ -121,6 +124,17 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
     Box(Modifier.fillMaxSize().background(state.background)) {
         state.content()
 
+        // System-Gesten-Ausschluss (opt-in pro Reader, host-erzwungen): zwei volle Rand-Streifen
+        // links/rechts melden sich beim OS als Gesten-Ausschluss-Region an, damit ein Rand-Wisch
+        // an den Reader geht statt das System-Zurück (predictive-back) auszulösen. Das OS deckelt
+        // den Ausschluss auf 200dp/Kante; reine Markierung (kein pointerInput) → überlagert die
+        // Tap-Zonen/Frontlight-Streifen konfliktfrei. Der System-Home-Wisch (von unten) lässt sich
+        // NICHT deaktivieren (OS-Garantie) — nur die Zurück-Kanten werden abgehalten.
+        if (state.gestureExclusion) {
+            Box(Modifier.align(Alignment.CenterStart).fillMaxHeight().width(40.dp).systemGestureExclusion())
+            Box(Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(40.dp).systemGestureExclusion())
+        }
+
         // Tap-Zonen: die Geometrie (Drittel) gehört dem Host; der Reader liefert pro Zone nur die
         // Aktion (deklarativ). `null` = der Reader behandelt Taps selbst (Comic: Panel-Hit-Test in
         // der content-Lambda) → kein Tap-Layer.
@@ -151,7 +165,9 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
         if (brightnessRange != null) {
             var barAlign by remember { mutableStateOf<Alignment?>(null) }
             val level by frontlight.level.collectAsState()
-            val effectiveLevel = if (level < 0) brightnessRange.first else level
+            // Clamp into the device index range: a level persisted under an earlier value scale
+            // would otherwise render as a full bar until the first drag re-snaps it.
+            val effectiveLevel = if (level < 0) brightnessRange.first else level.coerceIn(brightnessRange)
 
             // Left strip: inward drag (dragAmount > 0) opens the bar on the start side.
             Box(
@@ -190,6 +206,9 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
                     alignment = align,
                     onLevel = { frontlight.setLevel(it) },
                     onDismiss = { barAlign = null },
+                    // Snap to at most 16 perceptual steps over the device index range (fewer E-Ink
+                    // refreshes); a small device range maps each index to its own step.
+                    steps = (brightnessRange.last - brightnessRange.first).coerceIn(1, 16),
                 )
             }
         }

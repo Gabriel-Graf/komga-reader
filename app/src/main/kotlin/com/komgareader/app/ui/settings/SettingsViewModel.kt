@@ -80,6 +80,9 @@ class SettingsViewModel @Inject constructor(
     // E-Ink Dynamics: device capabilities (static) + per-context overrides (persistent).
     val einkRefreshModes: List<EinkModeOption> = einkController.capabilities.refreshModes
     val einkColorModes: List<EinkModeOption> = einkController.capabilities.colorModes
+
+    /** True on devices with physical buttons the reader remaps (Onyx volume keys) — gates the Buttons section. */
+    val einkHasHardwareButtons: Boolean = einkController.capabilities.hasHardwareButtons
     val einkContextProfiles = settings.einkContextProfiles
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 

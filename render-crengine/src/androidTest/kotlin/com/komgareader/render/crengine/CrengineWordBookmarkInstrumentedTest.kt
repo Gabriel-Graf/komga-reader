@@ -76,9 +76,9 @@ class CrengineWordBookmarkInstrumentedTest {
         openDocument().use { doc ->
             doc.applyLayout(ReflowConfig(hyphenation = Hyphenation.Language("de")))
 
-            // Ein Punkt im oberen Viertel, horizontal mittig — sollte im Textkörper
-            // der ersten Seite liegen.
-            val hit = doc.wordAt(viewportW / 2, viewportH / 4)
+            // Ein Punkt im oberen Viertel, horizontal mittig auf Seite 0 — sollte im
+            // Textkörper der ersten Seite liegen.
+            val hit = doc.wordAt(0, viewportW / 2, viewportH / 4)
             assertTrue("wordAt liefert ein WordHit, war null", hit != null)
             val word = hit!!
             assertTrue(
@@ -86,9 +86,8 @@ class CrengineWordBookmarkInstrumentedTest {
                 word.xpointer.isNotBlank(),
             )
 
-            // Round-Trip: der gefundene xpointer muss auf der aktuellen Seite ein
-            // Rect liefern.
-            val rects = doc.rectsFor(listOf(word.xpointer))
+            // Round-Trip: der gefundene xpointer muss auf Seite 0 ein Rect liefern.
+            val rects = doc.rectsFor(0, listOf(word.xpointer))
             assertTrue(
                 "rectsFor enthält den xpointer des Treffers, vorhanden: ${rects.keys}",
                 rects.containsKey(word.xpointer),

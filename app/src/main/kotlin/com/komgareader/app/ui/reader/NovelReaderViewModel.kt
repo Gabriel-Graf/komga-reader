@@ -468,10 +468,17 @@ class NovelReaderViewModel @Inject constructor(
     /** Tap at page-relative pixel ([x],[y]) in bookmark mode: set or remove the word's bookmark. */
     fun onWordTap(x: Int, y: Int) {
         viewModelScope.launch {
+            // Pass the displayed page so the engine seeks to it before the hit-test — renderPage may
+            // serve a cached bitmap without moving the native view, which would otherwise desync the
+            // native "current page" from the displayed page and resolve the wrong page (or nothing).
+            val page = _uiState.value.currentPage
             val hit: WordHit = documentMutex.withLock {
                 val doc = document ?: return@launch
-                withContext(Dispatchers.IO) { doc.wordAt(x, y) }
-            } ?: return@launch
+                withContext(Dispatchers.IO) { doc.wordAt(page, x, y) }
+            } ?: run {
+                android.util.Log.w("NovelReader", "onWordTap: no word at page=$page ($x,$y)")
+                return@launch
+            }
             when (val r = toggleBookmark(bookmarksFlow.value, hit.xpointer)) {
                 is ToggleResult.Remove -> bookmarks.remove(r.id)
                 is ToggleResult.Set -> bookmarks.add(
@@ -489,9 +496,12 @@ class NovelReaderViewModel @Inject constructor(
     suspend fun bookmarkRectsForCurrentPage(): Map<String, IntRect> {
         val xps = bookmarksFlow.value.map { it.xpointer }
         if (xps.isEmpty()) return emptyMap()
+        // Pass the displayed page (see onWordTap) so the native view is seeked to it before the
+        // markers are measured — otherwise a stale native page would hide the displayed page's marks.
+        val page = _uiState.value.currentPage
         return documentMutex.withLock {
             val doc = document ?: return emptyMap()
-            withContext(Dispatchers.IO) { doc.rectsFor(xps) }
+            withContext(Dispatchers.IO) { doc.rectsFor(page, xps) }
         }
     }
 

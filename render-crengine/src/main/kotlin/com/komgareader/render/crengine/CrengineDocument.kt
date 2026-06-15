@@ -121,8 +121,8 @@ class CrengineDocument(
             )
         }
 
-    override fun wordAt(x: Int, y: Int): WordHit? {
-        val raw = CrengineNative.nativeXPointerAtPoint(handle, x, y)
+    override fun wordAt(page: Int, x: Int, y: Int): WordHit? {
+        val raw = CrengineNative.nativeXPointerAtPoint(handle, page, x, y)
         if (raw.isEmpty()) return null
         val f = raw.split(FIELD_SEP)
         if (f.size < 6) return null
@@ -133,9 +133,9 @@ class CrengineDocument(
         )
     }
 
-    override fun rectsFor(xpointers: List<String>): Map<String, IntRect> {
+    override fun rectsFor(page: Int, xpointers: List<String>): Map<String, IntRect> {
         if (xpointers.isEmpty()) return emptyMap()
-        val raw = CrengineNative.nativeRectsForXPointers(handle, xpointers.toTypedArray())
+        val raw = CrengineNative.nativeRectsForXPointers(handle, page, xpointers.toTypedArray())
         if (raw.isEmpty()) return emptyMap()
         return raw.split(RECORD_SEP).filter { it.isNotEmpty() }.mapNotNull { rec ->
             val ff = rec.split(FIELD_SEP)

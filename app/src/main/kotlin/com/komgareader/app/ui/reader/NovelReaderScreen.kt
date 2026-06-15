@@ -146,6 +146,9 @@ fun NovelReaderScreen(
             ReaderTapZones.HorizontalThirds(novelVm::prevPage, novelVm::toggleChrome, novelVm::nextPage)
         },
         showTapZoneHints = !bookmarkMode,
+        // Hold off the system back-edge swipes so they don't collide with reading gestures (the
+        // system home swipe-up is an OS-level gesture and cannot be disabled by the app).
+        gestureExclusion = true,
         actions = {
             IconButton(onClick = { novelVm.toggleBookmarkMode() }) {
                 Icon(

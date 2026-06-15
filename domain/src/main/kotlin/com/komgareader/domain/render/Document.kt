@@ -78,16 +78,22 @@ interface ReflowableDocument : Document {
     fun contentLanguage(): String = ""
 
     /**
-     * The word at page-relative pixel ([x],[y]) on the currently rendered page, or
-     * null if no word is there. Default no-op so non-crengine engines need no change.
+     * The word at page-relative pixel ([x],[y]) on [page], or null if no word is there.
+     *
+     * [page] is the 0-based index of the page currently displayed by the caller. The engine seeks
+     * to it before the hit-test so the coordinate base matches the displayed bitmap even when the
+     * caller renders from a cache that did not move the native view (otherwise the native "current
+     * page" can lag the displayed page after back-navigation and the tap resolves the wrong page).
+     * Default no-op so non-crengine engines need no change.
      */
-    fun wordAt(x: Int, y: Int): WordHit? = null
+    fun wordAt(page: Int, x: Int, y: Int): WordHit? = null
 
     /**
-     * Page-relative rects for the [xpointers] that fall on the currently rendered
-     * page (others omitted). Used to draw bookmark markers. Default empty.
+     * Page-relative rects for the [xpointers] that fall on [page] (others omitted), used to draw
+     * bookmark markers. [page] is seeked to first for the same coordinate-base reason as [wordAt].
+     * Default empty.
      */
-    fun rectsFor(xpointers: List<String>): Map<String, IntRect> = emptyMap()
+    fun rectsFor(page: Int, xpointers: List<String>): Map<String, IntRect> = emptyMap()
 }
 
 /**

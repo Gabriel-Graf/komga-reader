@@ -386,6 +386,14 @@ class MapBackedStrings(
     override fun readerPresetConfirmBody(name: String): String =
         overrides["readerPresetConfirmBody"]?.replace("{name}", name) ?: fallback.readerPresetConfirmBody(name)
     override val languagePluginInstalledHint: String get() = overrides["languagePluginInstalledHint"] ?: fallback.languagePluginInstalledHint
+    override val settingsButtons: String get() = overrides["settingsButtons"] ?: fallback.settingsButtons
+    override val settingsButtonsDesc: String get() = overrides["settingsButtonsDesc"] ?: fallback.settingsButtonsDesc
+    override val buttonActionHome: String get() = overrides["buttonActionHome"] ?: fallback.buttonActionHome
+    override val buttonActionHomeDesc: String get() = overrides["buttonActionHomeDesc"] ?: fallback.buttonActionHomeDesc
+    override val buttonActionRefresh: String get() = overrides["buttonActionRefresh"] ?: fallback.buttonActionRefresh
+    override val buttonActionRefreshDesc: String get() = overrides["buttonActionRefreshDesc"] ?: fallback.buttonActionRefreshDesc
+    override val buttonKeyVolumeUpLong: String get() = overrides["buttonKeyVolumeUpLong"] ?: fallback.buttonKeyVolumeUpLong
+    override val buttonKeyVolumeDownLong: String get() = overrides["buttonKeyVolumeDownLong"] ?: fallback.buttonKeyVolumeDownLong
     override val statsTitle: String get() = overrides["statsTitle"] ?: fallback.statsTitle
     override val statsTotalTime: String get() = overrides["statsTotalTime"] ?: fallback.statsTotalTime
     override val statsPerReader: String get() = overrides["statsPerReader"] ?: fallback.statsPerReader

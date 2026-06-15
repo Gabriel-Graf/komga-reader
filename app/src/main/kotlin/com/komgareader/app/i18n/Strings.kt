@@ -404,6 +404,15 @@ interface Strings {
     fun readerPresetConfirmBody(name: String): String
     // Feature C — Sprache
     val languagePluginInstalledHint: String
+    // Hardware buttons (read-only overview of the device long-press shortcuts)
+    val settingsButtons: String
+    val settingsButtonsDesc: String
+    val buttonActionHome: String
+    val buttonActionHomeDesc: String
+    val buttonActionRefresh: String
+    val buttonActionRefreshDesc: String
+    val buttonKeyVolumeUpLong: String
+    val buttonKeyVolumeDownLong: String
     // Statistics
     val statsTitle: String
     val statsTotalTime: String
@@ -809,6 +818,14 @@ object StringsDe : Strings {
     override val readerPresetConfirmTitle = "Preset anwenden?"
     override fun readerPresetConfirmBody(name: String) = "„$name“ überschreibt die betroffenen Reader-Einstellungen."
     override val languagePluginInstalledHint = "Installiert über Plugin"
+    override val settingsButtons = "Tasten"
+    override val settingsButtonsDesc = "Belegung der Geräte-Tasten beim langen Drücken (nur lesbar)."
+    override val buttonActionHome = "Zur Startseite"
+    override val buttonActionHomeDesc = "Schließt den Reader und springt zur Startseite zurück."
+    override val buttonActionRefresh = "Vollbild-Refresh"
+    override val buttonActionRefreshDesc = "Erzwingt einen vollständigen Refresh gegen Ghosting."
+    override val buttonKeyVolumeUpLong = "Lange Lauter ▲"
+    override val buttonKeyVolumeDownLong = "Lange Leiser ▼"
     override val statsTitle = "Statistik"
     override val statsTotalTime = "Gesamtlesezeit"
     override val statsPerReader = "Nach Lesemodus"
@@ -1213,6 +1230,14 @@ object StringsEn : Strings {
     override val readerPresetConfirmTitle = "Apply preset?"
     override fun readerPresetConfirmBody(name: String) = "\"$name\" overwrites the affected reader settings."
     override val languagePluginInstalledHint = "Installed via plugin"
+    override val settingsButtons = "Buttons"
+    override val settingsButtonsDesc = "Hardware button assignments on long press (read-only)."
+    override val buttonActionHome = "Go to home"
+    override val buttonActionHomeDesc = "Closes the reader and returns to the home screen."
+    override val buttonActionRefresh = "Full refresh"
+    override val buttonActionRefreshDesc = "Forces a full screen refresh to clear ghosting."
+    override val buttonKeyVolumeUpLong = "Long Volume Up ▲"
+    override val buttonKeyVolumeDownLong = "Long Volume Down ▼"
     override val statsTitle = "Statistics"
     override val statsTotalTime = "Total reading time"
     override val statsPerReader = "By reader mode"

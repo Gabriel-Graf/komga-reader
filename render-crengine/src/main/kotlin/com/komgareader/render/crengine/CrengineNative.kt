@@ -97,16 +97,17 @@ object CrengineNative {
     external fun nativeSearch(handle: Long, query: String, maxCount: Int): String
 
     /**
-     * Word at the page-relative pixel ([x], [y]) on the current page.
+     * Word at the page-relative pixel ([x], [y]) on [page] (the native view is seeked to [page]
+     * first so the coordinate base matches the displayed page).
      * Returns "xpointer<US>word<US>left<US>top<US>right<US>bottom" or "" if none.
      */
-    external fun nativeXPointerAtPoint(handle: Long, x: Int, y: Int): String
+    external fun nativeXPointerAtPoint(handle: Long, page: Int, x: Int, y: Int): String
 
     /**
-     * For each of [xpointers] that lies on the current page, a record
-     * "xpointer<US>left<US>top<US>right<US>bottom" (RECORD_SEP-separated); others omitted.
+     * For each of [xpointers] that lies on [page] (the native view is seeked to [page] first), a
+     * record "xpointer<US>left<US>top<US>right<US>bottom" (RECORD_SEP-separated); others omitted.
      */
-    external fun nativeRectsForXPointers(handle: Long, xpointers: Array<String>): String
+    external fun nativeRectsForXPointers(handle: Long, page: Int, xpointers: Array<String>): String
 
     external fun nativeClose(handle: Long)
 }

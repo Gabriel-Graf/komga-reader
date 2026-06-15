@@ -443,31 +443,51 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeSearch(
 }
 
 /*
- * Word at the page-relative pixel ([x], [y]) on the current page. Serialized as
+ * Word at the page-relative pixel ([x], [y]) on [page]. Serialized as
  *   xpointer<US>word<US>left<US>top<US>right<US>bottom
  * ("" if there is no word at the point). The rect is page-relative (the caller's
  * coordinate space), so view->GetPos() is added going into getNodeByPoint and
  * subtracted out of the returned rect.
+ *
+ * The view is seeked to [page] first: the Kotlin layer renders from a bitmap cache that may not have
+ * moved the native view, so GetPos() could otherwise reflect a different page than the one tapped
+ * (the native "current page" lags the displayed page after back-navigation). Seeking guarantees the
+ * coordinate base matches the displayed bitmap. The hit-test retries at small offsets so a tap in
+ * inter-word/inter-line whitespace still resolves the nearest word. Failures are logged under this
+ * file's LOG_TAG so an on-device run can pinpoint which step missed:  adb logcat -s cr3bridge
  */
 JNIEXPORT jstring JNICALL
 Java_com_komgareader_render_crengine_CrengineNative_nativeXPointerAtPoint(
-        JNIEnv* env, jobject /*thiz*/, jlong handle, jint x, jint y) {
+        JNIEnv* env, jobject /*thiz*/, jlong handle, jint page, jint x, jint y) {
     auto* view = reinterpret_cast<LVDocView*>(handle);
     if (view == nullptr)
         return env->NewStringUTF("");
+    view->goToPage(page);
     view->checkRender();
     const int pageTop = view->GetPos();
-    // getNodeByPoint expects document coordinates; page-relative y -> doc y.
-    lvPoint pt(x, y + pageTop);
-    ldomXPointer ptr = view->getNodeByPoint(pt);
-    if (ptr.isNull())
+    LOGI("wordAt page=%d in=(%d,%d) pageTop=%d", page, x, y, pageTop);
+    // getNodeByPoint expects document coordinates; page-relative y -> doc y. Retry around the tap so
+    // a tap landing in whitespace between words/lines still resolves the nearest word.
+    static const int DX[] = {0, 8, -8, 0, 0};
+    static const int DY[] = {0, 0, 0, 8, -8};
+    ldomXPointer ptr;
+    for (int i = 0; i < 5 && ptr.isNull(); i++) {
+        ptr = view->getNodeByPoint(lvPoint(x + DX[i], y + pageTop + DY[i]));
+    }
+    if (ptr.isNull()) {
+        LOGE("wordAt: getNodeByPoint null");
         return env->NewStringUTF("");
+    }
     ldomXRange wordRange;
-    if (!ldomXRange::getWordRange(wordRange, ptr))
+    if (!ldomXRange::getWordRange(wordRange, ptr)) {
+        LOGE("wordAt: getWordRange failed");
         return env->NewStringUTF("");
+    }
     lvRect rect;
-    if (!wordRange.getRectEx(rect) || rect.isEmpty())
+    if (!wordRange.getRectEx(rect) || rect.isEmpty()) {
+        LOGE("wordAt: getRectEx empty");
         return env->NewStringUTF("");
+    }
     lString32 out;
     out.append(wordRange.getStart().toString());
     out.append(1, FIELD_SEP);
@@ -484,17 +504,19 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeXPointerAtPoint(
 }
 
 /*
- * For each of [xpointers] that lies on the current page, one record
+ * For each of [xpointers] that lies on [page], one record
  *   xpointer<US>left<US>top<US>right<US>bottom
- * (RECORD_SEP-separated); xpointers off the current page or that don't resolve
- * are omitted. Rects are page-relative (view->GetPos() subtracted).
+ * (RECORD_SEP-separated); xpointers off [page] or that don't resolve are omitted.
+ * Rects are page-relative (view->GetPos() subtracted). The view is seeked to [page]
+ * first (same coordinate-base reason as nativeXPointerAtPoint).
  */
 JNIEXPORT jstring JNICALL
 Java_com_komgareader_render_crengine_CrengineNative_nativeRectsForXPointers(
-        JNIEnv* env, jobject /*thiz*/, jlong handle, jobjectArray xpointers) {
+        JNIEnv* env, jobject /*thiz*/, jlong handle, jint page, jobjectArray xpointers) {
     auto* view = reinterpret_cast<LVDocView*>(handle);
     if (view == nullptr)
         return env->NewStringUTF("");
+    view->goToPage(page);
     view->checkRender();
     ldomDocument* doc = view->getDocument();
     if (doc == nullptr)

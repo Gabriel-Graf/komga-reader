@@ -68,5 +68,13 @@ data class ReaderScaffoldState(
      * Host-enforced E-Ink invariants: instant on E-Ink, animated only on phone.
      */
     val bottomSheet: ReaderBottomSheet? = null,
+    /**
+     * When true, the host excludes the left/right screen edges of the reader from the system BACK
+     * gesture (`Modifier.systemGestureExclusion`, OS-capped at 200dp/edge) so edge swipes go to the
+     * reader instead of triggering predictive-back. Used by the Novel reader, whose reading gestures
+     * collide with the system swipe-back. NOTE: the system HOME swipe-up cannot be disabled by any
+     * app (OS guarantee) — this only holds off the back-edge swipes.
+     */
+    val gestureExclusion: Boolean = false,
     val content: @Composable () -> Unit,
 )

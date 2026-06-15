@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.komgareader.ui.theme.EinkTokens
 import kotlin.math.roundToInt
 
 /**
@@ -31,17 +35,27 @@ fun brightnessForFraction(yFractionFromTop: Float, range: IntRange, steps: Int):
     return range.first + (span * stepIndex / steps)
 }
 
+/** Width of the floating bar. */
+private val BAR_WIDTH = 44.dp
+
+/** Fraction of the screen height the bar spans — short, floating, not full-height. */
+private const val BAR_HEIGHT_FRACTION = 0.5f
+
+/** Inset from the screen edge so the bar floats rather than sticking to the border. */
+private val BAR_EDGE_INSET = 20.dp
+
 /**
- * Host-rendered brightness bar anchored to a screen edge. Flat E-Ink look: 1.5dp border, no
- * shadow, no elevation, no animation — each drag step is a discrete level change (one partial
- * refresh on E-Ink). The fill rectangle grows from the bottom to indicate the current level.
+ * Host-rendered frontlight bar: a short, rounded, **floating** pill inset from the screen edge.
+ * Flat E-Ink look — [EinkTokens.hairline] border, no shadow, no elevation, no animation; each drag
+ * step is one discrete level change (one partial refresh on E-Ink). The fill grows from the bottom
+ * to show the current level, clipped to the rounded shape.
  *
- * @param level    Current brightness value within [range].
- * @param range    Valid brightness range (e.g. 0..255 for screen brightness, 0..100 for frontlight).
- * @param alignment Where to anchor the bar (e.g. [Alignment.CenterStart] or [Alignment.CenterEnd]).
- * @param onLevel  Called with the snapped level while the user drags.
+ * @param level     Current brightness value within [range].
+ * @param range     Valid brightness range (device index space; see [com.komgareader.domain.eink.EinkCapabilities.brightnessRange]).
+ * @param alignment Which edge to float against ([Alignment.CenterStart] or [Alignment.CenterEnd]).
+ * @param onLevel   Called with the snapped level while the user drags.
  * @param onDismiss Called when the user taps outside the bar.
- * @param steps    Number of discrete steps in the bar (default 16).
+ * @param steps     Number of discrete steps the drag snaps to (default 16).
  */
 @Composable
 fun BrightnessBar(
@@ -52,6 +66,7 @@ fun BrightnessBar(
     onDismiss: () -> Unit,
     steps: Int = 16,
 ) {
+    val shape = RoundedCornerShape(BAR_WIDTH / 2) // pill: fully rounded ends
     Box(
         Modifier
             .fillMaxSize()
@@ -60,10 +75,12 @@ fun BrightnessBar(
         Box(
             Modifier
                 .align(alignment)
-                .width(56.dp)
-                .fillMaxHeight()
+                .padding(horizontal = BAR_EDGE_INSET)
+                .width(BAR_WIDTH)
+                .fillMaxHeight(BAR_HEIGHT_FRACTION)
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.surface)
-                .border(1.5.dp, MaterialTheme.colorScheme.outline)
+                .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, shape)
                 .pointerInput(range) {
                     detectVerticalDragGestures { change, _ ->
                         val frac = change.position.y / size.height.toFloat()
@@ -73,6 +90,7 @@ fun BrightnessBar(
         ) {
             val frac = if (range.last == range.first) 0f
                 else (level - range.first).toFloat() / (range.last - range.first)
+            // Fill is clipped to the parent pill shape, so it reads as a filled portion of the pill.
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)

@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.komgareader.ui.icons.AppIcons
@@ -249,6 +250,62 @@ fun EinkToggle(
         contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
         Box(Modifier.size(20.dp).background(if (enabled) knob else border, CircleShape))
+    }
+}
+
+/**
+ * Einzeilige Ordner-Auswahl: **links** das Lucide-Ordner-Icon, **rechts** der aktuelle Pfad —
+ * die ganze Zeile ist antippbar und öffnet den SAF-Ordnerwähler. Ersetzt den früheren
+ * „Ordner wählen"-Button + separaten Pfad-Helper durch eine kompakte Tile. [onReset] (optional)
+ * hängt rechts ein kleines Zurücksetzen-Icon an — nur zeigen, wenn ein Ordner gesetzt ist.
+ */
+@Composable
+fun FolderPickerRow(
+    path: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onReset: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                EinkTokens.hairline,
+                MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(EinkTokens.tileRadius),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            AppIcons.Folder,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            path,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (onReset != null) {
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                AppIcons.Delete,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable(onClick = onReset)
+                    .padding(6.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +61,7 @@ import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkTextField
 import com.komgareader.app.ui.components.FieldCaption
+import com.komgareader.app.ui.components.FolderPickerRow
 import com.komgareader.app.ui.components.HighlightText
 import com.komgareader.app.ui.components.PickerModal
 import com.komgareader.app.ui.components.PickerRow
@@ -856,24 +856,20 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
     val localPath = localFolder?.let { treeUriToDisplayPath(it) } ?: s.localFolderNotSet
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        SettingsGroup(s.downloadFolder, query, helper = downloadPath) {
-            Row {
-                Button(onClick = { downloadPicker.launch(null) }) { Text(s.chooseFolder) }
-                if (downloadDir != null) {
-                    Spacer(Modifier.width(8.dp))
-                    EinkOutlinedButton(onClick = { viewModel.setDownloadDir(null) }) { Text(s.resetFolder) }
-                }
-            }
+        SettingsGroup(s.downloadFolder, query) {
+            FolderPickerRow(
+                path = downloadPath,
+                onClick = { downloadPicker.launch(null) },
+                onReset = if (downloadDir != null) ({ viewModel.setDownloadDir(null) }) else null,
+            )
         }
 
-        SettingsGroup(s.serverKindLocal, query, helper = localPath) {
-            Row {
-                Button(onClick = { localPicker.launch(null) }) { Text(s.chooseFolder) }
-                if (localFolder != null) {
-                    Spacer(Modifier.width(8.dp))
-                    EinkOutlinedButton(onClick = { viewModel.removeLocalFolder() }) { Text(s.resetFolder) }
-                }
-            }
+        SettingsGroup(s.serverKindLocal, query) {
+            FolderPickerRow(
+                path = localPath,
+                onClick = { localPicker.launch(null) },
+                onReset = if (localFolder != null) ({ viewModel.removeLocalFolder() }) else null,
+            )
         }
 
         SettingsGroup(s.externalOpenSetting, query) {

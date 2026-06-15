@@ -60,6 +60,7 @@ object LucideIcons {
     val Download: ImageVector by lazy { lucide("Download", "M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15 M7 10L12 15L17 10 M12 15L12 3") }
     val EllipsisVertical: ImageVector by lazy { lucide("EllipsisVertical", "M11 12A1 1 0 1 0 13 12A1 1 0 1 0 11 12 M11 5A1 1 0 1 0 13 5A1 1 0 1 0 11 5 M11 19A1 1 0 1 0 13 19A1 1 0 1 0 11 19") }
     val Eye: ImageVector by lazy { lucide("Eye", "M2.062 12.348A1 1 0 0 1 2.062 11.652000000000001 10.75 10.75 0 0 1 21.938000000000002 11.652000000000001 1 1 0 0 1 21.938000000000002 12.348 10.75 10.75 0 0 1 2.062000000000001 12.348 M9 12A3 3 0 1 0 15 12A3 3 0 1 0 9 12") }
+    val Folder: ImageVector by lazy { lucide("Folder", "M20 20A2 2 0 0 0 22 18V8A2 2 0 0 0 20 6H12.1A2 2 0 0 1 10.41 5.1L9.6 3.9A2 2 0 0 0 7.93 3H4A2 2 0 0 0 2 5V18A2 2 0 0 0 4 20Z") }
     val EyeOff: ImageVector by lazy { lucide("EyeOff", "M10.733 5.076A10.744 10.744 0 0 1 21.938000000000002 11.651 1 1 0 0 1 21.938000000000002 12.347 10.747 10.747 0 0 1 20.494000000000003 14.837 M14.084 14.158A3 3 0 0 1 9.841999999999999 9.916 M17.479 17.499A10.75 10.75 0 0 1 2.0619999999999994 12.347999999999999 1 1 0 0 1 2.0619999999999994 11.652 10.75 10.75 0 0 1 6.507999999999999 6.5089999999999995 M2 2L22 22") }
     val GalleryVertical: ImageVector by lazy { lucide("GalleryVertical", "M3 2H21 M5 6H19A2 2 0 0 1 21 8V16A2 2 0 0 1 19 18H5A2 2 0 0 1 3 16V8A2 2 0 0 1 5 6Z M3 22H21") }
     val Grid2x2: ImageVector by lazy { lucide("Grid2x2", "M5 3H19A2 2 0 0 1 21 5V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3Z M3 12H21 M12 3V21") }
@@ -85,5 +86,6 @@ object LucideIcons {
     val Type: ImageVector by lazy { lucide("Type", "M4 7L4 4L20 4L20 7 M9 20L15 20 M12 4L12 20") }
     val X: ImageVector by lazy { lucide("X", "M18 6L6 18 M6 6L18 18") }
     val BookmarkFilled: ImageVector by lazy { lucideFilled("BookmarkFilled", "M19 21L12 17 5 21V5A2 2 0 0 1 7 3H17A2 2 0 0 1 19 5V21Z") }
+    // Manuell angehängt (nicht in icon-set.mjs — Lucide hat bar-chart-3 zugunsten chart-column ausgemustert).
     val BarChart3: ImageVector by lazy { lucide("BarChart3", "M3 3V21 M21 21H3 M7 16V11 M12 16V5 M17 16V8") }
 }

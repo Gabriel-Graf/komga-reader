@@ -18,6 +18,7 @@ export const ICONS = {
   "download": "Download",
   "ellipsis-vertical": "EllipsisVertical",
   "eye": "Eye",
+  "folder": "Folder",
   "eye-off": "EyeOff",
   "gallery-vertical": "GalleryVertical",
   "grid-2x2": "Grid2x2",

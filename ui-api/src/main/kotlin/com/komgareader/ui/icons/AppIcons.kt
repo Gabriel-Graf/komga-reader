@@ -65,4 +65,5 @@ object AppIcons {
     val PasswordShow: ImageVector get() = ActiveIconPack.resolve(IconKey.PasswordShow)
     val PasswordHide: ImageVector get() = ActiveIconPack.resolve(IconKey.PasswordHide)
     val Stats: ImageVector get() = ActiveIconPack.resolve(IconKey.Stats)
+    val Folder: ImageVector get() = ActiveIconPack.resolve(IconKey.Folder)
 }

@@ -144,6 +144,10 @@ class MapBackedStrings(
     override val aboutCheckFailed: String get() = overrides["aboutCheckFailed"] ?: fallback.aboutCheckFailed
     override val aboutInstallUpdate: String get() = overrides["aboutInstallUpdate"] ?: fallback.aboutInstallUpdate
     override val aboutDownloading: String get() = overrides["aboutDownloading"] ?: fallback.aboutDownloading
+    override val aboutUpdateStarted: String get() = overrides["aboutUpdateStarted"] ?: fallback.aboutUpdateStarted
+    override val aboutUpdateNoApk: String get() = overrides["aboutUpdateNoApk"] ?: fallback.aboutUpdateNoApk
+    override val aboutUpdateFailed: String get() = overrides["aboutUpdateFailed"] ?: fallback.aboutUpdateFailed
+    override val aboutUpdateNeedsPermission: String get() = overrides["aboutUpdateNeedsPermission"] ?: fallback.aboutUpdateNeedsPermission
     override fun aboutUpdateAvailable(version: String): String =
         overrides["aboutUpdateAvailable"]?.replace("{version}", version) ?: fallback.aboutUpdateAvailable(version)
     override fun aboutWhatsNew(version: String): String =

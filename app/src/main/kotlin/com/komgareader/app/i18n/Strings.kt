@@ -141,6 +141,10 @@ interface Strings {
     val aboutCheckFailed: String
     val aboutInstallUpdate: String
     val aboutDownloading: String
+    val aboutUpdateStarted: String
+    val aboutUpdateNoApk: String
+    val aboutUpdateFailed: String
+    val aboutUpdateNeedsPermission: String
     fun aboutUpdateAvailable(version: String): String
     fun aboutWhatsNew(version: String): String
     val updateInstalledNotice: String
@@ -554,6 +558,10 @@ object StringsDe : Strings {
     override val aboutCheckFailed = "Konnte nicht nach Updates suchen."
     override val aboutInstallUpdate = "Update installieren"
     override val aboutDownloading = "Lädt…"
+    override val aboutUpdateStarted = "Installation gestartet – folge dem System-Dialog."
+    override val aboutUpdateNoApk = "Kein APK im Release gefunden."
+    override val aboutUpdateFailed = "Download fehlgeschlagen – erneut versuchen."
+    override val aboutUpdateNeedsPermission = "Erlaube „Unbekannte Apps installieren“ und tippe erneut."
     override fun aboutUpdateAvailable(version: String) = "Update verfügbar: $version"
     override fun aboutWhatsNew(version: String) = "Was ist neu in $version"
     override val updateInstalledNotice = "Update installiert – zum Öffnen tippen"
@@ -954,6 +962,10 @@ object StringsEn : Strings {
     override val aboutCheckFailed = "Could not check for updates."
     override val aboutInstallUpdate = "Install update"
     override val aboutDownloading = "Downloading…"
+    override val aboutUpdateStarted = "Install started – follow the system dialog."
+    override val aboutUpdateNoApk = "No APK found in the release."
+    override val aboutUpdateFailed = "Download failed – try again."
+    override val aboutUpdateNeedsPermission = "Allow “Install unknown apps” and tap again."
     override fun aboutUpdateAvailable(version: String) = "Update available: $version"
     override fun aboutWhatsNew(version: String) = "What's new in $version"
     override val updateInstalledNotice = "Update installed — tap to open"

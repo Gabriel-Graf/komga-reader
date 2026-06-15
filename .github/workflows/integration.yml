@@ -42,6 +42,24 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Start Komga + Kavita fixtures
         run: tools/ci-fixtures/up.sh
+      # Prime the Gradle dependency cache before the emulator step, with retries. comic-cutter is
+      # resolved from JitPack, which intermittently fronts requests with a Cloudflare "managed
+      # challenge" (HTTP 403 to any non-browser client) under load. The challenge is per-request and
+      # transient, so a few retries with backoff get through (some runs resolve first try, some need
+      # a couple). Once the artifacts are in ~/.gradle/caches, the emulator step's connectedAndroidTest
+      # reuses them and never re-hits JitPack. This builds the app + androidTest APKs here so the
+      # connectedAndroidTest below is up-to-date and only runs the on-device tests.
+      - name: Prime Gradle cache (retry transient JitPack/Cloudflare 403)
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon --stacktrace; then
+              exit 0
+            fi
+            echo "Attempt ${attempt} failed (likely transient JitPack/Cloudflare 403); retrying in 30s"
+            sleep 30
+          done
+          echo "Dependency resolution still failing after 5 attempts"
+          exit 1
       # The Komga/OPDS `ci.*` tests are self-contained (CiKomga uses static fixture Basic-Auth on
       # fixed ports). PluginKavitaCiTest needs the Kavita plugin APK pre-installed; that APK lives in
       # a separate (gitignored) repo and isn't provisioned on the throwaway CI emulator, so it skips

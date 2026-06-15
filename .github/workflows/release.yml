@@ -57,10 +57,19 @@ jobs:
       - name: Build signed release APK (version from tag)
         run: |
           VERSION_NAME="${TAG#v}"
+          # versionCode derived deterministically from the semver tag: major*10000 + minor*100 + patch.
+          # Monotonic with the version and always > the older manual codes (0.2.0=2, 0.3.0=3) — NOT the
+          # run number, which resets to 1 per workflow file and would read as a downgrade on device.
+          IFS='.' read -r MAJ MIN PAT <<EOF
+          $VERSION_NAME
+          EOF
+          PAT="${PAT%%-*}" # drop any pre-release suffix (e.g. 0.3.1-beta1 -> 1)
+          VERSION_CODE=$(( ${MAJ:-0} * 10000 + ${MIN:-0} * 100 + ${PAT:-0} ))
+          echo "versionName=$VERSION_NAME versionCode=$VERSION_CODE"
           # comic-cutter resolves from JitPack, which intermittently fronts requests with a Cloudflare
           # 403 under load. A release build must not fail on that transient — retry with backoff.
           for attempt in 1 2 3 4 5; do
-            if ./gradlew :app:assembleRelease --no-daemon --stacktrace -PversionName="$VERSION_NAME" -PversionCode="${{ github.run_number }}"; then
+            if ./gradlew :app:assembleRelease --no-daemon --stacktrace -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"; then
               exit 0
             fi
             echo "Attempt ${attempt} failed (likely transient JitPack/Cloudflare 403); retrying in 30s"

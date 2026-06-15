@@ -58,7 +58,7 @@ class CollectionSyncLiveTest {
         val store = KeystoreCredentialStore("collsync-live-${System.nanoTime()}")
         repo = RoomServerRepository(db.serverDao(), store)
         val sources = SourceManager()
-        val registration = SourceRegistration(sources, KomgaSourceProvider(), PluginHost(ctx))
+        val registration = SourceRegistration(sources, KomgaSourceProvider(), PluginHost(ctx), ctx)
         activeSource = ActiveSource(sources, repo, registration)
         collectionRepo = RoomCollectionRepository(db.collectionDao())
         manager = CollectionSyncManager(

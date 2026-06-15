@@ -39,6 +39,8 @@ class ReaderShortcutsViewModelTest {
         override val language: Flow<String> = flowOf("de")
         override val displayMode: Flow<String> = flowOf("EINK")
         override val shellLayoutMode: Flow<String> = flowOf("AUTO")
+        override val bookmarkMarkerStyle: Flow<String> = flowOf("UNDERLINE")
+        override val externalOpenBehavior: Flow<String> = flowOf("ASK")
         override val downloadDir: Flow<String?> = flowOf(null)
         override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
         override val useMlDetection: Flow<Boolean> = flowOf(true)
@@ -62,6 +64,8 @@ class ReaderShortcutsViewModelTest {
         override suspend fun setLanguage(value: String) {}
         override suspend fun setDisplayMode(value: String) {}
         override suspend fun setShellLayoutMode(value: String) {}
+        override suspend fun setBookmarkMarkerStyle(value: String) {}
+        override suspend fun setExternalOpenBehavior(value: String) {}
         override suspend fun setDownloadDir(uri: String?) {}
         override suspend fun setGuidedPanelOverlay(value: Boolean) {}
         override suspend fun setUseMlDetection(value: Boolean) {}

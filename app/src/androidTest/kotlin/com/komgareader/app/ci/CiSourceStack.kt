@@ -29,7 +29,7 @@ class CiSourceStack {
     private val sources = SourceManager()
     // PluginHost wird vom SourceRegistration-Vertrag verlangt; in den Seam-Tests nicht ausgeübt
     // (keine PLUGIN-Quelle registriert) — nur konstruiert, damit die Verdrahtung wie in Produktion steht.
-    private val registration = SourceRegistration(sources, KomgaSourceProvider(), PluginHost(ctx))
+    private val registration = SourceRegistration(sources, KomgaSourceProvider(), PluginHost(ctx), ctx)
 
     val activeSource = ActiveSource(sources, repo, registration)
 

@@ -69,6 +69,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** logcat tag for the hardware-button path (adb logcat -s HwButtons). */
+private const val HW_TAG = "HwButtons"
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
@@ -127,11 +130,17 @@ class MainActivity : ComponentActivity() {
     // key-up does not also emit a short (page-turn) event.
     private val longPressConsumed = mutableSetOf<Int>()
 
+    /** Held duration (ms) from the gesture's DOWN to its UP that counts as a long press. */
+    private val longPressMs = 500L
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // First down of the gesture: enable long-press tracking so onKeyLongPress fires.
+                // First down of the gesture: enable long-press tracking so onKeyLongPress fires on
+                // OEMs that dispatch it. Devices that send key-repeats instead (some Onyx Boox) never
+                // call onKeyLongPress — onKeyUp falls back to a held-duration check.
                 if (event != null && event.repeatCount == 0) event.startTracking()
+                android.util.Log.i(HW_TAG, "onKeyDown code=$keyCode repeat=${event?.repeatCount}")
                 true // consume; the actual emit happens on long-press or key-up
             }
             else -> super.onKeyDown(keyCode, event)
@@ -139,6 +148,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
+        android.util.Log.i(HW_TAG, "onKeyLongPress code=$keyCode")
         val emitted = com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = true)
         return if (emitted != null) {
             buttonBus.emit(emitted)
@@ -153,9 +163,16 @@ class MainActivity : ComponentActivity() {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
                 if (longPressConsumed.remove(keyCode)) {
-                    true // long press already handled this gesture
+                    true // onKeyLongPress already handled this gesture
                 } else {
-                    com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = false)
+                    // Fallback long-press detection by held duration: some Onyx Boox key devices send
+                    // key-repeat events but never dispatch onKeyLongPress, so a held volume key would
+                    // otherwise always read as a short press. event.downTime = the gesture's first DOWN,
+                    // event.eventTime = this UP.
+                    val held = if (event != null) event.eventTime - event.downTime else 0L
+                    val longPress = held >= longPressMs
+                    android.util.Log.i(HW_TAG, "onKeyUp code=$keyCode held=${held}ms long=$longPress")
+                    com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = longPress)
                         ?.let { buttonBus.emit(it) }
                     true
                 }

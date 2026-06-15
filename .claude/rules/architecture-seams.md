@@ -317,15 +317,22 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   die native „current page" nach Rück-Navigation **hinter** der angezeigten Seite (VM-`renderPage` cached
   und ruft bei Cache-Hit kein natives `goToPage`), der Tap traf die falsche/keine Seite, der Marker fehlte.
   Der native Hit-Test ist zusätzlich whitespace-tolerant (Retry an kleinen Offsets) und loggt jeden
-  Fehl-Schritt (`adb logcat -s cr3bridge`). **Lokal-only** (kein Server hat Wort-Lesezeichen): Room-Tabelle
+  Fehl-Schritt (`adb logcat -s cr3bridge`). **Koordinaten-Fix (2026-06-16, auf echter Boox verifiziert):**
+  `getNodeByPoint` erwartet **window-/seiten-relative** Koordinaten (seine `windowToDocPoint` mappt selbst
+  in Dokument-Koords) — das frühere `y + GetPos()` zählte den Seiten-Offset **doppelt** und gab immer `null`
+  („Tap markiert keine Wörter"). Eingabe also rohe `(x, y)`. Der Ausgabe-Rect (aus `getRectEx`, Dokument-
+  Koords) wird per Inverse zurück in Window-Koords gerechnet: `x + pageMargin.left`,
+  `y - GetPos() + pageMargin.top` (über `getPageMargins()`) — sonst zeichnete der Marker um den Seitenrand
+  versetzt. **Lokal-only** (kein Server hat Wort-Lesezeichen): Room-Tabelle
   `novel_bookmark` (`NovelBookmarkEntity`, `NovelBookmarkDao`, domain `NovelBookmarkRepository`,
   `RoomNovelBookmarkRepository`), `AppDatabase` 18 → 19 (`MIGRATION_18_19`) — bewusst **nicht** in der
   Sync-Queue. Die Tap-Verdrahtung läuft über die deklarative `ReaderTapZones`-Naht (A1b): Lesezeichen-Modus
   → `tapZones = null` (der Reader macht den Wort-Hit-Test selbst, wie Comic), sonst `HorizontalThirds`.
   Marker-Stil (`BookmarkMarkerStyle{UNDERLINE,MARGIN}`, Setting `bookmark_marker_style`) ist eine
-  Einstellung. **Ist-Vorbehalt:** compile- + unit-verifiziert, `:app:assembleDebug` grün, aber das
-  Runtime-Wort-Tap-/Marker-Verhalten ist **gerätegebunden noch nicht verifiziert** — die crengine-`.so`
-  ist arm64-only und fehlt auf dem x86_64-Emulator; nur eine echte arm64-Boox kann den JNI-Pfad ausführen.
+  Einstellung. **Ist (2026-06-16, auf echter Boox Go Color 7 Gen2 verifiziert):** Tap im Lesezeichen-Modus
+  setzt das Wort-Lesezeichen (per `adb input tap` + `adb logcat -s cr3bridge` bewiesen: `wordAt: HIT` →
+  Eintrag „#1 …" in der Liste); die Wort-Auflösung trifft das angetippte Wort, der Marker ist
+  margin-korrigiert. Der Koordinaten-Fix oben war der eigentliche „markiert keine Wörter"-Bug.
 - **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`
@@ -337,7 +344,11 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Drei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
   (NoOp inert). (1) **Press-Art:** `ButtonEvent` trägt jetzt `press: PressKind {SHORT, LONG}`
   (Default SHORT, quell-kompatibel). `MainActivity` klassifiziert kurze/lange Volume-Drücke über
-  den Android-Long-Press-Lifecycle (`startTracking`/`onKeyLongPress`/`onKeyUp`, Schwelle = System);
+  den Android-Long-Press-Lifecycle (`startTracking`/`onKeyLongPress`/`onKeyUp`). **Korrektur (2026-06-16,
+  auf echter Boox):** die Go Color 7 Gen2 dispatcht `onKeyLongPress` für Volume-Keys **nie** (OEM-quirk —
+  sie sendet Key-Repeats statt des Long-Press-Callbacks; per `adb logcat -s HwButtons` bewiesen). `onKeyUp`
+  hat darum jetzt einen **zeitbasierten Fallback**: `held = event.eventTime - event.downTime`; `held >= 500ms`
+  = Long. `onKeyLongPress` bleibt als sekundärer (sofortiger) Trigger für OEMs, die ihn liefern.
   der pure `volumeButtonEvent(keyCode, longPress)` mappt: kurz → `PAGE_PREV`/`PAGE_NEXT` (Blättern
   unverändert), lang → `VOLUME_UP`/`VOLUME_DOWN` mit `LONG`. Alle drei Reader-VMs ignorieren LONG
   fürs Blättern; der geteilte `ReaderShortcutsViewModel` (eine Stelle, nicht pro-VM) mappt
@@ -366,7 +377,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `ReaderScaffoldState.gestureExclusion` (host-erzwungen, opt-in pro Reader) legt zwei volle Rand-Streifen mit
   `Modifier.systemGestureExclusion()` an → Rand-Wisch geht an den Reader statt System-Zurück (OS-Cap 200dp/Kante,
   reine Markierung ohne `pointerInput` → klaut keine Taps). **Nur Novel-Reader** (`gestureExclusion = true`). Der
-  **System-Home-Wisch (von unten) lässt sich NICHT** deaktivieren (OS-Garantie) — nur die Zurück-Kanten. (5)
+  **System-Home-Wisch (von unten) lässt sich NICHT** deaktivieren (OS-Garantie) — nur die Zurück-Kanten.
+  **Gerätebefund (2026-06-16, echte Boox):** die Go Color 7 läuft in **3-Button-Android-Nav**
+  (`settings get secure navigation_mode == 0`), also gibt es gar keinen Android-Gesten-Nav-Zurück-Wisch —
+  `systemGestureExclusion` ist dort **wirkungslos**. Die „Wisch-zurück/von-unten"-Gesten, über die der Nutzer
+  klagt, sind **Onyx-eigene System-Gesten** (Boox-proprietär), die **kein** Android-API erreicht; sie sind nur
+  in den **Onyx-Systemeinstellungen** abschaltbar. Der Code bleibt (korrekt für echte Android-Gesten-Nav-Geräte). (5)
   **Tasten-Übersicht:** read-only Settings-Sektion `SettingsSectionId.BUTTONS` (`ButtonsSettingsContent`) zeigt die
   zwei Long-Press-Belegungen (lang Lauter→Home, lang Leiser→Full-Refresh), gegated über
   `EinkCapabilities.hasHardwareButtons` (nicht über `displayMode` — Tasten sind physisch). (6) **Bottom-Sheet-Politur:**

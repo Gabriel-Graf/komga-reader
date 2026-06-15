@@ -466,16 +466,19 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeXPointerAtPoint(
     view->checkRender();
     const int pageTop = view->GetPos();
     LOGI("wordAt page=%d in=(%d,%d) pageTop=%d", page, x, y, pageTop);
-    // getNodeByPoint expects document coordinates; page-relative y -> doc y. Retry around the tap so
-    // a tap landing in whitespace between words/lines still resolves the nearest word.
+    // getNodeByPoint expects WINDOW/page-relative coordinates — its windowToDocPoint() maps the point
+    // into the document itself (page mode resolves m_pages[_page]->start). Adding pageTop here would
+    // double-count the page offset and push the point off the page (getNodeByPoint -> null), the
+    // original "tap marks no words" bug — confirmed on a real Boox. Pass the raw page-relative (x,y).
+    // Retry around the tap so whitespace between words/lines still resolves the nearest word.
     static const int DX[] = {0, 8, -8, 0, 0};
     static const int DY[] = {0, 0, 0, 8, -8};
     ldomXPointer ptr;
     for (int i = 0; i < 5 && ptr.isNull(); i++) {
-        ptr = view->getNodeByPoint(lvPoint(x + DX[i], y + pageTop + DY[i]));
+        ptr = view->getNodeByPoint(lvPoint(x + DX[i], y + DY[i]));
     }
     if (ptr.isNull()) {
-        LOGE("wordAt: getNodeByPoint null");
+        LOGE("wordAt: getNodeByPoint null (window-coords)");
         return env->NewStringUTF("");
     }
     ldomXRange wordRange;
@@ -488,18 +491,26 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeXPointerAtPoint(
         LOGE("wordAt: getRectEx empty");
         return env->NewStringUTF("");
     }
+    // getRectEx returns DOCUMENT coordinates (content-relative). Convert back to WINDOW/page-relative
+    // coordinates — the inverse of windowToDocPoint: window.x = doc.x + margin.left,
+    // window.y = (doc.y - pageTop) + margin.top. The page margins are the same offset that
+    // windowToDocPoint subtracted; without re-adding them the marker drew shifted up-left by the
+    // page margin (confirmed on a real Boox: tap at window-y 497 produced a rect at page-rel 382).
+    const lvRect pm = view->getPageMargins();
+    LOGI("wordAt: HIT rect=[%d,%d,%d,%d] win-top=%d margins(l=%d,t=%d)",
+         rect.left, rect.top, rect.right, rect.bottom, rect.top - pageTop + pm.top, pm.left, pm.top);
     lString32 out;
     out.append(wordRange.getStart().toString());
     out.append(1, FIELD_SEP);
     out.append(wordRange.getRangeText());
     out.append(1, FIELD_SEP);
-    out.append(lString32::itoa(rect.left));
+    out.append(lString32::itoa(rect.left + pm.left));
     out.append(1, FIELD_SEP);
-    out.append(lString32::itoa(rect.top - pageTop));
+    out.append(lString32::itoa(rect.top - pageTop + pm.top));
     out.append(1, FIELD_SEP);
-    out.append(lString32::itoa(rect.right));
+    out.append(lString32::itoa(rect.right + pm.left));
     out.append(1, FIELD_SEP);
-    out.append(lString32::itoa(rect.bottom - pageTop));
+    out.append(lString32::itoa(rect.bottom - pageTop + pm.top));
     return env->NewStringUTF(UnicodeToUtf8(out).c_str());
 }
 
@@ -523,6 +534,9 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeRectsForXPointers(
         return env->NewStringUTF("");
     const int pageTop = view->GetPos();
     const int pageBottom = pageTop + view->GetHeight();
+    // Page margins to convert the document-coordinate rects back to window/page-relative coordinates
+    // (same inverse as nativeXPointerAtPoint, so the markers line up with the rendered words).
+    const lvRect pm = view->getPageMargins();
     const int n = env->GetArrayLength(xpointers);
     lString32 out;
     for (int i = 0; i < n; i++) {
@@ -546,13 +560,13 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeRectsForXPointers(
             out.append(1, RECORD_SEP);
         out.append(xpStr);
         out.append(1, FIELD_SEP);
-        out.append(lString32::itoa(rect.left));
+        out.append(lString32::itoa(rect.left + pm.left));
         out.append(1, FIELD_SEP);
-        out.append(lString32::itoa(rect.top - pageTop));
+        out.append(lString32::itoa(rect.top - pageTop + pm.top));
         out.append(1, FIELD_SEP);
-        out.append(lString32::itoa(rect.right));
+        out.append(lString32::itoa(rect.right + pm.left));
         out.append(1, FIELD_SEP);
-        out.append(lString32::itoa(rect.bottom - pageTop));
+        out.append(lString32::itoa(rect.bottom - pageTop + pm.top));
     }
     return env->NewStringUTF(UnicodeToUtf8(out).c_str());
 }

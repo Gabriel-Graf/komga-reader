@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.components.EinkInfoDialog
+import androidx.compose.foundation.layout.Column
 import com.komgareader.ui.icons.AppIcons
 import com.komgareader.domain.render.Chapter
 
@@ -53,39 +53,32 @@ internal fun groupChapters(chapters: List<Chapter>): List<TocGroup> {
 }
 
 /**
- * Roman-Inhaltsverzeichnis ([EinkInfoDialog]): oberste Ebenen mit **faltbaren**
- * Unterkapiteln (per Default **alles zu**). Ein Tap auf den Titel springt zum Anker und
- * schließt; der Chevron links klappt nur auf/zu. Enge Zeilen, **keine** Trennlinien
- * (ein Inhaltsverzeichnis trägt seine Gliederung über Einrückung + Chevron).
- *
- * **Keine Animation** (`animation-gating`). Texte über [LocalStrings] (DE+EN).
+ * Novel table of contents as a frameless list (for the settings bottom sheet, TOC tab): top levels
+ * with foldable children (collapsed by default). Tapping a title jumps to the anchor (via
+ * [onChapterSelected]); the left chevron only folds/unfolds. Tight rows, no dividers. No animation
+ * (animation-gating). Text via [LocalStrings].
  */
 @Composable
-fun NovelTocPanel(
+fun NovelTocList(
     chapters: List<Chapter>,
     onChapterSelected: (String) -> Unit,
-    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val strings = LocalStrings.current
+    if (chapters.isEmpty()) {
+        Text(
+            strings.novelTocEmpty,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier,
+        )
+        return
+    }
 
-    EinkInfoDialog(
-        title = strings.novelToc,
-        onDismiss = onDismiss,
-        closeLabel = strings.close,
-        contentSpacing = 0.dp,
-    ) {
-        if (chapters.isEmpty()) {
-            Text(
-                strings.novelTocEmpty,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            return@EinkInfoDialog
-        }
+    val groups = remember(chapters) { groupChapters(chapters) }
+    var expanded by remember(chapters) { mutableStateOf(emptySet<Int>()) }
 
-        val groups = remember(chapters) { groupChapters(chapters) }
-        var expanded by remember(chapters) { mutableStateOf(emptySet<Int>()) }
-
+    Column(modifier.fillMaxWidth()) {
         groups.forEachIndexed { index, group ->
             TocParentRow(
                 chapter = group.parent,
@@ -94,17 +87,11 @@ fun NovelTocPanel(
                 onToggle = {
                     expanded = if (index in expanded) expanded - index else expanded + index
                 },
-                onSelect = {
-                    onChapterSelected(group.parent.anchor)
-                    onDismiss()
-                },
+                onSelect = { onChapterSelected(group.parent.anchor) },
             )
             if (index in expanded) {
                 group.children.forEach { child ->
-                    TocChildRow(child) {
-                        onChapterSelected(child.anchor)
-                        onDismiss()
-                    }
+                    TocChildRow(child) { onChapterSelected(child.anchor) }
                 }
             }
         }

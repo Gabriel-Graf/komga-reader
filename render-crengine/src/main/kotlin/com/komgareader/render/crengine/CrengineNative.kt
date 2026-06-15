@@ -93,5 +93,17 @@ object CrengineNative {
     /** Serialized search hits: xpointer<US>snippet<RS>... ("" if none). */
     external fun nativeSearch(handle: Long, query: String, maxCount: Int): String
 
+    /**
+     * Word at the page-relative pixel ([x], [y]) on the current page.
+     * Returns "xpointer<US>word<US>left<US>top<US>right<US>bottom" or "" if none.
+     */
+    external fun nativeXPointerAtPoint(handle: Long, x: Int, y: Int): String
+
+    /**
+     * For each of [xpointers] that lies on the current page, a record
+     * "xpointer<US>left<US>top<US>right<US>bottom" (RECORD_SEP-separated); others omitted.
+     */
+    external fun nativeRectsForXPointers(handle: Long, xpointers: Array<String>): String
+
     external fun nativeClose(handle: Long)
 }

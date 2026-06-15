@@ -2,11 +2,13 @@ package com.komgareader.render.crengine
 
 import android.graphics.Bitmap
 import com.komgareader.domain.render.Chapter
+import com.komgareader.domain.render.IntRect
 import com.komgareader.domain.render.PageSize
 import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.ReflowableDocument
 import com.komgareader.domain.render.RenderedPage
 import com.komgareader.domain.render.SearchHit
+import com.komgareader.domain.render.WordHit
 
 /**
  * crengine-ng-Implementierung der reflowbaren Render-Naht (Naht B, nur EPUB).
@@ -116,6 +118,32 @@ class CrengineDocument(
                 snippet = fields.getOrElse(1) { "" },
             )
         }
+
+    override fun wordAt(x: Int, y: Int): WordHit? {
+        val raw = CrengineNative.nativeXPointerAtPoint(handle, x, y)
+        if (raw.isEmpty()) return null
+        val f = raw.split(FIELD_SEP)
+        if (f.size < 6) return null
+        return WordHit(
+            xpointer = f[0],
+            word = f[1],
+            rect = IntRect(f[2].toInt(), f[3].toInt(), f[4].toInt(), f[5].toInt()),
+        )
+    }
+
+    override fun rectsFor(xpointers: List<String>): Map<String, IntRect> {
+        if (xpointers.isEmpty()) return emptyMap()
+        val raw = CrengineNative.nativeRectsForXPointers(handle, xpointers.toTypedArray())
+        if (raw.isEmpty()) return emptyMap()
+        return raw.split(RECORD_SEP).filter { it.isNotEmpty() }.mapNotNull { rec ->
+            val ff = rec.split(FIELD_SEP)
+            if (ff.size < 5) {
+                null
+            } else {
+                ff[0] to IntRect(ff[1].toInt(), ff[2].toInt(), ff[3].toInt(), ff[4].toInt())
+            }
+        }.toMap()
+    }
 
     override fun close() {
         CrengineNative.nativeClose(handle)

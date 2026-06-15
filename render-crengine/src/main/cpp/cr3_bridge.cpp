@@ -432,6 +432,99 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeSearch(
     return env->NewStringUTF(UnicodeToUtf8(out).c_str());
 }
 
+/*
+ * Word at the page-relative pixel ([x], [y]) on the current page. Serialized as
+ *   xpointer<US>word<US>left<US>top<US>right<US>bottom
+ * ("" if there is no word at the point). The rect is page-relative (the caller's
+ * coordinate space), so view->GetPos() is added going into getNodeByPoint and
+ * subtracted out of the returned rect.
+ */
+JNIEXPORT jstring JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeXPointerAtPoint(
+        JNIEnv* env, jobject /*thiz*/, jlong handle, jint x, jint y) {
+    auto* view = reinterpret_cast<LVDocView*>(handle);
+    if (view == nullptr)
+        return env->NewStringUTF("");
+    view->checkRender();
+    const int pageTop = view->GetPos();
+    // getNodeByPoint expects document coordinates; page-relative y -> doc y.
+    lvPoint pt(x, y + pageTop);
+    ldomXPointer ptr = view->getNodeByPoint(pt);
+    if (ptr.isNull())
+        return env->NewStringUTF("");
+    ldomXRange wordRange;
+    if (!ldomXRange::getWordRange(wordRange, ptr))
+        return env->NewStringUTF("");
+    lvRect rect;
+    if (!wordRange.getRectEx(rect) || rect.isEmpty())
+        return env->NewStringUTF("");
+    lString32 out;
+    out.append(wordRange.getStart().toString());
+    out.append(1, FIELD_SEP);
+    out.append(wordRange.getRangeText());
+    out.append(1, FIELD_SEP);
+    out.append(lString32::itoa(rect.left));
+    out.append(1, FIELD_SEP);
+    out.append(lString32::itoa(rect.top - pageTop));
+    out.append(1, FIELD_SEP);
+    out.append(lString32::itoa(rect.right));
+    out.append(1, FIELD_SEP);
+    out.append(lString32::itoa(rect.bottom - pageTop));
+    return env->NewStringUTF(UnicodeToUtf8(out).c_str());
+}
+
+/*
+ * For each of [xpointers] that lies on the current page, one record
+ *   xpointer<US>left<US>top<US>right<US>bottom
+ * (RECORD_SEP-separated); xpointers off the current page or that don't resolve
+ * are omitted. Rects are page-relative (view->GetPos() subtracted).
+ */
+JNIEXPORT jstring JNICALL
+Java_com_komgareader_render_crengine_CrengineNative_nativeRectsForXPointers(
+        JNIEnv* env, jobject /*thiz*/, jlong handle, jobjectArray xpointers) {
+    auto* view = reinterpret_cast<LVDocView*>(handle);
+    if (view == nullptr)
+        return env->NewStringUTF("");
+    view->checkRender();
+    ldomDocument* doc = view->getDocument();
+    if (doc == nullptr)
+        return env->NewStringUTF("");
+    const int pageTop = view->GetPos();
+    const int pageBottom = pageTop + view->GetHeight();
+    const int n = env->GetArrayLength(xpointers);
+    lString32 out;
+    for (int i = 0; i < n; i++) {
+        auto js = (jstring) env->GetObjectArrayElement(xpointers, i);
+        if (js == nullptr)
+            continue;
+        const char* c = env->GetStringUTFChars(js, nullptr);
+        lString32 xpStr = Utf8ToUnicode(lString8(c));
+        env->ReleaseStringUTFChars(js, c);
+        env->DeleteLocalRef(js);
+        ldomXPointer ptr = doc->createXPointer(xpStr);
+        if (ptr.isNull())
+            continue;
+        lvRect rect;
+        if (!ptr.getRect(rect) || rect.isEmpty())
+            continue;
+        // Skip xpointers that don't intersect the current page vertically.
+        if (rect.bottom <= pageTop || rect.top >= pageBottom)
+            continue;
+        if (!out.empty())
+            out.append(1, RECORD_SEP);
+        out.append(xpStr);
+        out.append(1, FIELD_SEP);
+        out.append(lString32::itoa(rect.left));
+        out.append(1, FIELD_SEP);
+        out.append(lString32::itoa(rect.top - pageTop));
+        out.append(1, FIELD_SEP);
+        out.append(lString32::itoa(rect.right));
+        out.append(1, FIELD_SEP);
+        out.append(lString32::itoa(rect.bottom - pageTop));
+    }
+    return env->NewStringUTF(UnicodeToUtf8(out).c_str());
+}
+
 JNIEXPORT void JNICALL
 Java_com_komgareader_render_crengine_CrengineNative_nativeClose(
         JNIEnv* /*env*/, jobject /*thiz*/, jlong handle) {

@@ -337,6 +337,15 @@ class MapBackedStrings(
     override val novelPageOfCount: String get() = overrides["novelPageOfCount"] ?: fallback.novelPageOfCount
     override val novelToc: String get() = overrides["novelToc"] ?: fallback.novelToc
     override val novelTocEmpty: String get() = overrides["novelTocEmpty"] ?: fallback.novelTocEmpty
+    override val novelBookmarks: String get() = overrides["novelBookmarks"] ?: fallback.novelBookmarks
+    override val novelBookmarkMode: String get() = overrides["novelBookmarkMode"] ?: fallback.novelBookmarkMode
+    override val novelBookmarkRename: String get() = overrides["novelBookmarkRename"] ?: fallback.novelBookmarkRename
+    override val novelBookmarkDelete: String get() = overrides["novelBookmarkDelete"] ?: fallback.novelBookmarkDelete
+    override val novelBookmarksEmpty: String get() = overrides["novelBookmarksEmpty"] ?: fallback.novelBookmarksEmpty
+    override fun novelBookmarkNumber(n: Int): String =
+        overrides["novelBookmarkNumber"]?.replace("{n}", n.toString()) ?: fallback.novelBookmarkNumber(n)
+    override val novelBookmarkMarkerUnderline: String get() = overrides["novelBookmarkMarkerUnderline"] ?: fallback.novelBookmarkMarkerUnderline
+    override val novelBookmarkMarkerMargin: String get() = overrides["novelBookmarkMarkerMargin"] ?: fallback.novelBookmarkMarkerMargin
     override val novelSearch: String get() = overrides["novelSearch"] ?: fallback.novelSearch
     override val novelSearchPlaceholder: String get() = overrides["novelSearchPlaceholder"] ?: fallback.novelSearchPlaceholder
     override val novelSearchEmpty: String get() = overrides["novelSearchEmpty"] ?: fallback.novelSearchEmpty

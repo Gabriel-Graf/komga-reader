@@ -349,6 +349,15 @@ interface Strings {
     // Roman-Inhaltsverzeichnis
     val novelToc: String
     val novelTocEmpty: String
+    // Roman-Lesezeichen
+    val novelBookmarks: String
+    val novelBookmarkMode: String
+    val novelBookmarkRename: String
+    val novelBookmarkDelete: String
+    val novelBookmarksEmpty: String
+    fun novelBookmarkNumber(n: Int): String
+    val novelBookmarkMarkerUnderline: String
+    val novelBookmarkMarkerMargin: String
     // Roman-Volltextsuche + Gehe-zu-%
     val novelSearch: String
     val novelSearchPlaceholder: String
@@ -714,6 +723,14 @@ object StringsDe : Strings {
     override val novelPageOfCount = "Seite"
     override val novelToc = "Inhaltsverzeichnis"
     override val novelTocEmpty = "Kein Inhaltsverzeichnis vorhanden."
+    override val novelBookmarks = "Lesezeichen"
+    override val novelBookmarkMode = "Lesezeichen-Modus"
+    override val novelBookmarkRename = "Umbenennen"
+    override val novelBookmarkDelete = "Löschen"
+    override val novelBookmarksEmpty = "Noch keine Lesezeichen"
+    override fun novelBookmarkNumber(n: Int) = "#$n"
+    override val novelBookmarkMarkerUnderline = "Unterstreichung"
+    override val novelBookmarkMarkerMargin = "Rand-Marker"
     override val novelSearch = "Suche"
     override val novelSearchPlaceholder = "Im Buch suchen…"
     override val novelSearchEmpty = "Suchbegriff eingeben und bestätigen."
@@ -1073,6 +1090,14 @@ object StringsEn : Strings {
     override val novelPageOfCount = "Page"
     override val novelToc = "Table of contents"
     override val novelTocEmpty = "No table of contents available."
+    override val novelBookmarks = "Bookmarks"
+    override val novelBookmarkMode = "Bookmark mode"
+    override val novelBookmarkRename = "Rename"
+    override val novelBookmarkDelete = "Delete"
+    override val novelBookmarksEmpty = "No bookmarks yet"
+    override fun novelBookmarkNumber(n: Int) = "#$n"
+    override val novelBookmarkMarkerUnderline = "Underline"
+    override val novelBookmarkMarkerMargin = "Margin marker"
     override val novelSearch = "Search"
     override val novelSearchPlaceholder = "Search in book…"
     override val novelSearchEmpty = "Enter a search term and confirm."

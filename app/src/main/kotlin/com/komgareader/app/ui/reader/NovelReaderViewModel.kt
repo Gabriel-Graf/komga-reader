@@ -10,15 +10,22 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
+import com.komgareader.domain.model.BookmarkMarkerStyle
+import com.komgareader.domain.model.NovelBookmark
 import com.komgareader.domain.render.Chapter
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.render.NovelSettings
 import com.komgareader.domain.render.ReflowConfig
 import com.komgareader.domain.render.ReflowableDocument
 import com.komgareader.domain.render.ReflowableDocumentFactory
+import com.komgareader.domain.render.IntRect
 import com.komgareader.domain.render.SearchHit
+import com.komgareader.domain.render.WordHit
+import com.komgareader.domain.repository.NovelBookmarkRepository
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.domain.usecase.ToggleResult
+import com.komgareader.domain.usecase.toggleBookmark
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +79,7 @@ class NovelReaderViewModel @Inject constructor(
     private val bus: HardwareButtonBus,
     private val settings: SettingsRepository,
     private val novelProgress: NovelProgressRepository,
+    private val bookmarks: NovelBookmarkRepository,
     private val catalog: PluginCatalog,
     @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel(), Viewer {
@@ -152,6 +160,21 @@ class NovelReaderViewModel @Inject constructor(
     val progressPercent: StateFlow<Int> = _uiState
         .map { percentOf(it.currentPage, it.pageCount) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    /** Local-only bookmarks of this work (Naht A, never synced). */
+    val bookmarksFlow: StateFlow<List<NovelBookmark>> =
+        bookmarks.observe(routeSourceId, bookId)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Ephemeral toggle: tapping a word sets/removes its bookmark while on. */
+    private val _bookmarkMode = MutableStateFlow(false)
+    val bookmarkMode: StateFlow<Boolean> = _bookmarkMode.asStateFlow()
+    fun toggleBookmarkMode() { _bookmarkMode.value = !_bookmarkMode.value }
+
+    /** How set bookmarks are drawn on the page (persisted setting). */
+    val markerStyle: StateFlow<String> =
+        settings.bookmarkMarkerStyle
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BookmarkMarkerStyle.UNDERLINE.name)
 
     private var document: ReflowableDocument? = null
     private val renderCache = mutableMapOf<Int, Bitmap>()
@@ -411,6 +434,44 @@ class NovelReaderViewModel @Inject constructor(
             withContext(Dispatchers.IO) { doc.search(query) }
         }
     }
+
+    /** Tap at page-relative pixel ([x],[y]) in bookmark mode: set or remove the word's bookmark. */
+    fun onWordTap(x: Int, y: Int) {
+        viewModelScope.launch {
+            val hit: WordHit = documentMutex.withLock {
+                val doc = document ?: return@launch
+                withContext(Dispatchers.IO) { doc.wordAt(x, y) }
+            } ?: return@launch
+            when (val r = toggleBookmark(bookmarksFlow.value, hit.xpointer)) {
+                is ToggleResult.Remove -> bookmarks.remove(r.id)
+                is ToggleResult.Set -> bookmarks.add(
+                    NovelBookmark(
+                        id = 0, sourceId = routeSourceId, bookId = bookId,
+                        xpointer = hit.xpointer, number = r.number, label = null,
+                        snippet = hit.word, createdAt = System.currentTimeMillis(),
+                    ),
+                )
+            }
+        }
+    }
+
+    /** Page-relative rects of the bookmarks that fall on the currently rendered page. */
+    suspend fun bookmarkRectsForCurrentPage(): Map<String, IntRect> {
+        val xps = bookmarksFlow.value.map { it.xpointer }
+        if (xps.isEmpty()) return emptyMap()
+        return documentMutex.withLock {
+            val doc = document ?: return emptyMap()
+            withContext(Dispatchers.IO) { doc.rectsFor(xps) }
+        }
+    }
+
+    /** Jump to a bookmark's (layout-independent) anchor — same path as TOC/search. */
+    fun jumpToBookmark(xpointer: String) = goToAnchor(xpointer)
+
+    fun renameBookmark(id: Long, label: String?) =
+        viewModelScope.launch { bookmarks.rename(id, label?.ifBlank { null }) }
+
+    fun deleteBookmark(id: Long) = viewModelScope.launch { bookmarks.remove(id) }
 
     override fun onPageSettled(page: Int) {
         if (page != _uiState.value.currentPage) {

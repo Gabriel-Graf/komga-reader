@@ -25,7 +25,7 @@ behind a seam so it can grow by *addition*, never by core rewrite.
 │  KomgaSource (REST)         │      │  MuPDF (JNI) → Bitmap   [render-core]│
 │  OpdsSource                 │      │  crengine-ng reflow [render-crengine]│
 │  Plugin sources (APK, TOFU) │      │  OnyxEinkController / NoOp [eink-onyx]│
-│  SourceManager + StubSource │      │  RefreshScheduler (device-managed)   │
+│  SourceManager + StubSource │      │  EinkContextController (EinkWise)    │
 └─────────────────────────────┘      └──────────────────────────────────────┘
 ```
 
@@ -124,19 +124,21 @@ in the `app/data` wiring layer — never in a ViewModel, a UI file, or `domain`.
   via `Build.MANUFACTURER`) and `NoOpEinkController` as the off‑device fallback — development
   never crashes on non‑Boox hardware. It carries `EinkCapabilities` (hasEink / canColor /
   canInvert).
-- The refresh **decision** (partial while paging, full promotion against ghosting) lives in the
-  device‑independent, unit‑tested `RefreshScheduler`. By default the setting
-  `deviceManagedRefresh` is on, so the Onyx device handles full refresh and the scheduler is a
-  no‑op fallback. (`RefreshScheduler` is `@Deprecated` and slated for removal once the
-  device‑managed path is the only one.)
+- The refresh mode and system colour mode are applied **per reading context** via the Onyx EinkWise
+  API. The pure `resolveEinkProfile` merges a user override over the device default per axis; the
+  `@Singleton EinkContextController` resolves it and calls `applyRefreshMode` / `applyColorMode`, and
+  the `EinkContextEffect(context)` composable re‑applies on resume. Each screen declares its
+  `EinkContext` (HOME/PAGED/WEBTOON/COMIC/NOVEL). Settings exposes an "E‑Ink Dynamik" matrix
+  (context × {refresh, colour}), shown only on Boox. (The earlier device‑independent
+  `RefreshScheduler` and the `deviceManagedRefresh` setting were removed 2026‑06‑13.)
 
 ### The `Viewer` contract & shared reader scaffold
 
 `app/ui/reader/Viewer.kt` is a **Compose‑state** seam (a `chromeVisible` flow,
-`toggleChrome` / `navigateTo` / `onPageSettled`, a shared `RefreshScheduler`) — not an OO
-bind/teardown lifecycle (Compose manages that declaratively). All reader ViewModels implement it,
-and the shared `ReaderScaffold` works against it. There is **one** `RefreshScheduler` per reader
-session, shared by all readers.
+`toggleChrome` / `navigateTo` / `onPageSettled`) — not an OO bind/teardown lifecycle (Compose
+manages that declaratively). All reader ViewModels implement it, and the shared `ReaderScaffold`
+works against it. E‑Ink refresh is **not** part of the `Viewer` seam — it runs through the
+context‑based `EinkContextController` path described above.
 
 Four reading modes (`ViewerType`: `PAGED`, `WEBTOON`, `NOVEL`, `COMIC`) are dispatched in
 `ReaderRoute.kt`. The **guided comic** reader (`ComicReaderScreen` + `ComicReaderViewModel`) does
@@ -221,7 +223,7 @@ brightness before display:
 
 ## 8. Data, sync & offline
 
-- Room persistence in `data`, **schema v18**. Every record carries a `sourceId` (local source =
+- Room persistence in `data`, **schema v19**. Every record carries a `sourceId` (local source =
   id 0), so a source going away degrades to `StubSource` with no schema change. `SourceId.EXTERNAL = 1L`
   is a reserved **transient** id: externally "opened" files (§3) live as short‑lived download rows that
   `ExternalBookOpener.purgeTransient` clears on app start; `LocalDownloadSync` touches only `LOCAL` rows.

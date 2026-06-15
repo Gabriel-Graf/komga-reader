@@ -14,7 +14,7 @@ webtoons, panel‑by‑panel "guided" comics and reflowable e‑books, and is bu
 **new sources, new devices and even whole new UIs can be added behind stable seams —
 without touching the core.** Maximum flexibility is the explicit north‑star goal.
 
-> **Status:** early but substantial (`versionName 0.1.0`). The architecture is in place
+> **Status:** early but substantial (`versionName 0.3.x`, latest release `v0.3.3`). The architecture is in place
 > and proven; the app runs on real hardware. See [Project Status](docs/PROJECT-STATUS.md)
 > for an honest, evidence‑backed assessment of what is done, what is missing, and what is
 > still blocked.
@@ -76,7 +76,7 @@ See the [Feature status matrix](docs/PROJECT-STATUS.md#1-goal-by-goal-scorecard)
 │  KomgaSource (REST)         │      │  MuPDF (JNI) → Bitmap   [render-core]│
 │  OpdsSource                 │      │  crengine-ng reflow  [render-crengine]│
 │  Plugin sources (APK, TOFU) │      │  OnyxEinkController / NoOp [eink-onyx]│
-│  SourceManager + StubSource │      │  RefreshScheduler (device-managed)   │
+│  SourceManager + StubSource │      │  EinkContextController (EinkWise)    │
 └─────────────────────────────┘      └──────────────────────────────────────┘
 ```
 

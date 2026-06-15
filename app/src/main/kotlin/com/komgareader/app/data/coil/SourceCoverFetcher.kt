@@ -7,6 +7,7 @@ import coil.fetch.FetchResult
 import coil.fetch.Fetcher
 import coil.fetch.SourceResult
 import coil.request.Options
+import com.komgareader.app.data.LocalCoverRenderer
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SourceManager
 import okio.Buffer
@@ -30,10 +31,14 @@ class SourceCoverFetcher(
     private val model: SourceCover,
     private val options: Options,
     private val sources: SourceManager,
+    private val localCover: LocalCoverRenderer,
 ) : Fetcher {
 
     override suspend fun fetch(): FetchResult {
-        val bytes = loadCoverBytes(model, sources)
+        // Primary: the source's own cover bytes (Komga thumbnail, CBZ first image, …). When empty —
+        // notably a renderer-free LOCAL PDF/EPUB/CBR work — fall back to rendering the first page.
+        val primary = runCatching { loadCoverBytes(model, sources) }.getOrDefault(ByteArray(0))
+        val bytes = if (primary.isNotEmpty()) primary else localCover.render(model) ?: primary
         return SourceResult(
             source = ImageSource(
                 source = Buffer().apply { write(bytes) },
@@ -45,8 +50,11 @@ class SourceCoverFetcher(
     }
 
     /** Coil-Komponente: erzeugt für jedes [SourceCover] einen [SourceCoverFetcher]. */
-    class Factory(private val sources: SourceManager) : Fetcher.Factory<SourceCover> {
+    class Factory(
+        private val sources: SourceManager,
+        private val localCover: LocalCoverRenderer,
+    ) : Fetcher.Factory<SourceCover> {
         override fun create(data: SourceCover, options: Options, imageLoader: ImageLoader): Fetcher =
-            SourceCoverFetcher(data, options, sources)
+            SourceCoverFetcher(data, options, sources, localCover)
     }
 }

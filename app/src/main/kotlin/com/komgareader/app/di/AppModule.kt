@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import coil.ImageLoader
 import com.komgareader.plugin.host.PluginHost
+import com.komgareader.app.data.LocalCoverRenderer
 import com.komgareader.app.data.coil.SourceCoverFetcher
 import com.komgareader.app.data.coil.SourcePageFetcher
 import com.komgareader.app.di.ApplicationScope
@@ -50,11 +51,12 @@ object AppModule {
     fun imageLoader(
         @ApplicationContext ctx: Context,
         sources: SourceManager,
+        localCover: LocalCoverRenderer,
     ): ImageLoader =
         ImageLoader.Builder(ctx)
             .components {
                 add(SourcePageFetcher.Factory(sources))
-                add(SourceCoverFetcher.Factory(sources))
+                add(SourceCoverFetcher.Factory(sources, localCover))
             }
             .build()
 

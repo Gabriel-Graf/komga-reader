@@ -43,7 +43,13 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (hängt **nicht** an `render-core`): eine CBZ-Seite *ist* eine gespeicherte Bilddatei, daher liefert
   `openPage` den rohen Zip-Eintrag (`java.util.zip`, kein Decode); für PDF/CBR/EPUB gibt `pages()`
   `emptyList()` zurück → der Reader rendert whole-file (s. u. „Reader-Lesepfad"). `SyncingSource`
-  wird **nicht** implementiert (kein Server zum Syncen — Fortschritt bleibt lokal). Metadaten
+  wird **nicht** implementiert (kein Server zum Syncen — Fortschritt bleibt lokal). **Cover (Ist,
+  2026-06-15):** `coverBytes` liefert nur für **CBZ** Bytes (erstes Zip-Bild); für PDF/EPUB/CBR
+  gibt es ByteArray(0), weil das Rendern eine Engine braucht und `:source-local` renderer-frei
+  bleibt. Das Cover dieser Formate entsteht daher in der **App-Schicht**: `LocalCoverRenderer`
+  (`app/data`) rendert als **Fallback** im `SourceCoverFetcher` (Coil) die erste Seite via
+  `DocumentFactory` (MuPDF) — greift nur bei leeren Primär-Bytes + `sourceId == LOCAL`, sonst
+  unverändert. Metadaten
   best-effort: Dateiname als Basis, `seriesDetail` reichert aus der **ersten** CBZ-`ComicInfo.xml`
   an (ein Materialize, nicht pro Buch — sonst kopierte ein Listing jede Datei). **Wichtig — opake
   remoteIds:** lokale Pfade enthalten `/`, die App fädelt remoteIds aber als einzelne Nav-Pfad-Segmente

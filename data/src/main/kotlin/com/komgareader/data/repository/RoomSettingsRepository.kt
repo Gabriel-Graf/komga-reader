@@ -54,8 +54,9 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.observe(KEY_NOVEL_FONT_FAMILY).map { it ?: NovelFonts.DEFAULT }
     override val novelTextAlign: Flow<String> =
         dao.observe(KEY_NOVEL_TEXT_ALIGN).map { it ?: "JUSTIFY" }
+    // Default "auto": resolves to off for unknown/unbundled languages; safe for existing users.
     override val novelHyphenationLang: Flow<String> =
-        dao.observe(KEY_NOVEL_HYPHENATION).map { it ?: "" }
+        dao.observe(KEY_NOVEL_HYPHENATION).map { it ?: "auto" }
     override val novelFontWeight: Flow<Int> =
         dao.observe(KEY_NOVEL_FONT_WEIGHT).map { it?.toIntOrNull() ?: 400 }
     // Default true: das offizielle Plugin-Repo wird im Browser standardmäßig geladen.

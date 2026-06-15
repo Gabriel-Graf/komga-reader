@@ -119,30 +119,9 @@ fun NovelTypographyControls(
         )
 
         PanelDivider()
-        PanelSectionHeader(strings.novelHyphenation)
-        ChoiceRow(
-            label = strings.novelHyphenationAuto,
-            selected = hyphenationLang == "auto",
-            dense = true,
-            onSelect = { onHyphenation("auto") },
-        )
-        ChoiceRow(
-            label = strings.novelHyphenationOff,
-            selected = hyphenationLang.isBlank(),
-            dense = true,
-            onSelect = { onHyphenation("") },
-        )
-        ChoiceRow(
-            label = strings.novelHyphenationDe,
-            selected = hyphenationLang == "de",
-            dense = true,
-            onSelect = { onHyphenation("de") },
-        )
-        ChoiceRow(
-            label = strings.novelHyphenationEn,
-            selected = hyphenationLang == "en",
-            dense = true,
-            onSelect = { onHyphenation("en") },
+        HyphenationPicker(
+            value = hyphenationLang,
+            onValue = onHyphenation,
         )
 
         PanelDivider()

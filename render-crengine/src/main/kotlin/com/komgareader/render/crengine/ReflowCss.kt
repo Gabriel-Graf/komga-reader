@@ -51,10 +51,36 @@ object ReflowCss {
      *
      * Nur Sprachen mit gebündeltem Muster-Wörterbuch; alle anderen fallen auf
      * [HYPH_DICT_ID_ALGORITHM] (generische, regelbasierte Trennung) zurück.
+     *
+     * Keys are the BCP-47 base codes from [com.komgareader.domain.render.HyphenationLanguages.SUPPORTED];
+     * values are the bundled `.pattern` asset filenames under `hyph/`. A parity test
+     * ([HyphenationParityTest]) guards that both lists stay in sync.
      */
-    private val PATTERN_DICTS: Map<String, String> = mapOf(
+    internal val PATTERN_DICTS: Map<String, String> = mapOf(
+        "ar" to "hyph-ar.pattern",
+        "bg" to "hyph-bg.pattern",
+        "bn" to "hyph-bn.pattern",
+        "cs" to "hyph-cs.pattern",
+        "da" to "hyph-da.pattern",
         "de" to "hyph-de-1996.pattern",
+        "el" to "hyph-el-monoton.pattern",
         "en" to "hyph-en-us.pattern",
+        "es" to "hyph-es.pattern",
+        "fa" to "hyph-fa.pattern",
+        "fi" to "hyph-fi.pattern",
+        "fr" to "hyph-fr.pattern",
+        "gu" to "hyph-gu.pattern",
+        "hu" to "hyph-hu.pattern",
+        "it" to "hyph-it.pattern",
+        "mr" to "hyph-mr.pattern",
+        "nl" to "hyph-nl.pattern",
+        "pa" to "hyph-pa.pattern",
+        "pl" to "hyph-pl.pattern",
+        "pt" to "hyph-pt.pattern",
+        "ru" to "hyph-ru-ru.pattern",
+        "ta" to "hyph-ta.pattern",
+        "te" to "hyph-te.pattern",
+        "uk" to "hyph-uk.pattern",
     )
 
     /**

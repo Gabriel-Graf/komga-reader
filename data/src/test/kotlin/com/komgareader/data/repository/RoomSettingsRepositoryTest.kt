@@ -105,9 +105,9 @@ class RoomSettingsRepositoryTest {
     }
 
     @Test
-    fun `novelHyphenationLang default ist leer ohne gesetzten Wert`() = runTest {
+    fun `novelHyphenationLang default ist auto ohne gesetzten Wert`() = runTest {
         val repo = RoomSettingsRepository(FakeSettingsDao())
-        assertEquals("", repo.novelHyphenationLang.first())
+        assertEquals("auto", repo.novelHyphenationLang.first())
     }
 
     @Test
@@ -115,6 +115,10 @@ class RoomSettingsRepositoryTest {
         val repo = RoomSettingsRepository(FakeSettingsDao())
         repo.setNovelHyphenationLang("de")
         assertEquals("de", repo.novelHyphenationLang.first())
+    }
+
+    @Test fun `novel hyphenation defaults to auto when unset`() = runTest {
+        assertEquals("auto", RoomSettingsRepository(FakeSettingsDao()).novelHyphenationLang.first())
     }
 
     @Test

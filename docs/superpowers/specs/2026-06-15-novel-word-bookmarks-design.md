@@ -1,8 +1,30 @@
 # Novel Word Bookmarks — Design
 
 Date: 2026-06-15
-Status: Approved (brainstorming)
+Status: Implemented (Ist 2026-06-15) — built, compile- + unit-verified, full `:app:assembleDebug` green.
+Runtime word-tap / marker behaviour is **device-verification pending** (the crengine `.so` is
+arm64-only and absent on the x86_64 emulator, so the JNI `wordAt`/`rectsFor` path can only be
+exercised on a real arm64 Boox).
 Scope: one implementation plan.
+
+## Ist (2026-06-15)
+
+Built across the three additive seam homes as designed:
+- **Seam B / render:** `ReflowableDocument.wordAt(x, y): WordHit?` + `rectsFor(xpointers): Map<String, IntRect>`
+  (engine-neutral `WordHit`/`IntRect` in `domain/render/Document.kt`, default no-op); crengine impl
+  `CrengineDocument.wordAt`/`rectsFor` over two new JNI methods `CrengineNative.nativeXPointerAtPoint`
+  / `nativeRectsForXPointers` (`render-crengine/.../cr3_bridge.cpp`). Jumping reuses the existing
+  `goToAnchor`/`seekToAnchor`.
+- **Data (local-only):** Room table `novel_bookmark` (`NovelBookmarkEntity`, `NovelBookmarkDao`,
+  domain `NovelBookmarkRepository`, `RoomNovelBookmarkRepository`); `AppDatabase` 17 → 18 with
+  `MIGRATION_17_18`. Deliberately **not** registered with the sync queue (no server has per-word bookmarks).
+- **Settings:** `BookmarkMarkerStyle { UNDERLINE, MARGIN }`, `SettingsRepository.bookmarkMarkerStyle`
+  (Room key `bookmark_marker_style`, no migration), picker in the Novel settings section.
+- **App/UI:** `NovelReaderViewModel` (bookmark flow, bookmark-mode toggle, word-tap toggle, jump /
+  rename / delete, per-page marker rects), `NovelBookmarkPanel`, `NovelReaderScreen`. Tap integration
+  via the declarative `ReaderTapZones` seam: bookmark mode → `tapZones = null` (the reader hit-tests
+  words itself, like Comic); off → `HorizontalThirds`. i18n keys (`novelBookmarks`/`novelBookmarkMode`/…)
+  in all four `Strings` impls (de + en). E-Ink: markers monochrome black, no animation, immediate mode switch.
 
 ## Goal
 

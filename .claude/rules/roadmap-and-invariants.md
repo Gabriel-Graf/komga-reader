@@ -23,6 +23,13 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
   **comic-cutter** über `PanelSourceProvider` — geometrisch per Default, **ML via ONNX** bei
   installiertem `PANEL_MODEL`-Plugin + `useMlDetection`. (Das frühere „UI fehlt noch"-Item ist
   damit erledigt — die UI ist längst da.)
+- **Roman-Wort-Lesezeichen — gebaut (Ist, 2026-06-15; Runtime gerätegebunden offen):** Tap-auf-Wort
+  setzt/entfernt im Roman-Reader ein nummeriertes Lesezeichen (liste/umbenennen/löschen/anspringen,
+  Marker auf der Seite). Render-Naht-Erweiterung `ReflowableDocument.wordAt`/`rectsFor` (+ zwei neue JNI),
+  lokal-only Room-Tabelle `novel_bookmark` (`MIGRATION_17_18`, **nicht** synchronisiert). Compile- +
+  unit-verifiziert, `:app:assembleDebug` grün; das **Runtime-Wort-Tap-/Marker-Verhalten** ist mangels
+  arm64-crengine-`.so` auf dem Emulator **nur auf echter Boox verifizierbar** (noch ausstehend). Details:
+  `architecture-seams.md` (Naht B).
 - **Bekannte Minor-Issues** (siehe [[project-komga-eink-reader]]): Reader fängt Volume-Tasten global ab
   (sollte nur im Reader); Streaming-PagedViewer nutzt Komga-fertige Seitenbilder via Coil, nicht MuPDF.
 - **Plugin-Bereitschaft wahren:** keine quellenspezifischen Annahmen ins `MediaSource`-Interface backen

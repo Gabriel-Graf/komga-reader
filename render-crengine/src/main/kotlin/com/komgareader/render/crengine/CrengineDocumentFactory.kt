@@ -104,8 +104,11 @@ class CrengineDocumentFactory(
         return out
     }
 
-    private companion object {
-        /** Gebündelte Silbentrennungs-Muster (Assets unter `hyph/`). */
-        val HYPH_PATTERNS = listOf("hyph-de-1996.pattern", "hyph-en-us.pattern")
+    internal companion object {
+        /** Bundled hyphenation pattern files (assets under `hyph/`) — derived from the one map. */
+        val HYPH_PATTERNS = ReflowCss.PATTERN_DICTS.values.toList()
+
+        /** Test accessor for the parity guard. */
+        fun hyphPatternFiles(): List<String> = HYPH_PATTERNS
     }
 }

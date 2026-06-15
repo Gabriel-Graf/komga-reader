@@ -82,13 +82,14 @@ class ReflowCssTest {
 
     @Test
     fun hyphenation_unbekannte_sprache_faellt_auf_algorithmische_trennung_zurueck() {
-        // Für Sprachen ohne gebündeltes Muster-Wörterbuch bleibt der generische
-        // @algorithm-Pfad erhalten (immer noch echte Trennung, nur geringere Qualität).
+        // For languages without a bundled pattern dictionary the generic @algorithm
+        // fallback is used (real hyphenation, lower quality). Use "ja" — a language
+        // not in HyphenationLanguages.SUPPORTED and therefore not in PATTERN_DICTS.
         val props = ReflowCss.toProperties(
-            ReflowConfig(hyphenation = Hyphenation.Language("fr")),
+            ReflowConfig(hyphenation = Hyphenation.Language("ja")),
         )
         assertEquals("@algorithm", props["crengine.hyphenation.directory"])
-        assertEquals("fr", props["crengine.textlang.main.lang"])
+        assertEquals("ja", props["crengine.textlang.main.lang"])
         assertEquals("1", props["crengine.textlang.hyphenation.enabled"])
     }
 

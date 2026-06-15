@@ -11,6 +11,7 @@ import com.komgareader.domain.eink.EinkContext
 import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.EinkModeOption
+import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.model.SourceKind
@@ -68,6 +69,8 @@ class SettingsViewModel @Inject constructor(
     val novelTextAlign = settings.novelTextAlign.stateIn(viewModelScope, SharingStarted.Eagerly, "JUSTIFY")
     val novelHyphenationLang = settings.novelHyphenationLang.stateIn(viewModelScope, SharingStarted.Eagerly, "")
     val novelFontWeight = settings.novelFontWeight.stateIn(viewModelScope, SharingStarted.Eagerly, 400)
+    val bookmarkMarkerStyle =
+        settings.bookmarkMarkerStyle.stateIn(viewModelScope, SharingStarted.Eagerly, BookmarkMarkerStyle.UNDERLINE.name)
     /** Alle konfigurierten Server (mehrere gleichzeitig, gemischte Quellenarten). */
     val serverList = servers.configs.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val activeColorProfile = colorProfiles.observeActive()
@@ -154,6 +157,8 @@ class SettingsViewModel @Inject constructor(
     fun setNovelTextAlign(align: String) = viewModelScope.launch { settings.setNovelTextAlign(align) }.let {}
     fun setNovelHyphenationLang(lang: String) = viewModelScope.launch { settings.setNovelHyphenationLang(lang) }.let {}
     fun setNovelFontFamily(family: String) = viewModelScope.launch { settings.setNovelFontFamily(family) }.let {}
+    fun setBookmarkMarkerStyle(value: String) =
+        viewModelScope.launch { settings.setBookmarkMarkerStyle(value) }.let {}
     /**
      * Legt eine Verbindung an ([id] == 0) oder aktualisiert sie in-place ([id] != 0 = Bearbeiten).
      * [save] ist ein Upsert über die Rowid — der Bearbeiten-Pfad reicht einfach die bestehende [id] durch.

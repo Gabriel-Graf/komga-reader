@@ -1,0 +1,80 @@
+# Release pipeline: every `v*` tag builds a SIGNED release APK and attaches it to the GitHub
+# release for that tag. This is what the in-app updater ("Infos") downloads — it only offers an
+# install when the latest release carries a `.apk` asset signed with the same key as the installed
+# app. The signing key + passwords come from encrypted repo secrets (KEYSTORE_BASE64 holds the
+# base64 of komga-release.jks; KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD the credentials) — the
+# same key used for the manually built v0.2.0 APK, so updates install in place.
+#
+# Version never drifts from the tag: versionName is derived from the tag (without the leading `v`)
+# and versionCode from the monotonic run number, both injected via -P overrides (see app/build.gradle.kts).
+name: Release (build + attach APK on tag)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build and attach the APK to (e.g. v0.3.0)'
+        required: true
+
+permissions:
+  contents: write # create/upload release assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install pinned NDK + CMake (render-crengine native libs)
+        run: sdkmanager "ndk;28.2.13676358" "cmake;3.22.1"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore signing keystore from secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/komga-release.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/komga-release.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+      - name: Build signed release APK (version from tag)
+        run: |
+          VERSION_NAME="${TAG#v}"
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace -PversionName="$VERSION_NAME" -PversionCode="${{ github.run_number }}"
+      - name: Locate + name the APK
+        id: apk
+        run: |
+          SRC="$(find app/build/outputs/apk/release -name '*.apk' | head -1)"
+          if [ -z "$SRC" ]; then echo "No APK produced"; exit 1; fi
+          DEST="komga-reader-${TAG#v}.apk"
+          cp "$SRC" "$DEST"
+          echo "path=$DEST" >> "$GITHUB_OUTPUT"
+      - name: Attach APK to the release (create the release if it does not exist yet)
+        run: |
+          APK="${{ steps.apk.outputs.path }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" --clobber
+          else
+            gh release create "$TAG" "$APK" --title "$TAG" --generate-notes
+          fi
+      - name: Verify the APK is signed (fail loudly if unsigned)
+        run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
+          "$APKSIGNER" verify --print-certs "${{ steps.apk.outputs.path }}"

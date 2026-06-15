@@ -40,8 +40,11 @@ android {
         applicationId = "com.komgareader.app"
         minSdk = 28
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2.0"
+        // Version can be overridden from the command line (the release CI derives both from the
+        // git tag: `-PversionName=<tag without v> -PversionCode=<monotonic, e.g. run number>`), so a
+        // tag build never drifts from the hardcoded default. Fallbacks are used for local/dev builds.
+        versionCode = (project.findProperty("versionCode") as String?)?.toInt() ?: 3
+        versionName = (project.findProperty("versionName") as String?) ?: "0.3.0"
         testInstrumentationRunner = "com.komgareader.app.HiltTestRunner"
         buildConfigField("String", "KOMGA_TEST_API_KEY", "\"$komgaTestApiKey\"")
         buildConfigField("String", "KOMGA_TEST_BASE_URL", "\"$komgaTestBaseUrl\"")

@@ -1,8 +1,26 @@
 # External Book File Handler — Design
 
 Date: 2026-06-15
-Status: Approved (brainstorming)
+Status: Implemented (2026-06-15) — device-verification pending (see Ist note below).
 Scope: one implementation plan.
+
+> **Ist (2026-06-15):** Built and verified at the unit/build level (`detectBookFormat` unit
+> tests green, `:app:assembleDebug` green, `DownloadDaoSourceIdTest` androidTest green on the
+> emulator). The VIEW `<intent-filter>` (content scheme, book MIME types + `application/octet-stream`)
+> is registered in `MainActivity`; the activity captures the intent in `onCreate`/`onNewIntent`,
+> resolves the format, and either opens read-only, imports straight away, or shows the prompt
+> `EinkModal` (with a "remember" checkbox + an import-folder picker), per the persisted
+> `SettingsRepository.externalOpenBehavior` (`ASK`/`IMPORT`/`READ_ONLY`).
+> `ExternalBookOpener.prepareEphemeral` inserts a transient `DownloadedBook(sourceId =
+> SourceId.EXTERNAL = 1L, localPath = content-URI)` so the existing reader pipeline reads it with
+> no reader rewrite; `importToFolder` copies the bytes into the SAF folder via `DocumentFile`;
+> `purgeTransient` (`DownloadRepository.removeBySourceId` → DAO `deleteBySourceId`) runs on
+> `SyncCoordinator.onAppStart`. `LocalDownloadSync` only reconciles `sourceId == SourceId.LOCAL`,
+> so EXTERNAL rows are left untouched. The Settings → Downloads download-folder picker now also
+> sets the local folder (`setBothFolders` is the default; the separate "same folder" button was
+> removed). **Soll — not yet device-verified** (gated on a real arm64 Boox): the EPUB ephemeral
+> open path (crengine `.so` is arm64-only) and confirming the app actually appears as an
+> "open with" handler in the Boox file manager.
 
 ## Goal
 

@@ -81,6 +81,14 @@ Contract: `source-api/.../source/MediaSource.kt`.
   app threads ids through navigation as single path segments and local paths contain `/`. Folder
   picking + persisted permission live in Settings; it is not a `SyncingSource` (progress stays
   local). Verified on‑device (CBZ + PDF rendered, listing + restart persistence).
+- **External "open with" files (no `MediaSource`).** A file handed in by a VIEW intent
+  (`.epub`/`.cbz`/`.cbr`/`.pdf`) opens through the **existing offline/download read path**, not a new
+  source: `ExternalBookOpener` (`app/data`) inserts a transient `DownloadedBook` under the reserved
+  `SourceId.EXTERNAL = 1L`, so the reader renders it with no rewrite; `importToFolder` copies it into
+  the local(=download) SAF folder, and `purgeTransient` removes the transient rows on
+  `SyncCoordinator.onAppStart`. `LocalDownloadSync` reconciles only `SourceId.LOCAL` (id 0), leaving
+  EXTERNAL rows untouched — that is why the transient id is separate. See Seam B (whole‑file read path)
+  and §8. Device‑verification‑pending (arm64‑only EPUB engine + handler listing).
 
 Concrete source types (`KomgaSource`, `KomgaSourceProvider`, `LocalSourceFactory`, …) appear **only**
 in the `app/data` wiring layer — never in a ViewModel, a UI file, or `domain`.
@@ -214,7 +222,9 @@ brightness before display:
 ## 8. Data, sync & offline
 
 - Room persistence in `data`, **schema v18**. Every record carries a `sourceId` (local source =
-  id 0), so a source going away degrades to `StubSource` with no schema change.
+  id 0), so a source going away degrades to `StubSource` with no schema change. `SourceId.EXTERNAL = 1L`
+  is a reserved **transient** id: externally "opened" files (§3) live as short‑lived download rows that
+  `ExternalBookOpener.purgeTransient` clears on app start; `LocalDownloadSync` touches only `LOCAL` rows.
 - Offline‑first read progress: local `dirty` flag → background sync queue.
 - **Local‑only data that no server mirrors stays off the sync queue by design.** The novel
   word‑bookmark table `novel_bookmark` (`NovelBookmarkEntity` / `NovelBookmarkDao` /

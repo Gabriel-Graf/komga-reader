@@ -37,6 +37,18 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
   unit-verifiziert, `:app:assembleDebug` grün; das **Runtime-Wort-Tap-/Marker-Verhalten** ist mangels
   arm64-crengine-`.so` auf dem Emulator **nur auf echter Boox verifizierbar** (noch ausstehend). Details:
   `architecture-seams.md` (Naht B).
+- **Externer Buch-Datei-Handler („Öffnen mit") — gebaut (Ist, 2026-06-15; Runtime gerätegebunden offen):**
+  Die App ist System-Handler für `.epub`/`.cbz`/`.cbr`/`.pdf` (VIEW-`<intent-filter>` in `MainActivity`,
+  content-Schema + Buch-MIME-Typen + `application/octet-stream`). Eine externe Datei öffnet **ephemer**
+  über eine **transiente** Download-Zeile unter `SourceId.EXTERNAL = 1L` (`ExternalBookOpener.prepareEphemeral`)
+  — kein Reader-Umbau, keine neue `MediaSource`; `importToFolder` kopiert in den lokalen(=Download-)SAF-Ordner;
+  `purgeTransient` räumt bei `SyncCoordinator.onAppStart` auf. Verhalten merkbar/editierbar
+  (`SettingsRepository.externalOpenBehavior`, `ExternalOpenBehavior{ASK,IMPORT,READ_ONLY}`) in Settings →
+  Downloads; der Download-Ordner-Picker setzt jetzt zugleich den lokalen Ordner (`setBothFolders`-Default).
+  Compile- + unit-verifiziert (`detectBookFormat`-Tests), `:app:assembleDebug` grün, `DownloadDaoSourceIdTest`
+  androidTest grün. **Noch nicht auf echter arm64-Boox verifiziert** (Soll): EPUB-Ephemeral-Open (crengine-`.so`
+  arm64-only) und die tatsächliche „Öffnen mit"-Listung im Boox-Dateimanager. Details:
+  `source-extensibility.md` (Kochrezept C), `architecture-seams.md` (Naht A).
 - **Bekannte Minor-Issues** (siehe [[project-komga-eink-reader]]): Reader fängt Volume-Tasten global ab
   (sollte nur im Reader); Streaming-PagedViewer nutzt Komga-fertige Seitenbilder via Coil, nicht MuPDF.
 - **Plugin-Bereitschaft wahren:** keine quellenspezifischen Annahmen ins `MediaSource`-Interface backen

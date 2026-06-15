@@ -53,6 +53,30 @@ quellenspezifische IDs mit Sonderzeichen (Pfade, Leerzeichen) immer kodieren. Le
 Streaming: `pages()` = `emptyList()` zurückgeben, dann rendert der Reader whole-file (s.
 `architecture-seams.md` „Reader-Lesepfad").
 
+## Kochrezept C — externe Datei „öffnen mit" (kein Quellen-Modul, transiente Download-Zeile)
+
+Manchmal kommt ein Werk **nicht** aus einer registrierten Quelle, sondern als einmaliger
+„Öffnen mit"-VIEW-Intent (z. B. eine `.epub`/`.cbz`/`.cbr`/`.pdf` aus dem Boox-Dateimanager).
+Dafür gibt es **keine** neue `MediaSource` — die reservierte transiente Quellen-ID
+`SourceId.EXTERNAL = 1L` (`source-api`) und der **bestehende Offline-/Download-Lesepfad** tragen es:
+
+- **External Book File Handler (Ist, 2026-06-15):** `detectBookFormat(mime, fileName): BookFormat?`
+  (`domain/usecase`) erkennt das Format (`enum BookFormat{CBZ,CBR,PDF,EPUB}`). `ExternalBookOpener`
+  (`app/data`) `prepareEphemeral` fügt eine **transiente** `DownloadedBook`-Zeile mit
+  `sourceId = SourceId.EXTERNAL` und `localPath` = der content-URI ein → der bestehende Reader liest
+  sie über den Offline-Pfad (kein Reader-Umbau, keine `MediaSource`); `importToFolder` kopiert die
+  Bytes via `DocumentFile` in den lokalen(=Download-)SAF-Ordner; `purgeTransient`
+  (`DownloadRepository.removeBySourceId` → DAO `deleteBySourceId`) räumt die EXTERNAL-Zeilen bei
+  `SyncCoordinator.onAppStart` auf. **`LocalDownloadSync` reconciliert nur `sourceId == SourceId.LOCAL`**
+  (id 0) — die EXTERNAL-Zeilen (id 1) bleiben unberührt; das ist der Grund für die getrennte
+  reservierte ID. Verhalten persistiert über `SettingsRepository.externalOpenBehavior`
+  (`ExternalOpenBehavior{ASK,IMPORT,READ_ONLY}`, Room-Key `external_open_behavior`, keine Migration),
+  editierbar in Settings → Downloads. Der Download-Ordner-Picker dort setzt jetzt zugleich den lokalen
+  Ordner (`setBothFolders` als Default; der separate „Gemeinsamer Ordner"-Button ist entfernt). **Device-
+  Vorbehalt:** EPUB-Ephemeral-Open (crengine-`.so` arm64-only) und die tatsächliche „Öffnen mit"-Listung
+  im Boox-Dateimanager sind **noch nicht auf echter arm64-Boox verifiziert** (Soll); Build + Unit + DAO-
+  androidTest sind grün.
+
 ## Bezug
 
 Setzt `architecture-seams.md` (Naht A) voraus. Gehört zu [[project-komga-eink-reader]].

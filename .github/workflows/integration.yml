@@ -63,8 +63,7 @@ jobs:
             adb shell wm dismiss-keyguard || true
             adb shell locksettings set-disabled true || true
             adb shell settings put secure user_setup_complete 1 || true
-            ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace \
-              -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci
+            ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace -Pandroid.testInstrumentationRunnerArguments.package=com.komgareader.app.ci
       - name: Tear down fixtures
         if: always()
         run: tools/ci-fixtures/down.sh

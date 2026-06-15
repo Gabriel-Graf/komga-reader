@@ -1,7 +1,7 @@
 package com.komgareader.domain.render
 
 /** Hyphenation languages with a real pattern dictionary (mirrors render layer's PATTERN_DICTS). */
-private val SUPPORTED_HYPHENATION = setOf("de", "en")
+private val SUPPORTED_HYPHENATION = HyphenationLanguages.SUPPORTED.toSet()
 
 /** Sentinel meaning "derive the language from the document". */
 const val HYPHENATION_AUTO = "auto"

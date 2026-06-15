@@ -57,6 +57,7 @@ import com.komgareader.app.ui.components.CompactStepperRow
 import com.komgareader.app.ui.components.SettingsRow
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.plugins.AddPluginSourceModals
+import com.komgareader.app.ui.reader.HyphenationPicker
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkTextField
@@ -710,16 +711,9 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
                 onSelect = { viewModel.setNovelTextAlign(it) },
                 query = query,
             )
-            SegmentedChoiceRow(
-                label = s.novelHyphenation,
-                options = listOf(
-                    SegmentOption("auto", s.novelHyphenationAuto),
-                    SegmentOption("", s.novelHyphenationOff),
-                    SegmentOption("de", s.novelHyphenationDe),
-                    SegmentOption("en", s.novelHyphenationEn),
-                ),
-                selectedKey = hyphenationLang,
-                onSelect = { viewModel.setNovelHyphenationLang(it) },
+            HyphenationPicker(
+                value = hyphenationLang,
+                onValue = { viewModel.setNovelHyphenationLang(it) },
                 query = query,
             )
             // Schriftart: lange Liste → Wert+Chevron → Picker-Modal.

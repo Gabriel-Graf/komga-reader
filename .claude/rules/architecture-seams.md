@@ -74,6 +74,27 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   sourceId=0 ab und zeigt erst ein **Warn-`EinkModal`** („Lokale Datei löschen?"), bestätigt → `removeDownload`/
   `removeAll` → `DownloadManager.delete` → `DocumentFile.delete`. „Alle herunterladen" überspringt lokale Werke
   automatisch (`!in localBookIds`). E2E-verifiziert (Badge + Warn-Modal + Abbrechen lässt Datei intakt).
+- **Externe Datei „öffnen mit" über transiente Download-Zeile (Ist, 2026-06-15):** Eine per VIEW-Intent
+  übergebene `.epub`/`.cbz`/`.cbr`/`.pdf` (Boox-Dateimanager / „Öffnen mit") öffnet **ohne** neue
+  `MediaSource` — über die reservierte transiente Quellen-ID **`SourceId.EXTERNAL = 1L`** (`source-api`) und
+  den **bestehenden Offline-/Download-Lesepfad**. `ExternalBookOpener` (`app/data`): `prepareEphemeral`
+  fügt eine transiente `DownloadedBook(sourceId = SourceId.EXTERNAL, localPath = content-URI)` ein → der
+  vorhandene Reader liest sie (`documentFactory.open`, kein Reader-Umbau); `importToFolder` kopiert via
+  `DocumentFile` in den lokalen(=Download-)SAF-Ordner; `purgeTransient`
+  (`DownloadRepository.removeBySourceId` → DAO `deleteBySourceId`) räumt die EXTERNAL-Zeilen bei
+  `SyncCoordinator.onAppStart`. **`LocalDownloadSync` reconciliert nur `sourceId == SourceId.LOCAL`** (id 0),
+  fasst also die EXTERNAL-Zeilen (id 1) nie an — deshalb die getrennte reservierte ID. `detectBookFormat(mime,
+  fileName): BookFormat?` (`domain/usecase`, `enum BookFormat{CBZ,CBR,PDF,EPUB}`) bestimmt die Viewer-Auflösung
+  (Route `viewerMode=PAGED`, EPUB→Novel über das Format). `MainActivity` trägt den VIEW-`<intent-filter>`
+  (content-Schema, Buch-MIME-Typen + `application/octet-stream`), fängt den Intent in `onCreate`/`onNewIntent`
+  und zeigt — je nach persistiertem `SettingsRepository.externalOpenBehavior`
+  (`ExternalOpenBehavior{ASK,IMPORT,READ_ONLY}`, Room-Key `external_open_behavior`, keine Migration) — ein
+  Prompt-`EinkModal` (Merken-Checkbox + Import-Ordner-Picker), importiert direkt, oder öffnet read-only.
+  Editierbar in Settings → Downloads; dort setzt der Download-Ordner-Picker jetzt zugleich den lokalen Ordner
+  (`SettingsViewModel.setBothFolders` als Default; der separate „Gemeinsamer Ordner"-Button ist entfernt).
+  **Verifikation:** `detectBookFormat`-Unit-Tests + `:app:assembleDebug` grün, `DownloadDaoSourceIdTest`
+  androidTest grün (Emulator). **Noch nicht auf echter arm64-Boox verifiziert** (Soll): EPUB-Ephemeral-Open
+  (crengine-`.so` arm64-only) und die tatsächliche „Öffnen mit"-Listung im Boox-Dateimanager.
 - **Ist-Stand (2026-06-08): die Integrationsseite ist verdrahtet.** `SourceManager` wird in `app`
   über `SourceRegistration` aus der `ServerConfig` befüllt; `ActiveSource` (app/data) ist der
   agnostische Resolver für alle ViewModels. Bilder/Seiten **und** Cover fließen über die Naht

@@ -80,6 +80,13 @@ class MapBackedStrings(
     override val markUnread: String get() = overrides["markUnread"] ?: fallback.markUnread
     override val downloadCancelled: String get() = overrides["downloadCancelled"] ?: fallback.downloadCancelled
     override val downloadFolder: String get() = overrides["downloadFolder"] ?: fallback.downloadFolder
+    override val externalOpenTitle: String get() = overrides["externalOpenTitle"] ?: fallback.externalOpenTitle
+    override val externalOpenImport: String get() = overrides["externalOpenImport"] ?: fallback.externalOpenImport
+    override val externalOpenReadOnly: String get() = overrides["externalOpenReadOnly"] ?: fallback.externalOpenReadOnly
+    override val externalOpenRemember: String get() = overrides["externalOpenRemember"] ?: fallback.externalOpenRemember
+    override val externalOpenSetting: String get() = overrides["externalOpenSetting"] ?: fallback.externalOpenSetting
+    override val externalOpenAsk: String get() = overrides["externalOpenAsk"] ?: fallback.externalOpenAsk
+    override val externalOpenUnsupported: String get() = overrides["externalOpenUnsupported"] ?: fallback.externalOpenUnsupported
     override val chooseFolder: String get() = overrides["chooseFolder"] ?: fallback.chooseFolder
     override val defaultFolder: String get() = overrides["defaultFolder"] ?: fallback.defaultFolder
     override val resetFolder: String get() = overrides["resetFolder"] ?: fallback.resetFolder

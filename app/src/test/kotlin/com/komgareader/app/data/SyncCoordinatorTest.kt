@@ -20,6 +20,7 @@ class SyncCoordinatorTest {
         scanLocal = { spy.scanLocalCount++ },
         fetchRepos = { spy.fetchReposCount++ },
         syncLocalDownloads = {},
+        purgeExternal = {},
         displayMode = { displayMode },
     )
 

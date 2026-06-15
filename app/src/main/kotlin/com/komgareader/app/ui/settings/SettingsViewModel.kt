@@ -60,6 +60,12 @@ class SettingsViewModel @Inject constructor(
         settings.shellLayoutMode.stateIn(viewModelScope, SharingStarted.Eagerly, ShellLayoutMode.AUTO.name)
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** What to do when an external book file is opened via a VIEW intent (ASK/IMPORT/READ_ONLY). */
+    val externalOpenBehavior =
+        settings.externalOpenBehavior.stateIn(viewModelScope, SharingStarted.Eagerly, "ASK")
+
+    fun setExternalOpenBehavior(value: String) = viewModelScope.launch { settings.setExternalOpenBehavior(value) }.let {}
+
     /**
      * SAF-Tree-URI des lokalen Ordners (die eine `SourceKind.LOCAL`-Quelle) oder null.
      * Abgeleitet aus der Server-Liste — der lokale Ordner wird unter „Downloads" verwaltet,

@@ -24,12 +24,14 @@ class SyncCoordinator(
     private val scanLocal: suspend () -> Unit,
     private val fetchRepos: suspend () -> Unit,
     private val syncLocalDownloads: suspend () -> Unit,
+    private val purgeExternal: suspend () -> Unit,
     private val displayMode: suspend () -> String,
 ) {
     @Inject constructor(
         sync: CollectionSyncManager,
         catalog: PluginCatalog,
         localDownloads: LocalDownloadSync,
+        externalOpener: ExternalBookOpener,
         settings: SettingsRepository,
     ) : this(
         fullSync = { sync.fullSync() },
@@ -37,6 +39,7 @@ class SyncCoordinator(
         scanLocal = { catalog.scanLocal() },
         fetchRepos = { catalog.fetchRepos() },
         syncLocalDownloads = { localDownloads.sync() },
+        purgeExternal = { externalOpener.purgeTransient() },
         displayMode = { settings.displayMode.first() },
     )
 
@@ -53,6 +56,7 @@ class SyncCoordinator(
         runCatching { scanLocal() }
         runCatching { fetchRepos() }
         runCatching { syncLocalDownloads() }
+        runCatching { purgeExternal() }
     }
 
     /** Server hinzugefügt/aktualisiert/entfernt (auch lokaler Ordner) → Sammlungen pullen + lokale Downloads spiegeln. */

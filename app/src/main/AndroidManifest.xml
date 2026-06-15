@@ -42,6 +42,27 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!--
+              Open-with handler: register MainActivity for VIEW intents on book file types so the
+              system "Open with" sheet (and file managers) can hand us a content:// URI. The intent
+              is captured in captureViewIntent and routed by the ephemeral-open driver in setContent.
+              octet-stream is included because many file managers report CBZ/CBR with a generic mime;
+              detectBookFormat falls back to the file-name extension in that case.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" android:mimeType="application/epub+zip" />
+                <data android:scheme="content" android:mimeType="application/pdf" />
+                <data android:scheme="content" android:mimeType="application/zip" />
+                <data android:scheme="content" android:mimeType="application/vnd.comicbook+zip" />
+                <data android:scheme="content" android:mimeType="application/x-cbz" />
+                <data android:scheme="content" android:mimeType="application/x-cbr" />
+                <data android:scheme="content" android:mimeType="application/vnd.comicbook-rar" />
+                <data android:scheme="content" android:mimeType="application/vnd.rar" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" />
+            </intent-filter>
         </activity>
         <receiver
             android:name=".ui.plugins.repo.PluginInstallReceiver"

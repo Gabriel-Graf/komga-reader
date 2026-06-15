@@ -76,6 +76,7 @@ import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.ExternalOpenBehavior
 import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.model.SourceKind
@@ -836,13 +837,14 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
     fun folderName(uri: Uri): String =
         androidx.documentfile.provider.DocumentFile.fromTreeUri(ctx, uri)?.name ?: "Local"
 
-    // Download-Ordner (Server-Downloads landen hier).
+    // Download-Ordner (Server-Downloads landen hier). Setzt den lokalen Ordner gleich mit,
+    // damit geräte-lokale Werke standardmäßig im selben Ordner liegen (überschreibbar unten).
     val downloadPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
     ) { uri: Uri? ->
         if (uri != null) {
             takeTreePermission(uri)
-            viewModel.setDownloadDir(uri.toString())
+            viewModel.setBothFolders(folderName(uri), uri.toString())
         }
     }
     // Lokaler Ordner (geräte-lokale Werke ohne Server — intern die LOCAL-Quelle).
@@ -854,15 +856,7 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
             viewModel.saveLocalFolder(folderName(uri), uri.toString())
         }
     }
-    // Ein Ordner für beide: setzt Download-Ordner UND lokalen Ordner auf dieselbe Wahl.
-    val bothPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree(),
-    ) { uri: Uri? ->
-        if (uri != null) {
-            takeTreePermission(uri)
-            viewModel.setBothFolders(folderName(uri), uri.toString())
-        }
-    }
+    val externalOpenBehavior by viewModel.externalOpenBehavior.collectAsState()
 
     val downloadPath = downloadDir?.let { treeUriToDisplayPath(it) } ?: s.defaultFolder
     val localPath = localFolder?.let { treeUriToDisplayPath(it) } ?: s.localFolderNotSet
@@ -888,8 +882,18 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
             }
         }
 
-        SettingsGroup(s.sameFolderForBoth, query, helper = s.sameFolderForBothHelp) {
-            Button(onClick = { bothPicker.launch(null) }) { Text(s.useSameFolderForBoth) }
+        SettingsGroup(s.externalOpenSetting, query) {
+            SegmentedChoiceRow(
+                label = s.externalOpenSetting,
+                options = listOf(
+                    SegmentOption(ExternalOpenBehavior.ASK.name, s.externalOpenAsk),
+                    SegmentOption(ExternalOpenBehavior.IMPORT.name, s.externalOpenImport),
+                    SegmentOption(ExternalOpenBehavior.READ_ONLY.name, s.externalOpenReadOnly),
+                ),
+                selectedKey = externalOpenBehavior,
+                onSelect = { viewModel.setExternalOpenBehavior(it) },
+                query = query,
+            )
         }
     }
 }

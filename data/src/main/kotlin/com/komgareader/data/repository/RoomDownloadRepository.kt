@@ -21,6 +21,9 @@ class RoomDownloadRepository(private val dao: DownloadDao) : DownloadRepository 
     override suspend fun remove(bookRemoteId: String) =
         dao.delete(bookRemoteId)
 
+    override suspend fun removeBySourceId(sourceId: Long) =
+        dao.deleteBySourceId(sourceId)
+
     private fun toBook(e: DownloadEntity) = DownloadedBook(
         bookRemoteId = e.bookRemoteId,
         sourceId = e.sourceId,

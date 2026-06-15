@@ -74,6 +74,7 @@ class SettingsViewModelTest {
             scanLocal = {},
             fetchRepos = {},
             syncLocalDownloads = {},
+            purgeExternal = {},
             displayMode = { "EINK" },
         )
 

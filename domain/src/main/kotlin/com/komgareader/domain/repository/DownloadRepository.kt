@@ -20,4 +20,5 @@ interface DownloadRepository {
     suspend fun get(bookRemoteId: String): DownloadedBook?
     suspend fun put(book: DownloadedBook)
     suspend fun remove(bookRemoteId: String)
+    suspend fun removeBySourceId(sourceId: Long)
 }

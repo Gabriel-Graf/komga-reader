@@ -12,6 +12,14 @@ object SourceId {
 
     const val LOCAL: Long = 0L
 
+    /**
+     * Transient source for an externally-opened file (VIEW intent). Distinct from
+     * [LOCAL] (0) so `LocalDownloadSync` — which only reconciles sourceId == LOCAL —
+     * never touches these rows. `of()` results are always >= 0 via `and Long.MAX_VALUE`,
+     * so the small constant 1 cannot collide with a generated id.
+     */
+    const val EXTERNAL: Long = 1L
+
     fun of(name: String, kind: SourceKind, config: String): Long {
         val key = "${name.lowercase()}/${kind.name}/$config"
         val digest = MessageDigest.getInstance("SHA-256").digest(key.toByteArray())

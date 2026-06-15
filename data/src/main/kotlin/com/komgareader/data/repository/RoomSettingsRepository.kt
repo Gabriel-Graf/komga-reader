@@ -7,6 +7,7 @@ import com.komgareader.data.eink.encodeEinkContextProfiles
 import com.komgareader.domain.eink.EinkContext
 import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.model.BookmarkMarkerStyle
+import com.komgareader.domain.model.ExternalOpenBehavior
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
@@ -24,6 +25,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.observe(KEY_SHELL_LAYOUT).map { it ?: ShellLayoutMode.AUTO.name }
     override val bookmarkMarkerStyle: Flow<String> =
         dao.observe(KEY_BOOKMARK_MARKER_STYLE).map { it ?: BookmarkMarkerStyle.UNDERLINE.name }
+    override val externalOpenBehavior: Flow<String> =
+        dao.observe(KEY_EXTERNAL_OPEN_BEHAVIOR).map { it ?: ExternalOpenBehavior.ASK.name }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)
     override val guidedPanelOverlay: Flow<Boolean> = dao.observe(KEY_PANEL_OVERLAY).map { it == "true" }
     // Default true: abwesender Schlüssel oder jeder Wert außer "false" → ML-Erkennung aktiv.
@@ -71,6 +74,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override suspend fun setDisplayMode(value: String) = dao.put(SettingEntity(KEY_DISPLAY, value))
     override suspend fun setShellLayoutMode(value: String) = dao.put(SettingEntity(KEY_SHELL_LAYOUT, value))
     override suspend fun setBookmarkMarkerStyle(value: String) = dao.put(SettingEntity(KEY_BOOKMARK_MARKER_STYLE, value))
+    override suspend fun setExternalOpenBehavior(value: String) = dao.put(SettingEntity(KEY_EXTERNAL_OPEN_BEHAVIOR, value))
     override suspend fun setDownloadDir(uri: String?) {
         if (uri == null) dao.delete(KEY_DOWNLOAD_DIR)
         else dao.put(SettingEntity(KEY_DOWNLOAD_DIR, uri))
@@ -124,6 +128,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_DISPLAY = "display_mode"
         const val KEY_SHELL_LAYOUT = "shell_layout_mode"
         const val KEY_BOOKMARK_MARKER_STYLE = "bookmark_marker_style"
+        const val KEY_EXTERNAL_OPEN_BEHAVIOR = "external_open_behavior"
         const val KEY_DOWNLOAD_DIR = "download_dir"
         const val KEY_PANEL_OVERLAY = "guided_panel_overlay"
         const val KEY_USE_ML = "use_ml_detection"

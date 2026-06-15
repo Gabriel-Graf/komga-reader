@@ -19,4 +19,7 @@ interface DownloadDao {
 
     @Query("DELETE FROM downloads WHERE bookRemoteId = :id")
     suspend fun delete(id: String)
+
+    @Query("DELETE FROM downloads WHERE sourceId = :sourceId")
+    suspend fun deleteBySourceId(sourceId: Long)
 }

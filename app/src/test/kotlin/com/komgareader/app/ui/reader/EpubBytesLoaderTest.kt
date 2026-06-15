@@ -81,6 +81,7 @@ class EpubBytesLoaderTest {
         override suspend fun get(bookRemoteId: String): DownloadedBook? = book
         override suspend fun put(book: DownloadedBook) = error("not used")
         override suspend fun remove(bookRemoteId: String) = error("not used")
+        override suspend fun removeBySourceId(sourceId: Long) = error("not used")
     }
 
     private class FakeLocalBookBytes(private val bytes: ByteArray) : LocalBookBytes {

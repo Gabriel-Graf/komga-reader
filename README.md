@@ -1,4 +1,8 @@
-# Komga Reader
+<p align="center">
+  <img src="assets/logo.png" alt="Komga Reader" width="200">
+</p>
+
+<h1 align="center">Komga Reader</h1>
 
 A native Android comic, manga, webtoon and e‑book reader built **E‑Ink‑first** for
 [Onyx Boox](https://onyxboox.com) devices — but **source‑agnostic, device‑agnostic and

@@ -22,6 +22,7 @@ import com.komgareader.data.db.MIGRATION_16_17
 import com.komgareader.data.db.MIGRATION_17_18
 import com.komgareader.data.db.MIGRATION_18_19
 import com.komgareader.data.db.MIGRATION_19_20
+import com.komgareader.data.db.MIGRATION_20_21
 import com.komgareader.data.db.SEED_CALLBACK
 import com.komgareader.data.download.DownloadManager
 import com.komgareader.data.download.LocalBookBytes
@@ -32,6 +33,7 @@ import com.komgareader.data.repository.RoomNovelBookmarkRepository
 import com.komgareader.data.repository.RoomNovelProgressRepository
 import com.komgareader.data.repository.RoomReadProgressRepository
 import com.komgareader.data.repository.RoomReadingStatsRepository
+import com.komgareader.data.repository.RoomSeriesAutoTypeRepository
 import com.komgareader.data.repository.RoomSeriesOverrideRepository
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.repository.RoomSettingsRepository
@@ -43,6 +45,7 @@ import com.komgareader.domain.repository.NovelBookmarkRepository
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.ReadProgressRepository
 import com.komgareader.domain.repository.ReadingStatsRepository
+import com.komgareader.domain.repository.SeriesAutoTypeRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -68,7 +71,7 @@ object DataModule {
                 MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
                 MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
                 MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19,
-                MIGRATION_19_20,
+                MIGRATION_19_20, MIGRATION_20_21,
             )
             .addCallback(SEED_CALLBACK)
             .fallbackToDestructiveMigration()
@@ -103,6 +106,10 @@ object DataModule {
     @Provides @Singleton
     fun seriesOverrideRepository(db: AppDatabase): SeriesOverrideRepository =
         RoomSeriesOverrideRepository(db.seriesOverrideDao())
+
+    @Provides @Singleton
+    fun seriesAutoTypeRepository(db: AppDatabase): SeriesAutoTypeRepository =
+        RoomSeriesAutoTypeRepository(db.seriesAutoTypeDao())
 
     @Provides @Singleton
     fun readProgressRepository(db: AppDatabase): ReadProgressRepository =

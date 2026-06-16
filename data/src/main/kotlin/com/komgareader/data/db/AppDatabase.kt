@@ -11,9 +11,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SeriesOverrideEntity::class, ReadProgressEntity::class, ColorProfileEntity::class,
         NovelProgressEntity::class, NovelBookmarkEntity::class,
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
-        PluginRepoEntity::class, ReadingSessionEntity::class,
+        PluginRepoEntity::class, ReadingSessionEntity::class, SeriesAutoTypeEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun collectionDao(): CollectionDao
     abstract fun pluginRepoDao(): PluginRepoDao
     abstract fun readingSessionDao(): ReadingSessionDao
+    abstract fun seriesAutoTypeDao(): SeriesAutoTypeDao
 }
 
 /** v1 → v2: downloads-Tabelle ergänzt. */
@@ -404,6 +405,21 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
         db.execSQL(
             "UPDATE `novel_bookmark` SET `markerStyle` = " +
                 "COALESCE((SELECT `value` FROM `settings` WHERE `key` = 'bookmark_marker_style'), 'UNDERLINE')",
+        )
+    }
+}
+
+/** v20 -> v21: series_auto_types (detected content-type suggestion per series). */
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE IF NOT EXISTS `series_auto_types` (
+                `sourceId` INTEGER NOT NULL,
+                `seriesRemoteId` TEXT NOT NULL,
+                `contentType` TEXT NOT NULL,
+                `detectorVersion` INTEGER NOT NULL,
+                PRIMARY KEY(`sourceId`, `seriesRemoteId`)
+            )""".trimIndent(),
         )
     }
 }

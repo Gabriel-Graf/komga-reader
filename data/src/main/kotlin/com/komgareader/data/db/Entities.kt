@@ -59,6 +59,20 @@ data class SeriesOverrideEntity(
 )
 
 /**
+ * Auto-detected content-type suggestion of a series (pixel heuristic). Separate from
+ * [SeriesOverrideEntity]: a heuristic guess the user/server/library all outrank.
+ * [contentType] is a [com.komgareader.domain.model.ContentType] name; [detectorVersion]
+ * makes re-detection idempotent across algorithm bumps.
+ */
+@Entity(tableName = "series_auto_types", primaryKeys = ["sourceId", "seriesRemoteId"])
+data class SeriesAutoTypeEntity(
+    val sourceId: Long,
+    val seriesRemoteId: String,
+    val contentType: String,
+    val detectorVersion: Int,
+)
+
+/**
  * Lokaler Lesefortschritt je Buch (offline-first). [dirty] = noch nicht zum Server gepusht.
  * Wird mit dem Server-Stand gemerged (höhere Seite gewinnt, kein Regress).
  */

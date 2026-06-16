@@ -368,6 +368,7 @@ class MapBackedStrings(
         overrides["novelBookmarkNumber"]?.replace("{n}", n.toString()) ?: fallback.novelBookmarkNumber(n)
     override val novelBookmarkMarkerUnderline: String get() = overrides["novelBookmarkMarkerUnderline"] ?: fallback.novelBookmarkMarkerUnderline
     override val novelBookmarkMarkerMargin: String get() = overrides["novelBookmarkMarkerMargin"] ?: fallback.novelBookmarkMarkerMargin
+    override val novelBookmarkMarkerFlag: String get() = overrides["novelBookmarkMarkerFlag"] ?: fallback.novelBookmarkMarkerFlag
     override val novelSearch: String get() = overrides["novelSearch"] ?: fallback.novelSearch
     override val novelSearchPlaceholder: String get() = overrides["novelSearchPlaceholder"] ?: fallback.novelSearchPlaceholder
     override val novelSearchEmpty: String get() = overrides["novelSearchEmpty"] ?: fallback.novelSearchEmpty

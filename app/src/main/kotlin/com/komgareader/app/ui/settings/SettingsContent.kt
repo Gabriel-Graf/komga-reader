@@ -727,6 +727,7 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
                 options = listOf(
                     SegmentOption(BookmarkMarkerStyle.UNDERLINE.name, s.novelBookmarkMarkerUnderline),
                     SegmentOption(BookmarkMarkerStyle.MARGIN.name, s.novelBookmarkMarkerMargin),
+                    SegmentOption(BookmarkMarkerStyle.FLAG.name, s.novelBookmarkMarkerFlag),
                 ),
                 selectedKey = bookmarkMarkerStyle,
                 onSelect = { viewModel.setBookmarkMarkerStyle(it) },

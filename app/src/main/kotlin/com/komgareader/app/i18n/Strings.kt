@@ -380,6 +380,7 @@ interface Strings {
     fun novelBookmarkNumber(n: Int): String
     val novelBookmarkMarkerUnderline: String
     val novelBookmarkMarkerMargin: String
+    val novelBookmarkMarkerFlag: String
     // Roman-Volltextsuche + Gehe-zu-%
     val novelSearch: String
     val novelSearchPlaceholder: String
@@ -800,7 +801,8 @@ object StringsDe : Strings {
     override val novelBookmarksEmpty = "Noch keine Lesezeichen"
     override fun novelBookmarkNumber(n: Int) = "#$n"
     override val novelBookmarkMarkerUnderline = "Unterstreichung"
-    override val novelBookmarkMarkerMargin = "Rand-Marker"
+    override val novelBookmarkMarkerMargin = "Linie"
+    override val novelBookmarkMarkerFlag = "Fähnchen"
     override val novelSearch = "Suche"
     override val novelSearchPlaceholder = "Im Buch suchen…"
     override val novelSearchEmpty = "Suchbegriff eingeben und bestätigen."
@@ -1212,7 +1214,8 @@ object StringsEn : Strings {
     override val novelBookmarksEmpty = "No bookmarks yet"
     override fun novelBookmarkNumber(n: Int) = "#$n"
     override val novelBookmarkMarkerUnderline = "Underline"
-    override val novelBookmarkMarkerMargin = "Margin marker"
+    override val novelBookmarkMarkerMargin = "Line"
+    override val novelBookmarkMarkerFlag = "Flag"
     override val novelSearch = "Search"
     override val novelSearchPlaceholder = "Search in book…"
     override val novelSearchEmpty = "Enter a search term and confirm."

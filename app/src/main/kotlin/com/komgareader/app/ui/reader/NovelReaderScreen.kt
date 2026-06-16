@@ -38,7 +38,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.text.style.TextAlign
 import com.komgareader.app.i18n.LocalStrings
@@ -425,33 +430,74 @@ private fun BookmarkMarkers(
         value = novelVm.bookmarkRectsForCurrentPage()
     }
     if (rects.isEmpty()) return
-    val margin = markerStyleName == BookmarkMarkerStyle.MARGIN.name
+    val numbers = remember(bookmarks) { bookmarks.associate { it.xpointer to it.number } }
+    val textMeasurer = rememberTextMeasurer()
     Canvas(Modifier.fillMaxSize()) {
         rects.forEach { (xpointer, r) ->
             val highlighted = xpointer == highlightedXpointer
-            if (margin) {
-                drawRect(
+            val lineHeight = (r.bottom - r.top).toFloat()
+            when (markerStyleName) {
+                BookmarkMarkerStyle.MARGIN.name -> drawRect(
                     color = Color.Black,
                     topLeft = Offset(0f, r.top.toFloat()),
-                    size = Size(if (highlighted) 14f else 8f, (r.bottom - r.top).toFloat()),
+                    size = Size(if (highlighted) 14f else 8f, lineHeight),
                 )
-            } else {
-                // Underline BELOW the glyphs. getRectEx returns the LINE box whose bottom sits around
-                // the glyph vertical center (not the baseline — verified pixel-exact on a real Boox:
-                // for a 62px line the baseline is ~12px below rect.bottom), so a line at rect.bottom
-                // cut through the text (strikethrough). Drop ~22% of the line height below rect.bottom
-                // to clear the baseline; this scales with the font size. The highlighted (just-jumped)
-                // word draws much thicker so it stands out among several marks (request 2026-06-16).
-                val lineHeight = (r.bottom - r.top).toFloat()
-                val y = r.bottom + lineHeight * 0.22f
-                val thickness = if (highlighted) 9f else 3f
-                drawRect(
-                    color = Color.Black,
-                    topLeft = Offset(r.left.toFloat(), y),
-                    size = Size((r.right - r.left).toFloat(), thickness),
+                BookmarkMarkerStyle.FLAG.name -> drawFlag(
+                    textMeasurer = textMeasurer,
+                    number = numbers[xpointer] ?: 0,
+                    rect = r,
+                    lineHeight = lineHeight,
+                    highlighted = highlighted,
                 )
+                else -> {
+                    // Underline BELOW the glyphs. getRectEx returns the LINE box whose bottom sits
+                    // around the glyph vertical center (not the baseline — verified pixel-exact on a
+                    // real Boox: for a 62px line the baseline is ~12px below rect.bottom), so a line at
+                    // rect.bottom cut through the text (strikethrough). Drop ~26% of the line height
+                    // below rect.bottom to clear the baseline with a little breathing room; this scales
+                    // with the font size. The highlighted (just-jumped) word draws much thicker so it
+                    // stands out among several marks (request 2026-06-16).
+                    val y = r.bottom + lineHeight * 0.26f
+                    val thickness = if (highlighted) 9f else 3f
+                    drawRect(
+                        color = Color.Black,
+                        topLeft = Offset(r.left.toFloat(), y),
+                        size = Size((r.right - r.left).toFloat(), thickness),
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * Flag marker: a short vertical stroke in the gap just before the bookmarked word, carrying the
+ * bookmark [number] above it (Kindle-like). The pole is centered on the glyph row (rect.bottom is
+ * the glyph vertical center — see [BookmarkMarkers]) and spans ~60% of the line height; the
+ * highlighted (just-jumped) flag is thicker. Monochrome, no animation (E-Ink).
+ */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFlag(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    number: Int,
+    rect: IntRect,
+    lineHeight: Float,
+    highlighted: Boolean,
+) {
+    val poleHeight = lineHeight * 0.6f
+    val centerY = rect.bottom.toFloat()
+    val top = centerY - poleHeight / 2f
+    val width = if (highlighted) 5f else 3f
+    val x = (rect.left - 7).coerceAtLeast(0).toFloat()
+    drawRect(color = Color.Black, topLeft = Offset(x, top), size = Size(width, poleHeight))
+    if (number > 0) {
+        val measured = textMeasurer.measure(
+            text = number.toString(),
+            style = TextStyle(color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+        )
+        drawText(
+            textLayoutResult = measured,
+            topLeft = Offset(x - measured.size.width / 2f + width / 2f, top - measured.size.height),
+        )
     }
 }
 

@@ -1,7 +1,10 @@
 package com.komgareader.app.ui.plugins
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.ApkSessionInstaller
 import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.installedEntriesOf
 import com.komgareader.app.data.SyncCoordinator
@@ -28,6 +31,9 @@ import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.plugin.host.DiscoveredPresetPlugin
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +42,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 /** State of the README area in the plugin info modal. */
@@ -51,6 +58,8 @@ class PluginsViewModel @Inject constructor(
     private val coordinator: SyncCoordinator,
     private val servers: ServerRepository,
     private val colorProfiles: ColorProfileRepository,
+    private val apkSession: ApkSessionInstaller,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     val sources = catalog.sources
@@ -174,6 +183,26 @@ class PluginsViewModel @Inject constructor(
 
     fun install(row: BrowserRow) = viewModelScope.launch { catalog.install(row) }.let {}
     fun dismissError() { catalog.dismissError() }
+
+    /**
+     * Sideloads a user-picked local APK (any plugin kind) from a SAF document [uri]. Copies the
+     * content stream to a cache file and commits it through the shared [ApkSessionInstaller] (the OS
+     * install dialog confirms). No fingerprint check: the file is user-chosen, not from a repo index —
+     * the repo install path keeps its fingerprint gate. The tab re-scan on resume discovers it; the
+     * font license gate (`scanLocal`) and source-plugin TOFU still apply at discovery/registration.
+     */
+    fun installLocalApk(uri: Uri) = viewModelScope.launch {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val tmp = File.createTempFile("sideload", ".apk", context.cacheDir)
+                val copied = context.contentResolver.openInputStream(uri)?.use { input ->
+                    tmp.outputStream().use { input.copyTo(it) }; true
+                } ?: false
+                if (copied) apkSession.commit(tmp)
+                tmp.delete()
+            }
+        }
+    }.let {}
 
     fun addRepo(url: String) = viewModelScope.launch { catalog.addRepo(url) }.let {}
     fun removeRepo(id: Long) = viewModelScope.launch { catalog.removeRepo(id) }.let {}

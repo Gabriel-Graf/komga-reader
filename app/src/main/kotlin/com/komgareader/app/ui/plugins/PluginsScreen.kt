@@ -2,6 +2,8 @@ package com.komgareader.app.ui.plugins
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -237,6 +239,7 @@ fun PluginsScreen(
             onAdd = viewModel::addRepo,
             onRemove = viewModel::removeRepo,
             onToggleOfficial = viewModel::setOfficialEnabled,
+            onPickApk = viewModel::installLocalApk,
         )
     }
 
@@ -490,9 +493,16 @@ private fun RepoManagementModal(
     onAdd: (String) -> Unit,
     onRemove: (Long) -> Unit,
     onToggleOfficial: (Boolean) -> Unit,
+    onPickApk: (Uri) -> Unit,
 ) {
     val s = LocalStrings.current
     var newUrl by remember { mutableStateOf("") }
+    // SAF picker for a local plugin APK: a repo link and a file from a folder are the two ways to add
+    // a plugin, so both live in this one menu. We accept the APK MIME plus octet-stream (some file
+    // providers report .apk that way); the OS install dialog confirms the sideload.
+    val apkPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(onPickApk)
+    }
     EinkInfoDialog(title = s.repoBrowserManage, onDismiss = onDismiss, closeLabel = s.close) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(s.repoBrowserOfficial, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
@@ -534,5 +544,11 @@ private fun RepoManagementModal(
                 }
             },
         )
+        EinkOutlinedButton(
+            onClick = {
+                apkPicker.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream"))
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(s.pluginInstallLocalApk) }
     }
 }

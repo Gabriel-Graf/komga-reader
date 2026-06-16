@@ -252,6 +252,7 @@ class MapBackedStrings(
     override val repoBrowserAddRepo: String get() = overrides["repoBrowserAddRepo"] ?: fallback.repoBrowserAddRepo
     override val repoBrowserOfficial: String get() = overrides["repoBrowserOfficial"] ?: fallback.repoBrowserOfficial
     override val repoBrowserRepoUrl: String get() = overrides["repoBrowserRepoUrl"] ?: fallback.repoBrowserRepoUrl
+    override val pluginInstallLocalApk: String get() = overrides["pluginInstallLocalApk"] ?: fallback.pluginInstallLocalApk
     override val repoBrowserRemoveRepo: String get() = overrides["repoBrowserRemoveRepo"] ?: fallback.repoBrowserRemoveRepo
     override val repoBrowserErrorTitle: String get() = overrides["repoBrowserErrorTitle"] ?: fallback.repoBrowserErrorTitle
     override val repoBrowserErrorFingerprint: String get() = overrides["repoBrowserErrorFingerprint"] ?: fallback.repoBrowserErrorFingerprint

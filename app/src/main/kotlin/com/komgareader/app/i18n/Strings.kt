@@ -251,6 +251,7 @@ interface Strings {
     val repoBrowserAddRepo: String
     val repoBrowserOfficial: String
     val repoBrowserRepoUrl: String
+    val pluginInstallLocalApk: String
     val repoBrowserRemoveRepo: String
     val repoBrowserErrorTitle: String
     val repoBrowserErrorFingerprint: String
@@ -685,6 +686,7 @@ object StringsDe : Strings {
     override val repoBrowserAddRepo = "Repo hinzufügen"
     override val repoBrowserOfficial = "Offizielles Repo"
     override val repoBrowserRepoUrl = "Repo-URL"
+    override val pluginInstallLocalApk = "Lokales APK installieren"
     override val repoBrowserRemoveRepo = "Repo entfernen"
     override val repoBrowserErrorTitle = "Installation fehlgeschlagen"
     override val repoBrowserErrorFingerprint = "Signatur passt nicht zum Repo-Eintrag — Installation abgebrochen."
@@ -1100,6 +1102,7 @@ object StringsEn : Strings {
     override val repoBrowserAddRepo = "Add repo"
     override val repoBrowserOfficial = "Official repo"
     override val repoBrowserRepoUrl = "Repo URL"
+    override val pluginInstallLocalApk = "Install local APK"
     override val repoBrowserRemoveRepo = "Remove repo"
     override val repoBrowserErrorTitle = "Installation failed"
     override val repoBrowserErrorFingerprint = "Signature does not match the repo entry — installation aborted."

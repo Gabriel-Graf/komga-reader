@@ -2,6 +2,7 @@ package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign as UiTextAlign
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
@@ -36,10 +38,11 @@ enum class NovelSheetTab { TYPOGRAPHY, BOOKMARKS }
 
 /**
  * Content of the novel settings bottom sheet: two tabs [Typography | Bookmarks]. Stateless — values
- * in, callbacks out; the caller (screen) owns the `expanded` state + the close action. Both tabs reuse
- * the already-shared building blocks ([NovelTypographyControls] / [NovelBookmarkList]) — no dialog
- * frame (shared-structure-before-variants). The TOC moved out to a chrome button ([NovelTocPanel]).
- * No animation (animation-gating).
+ * in, callbacks out; the caller (screen) owns the `expanded` state + the close action. The TYPOGRAPHY
+ * tab reuses the already-shared [NovelTypographyControls] inside a scrolling column; the BOOKMARKS
+ * tab hosts the full-height [NovelBookmarkPanel] (it owns its own pinned header + scroll, so it is NOT
+ * wrapped in the shared scroll). No dialog frame (shared-structure-before-variants). The TOC moved out
+ * to a chrome button ([NovelTocPanel]). No animation (animation-gating).
  */
 @Composable
 fun NovelSettingsSheet(
@@ -54,9 +57,14 @@ fun NovelSettingsSheet(
     onHyphenation: (String) -> Unit,
     onFontFamily: (String) -> Unit,
     bookmarks: List<NovelBookmark>,
+    defaultMarkerStyle: String,
+    onDefaultMarkerStyle: (String) -> Unit,
     onBookmarkJump: (String) -> Unit,
     onBookmarkRename: (Long) -> Unit,
     onBookmarkDelete: (Long) -> Unit,
+    onBookmarkPickColor: (List<Long>) -> Unit,
+    onBookmarkApplyMode: (List<Long>, String) -> Unit,
+    onBookmarkDeleteMany: (List<Long>) -> Unit,
     onBookmarkJumped: () -> Unit,
     availableFonts: List<NovelFont> = NovelFonts.ALL,
     fontFiles: Map<String, File> = emptyMap(),
@@ -75,22 +83,23 @@ fun NovelSettingsSheet(
             onSelect = onTabChange,
         )
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                when (selectedTab) {
-                    NovelSheetTab.TYPOGRAPHY -> NovelTypographyControls(
+            when (selectedTab) {
+                // Typography: the shared scroll wraps the controls.
+                NovelSheetTab.TYPOGRAPHY -> Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    NovelTypographyControls(
                         fontSizeEm = config.fontSizeEm,
                         onFontSize = onFontSizeEm,
                         lineHeight = config.lineHeight,
                         onLineHeight = onLineHeight,
                         fontWeight = config.fontWeight,
                         onFontWeight = onFontWeight,
-                        marginPreset = config.marginPreset(),
+                        marginPreset = NovelSettings.presetForMargin(config.margin),
                         onMargin = onMargin,
                         textAlign = if (config.textAlign == TextAlign.LEFT) "LEFT" else "JUSTIFY",
                         onTextAlign = onTextAlign,
@@ -101,14 +110,21 @@ fun NovelSettingsSheet(
                         availableFonts = availableFonts,
                         fontFiles = fontFiles,
                     )
-                    NovelSheetTab.BOOKMARKS -> NovelBookmarkList(
-                        bookmarks = bookmarks,
-                        onJump = onBookmarkJump,
-                        onRename = onBookmarkRename,
-                        onDelete = onBookmarkDelete,
-                        onJumped = onBookmarkJumped,
-                    )
                 }
+                // Bookmarks: the panel owns its pinned header + its own scroll — fill the sheet.
+                NovelSheetTab.BOOKMARKS -> NovelBookmarkPanel(
+                    bookmarks = bookmarks,
+                    defaultMarkerStyle = defaultMarkerStyle,
+                    onDefaultMarkerStyle = onDefaultMarkerStyle,
+                    onJump = onBookmarkJump,
+                    onJumped = onBookmarkJumped,
+                    onRename = onBookmarkRename,
+                    onDelete = onBookmarkDelete,
+                    onPickColor = onBookmarkPickColor,
+                    onApplyMode = onBookmarkApplyMode,
+                    onDeleteMany = onBookmarkDeleteMany,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
         }
     }
@@ -125,10 +141,18 @@ private fun SheetTabRow(
     onSelect: (NovelSheetTab) -> Unit,
 ) {
     val tokens = LocalDesignTokens.current
+    // Inset from the screen edges so the tab strip does NOT touch the sides ("shorter, not thinner" —
+    // request 2026-06-16): the horizontal padding sits OUTSIDE the border, so the bordered strip floats
+    // with side gaps; the row keeps its original height (full label + 10dp vertical padding).
+    // Slightly rounded corners (request 2026-06-16). Clip BEFORE the border so the active tab's
+    // accent fill is clipped to the rounded shape at the strip's ends, and the border follows it.
+    val tabShape = RoundedCornerShape(8.dp)
     Row(
         Modifier
             .fillMaxWidth()
-            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+            .clip(tabShape)
+            .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, tabShape),
     ) {
         tabs.forEach { (tab, label) ->
             val isSelected = tab == selected
@@ -149,13 +173,6 @@ private fun SheetTabRow(
             }
         }
     }
-}
-
-/** Reverse-map: concrete [ReflowConfig] margins -> the preset string the controls expect. */
-private fun ReflowConfig.marginPreset(): String = when (margin) {
-    NovelSettings.marginFor(NovelSettings.MARGIN_NARROW) -> NovelSettings.MARGIN_NARROW
-    NovelSettings.marginFor(NovelSettings.MARGIN_WIDE) -> NovelSettings.MARGIN_WIDE
-    else -> NovelSettings.MARGIN_NORMAL
 }
 
 /** Reverse-map: [Hyphenation] -> language code string ("" = off) the controls expect. */

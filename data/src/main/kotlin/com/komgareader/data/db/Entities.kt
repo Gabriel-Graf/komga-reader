@@ -108,6 +108,11 @@ data class NovelBookmarkEntity(
     val label: String?,
     val snippet: String,
     val createdAt: Long,
+    // defaultValue MUST match the MIGRATION_19_20 ALTER defaults verbatim, else Room's
+    // schema validation fails and fallbackToDestructiveMigration wipes the DB
+    // (see room-migration-destructive-pitfall). "-16777216" == 0xFF000000 (opaque black).
+    @ColumnInfo(defaultValue = "FLAG") val markerStyle: String = "FLAG",
+    @ColumnInfo(defaultValue = "-16777216") val color: Int = 0xFF000000.toInt(),
 )
 
 /** Lokal gespeichertes Buch (Download-Eintrag). */

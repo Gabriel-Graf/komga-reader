@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.komgareader.data.db.AppDatabase
 import com.komgareader.data.db.MIGRATION_17_18
 import com.komgareader.data.db.MIGRATION_18_19
+import com.komgareader.data.db.MIGRATION_19_20
 import com.komgareader.data.db.NovelBookmarkEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -72,6 +73,176 @@ class NovelBookmarkMigrationTest {
         assertEquals("Intro", loaded.label)
 
         db.close()
+    }
+
+    @Test
+    fun migration19to20_ergaenztMarkerStyleUndColor_ohneBestandsdatenZuLoeschen() = runBlocking {
+        // 1. v19-DB roh erzeugen: volles v19-Schema + ein novel_bookmark + die alte globale
+        //    Marker-Einstellung (bookmark_marker_style = MARGIN).
+        createV19DatabaseWithBookmarkRow()
+
+        // 2. Über Room mit der echten Migration öffnen (Ziel-Version = 20; Kette nur 19→20).
+        val db = Room.databaseBuilder(ctx, AppDatabase::class.java, dbName)
+            .addMigrations(MIGRATION_19_20)
+            .allowMainThreadQueries()
+            .build()
+
+        // 3. Die neuen Spalten existieren, die Bestandszeile überlebte und der bisherige (globale)
+        //    Marker-Stil wurde übernommen (nicht der neue FLAG-Default); die Farbe ist Default-Schwarz.
+        val loaded = db.novelBookmarkDao().observe(2, "novel-9").first().single()
+        assertEquals("/body/DocFragment[3].0", loaded.xpointer)
+        assertEquals("Chapter", loaded.label)
+        assertEquals("MARGIN", loaded.markerStyle)
+        assertEquals(0xFF000000.toInt(), loaded.color)
+
+        db.close()
+    }
+
+    @Test
+    fun migration19to20_ohneGlobaleMarkerEinstellung_faelltAufUnderlineZurueck() = runBlocking {
+        // 1. v19-DB roh erzeugen MIT Bestands-Lesezeichen, aber OHNE die globale
+        //    bookmark_marker_style-Einstellung (häufiger Realfall: Nutzer hat den Stil nie geändert).
+        createV19DatabaseWithBookmarkRow(markerSetting = null)
+
+        // 2. Über Room mit der echten Migration öffnen (19→20).
+        val db = Room.databaseBuilder(ctx, AppDatabase::class.java, dbName)
+            .addMigrations(MIGRATION_19_20)
+            .allowMainThreadQueries()
+            .build()
+
+        // 3. Fehlt die Einstellung, greift der COALESCE-Fallback auf 'UNDERLINE' (nicht der neue
+        //    FLAG-Default), sodass die Bestandszeile ihren bisherigen (globalen Default-)Look behält.
+        val loaded = db.novelBookmarkDao().observe(2, "novel-9").first().single()
+        assertEquals("UNDERLINE", loaded.markerStyle)
+        assertEquals(0xFF000000.toInt(), loaded.color)
+
+        db.close()
+    }
+
+    /**
+     * Erzeugt eine vollständige v19-Datenbank (alle v17-Tabellen + `reading_session` aus 17→18 +
+     * `novel_bookmark` aus 18→19, im Pre-v20-Schema OHNE markerStyle/color), eine Bestandszeile in
+     * `novel_bookmark` und — wenn [markerSetting] nicht null — die alte globale Marker-Einstellung.
+     * Wie bei der v17-Variante muss das volle Schema vorhanden sein, weil Room beim Öffnen ALLE
+     * Tabellen validiert.
+     */
+    private fun createV19DatabaseWithBookmarkRow(markerSetting: String? = "MARGIN") {
+        val callback = object : SupportSQLiteOpenHelper.Callback(19) {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `settings` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `server` (" +
+                        "`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `baseUrl` TEXT NOT NULL, " +
+                        "`username` TEXT, `apiKeyCiphertext` TEXT, `apiKeyIv` TEXT, " +
+                        "`passwordCiphertext` TEXT, `passwordIv` TEXT, " +
+                        "`kind` TEXT NOT NULL DEFAULT 'KOMGA', " +
+                        "`extrasCiphertext` TEXT, `extrasIv` TEXT, PRIMARY KEY(`id`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `downloads` (" +
+                        "`bookRemoteId` TEXT NOT NULL, `sourceId` INTEGER NOT NULL, " +
+                        "`seriesRemoteId` TEXT NOT NULL, `title` TEXT NOT NULL, `format` TEXT NOT NULL, " +
+                        "`localPath` TEXT NOT NULL, `totalPages` INTEGER NOT NULL, " +
+                        "`seriesTitle` TEXT NOT NULL DEFAULT '', `seriesCoverUrl` TEXT, " +
+                        "PRIMARY KEY(`bookRemoteId`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `shelves` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`sources` TEXT NOT NULL, `defaultContentType` TEXT)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `series_overrides` (" +
+                        "`sourceId` INTEGER NOT NULL, `seriesRemoteId` TEXT NOT NULL, " +
+                        "`contentType` TEXT NOT NULL, PRIMARY KEY(`sourceId`, `seriesRemoteId`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `read_progress` (" +
+                        "`bookRemoteId` TEXT NOT NULL, `sourceId` INTEGER NOT NULL, `page` INTEGER NOT NULL, " +
+                        "`completed` INTEGER NOT NULL, `totalPages` INTEGER NOT NULL, `dirty` INTEGER NOT NULL, " +
+                        "`updatedAt` INTEGER NOT NULL, PRIMARY KEY(`bookRemoteId`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `color_profiles` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                        "`saturation` REAL NOT NULL, `contrast` REAL NOT NULL, `brightness` REAL NOT NULL, " +
+                        "`blackPoint` REAL NOT NULL, `whitePoint` REAL NOT NULL, `gamma` REAL NOT NULL, " +
+                        "`sharpenAmount` REAL NOT NULL, `sharpenRadius` INTEGER NOT NULL, " +
+                        "`ditherMode` TEXT NOT NULL, `ditherLevels` INTEGER NOT NULL, `builtIn` INTEGER NOT NULL, " +
+                        "`pluginPackage` TEXT)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `novel_progress` (" +
+                        "`sourceId` INTEGER NOT NULL, `bookId` TEXT NOT NULL, `anchor` TEXT NOT NULL, " +
+                        "`fraction` REAL NOT NULL, `dirty` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`sourceId`, `bookId`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `collections` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `kind` TEXT NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `collection_members` (" +
+                        "`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `collectionId` INTEGER NOT NULL, " +
+                        "`sourceId` INTEGER NOT NULL, `remoteId` TEXT NOT NULL, `title` TEXT NOT NULL, " +
+                        "`position` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_collection_members_collectionId` ON `collection_members` (`collectionId`)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `collection_sync_links` (" +
+                        "`collectionId` INTEGER NOT NULL, `sourceId` INTEGER NOT NULL, " +
+                        "`remoteCollectionId` TEXT, `status` TEXT NOT NULL, `dirty` INTEGER NOT NULL, " +
+                        "`updatedAt` INTEGER NOT NULL, PRIMARY KEY(`collectionId`, `sourceId`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `plugin_repos` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `url` TEXT NOT NULL, `name` TEXT)",
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_plugin_repos_url` ON `plugin_repos` (`url`)")
+                // reading_session: aus MIGRATION_17_18.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `reading_session` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`readerKind` TEXT NOT NULL, `bookRemoteId` TEXT NOT NULL, `sourceId` INTEGER NOT NULL, " +
+                        "`startTs` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL)",
+                )
+                // novel_bookmark: aus MIGRATION_18_19, OHNE markerStyle/color (das ergänzt 19→20).
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `novel_bookmark` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`sourceId` INTEGER NOT NULL, `bookId` TEXT NOT NULL, " +
+                        "`xpointer` TEXT NOT NULL, `number` INTEGER NOT NULL, " +
+                        "`label` TEXT, `snippet` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_novel_bookmark_sourceId_bookId` " +
+                        "ON `novel_bookmark` (`sourceId`, `bookId`)",
+                )
+                // Alte globale Marker-Einstellung: existierende Lesezeichen sollen sie behalten.
+                // null = nie gesetzt (testet den COALESCE-'UNDERLINE'-Fallback der Migration).
+                if (markerSetting != null) {
+                    db.execSQL(
+                        "INSERT INTO `settings` (`key`,`value`) VALUES ('bookmark_marker_style', '$markerSetting')",
+                    )
+                }
+                db.execSQL(
+                    "INSERT INTO `novel_bookmark` " +
+                        "(`sourceId`,`bookId`,`xpointer`,`number`,`label`,`snippet`,`createdAt`) " +
+                        "VALUES (2, 'novel-9', '/body/DocFragment[3].0', 1, 'Chapter', 'lorem ipsum', 1000)",
+                )
+            }
+
+            override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        }
+        val config = SupportSQLiteOpenHelper.Configuration.builder(ctx)
+            .name(dbName)
+            .callback(callback)
+            .build()
+        val helper = FrameworkSQLiteOpenHelperFactory().create(config)
+        helper.writableDatabase.close()
+        helper.close()
     }
 
     /**

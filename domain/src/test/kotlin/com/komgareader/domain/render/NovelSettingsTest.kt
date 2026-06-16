@@ -2,6 +2,7 @@ package com.komgareader.domain.render
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Reiner Mapper-Test: die persistierten Primitive (Strings/Floats aus den
@@ -43,9 +44,65 @@ class NovelSettingsTest {
         assertEquals(Margins(50, 50, 50, 50), cfg.margin)
     }
 
+    @Test fun `margin-preset SNUG ergibt gelistete 20px-Raender`() {
+        val cfg = NovelSettings(marginPreset = NovelSettings.MARGIN_SNUG).toReflowConfig()
+        assertEquals(Margins(20, 20, 20, 20), cfg.margin)
+    }
+
+    @Test fun `margin-preset RELAXED ergibt gelistete 40px-Raender`() {
+        val cfg = NovelSettings(marginPreset = NovelSettings.MARGIN_RELAXED).toReflowConfig()
+        assertEquals(Margins(40, 40, 40, 40), cfg.margin)
+    }
+
+    @Test fun `margin-preset XWIDE ergibt 60px-Raender`() {
+        // NB: 60 must be crengine-listed on device; if it collapses, drop XWIDE to a listed value.
+        val cfg = NovelSettings(marginPreset = NovelSettings.MARGIN_XWIDE).toReflowConfig()
+        assertEquals(Margins(60, 60, 60, 60), cfg.margin)
+    }
+
     @Test fun `unbekanntes margin-preset faellt auf NORMAL zurueck`() {
         val cfg = NovelSettings(marginPreset = "ХYZ").toReflowConfig()
         assertEquals(Margins.NORMAL, cfg.margin)
+    }
+
+    @Test fun `MARGIN_STEPS sind aufsteigend nach Rand-px geordnet`() {
+        val px = NovelSettings.MARGIN_STEPS.map { NovelSettings.marginFor(it).left }
+        assertEquals(listOf(12, 20, 25, 40, 50, 60), px)
+    }
+
+    @Test fun `jeder MARGIN_STEP mappt auf seinen eigenen gelisteten px-Wert`() {
+        // Every step resolves to a distinct value via its own when-branch (none silently
+        // falls through to the NORMAL default), so the list has as many distinct px as entries.
+        val px = NovelSettings.MARGIN_STEPS.map { NovelSettings.marginFor(it).left }
+        assertEquals(NovelSettings.MARGIN_STEPS.size, px.distinct().size)
+    }
+
+    @Test fun `landmarks sind eine Teilmenge der MARGIN_STEPS`() {
+        assertTrue(NovelSettings.MARGIN_STEPS.containsAll(NovelSettings.MARGIN_LANDMARKS))
+    }
+
+    @Test fun `NARROW NORMAL WIDE XWIDE sind die benannten landmarks`() {
+        assertEquals(
+            setOf(
+                NovelSettings.MARGIN_NARROW,
+                NovelSettings.MARGIN_NORMAL,
+                NovelSettings.MARGIN_WIDE,
+                NovelSettings.MARGIN_XWIDE,
+            ),
+            NovelSettings.MARGIN_LANDMARKS,
+        )
+    }
+
+    @Test fun `presetForMargin ist die verlustfreie Umkehr von marginFor fuer jeden Step`() {
+        // Round-trip: every step's px maps back to exactly that step (the bug was SNUG/RELAXED/XWIDE
+        // round-tripping to NORMAL, so the margin slider snapped back instead of holding the pick).
+        NovelSettings.MARGIN_STEPS.forEach { step ->
+            assertEquals(step, NovelSettings.presetForMargin(NovelSettings.marginFor(step)))
+        }
+    }
+
+    @Test fun `presetForMargin faellt bei unbekannten px auf NORMAL zurueck`() {
+        assertEquals(NovelSettings.MARGIN_NORMAL, NovelSettings.presetForMargin(Margins(7, 7, 7, 7)))
     }
 
     @Test fun `textAlign LEFT wird zum LEFT-Enum`() {

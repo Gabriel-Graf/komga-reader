@@ -10,7 +10,7 @@ interface SettingsRepository {
     val language: Flow<String>       // "de" | "en"
     val displayMode: Flow<String>    // "EINK" | "SMARTPHONE"
     val shellLayoutMode: Flow<String>  // "AUTO" | "COMPACT" | "EXPANDED" — Home-Skelett-Form-Faktor (Override)
-    /** "UNDERLINE" | "MARGIN" — how novel bookmarks are marked on the page. */
+    /** "UNDERLINE" | "MARGIN" | "FLAG" — default marker style for *new* novel bookmarks (existing carry their own). */
     val bookmarkMarkerStyle: Flow<String>
     /** "ASK" | "IMPORT" | "READ_ONLY" — what to do when an external book file is opened. */
     val externalOpenBehavior: Flow<String>

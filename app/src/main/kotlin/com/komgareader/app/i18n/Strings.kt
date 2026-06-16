@@ -353,6 +353,7 @@ interface Strings {
     val novelMarginNarrow: String
     val novelMarginNormal: String
     val novelMarginWide: String
+    val novelMarginXWide: String
     val novelFontFamily: String
     val novelTextAlign: String
     val novelAlignLeft: String
@@ -381,6 +382,14 @@ interface Strings {
     val novelBookmarkMarkerUnderline: String
     val novelBookmarkMarkerMargin: String
     val novelBookmarkMarkerFlag: String
+    // Roman-Lesezeichen: Farbe + Mehrfachauswahl
+    val novelBookmarkColor: String
+    val novelBookmarkColorTitle: String
+    val novelBookmarkColorCustom: String
+    val novelBookmarkDefaultMarker: String
+    val novelBookmarkSelectAll: String
+    val novelBookmarkApplyMode: String
+    fun novelBookmarkSelectedCount(n: Int): String
     // Roman-Volltextsuche + Gehe-zu-%
     val novelSearch: String
     val novelSearchPlaceholder: String
@@ -778,6 +787,7 @@ object StringsDe : Strings {
     override val novelMarginNarrow = "Schmal"
     override val novelMarginNormal = "Normal"
     override val novelMarginWide = "Breit"
+    override val novelMarginXWide = "Extra breit"
     override val novelFontFamily = "Schriftart"
     override val novelTextAlign = "Ausrichtung"
     override val novelAlignLeft = "Linksbündig"
@@ -803,6 +813,13 @@ object StringsDe : Strings {
     override val novelBookmarkMarkerUnderline = "Unterstreichung"
     override val novelBookmarkMarkerMargin = "Linie"
     override val novelBookmarkMarkerFlag = "Fähnchen"
+    override val novelBookmarkColor = "Farbe"
+    override val novelBookmarkColorTitle = "Lesezeichen-Farbe"
+    override val novelBookmarkColorCustom = "Eigene"
+    override val novelBookmarkDefaultMarker = "Standard-Marker"
+    override val novelBookmarkSelectAll = "Alle"
+    override val novelBookmarkApplyMode = "Marker"
+    override fun novelBookmarkSelectedCount(n: Int) = "$n ausgewählt"
     override val novelSearch = "Suche"
     override val novelSearchPlaceholder = "Im Buch suchen…"
     override val novelSearchEmpty = "Suchbegriff eingeben und bestätigen."
@@ -1191,6 +1208,7 @@ object StringsEn : Strings {
     override val novelMarginNarrow = "Narrow"
     override val novelMarginNormal = "Normal"
     override val novelMarginWide = "Wide"
+    override val novelMarginXWide = "Extra wide"
     override val novelFontFamily = "Font"
     override val novelTextAlign = "Alignment"
     override val novelAlignLeft = "Left"
@@ -1216,6 +1234,13 @@ object StringsEn : Strings {
     override val novelBookmarkMarkerUnderline = "Underline"
     override val novelBookmarkMarkerMargin = "Line"
     override val novelBookmarkMarkerFlag = "Flag"
+    override val novelBookmarkColor = "Colour"
+    override val novelBookmarkColorTitle = "Bookmark colour"
+    override val novelBookmarkColorCustom = "Custom"
+    override val novelBookmarkDefaultMarker = "Default marker"
+    override val novelBookmarkSelectAll = "All"
+    override val novelBookmarkApplyMode = "Marker"
+    override fun novelBookmarkSelectedCount(n: Int) = "$n selected"
     override val novelSearch = "Search"
     override val novelSearchPlaceholder = "Search in book…"
     override val novelSearchEmpty = "Enter a search term and confirm."

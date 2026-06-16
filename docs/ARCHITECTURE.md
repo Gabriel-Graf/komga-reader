@@ -233,8 +233,9 @@ brightness before display:
 - Offline‑first read progress: local `dirty` flag → background sync queue.
 - **Local‑only data that no server mirrors stays off the sync queue by design.** The novel
   word‑bookmark table `novel_bookmark` (`NovelBookmarkEntity` / `NovelBookmarkDao` /
-  `RoomNovelBookmarkRepository`, `AppDatabase` v19, `MIGRATION_18_19`) is deliberately not synced —
-  neither Komga nor OPDS has per‑word bookmarks.
+  `RoomNovelBookmarkRepository`, `AppDatabase` **v20**, `MIGRATION_18_19` then `MIGRATION_19_20` which
+  added per‑bookmark `markerStyle`/`color` columns) is deliberately not synced — neither Komga nor OPDS
+  has per‑word bookmarks.
 - Bidirectional collection sync: the pure `planCollectionSync` use‑case decides per link by
   **last‑write‑wins (UTC)**; the `CollectionSyncManager` shell lists sources agnostically via
   `ActiveSource`. A central `SyncCoordinator` bundles app‑start / server‑changed / manual‑reload /

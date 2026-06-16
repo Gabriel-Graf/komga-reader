@@ -23,4 +23,19 @@ interface NovelBookmarkDao {
 
     @Query("UPDATE novel_bookmark SET label = :label WHERE id = :id")
     suspend fun rename(id: Long, label: String?)
+
+    @Query("UPDATE novel_bookmark SET markerStyle = :style WHERE id = :id")
+    suspend fun setMarkerStyle(id: Long, style: String)
+
+    @Query("UPDATE novel_bookmark SET color = :color WHERE id = :id")
+    suspend fun setColor(id: Long, color: Int)
+
+    @Query("DELETE FROM novel_bookmark WHERE id IN (:ids)")
+    suspend fun deleteMany(ids: List<Long>)
+
+    @Query("UPDATE novel_bookmark SET markerStyle = :style WHERE id IN (:ids)")
+    suspend fun setMarkerStyleMany(ids: List<Long>, style: String)
+
+    @Query("UPDATE novel_bookmark SET color = :color WHERE id IN (:ids)")
+    suspend fun setColorMany(ids: List<Long>, color: Int)
 }

@@ -50,7 +50,7 @@ The former in‑tree `guided-view` module has been removed.
 The novel reader gained **tap‑a‑word bookmarks** (Ist 2026-06-15): two new engine‑neutral render‑seam
 methods `ReflowableDocument.wordAt(page, …)` / `rectsFor(page, …)` (crengine JNI `nativeXPointerAtPoint` /
 `nativeRectsForXPointers`), a **local‑only** `novel_bookmark` Room table (`AppDatabase` v19 via
-`MIGRATION_18_19`, deliberately off the sync queue), a `BookmarkMarkerStyle{UNDERLINE,MARGIN}` setting, and tap wiring via
+`MIGRATION_18_19`, deliberately off the sync queue), a `BookmarkMarkerStyle{UNDERLINE,MARGIN,FLAG}` (later per‑bookmark; see the wide‑panel overhaul below), and tap wiring via
 the declarative `ReaderTapZones` seam (bookmark mode → `tapZones = null`, reader hit‑tests words itself).
 Built and compile/unit‑verified (`:app:assembleDebug` green); the **runtime word‑tap / marker behaviour
 is device‑verification pending** — the crengine `.so` is arm64‑only, so the JNI path only runs on a real
@@ -67,6 +67,19 @@ the new `EinkCapabilities.hasHardwareButtons`); (5) the novel reader excludes th
 edges** (`Modifier.systemGestureExclusion`; the system home swipe‑up is an OS guarantee and cannot be
 disabled); (6) the typography/TOC bottom sheet no longer dims the page (transparent dismisser → live
 preview). Frontlight + gesture behaviour remain **device‑verification pending** on a real Boox.
+
+**Novel‑reader wide‑panel sheet overhaul (Ist 2026-06-16, UI/UX only).** The novel settings/TOC bottom
+sheet was redesigned for a wide panel. Marker style **and colour** are now **per bookmark**
+(`NovelBookmark.markerStyle` default FLAG + `color` ARGB default black; `AppDatabase` **v20** /
+`MIGRATION_19_20` with a `COALESCE` backfill that preserves existing bookmarks' prior look; the
+`bookmark_marker_style` setting is now just the default for *new* bookmarks). `BookmarkMarkers` draws each
+bookmark in its own style+colour. The bookmarks tab (`NovelBookmarkPanel`) gains a pinned default‑marker
+selector + a **multi‑select** bar (select‑all, apply colour/marker, delete) and a per‑row colour swatch →
+new `EinkColorPicker` (palette + `#RRGGBB`). Typography became discrete `EinkSliderRow`s (margin with
+named landmarks Narrow/Normal/Wide/X‑Wide over `NovelSettings.MARGIN_STEPS`, plus font‑size/line‑height/
+weight), alignment is a button segment, and hyphenation order is Off/Auto/Language. `EinkSliderRow` +
+`EinkColorPicker` are new shared `ui/components`. Build green (`:app:assembleDebug`, `:domain:test`);
+the on‑page marker render + word‑tap remain **device‑bound** (arm64 crengine).
 
 ### Multi‑server / source‑agnostic — ✅
 This is the strongest result. A grep of `app/` and `domain/` finds **no** `KomgaSource`,

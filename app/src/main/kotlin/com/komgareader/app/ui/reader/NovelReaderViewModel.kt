@@ -504,6 +504,9 @@ class NovelReaderViewModel @Inject constructor(
                         id = 0, sourceId = routeSourceId, bookId = bookId,
                         xpointer = hit.xpointer, number = r.number, label = null,
                         snippet = hit.word, createdAt = System.currentTimeMillis(),
+                        // New bookmarks adopt the active default marker style and black colour;
+                        // the pinned selector only changes this default, not existing bookmarks.
+                        markerStyle = markerStyle.value, color = 0xFF000000.toInt(),
                     ),
                 )
             }
@@ -533,6 +536,30 @@ class NovelReaderViewModel @Inject constructor(
         viewModelScope.launch { bookmarks.rename(id, label?.ifBlank { null }) }
 
     fun deleteBookmark(id: Long) = viewModelScope.launch { bookmarks.remove(id) }
+
+    /** Sets the persisted default marker style applied to newly created bookmarks. */
+    fun setDefaultMarkerStyle(style: String) =
+        viewModelScope.launch { settings.setBookmarkMarkerStyle(style) }
+
+    /** Sets the content colour (ARGB) drawn for a single bookmark's marker. */
+    fun setBookmarkColor(id: Long, color: Int) =
+        viewModelScope.launch { bookmarks.setColor(id, color) }
+
+    /** Sets the marker style of a single existing bookmark. */
+    fun setBookmarkMarkerStyle(id: Long, style: String) =
+        viewModelScope.launch { bookmarks.setMarkerStyle(id, style) }
+
+    /** Removes the given bookmarks in one transaction (multi-select delete). */
+    fun deleteBookmarks(ids: List<Long>) =
+        viewModelScope.launch { bookmarks.removeMany(ids) }
+
+    /** Applies one content colour (ARGB) to all given bookmarks (multi-select). */
+    fun applyColorToBookmarks(ids: List<Long>, color: Int) =
+        viewModelScope.launch { bookmarks.setColorMany(ids, color) }
+
+    /** Applies one marker style to all given bookmarks (multi-select). */
+    fun applyMarkerStyleToBookmarks(ids: List<Long>, style: String) =
+        viewModelScope.launch { bookmarks.setMarkerStyleMany(ids, style) }
 
     override fun onPageSettled(page: Int) {
         if (page != _uiState.value.currentPage) {

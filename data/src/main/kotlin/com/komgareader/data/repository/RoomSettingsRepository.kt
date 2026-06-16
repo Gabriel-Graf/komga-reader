@@ -23,8 +23,9 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     // Default AUTO: Form-Faktor aus der Bildschirmbreite ableiten (verhaltensgleich zu vorher).
     override val shellLayoutMode: Flow<String> =
         dao.observe(KEY_SHELL_LAYOUT).map { it ?: ShellLayoutMode.AUTO.name }
+    // This is now the default marker for *new* bookmarks (existing ones carry their own style).
     override val bookmarkMarkerStyle: Flow<String> =
-        dao.observe(KEY_BOOKMARK_MARKER_STYLE).map { it ?: BookmarkMarkerStyle.UNDERLINE.name }
+        dao.observe(KEY_BOOKMARK_MARKER_STYLE).map { it ?: BookmarkMarkerStyle.FLAG.name }
     override val externalOpenBehavior: Flow<String> =
         dao.observe(KEY_EXTERNAL_OPEN_BEHAVIOR).map { it ?: ExternalOpenBehavior.ASK.name }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)

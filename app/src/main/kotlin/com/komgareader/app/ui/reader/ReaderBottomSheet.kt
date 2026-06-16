@@ -156,7 +156,8 @@ private fun ReaderBottomSheetExpanded(sheet: ReaderBottomSheet, modifier: Modifi
     // stay pinned while the body scrolls (novel-reader request 2026-06-16).
     val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val sheetHeight = maxHeight * 0.5f
+        // 0.4 of the viewport (was 0.5) — 20% shorter expanded sheet (request 2026-06-16).
+        val sheetHeight = maxHeight * 0.4f
         Column(
             Modifier
                 .fillMaxWidth()

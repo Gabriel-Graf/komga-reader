@@ -90,7 +90,8 @@ fun SegmentedChoiceRow(
 ) {
     val tokens = LocalDesignTokens.current
     Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
+        // Tighter than the old 8dp so settings rows don't read too far apart (request 2026-06-16).
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HighlightText(

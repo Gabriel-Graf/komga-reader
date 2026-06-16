@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
         PluginRepoEntity::class, ReadingSessionEntity::class,
     ],
-    version = 19,
+    version = 20,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -382,6 +382,28 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_novel_bookmark_sourceId_bookId` " +
                 "ON `novel_bookmark` (`sourceId`, `bookId`)",
+        )
+    }
+}
+
+/**
+ * v19 → v20: per-bookmark marker style + colour on `novel_bookmark`.
+ *
+ * Two `ALTER ADD COLUMN … NOT NULL DEFAULT …`; the defaults ('FLAG', -16777216 = opaque black)
+ * MUST equal the [NovelBookmarkEntity] `@ColumnInfo(defaultValue=…)` verbatim, otherwise Room's
+ * post-migration schema validation fails and `fallbackToDestructiveMigration` wipes the whole DB
+ * (see room-migration-destructive-pitfall). The final UPDATE preserves the *prior* look of
+ * existing bookmarks: before v20 the marker style was a single global setting
+ * (`bookmark_marker_style`, default UNDERLINE), so seed each existing row with that value
+ * instead of the new per-bookmark FLAG default.
+ */
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `novel_bookmark` ADD COLUMN `markerStyle` TEXT NOT NULL DEFAULT 'FLAG'")
+        db.execSQL("ALTER TABLE `novel_bookmark` ADD COLUMN `color` INTEGER NOT NULL DEFAULT -16777216")
+        db.execSQL(
+            "UPDATE `novel_bookmark` SET `markerStyle` = " +
+                "COALESCE((SELECT `value` FROM `settings` WHERE `key` = 'bookmark_marker_style'), 'UNDERLINE')",
         )
     }
 }

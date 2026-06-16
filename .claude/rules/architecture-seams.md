@@ -338,8 +338,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `RoomNovelBookmarkRepository`), `AppDatabase` 18 → 19 (`MIGRATION_18_19`) — bewusst **nicht** in der
   Sync-Queue. Die Tap-Verdrahtung läuft über die deklarative `ReaderTapZones`-Naht (A1b): Lesezeichen-Modus
   → `tapZones = null` (der Reader macht den Wort-Hit-Test selbst, wie Comic), sonst `HorizontalThirds`.
-  Marker-Stil (`BookmarkMarkerStyle{UNDERLINE,MARGIN}`, Setting `bookmark_marker_style`) ist eine
-  Einstellung. **Ist (2026-06-16, auf echter Boox Go Color 7 Gen2 verifiziert):** Tap im Lesezeichen-Modus
+  Marker-Stil (`BookmarkMarkerStyle{UNDERLINE,MARGIN,FLAG}`) + **Marker-Farbe (ARGB)** sind seit
+  dem Wide-Panel-Umbau (s. u.) **pro Lesezeichen** gespeichert (`NovelBookmark.markerStyle`/`.color`,
+  Spalten in `novel_bookmark`); das Setting `bookmark_marker_style` ist nur noch der **Default für
+  neue** Lesezeichen (Default **FLAG**). **Ist (2026-06-16, auf echter Boox Go Color 7 Gen2 verifiziert):** Tap im Lesezeichen-Modus
   setzt das Wort-Lesezeichen (per `adb input tap` + `adb logcat -s cr3bridge` bewiesen: `wordAt: HIT` →
   Eintrag „#1 …" in der Liste); die Wort-Auflösung trifft das angetippte Wort, der Marker ist
   margin-korrigiert. Der Koordinaten-Fix oben war der eigentliche „markiert keine Wörter"-Bug.
@@ -353,7 +355,23 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`NovelBookmarkList` frameless, neben Typografie; `NovelSheetTab{TYPOGRAPHY,BOOKMARKS}`) — getauscht
   gegenüber vorher (TOC-Tab im Sheet, Lesezeichen-Liste als Top-Modal). Das Expanded-Sheet ist ein
   **schmalerer (0.92), kürzerer (0.45) schwebender Karten**-Look (gerundet, Rand-Abstand), der Scrim
-  bleibt transparent (Live-Vorschau).
+  bleibt transparent (Live-Vorschau). **Wide-Panel-Sheet-Umbau (Ist, 2026-06-16, reine UI/UX —
+  Runtime gerätegebunden offen):** der Roman-Settings-Sheet ist für breite Panels neu gestaltet.
+  (1) **Pro-Lesezeichen Marker-Stil + Farbe:** `NovelBookmark` trägt jetzt `markerStyle: String`
+  (Default FLAG) + `color: Int` (ARGB, Default Schwarz); Entity-Spalten + DAO-Batch-Updates,
+  `AppDatabase` **19 → 20** (`MIGRATION_19_20`: `ALTER ADD COLUMN` mit @ColumnInfo-`defaultValue`-Parität,
+  bestehende Zeilen per `COALESCE`-Backfill aus `bookmark_marker_style` → vorheriger Look erhalten).
+  `BookmarkMarkers` zeichnet **pro Lesezeichen** in dessen Stil+Farbe (kein globaler `markerStyleName`
+  mehr). Modi sind mittendrin wechselbar, ohne bestehende zu verändern. (2) **Bookmark-Tab** (`NovelBookmarkPanel`,
+  ersetzt `NovelBookmarkList`): fixierter Default-Marker-Selektor + Mehrfachauswahl-Leiste (Alle/Anzahl,
+  Farbe/Marker/Löschen auf der Auswahl), engere Zeilen mit Farb-Swatch → `EinkColorPicker` (Palette +
+  `#RRGGBB`, Schwarz default; Screen besitzt das eine Modal). (3) **Typografie-Tab:** Seitenrand +
+  Schriftgröße/Zeilenabstand/Stärke als diskreter `EinkSliderRow` (−/+ + gerasterte Spur + Landmarks;
+  Rand-Stufen `NovelSettings.MARGIN_STEPS` 12·20·25·40·50·60 mit Landmarks Schmal/Normal/Breit/Extra),
+  Ausrichtung als `SegmentedChoiceRow`, Silbentrennung-Reihenfolge Aus/Auto/Sprache. Schmalere `SheetTabRow`.
+  `EinkSliderRow`/`EinkColorPicker` sind neue geteilte `ui/components`-Bausteine. Build grün
+  (`:app:assembleDebug`, `:domain:test`); Wort-Tap-Render + Farbe selbst sind arm64-crengine, nur auf
+  echter Boox verifizierbar.
 - **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`

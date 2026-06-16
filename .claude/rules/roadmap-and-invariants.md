@@ -35,7 +35,12 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
   Marker auf der Seite). Render-Naht-Erweiterung `ReflowableDocument.wordAt`/`rectsFor` (+ zwei neue JNI),
   lokal-only Room-Tabelle `novel_bookmark` (`MIGRATION_18_19`, Schema v19, **nicht** synchronisiert). Compile- +
   unit-verifiziert, `:app:assembleDebug` grün; das **Runtime-Wort-Tap-/Marker-Verhalten** ist mangels
-  arm64-crengine-`.so` auf dem Emulator **nur auf echter Boox verifizierbar** (noch ausstehend). Details:
+  arm64-crengine-`.so` auf dem Emulator **nur auf echter Boox verifizierbar** (noch ausstehend).
+  **Wide-Panel-Sheet-Umbau (Ist, 2026-06-16, reine UI/UX):** Marker-Stil + **Farbe** jetzt **pro
+  Lesezeichen** (`NovelBookmark.markerStyle`/`.color`, `AppDatabase` v20/`MIGRATION_19_20`, Default-Marker
+  FLAG); Bookmark-Tab mit Mehrfachauswahl (Farbe/Modus/Löschen) + `EinkColorPicker`; Typografie als
+  diskrete `EinkSliderRow` (Rand-Landmarks + X-breit), Ausrichtung als Buttons, Trennung Aus/Auto/Sprache.
+  Build grün; Runtime gerätegebunden. Details:
   `architecture-seams.md` (Naht B).
 - **Externer Buch-Datei-Handler („Öffnen mit") — gebaut (Ist, 2026-06-15; Runtime gerätegebunden offen):**
   Die App ist System-Handler für `.epub`/`.cbz`/`.cbr`/`.pdf` (VIEW-`<intent-filter>` in `MainActivity`,

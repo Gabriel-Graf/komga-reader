@@ -343,6 +343,7 @@ class MapBackedStrings(
     override val novelMarginNarrow: String get() = overrides["novelMarginNarrow"] ?: fallback.novelMarginNarrow
     override val novelMarginNormal: String get() = overrides["novelMarginNormal"] ?: fallback.novelMarginNormal
     override val novelMarginWide: String get() = overrides["novelMarginWide"] ?: fallback.novelMarginWide
+    override val novelMarginXWide: String get() = overrides["novelMarginXWide"] ?: fallback.novelMarginXWide
     override val novelFontFamily: String get() = overrides["novelFontFamily"] ?: fallback.novelFontFamily
     override val novelTextAlign: String get() = overrides["novelTextAlign"] ?: fallback.novelTextAlign
     override val novelAlignLeft: String get() = overrides["novelAlignLeft"] ?: fallback.novelAlignLeft
@@ -369,6 +370,14 @@ class MapBackedStrings(
     override val novelBookmarkMarkerUnderline: String get() = overrides["novelBookmarkMarkerUnderline"] ?: fallback.novelBookmarkMarkerUnderline
     override val novelBookmarkMarkerMargin: String get() = overrides["novelBookmarkMarkerMargin"] ?: fallback.novelBookmarkMarkerMargin
     override val novelBookmarkMarkerFlag: String get() = overrides["novelBookmarkMarkerFlag"] ?: fallback.novelBookmarkMarkerFlag
+    override val novelBookmarkColor: String get() = overrides["novelBookmarkColor"] ?: fallback.novelBookmarkColor
+    override val novelBookmarkColorTitle: String get() = overrides["novelBookmarkColorTitle"] ?: fallback.novelBookmarkColorTitle
+    override val novelBookmarkColorCustom: String get() = overrides["novelBookmarkColorCustom"] ?: fallback.novelBookmarkColorCustom
+    override val novelBookmarkDefaultMarker: String get() = overrides["novelBookmarkDefaultMarker"] ?: fallback.novelBookmarkDefaultMarker
+    override val novelBookmarkSelectAll: String get() = overrides["novelBookmarkSelectAll"] ?: fallback.novelBookmarkSelectAll
+    override val novelBookmarkApplyMode: String get() = overrides["novelBookmarkApplyMode"] ?: fallback.novelBookmarkApplyMode
+    override fun novelBookmarkSelectedCount(n: Int): String =
+        overrides["novelBookmarkSelectedCount"]?.replace("{n}", n.toString()) ?: fallback.novelBookmarkSelectedCount(n)
     override val novelSearch: String get() = overrides["novelSearch"] ?: fallback.novelSearch
     override val novelSearchPlaceholder: String get() = overrides["novelSearchPlaceholder"] ?: fallback.novelSearchPlaceholder
     override val novelSearchEmpty: String get() = overrides["novelSearchEmpty"] ?: fallback.novelSearchEmpty

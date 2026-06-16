@@ -24,6 +24,8 @@ class RoomNovelBookmarkRepository(private val dao: NovelBookmarkDao) : NovelBook
                 label = bookmark.label,
                 snippet = bookmark.snippet,
                 createdAt = bookmark.createdAt,
+                markerStyle = bookmark.markerStyle,
+                color = bookmark.color,
             ),
         )
     }
@@ -31,6 +33,17 @@ class RoomNovelBookmarkRepository(private val dao: NovelBookmarkDao) : NovelBook
     override suspend fun remove(id: Long) = dao.delete(id)
 
     override suspend fun rename(id: Long, label: String?) = dao.rename(id, label)
+
+    override suspend fun setMarkerStyle(id: Long, style: String) = dao.setMarkerStyle(id, style)
+
+    override suspend fun setColor(id: Long, color: Int) = dao.setColor(id, color)
+
+    override suspend fun removeMany(ids: List<Long>) = dao.deleteMany(ids)
+
+    override suspend fun setMarkerStyleMany(ids: List<Long>, style: String) =
+        dao.setMarkerStyleMany(ids, style)
+
+    override suspend fun setColorMany(ids: List<Long>, color: Int) = dao.setColorMany(ids, color)
 
     private fun NovelBookmarkEntity.toDomain() = NovelBookmark(
         id = id,
@@ -41,5 +54,7 @@ class RoomNovelBookmarkRepository(private val dao: NovelBookmarkDao) : NovelBook
         label = label,
         snippet = snippet,
         createdAt = createdAt,
+        markerStyle = markerStyle,
+        color = color,
     )
 }

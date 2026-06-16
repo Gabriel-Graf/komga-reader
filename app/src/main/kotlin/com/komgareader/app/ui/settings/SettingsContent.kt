@@ -702,6 +702,7 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
                     SegmentOption(NovelSettings.MARGIN_NARROW, s.novelMarginNarrow),
                     SegmentOption(NovelSettings.MARGIN_NORMAL, s.novelMarginNormal),
                     SegmentOption(NovelSettings.MARGIN_WIDE, s.novelMarginWide),
+                    SegmentOption(NovelSettings.MARGIN_XWIDE, s.novelMarginXWide),
                 ),
                 selectedKey = marginPreset,
                 onSelect = { viewModel.setNovelMarginPreset(it) },
@@ -722,8 +723,10 @@ private fun NovelScope(viewModel: SettingsViewModel, query: String) {
                 onValue = { viewModel.setNovelHyphenationLang(it) },
                 query = query,
             )
+            // Global DEFAULT marker for *new* bookmarks (existing bookmarks keep their own style,
+            // changeable per-bookmark in the reader). Relabelled accordingly (request 2026-06-16).
             SegmentedChoiceRow(
-                label = s.novelBookmarks,
+                label = s.novelBookmarkDefaultMarker,
                 options = listOf(
                     SegmentOption(BookmarkMarkerStyle.UNDERLINE.name, s.novelBookmarkMarkerUnderline),
                     SegmentOption(BookmarkMarkerStyle.MARGIN.name, s.novelBookmarkMarkerMargin),

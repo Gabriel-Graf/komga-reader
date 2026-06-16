@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.text.style.TextAlign
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.common.label
+import com.komgareader.app.ui.components.EinkColorPicker
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.FilteredReaderImage
 import com.komgareader.app.ui.components.LoadingIndicator
@@ -91,7 +92,9 @@ fun NovelReaderScreen(
     val fontSampleFiles by novelVm.fontSampleFiles.collectAsState()
     val bookmarks by novelVm.bookmarksFlow.collectAsState()
     val bookmarkMode by novelVm.bookmarkMode.collectAsState()
-    val markerStyleName by novelVm.markerStyle.collectAsState()
+    // The persisted default marker style for *new* bookmarks (the pinned sheet selector); existing
+    // bookmarks carry their own style + colour and are drawn per-bookmark (see [BookmarkMarkers]).
+    val defaultMarkerStyle by novelVm.markerStyle.collectAsState()
     val highlightedBookmark by novelVm.highlightedBookmark.collectAsState()
     val strings = LocalStrings.current
     var sheetExpanded by remember { mutableStateOf(false) }
@@ -99,6 +102,9 @@ fun NovelReaderScreen(
     var searchPanelOpen by remember { mutableStateOf(false) }
     var tocPanelOpen by remember { mutableStateOf(false) }
     var renameId by remember { mutableStateOf<Long?>(null) }
+    // Colour-picker target: the bookmark ids whose marker colour is being chosen (one id = single,
+    // many = batch). Non-null opens the colour modal — part of the exclusive single-modal discipline.
+    var colorPickerTargetIds by remember { mutableStateOf<List<Long>?>(null) }
 
     ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.currentPage)
 
@@ -108,6 +114,8 @@ fun NovelReaderScreen(
     }
 
     // Max. ein Dialog gleichzeitig über dem Reader (E-Ink-Designsprache): exklusive Verzweigung.
+    // The colour picker, rename dialog, search and TOC panels all share this single-modal discipline.
+    val colorIds = colorPickerTargetIds
     when {
         searchPanelOpen -> NovelSearchPanel(
             pageCount = state.pageCount,
@@ -122,20 +130,35 @@ fun NovelReaderScreen(
             onChapterSelected = novelVm::goToAnchor,
             onDismiss = { tocPanelOpen = false },
         )
+        // Bookmark-Label umbenennen (E-Ink-Dialog mit einem Textfeld).
+        renameId != null -> {
+            val id = renameId!!
+            val existing = bookmarks.firstOrNull { it.id == id }
+            BookmarkRenameDialog(
+                initial = existing?.label.orEmpty(),
+                onConfirm = { novelVm.renameBookmark(id, it); renameId = null },
+                onDismiss = { renameId = null },
+            )
+        }
+        // Bookmark marker colour: single id -> that bookmark's current colour, many -> black.
+        colorIds != null -> EinkColorPicker(
+            title = strings.novelBookmarkColorTitle,
+            initial = if (colorIds.size == 1) {
+                bookmarks.firstOrNull { it.id == colorIds[0] }?.color ?: 0xFF000000.toInt()
+            } else {
+                0xFF000000.toInt()
+            },
+            onPick = { c ->
+                if (colorIds.size == 1) novelVm.setBookmarkColor(colorIds[0], c)
+                else novelVm.applyColorToBookmarks(colorIds, c)
+                colorPickerTargetIds = null
+            },
+            onDismiss = { colorPickerTargetIds = null },
+        )
     }
 
     // Hardware back closes the bottom sheet first.
     BackHandler(sheetExpanded) { sheetExpanded = false }
-
-    // Bookmark-Label umbenennen (E-Ink-Dialog mit einem Textfeld).
-    renameId?.let { id ->
-        val existing = bookmarks.firstOrNull { it.id == id }
-        BookmarkRenameDialog(
-            initial = existing?.label.orEmpty(),
-            onConfirm = { novelVm.renameBookmark(id, it); renameId = null },
-            onDismiss = { renameId = null },
-        )
-    }
 
     ReaderScaffold(
         modifier = Modifier.testTag("reader_novel"),
@@ -203,9 +226,14 @@ fun NovelReaderScreen(
                     onHyphenation = novelVm::setHyphenation,
                     onFontFamily = novelVm::setFontFamily,
                     bookmarks = bookmarks,
+                    defaultMarkerStyle = defaultMarkerStyle,
+                    onDefaultMarkerStyle = novelVm::setDefaultMarkerStyle,
                     onBookmarkJump = novelVm::jumpToBookmark,
                     onBookmarkRename = { renameId = it },
                     onBookmarkDelete = novelVm::deleteBookmark,
+                    onBookmarkPickColor = { colorPickerTargetIds = it },
+                    onBookmarkApplyMode = novelVm::applyMarkerStyleToBookmarks,
+                    onBookmarkDeleteMany = novelVm::deleteBookmarks,
                     onBookmarkJumped = { sheetExpanded = false },
                     availableFonts = availableNovelFonts,
                     fontFiles = fontSampleFiles,
@@ -289,8 +317,8 @@ fun NovelReaderScreen(
                                 bookmarks = bookmarks,
                                 currentPage = state.currentPage,
                                 layoutGeneration = state.layoutGeneration,
-                                markerStyleName = markerStyleName,
                                 highlightedXpointer = highlightedBookmark,
+                                marginLeftPx = reflowConfig.margin.left,
                             )
                         } else {
                             LoadingIndicator()
@@ -409,8 +437,9 @@ private val BAR_STROKE = 1.5.dp
 /**
  * Zeichnet die Bookmark-Marker über die gerenderte Seite. Die Rects kommen aus der
  * crengine-Engine ([NovelReaderViewModel.bookmarkRectsForCurrentPage]) im selben Pixel-Raum
- * wie die 1:1 dargestellte Seiten-Bitmap. **Monochrom schwarz, keine Animation** (E-Ink):
- * je nach [BookmarkMarkerStyle] entweder ein Margin-Balken links oder eine Unterstreichung.
+ * wie die 1:1 dargestellte Seiten-Bitmap. **Keine Animation** (E-Ink). Each bookmark carries its
+ * own [NovelBookmark.markerStyle] and [NovelBookmark.color], so the mark is drawn **per-bookmark**:
+ * a margin bar, an underline or a numbered flag — in that bookmark's content colour (default black).
  */
 @Composable
 private fun BookmarkMarkers(
@@ -418,8 +447,8 @@ private fun BookmarkMarkers(
     bookmarks: List<NovelBookmark>,
     currentPage: Int,
     layoutGeneration: Int,
-    markerStyleName: String,
     highlightedXpointer: String?,
+    marginLeftPx: Int,
 ) {
     val rects by produceState(
         initialValue = emptyMap<String, IntRect>(),
@@ -430,24 +459,45 @@ private fun BookmarkMarkers(
         value = novelVm.bookmarkRectsForCurrentPage()
     }
     if (rects.isEmpty()) return
-    val numbers = remember(bookmarks) { bookmarks.associate { it.xpointer to it.number } }
+    // Per-xpointer lookup of the bookmark, so each rect draws with its own style + colour + number.
+    val byXpointer = remember(bookmarks) { bookmarks.associateBy { it.xpointer } }
     val textMeasurer = rememberTextMeasurer()
     Canvas(Modifier.fillMaxSize()) {
         rects.forEach { (xpointer, r) ->
+            val bookmark = byXpointer[xpointer] ?: return@forEach
+            val color = Color(bookmark.color)
             val highlighted = xpointer == highlightedXpointer
             val lineHeight = (r.bottom - r.top).toFloat()
-            when (markerStyleName) {
-                BookmarkMarkerStyle.MARGIN.name -> drawRect(
-                    color = Color.Black,
-                    topLeft = Offset(0f, r.top.toFloat()),
-                    size = Size(if (highlighted) 14f else 8f, lineHeight),
-                )
+            when (bookmark.markerStyle) {
+                BookmarkMarkerStyle.MARGIN.name -> {
+                    // A vertical stroke in the LEFT margin gutter that TRACKS the page margin: the
+                    // text column starts at [marginLeftPx] in this 1:1 px space (rendered bitmap ==
+                    // canvas), so seat the stroke just left of the text keeping a small relative gap,
+                    // instead of hugging the screen edge (request 2026-06-16). When the margin grows
+                    // the stroke moves right with the text; a tiny margin clamps it to the edge.
+                    val width = if (highlighted) 14f else 8f
+                    val gapToText = 10f
+                    val x = (marginLeftPx - gapToText - width).coerceAtLeast(0f)
+                    // Centre the stroke on the GLYPH row, not the line box. r.bottom is the glyph
+                    // vertical centre (see the underline branch); the line box (r.top..r.bottom)
+                    // reaches up into the inter-line leading, so drawing from r.top made the stroke
+                    // sit in the gap BETWEEN lines instead of beside a specific line of text
+                    // (request 2026-06-16). Span ~75% of the line height around the glyph centre.
+                    val markHeight = lineHeight * 0.75f
+                    val markTop = r.bottom - markHeight / 2f
+                    drawRect(
+                        color = color,
+                        topLeft = Offset(x, markTop),
+                        size = Size(width, markHeight),
+                    )
+                }
                 BookmarkMarkerStyle.FLAG.name -> drawFlag(
                     textMeasurer = textMeasurer,
-                    number = numbers[xpointer] ?: 0,
+                    number = bookmark.number,
                     rect = r,
                     lineHeight = lineHeight,
                     highlighted = highlighted,
+                    color = color,
                 )
                 else -> {
                     // Underline BELOW the glyphs. getRectEx returns the LINE box whose bottom sits
@@ -460,7 +510,7 @@ private fun BookmarkMarkers(
                     val y = r.bottom + lineHeight * 0.26f
                     val thickness = if (highlighted) 9f else 3f
                     drawRect(
-                        color = Color.Black,
+                        color = color,
                         topLeft = Offset(r.left.toFloat(), y),
                         size = Size((r.right - r.left).toFloat(), thickness),
                     )
@@ -474,7 +524,7 @@ private fun BookmarkMarkers(
  * Flag marker: a short vertical stroke in the gap just before the bookmarked word, carrying the
  * bookmark [number] above it (Kindle-like). The pole is centered on the glyph row (rect.bottom is
  * the glyph vertical center — see [BookmarkMarkers]) and spans ~60% of the line height; the
- * highlighted (just-jumped) flag is thicker. Monochrome, no animation (E-Ink).
+ * highlighted (just-jumped) flag is thicker. Drawn in the bookmark's [color]; no animation (E-Ink).
  */
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFlag(
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
@@ -482,6 +532,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFlag(
     rect: IntRect,
     lineHeight: Float,
     highlighted: Boolean,
+    color: Color,
 ) {
     val poleHeight = lineHeight * 0.6f
     val centerY = rect.bottom.toFloat()
@@ -492,11 +543,11 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFlag(
     // that letter (request 2026-06-16, "more room from the last letter on the left"). The number leans
     // right (left-aligned to the pole) so it never reaches back over the previous word.
     val x = (rect.left - 5).coerceAtLeast(0).toFloat()
-    drawRect(color = Color.Black, topLeft = Offset(x, top), size = Size(width, poleHeight))
+    drawRect(color = color, topLeft = Offset(x, top), size = Size(width, poleHeight))
     if (number > 0) {
         val measured = textMeasurer.measure(
             text = number.toString(),
-            style = TextStyle(color = Color.Black, fontSize = 13.sp, fontWeight = FontWeight.Bold),
+            style = TextStyle(color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold),
         )
         drawText(
             textLayoutResult = measured,

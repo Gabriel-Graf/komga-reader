@@ -23,7 +23,7 @@ internal fun hyphenationLanguageName(code: String): String =
         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 
 /**
- * Shared hyphenation control: Automatic / Off chips plus a Language chip that opens a modal of all
+ * Shared hyphenation control: Off / Automatic chips plus a Language chip that opens a modal of all
  * supported languages. Used in both the settings screen and the in-reader typography panel
  * (shared-structure-before-variants). [value] is the stored setting ("auto" | "" | a language code).
  */
@@ -38,8 +38,8 @@ fun HyphenationPicker(value: String, onValue: (String) -> Unit, query: String = 
     SegmentedChoiceRow(
         label = strings.novelHyphenation,
         options = listOf(
-            SegmentOption("auto", strings.novelHyphenationAuto),
             SegmentOption("", strings.novelHyphenationOff),
+            SegmentOption("auto", strings.novelHyphenationAuto),
             SegmentOption(LANGUAGE_KEY, languageLabel),
         ),
         selectedKey = if (mode == HyphenationMode.LANGUAGE) LANGUAGE_KEY else value,

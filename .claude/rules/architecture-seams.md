@@ -354,11 +354,17 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Drei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
   (NoOp inert). (1) **Press-Art:** `ButtonEvent` trägt jetzt `press: PressKind {SHORT, LONG}`
   (Default SHORT, quell-kompatibel). `MainActivity` klassifiziert kurze/lange Volume-Drücke über
-  den Android-Long-Press-Lifecycle (`startTracking`/`onKeyLongPress`/`onKeyUp`). **Korrektur (2026-06-16,
-  auf echter Boox):** die Go Color 7 Gen2 dispatcht `onKeyLongPress` für Volume-Keys **nie** (OEM-quirk —
-  sie sendet Key-Repeats statt des Long-Press-Callbacks; per `adb logcat -s HwButtons` bewiesen). `onKeyUp`
-  hat darum jetzt einen **zeitbasierten Fallback**: `held = event.eventTime - event.downTime`; `held >= 500ms`
-  = Long. `onKeyLongPress` bleibt als sekundärer (sofortiger) Trigger für OEMs, die ihn liefern.
+  den Android-Long-Press-Lifecycle (`startTracking`/`onKeyLongPress`/`onKeyUp`). **Befund + Korrektur
+  (2026-06-16, auf echter Boox per `adb logcat -s HwButtons` bewiesen):** die Go Color 7 Gen2 macht
+  **echtes Long-Press unmöglich** — ihre Firmware **kollabiert jeden Halt zu einem einzigen Instant-Tap**
+  (ein `onKeyDown`+`onKeyUp` 1ms auseinander, `downTime == eventTime`, `repeatCount = 0`, kein zweites
+  Event — egal ob 0,1s oder 3s gehalten). Weder `onKeyLongPress` (feuert nie) noch eine Haltedauer-Messung
+  sehen je einen Halt; die Onyx-eigene App kann es nur, weil sie als **System-App `/dev/input` direkt liest**.
+  Darum löst `MainActivity` die Shortcuts über **Doppel-Druck** aus (zwei diskrete Taps derselben Taste
+  innerhalb `doublePressMs = 300ms`): erster Tap = Blättern + Fenster scharf, zweiter Tap = Shortcut
+  (`longPress = true`-Pfad). `onKeyLongPress` bleibt als sekundärer Trigger für echte Android-Geräte, die
+  ihn liefern. Die `PressKind.LONG`/`volumeButtonEvent(.., longPress)`-Verdrahtung bleibt unverändert —
+  „LONG" ist jetzt nur das **Shortcut-Signal**, auf der Boox per Doppel-Druck ausgelöst statt per Halten.
   der pure `volumeButtonEvent(keyCode, longPress)` mappt: kurz → `PAGE_PREV`/`PAGE_NEXT` (Blättern
   unverändert), lang → `VOLUME_UP`/`VOLUME_DOWN` mit `LONG`. Alle drei Reader-VMs ignorieren LONG
   fürs Blättern; der geteilte `ReaderShortcutsViewModel` (eine Stelle, nicht pro-VM) mappt
@@ -394,7 +400,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   klagt, sind **Onyx-eigene System-Gesten** (Boox-proprietär), die **kein** Android-API erreicht; sie sind nur
   in den **Onyx-Systemeinstellungen** abschaltbar. Der Code bleibt (korrekt für echte Android-Gesten-Nav-Geräte). (5)
   **Tasten-Übersicht:** read-only Settings-Sektion `SettingsSectionId.BUTTONS` (`ButtonsSettingsContent`) zeigt die
-  zwei Long-Press-Belegungen (lang Lauter→Home, lang Leiser→Full-Refresh), gegated über
+  zwei Doppel-Druck-Belegungen (Doppel-Lauter→Home, Doppel-Leiser→Full-Refresh), gegated über
   `EinkCapabilities.hasHardwareButtons` (nicht über `displayMode` — Tasten sind physisch). (6) **Bottom-Sheet-Politur:**
   der Sheet-„Scrim" ist ein **transparenter** Tap-Dismisser (kein Abdunkeln → Live-Vorschau der Reflow-Änderungen),
   die zugeklappte Peek-Leiste ist **schwarz/weiß** wie `DefaultReaderOverlay`.

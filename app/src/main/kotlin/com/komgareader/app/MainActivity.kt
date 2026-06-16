@@ -126,21 +126,27 @@ class MainActivity : ComponentActivity() {
         if (!granted) requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    // Tracks volume keys whose gesture was already consumed by a long press, so the following
-    // key-up does not also emit a short (page-turn) event.
+    // Volume keys whose gesture was already consumed by onKeyLongPress (on OEMs that dispatch it),
+    // so the following key-up does not also emit a short (page-turn) event.
     private val longPressConsumed = mutableSetOf<Int>()
 
-    /** Held duration (ms) from the gesture's DOWN to its UP that counts as a long press. */
-    private val longPressMs = 500L
+    /** uptime (ms) of the previous tap of each volume key, for double-press detection. */
+    private val lastTapUptime = mutableMapOf<Int, Long>()
+
+    /**
+     * Two taps of the same volume key within this window = a double-press shortcut (Home / refresh).
+     * Long-press is NOT usable on the Onyx Boox Go Color 7 Gen2: its firmware collapses any hold to a
+     * single instantaneous tap (downTime == eventTime, no repeats, no separate release event — proven
+     * on device), so neither onKeyLongPress nor a held-duration check can ever see a hold. A double
+     * tap is two clean discrete events, which the firmware does deliver reliably.
+     */
+    private val doublePressMs = 300L
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // First down of the gesture: enable long-press tracking so onKeyLongPress fires on
-                // OEMs that dispatch it. Devices that send key-repeats instead (some Onyx Boox) never
-                // call onKeyLongPress — onKeyUp falls back to a held-duration check.
+                // startTracking so onKeyLongPress still fires on OEMs that dispatch it (not the Boox).
                 if (event != null && event.repeatCount == 0) event.startTracking()
-                android.util.Log.i(HW_TAG, "onKeyDown code=$keyCode repeat=${event?.repeatCount}")
                 true // consume; the actual emit happens on long-press or key-up
             }
             else -> super.onKeyDown(keyCode, event)
@@ -148,7 +154,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
-        android.util.Log.i(HW_TAG, "onKeyLongPress code=$keyCode")
+        // Only fires on devices that dispatch it (the Boox does not — see doublePressMs).
         val emitted = com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = true)
         return if (emitted != null) {
             buttonBus.emit(emitted)
@@ -163,17 +169,22 @@ class MainActivity : ComponentActivity() {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
                 if (longPressConsumed.remove(keyCode)) {
-                    true // onKeyLongPress already handled this gesture
+                    true // onKeyLongPress already handled this gesture (non-Boox)
                 } else {
-                    // Fallback long-press detection by held duration: some Onyx Boox key devices send
-                    // key-repeat events but never dispatch onKeyLongPress, so a held volume key would
-                    // otherwise always read as a short press. event.downTime = the gesture's first DOWN,
-                    // event.eventTime = this UP.
-                    val held = if (event != null) event.eventTime - event.downTime else 0L
-                    val longPress = held >= longPressMs
-                    android.util.Log.i(HW_TAG, "onKeyUp code=$keyCode held=${held}ms long=$longPress")
-                    com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = longPress)
-                        ?.let { buttonBus.emit(it) }
+                    val now = android.os.SystemClock.uptimeMillis()
+                    val isDouble = now - (lastTapUptime[keyCode] ?: 0L) <= doublePressMs
+                    if (isDouble) {
+                        // Second quick tap → the shortcut action (double Volume Up = Home, Down = refresh).
+                        android.util.Log.i(HW_TAG, "double-press code=$keyCode -> shortcut")
+                        lastTapUptime[keyCode] = 0L
+                        com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = true)
+                            ?.let { buttonBus.emit(it) }
+                    } else {
+                        // First tap → page turn, and arm the double-press window.
+                        lastTapUptime[keyCode] = now
+                        com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = false)
+                            ?.let { buttonBus.emit(it) }
+                    }
                     true
                 }
             }

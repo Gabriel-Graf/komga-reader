@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.localSeries
 import com.komgareader.app.ui.common.ErrorKind
+import com.komgareader.app.ui.common.holdSpinning
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.model.Series
@@ -20,12 +21,14 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface GroupBrowseUiState {
@@ -113,5 +116,13 @@ class GroupBrowseViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroupBrowseUiState.Loading)
 
-    fun refresh() { refreshTrigger.value++ }
+    /** Spins the refresh button. Dedicated latch (not [GroupBrowseUiState.Loading]) so a fast/offline
+     *  refresh — whose Loading would be conflated away — still shows a visible turn. */
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
+
+    fun refresh() {
+        refreshTrigger.value++
+        viewModelScope.launch { _refreshing.holdSpinning() }
+    }
 }

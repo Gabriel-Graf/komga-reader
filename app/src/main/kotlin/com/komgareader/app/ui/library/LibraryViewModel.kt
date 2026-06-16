@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.localSeries
+import com.komgareader.app.ui.common.holdSpinning
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.data.download.DownloadManager
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -147,7 +149,15 @@ class LibraryViewModel @Inject constructor(
 
     val events = MutableSharedFlow<LibraryEvent>(extraBufferCapacity = 4)
 
-    fun refresh() { refreshTrigger.value++ }
+    /** Spins the refresh button. A dedicated latch (not derived from [LibraryUiState.Loading]) — a
+     *  fast/offline refresh would conflate Loading away and the icon would never animate. */
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
+
+    fun refresh() {
+        refreshTrigger.value++
+        viewModelScope.launch { _refreshing.holdSpinning() }
+    }
 
     fun downloadSeries(series: Series) {
         viewModelScope.launch {

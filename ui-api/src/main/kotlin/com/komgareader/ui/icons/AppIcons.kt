@@ -29,6 +29,7 @@ object AppIcons {
     val Home: ImageVector get() = ActiveIconPack.resolve(IconKey.Home)
     val Search: ImageVector get() = ActiveIconPack.resolve(IconKey.Search)
     val Refresh: ImageVector get() = ActiveIconPack.resolve(IconKey.Refresh)
+    val Busy: ImageVector get() = ActiveIconPack.resolve(IconKey.Busy)
     val Edit: ImageVector get() = ActiveIconPack.resolve(IconKey.Edit)
     val Settings: ImageVector get() = ActiveIconPack.resolve(IconKey.Settings)
     val Delete: ImageVector get() = ActiveIconPack.resolve(IconKey.Delete)

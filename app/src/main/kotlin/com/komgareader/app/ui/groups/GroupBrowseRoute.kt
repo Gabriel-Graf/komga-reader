@@ -9,8 +9,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,7 +23,7 @@ import com.komgareader.app.ui.common.UiErrorText
 import com.komgareader.ui.slots.DetailScaffoldState
 import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.SeriesTile
-import com.komgareader.ui.icons.AppIcons
+import com.komgareader.app.ui.components.SyncIconButton
 import com.komgareader.ui.slots.LocalResolvedSlots
 
 @Composable
@@ -37,6 +35,7 @@ fun GroupBrowseRoute(
 ) {
     val state by viewModel.state.collectAsState()
     val localSeriesIds by viewModel.localSeriesIds.collectAsState()
+    val refreshing by viewModel.refreshing.collectAsState()
 
     val title = when (val s = state) {
         is GroupBrowseUiState.Content -> s.shelf.name
@@ -49,9 +48,11 @@ fun GroupBrowseRoute(
             title = title,
             onBack = onBack,
             actions = {
-                IconButton(onClick = { viewModel.refresh() }) {
-                    Icon(AppIcons.Refresh, contentDescription = null)
-                }
+                SyncIconButton(
+                    onClick = { viewModel.refresh() },
+                    syncing = refreshing,
+                    contentDescription = null,
+                )
             },
             content = { padding ->
                 when (val current = state) {

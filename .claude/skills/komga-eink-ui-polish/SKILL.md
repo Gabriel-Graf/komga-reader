@@ -223,6 +223,34 @@ immer `AppIcons.<Zweck>`. Eine Variante pro Zweck (Outline), kein **stilistische
 `AppIcons.<Zweck>`. **Stroke anpassen:** nur `STROKE` in `LucideIcons.kt`. Auf echter Boox/`eink_test`
 verifizieren (zu dünn = blass auf E-Ink).
 
+### Animierte Icons: `AnimatedAppIcon` (LCD) — aber E-Ink dreht NICHT
+
+`AnimatedAppIcon(imageVector, animation, running, …)` (`app/ui/components/AnimatedAppIcon.kt`) ist die
+**eine** Heimat für bewegte Icons — Bewegung wird hier zentral über `LocalEinkMode` entschieden, nie am
+Aufrufer. `IconAnimation` = additives Vokabular (`SpinClockwise`, `BobVertical`); neue Animation = neue
+Variante + Branch in `iconAnimationPlan`. **Nie** ein Icon mit rohem `rotate`/`animate*` direkt bewegen.
+Konkretisiert `animation-gating.md`.
+
+**HW-Befund (2026-06-16, Go Color 7 Gen2): glatte Rotation/Bob rendert auf E-Ink NICHT sichtbar.** Eine
+`graphicsLayer`-Rotation über 400 ms erzeugt Zwischenframes, die das Panel im normalen GC-Refresh nicht
+durchschiebt → das Icon bleibt schlicht statisch. Das deckt sich mit der `LoadingIndicator`-Entscheidung
+(statischer „Lädt…"-Text statt Spinner). **Sub-Pixel-Bewegung ist auf E-Ink kein gültiges Feedback** —
+nur ein **diskreter Zustandswechsel** (anderer Glyph / anderer Text) refresht zuverlässig. `AnimatedAppIcon`
+ist damit effektiv **nur der LCD-Pfad**; auf E-Ink nichts erwarten.
+
+**Sync-/Reload-/Refresh-Buttons: `SyncIconButton`** (`app/ui/components/SyncIconButton.kt`) — die geteilte
+Heimat **aller** Sync-Buttons (`shared-structure-before-variants`). **LCD:** `AnimatedAppIcon(SpinClockwise)`
+dreht während `syncing`. **E-Ink:** der Glyph **wechselt diskret** auf eine Sanduhr (`AppIcons.Busy` →
+Lucide `hourglass`) solange `syncing`, zurück auf `Refresh` wenn fertig — ein State-Wechsel, refresht.
+Jeder Refresh-Button nutzt das statt `IconButton { Icon(AppIcons.Refresh) }`.
+
+**`syncing`-Flag mit Mindestdauer halten:** `holdSpinning()` (`app/ui/common/SyncSpin.kt`, Default 700 ms)
+umschließt die Sync-Arbeit im VM (`CollectionsViewModel.syncing`, `PluginsViewModel.reloading`,
+`LibraryViewModel.refreshing`, `GroupBrowseViewModel.refreshing` — **eigener Latch, NICHT** aus einem
+`Loading`-State abgeleitet). Ohne den Boden flippt ein Sofort-Sync (offline, kein Server, lokale DB)
+`true→false` in <1 Frame; `StateFlow` **konflatiert** das, der Collector sieht `true` nie, der Busy-Zustand
+erscheint nicht. Der Boden garantiert, dass der diskrete Busy-Glyph sichtbar wird.
+
 ## Settings-Architektur
 
 **Adaptives Master-Detail.** Eine Section-Registry (`SettingsSection`: id, Icon, Titel, `searchTerms`,
@@ -335,9 +363,13 @@ ein sichtbarer Flash + Full-Refresh (Ghosting) — unnötig, weil sich nur ein D
 - **Zu dünne Schrift.** Material-Default ist `FontWeight.Normal` (400) — auf E-Ink bei kleiner Schrift
   zu blass. **Nicht** pro `Text` ein `fontWeight`, sondern **zentral** über `EinkTypography` (`Theme.kt`):
   Body → Medium (500), Labels + kleine Titel → SemiBold (600); große Überschriften bleiben.
-- **Disabled-Text zu blass.** Material dämpft disabled-Content auf Grau (auf E-Ink kaum lesbar). Muss der
-  Text lesbar bleiben (z. B. Fortschritt in nicht-klickbarem Button), Textfarbe **explizit**
-  `colorScheme.onSurface` setzen.
+- **Disabled-Text zu blass.** Material dämpft disabled-Content auf Grau (alpha 0.38, auf E-Ink kaum
+  lesbar) — und **überschreibt dabei eine explizite Textfarbe im Button** (`EinkOutlinedButton` reicht
+  `disabledContentColor` nicht durch). Wichtiger, lesbar-pflichtiger Text (z. B. Download-Fortschritt
+  „Lädt… NN %") gehört darum **nicht** in einen `enabled = false`-Button: stattdessen während der Arbeit
+  eine **eigene volle-Kontrast-Zeile** (`Row` + `Text(color = onSurface, fontWeight = Bold)` + ggf.
+  `AnimatedAppIcon`) rendern, den klickbaren Button nur im Ruhezustand zeigen. Referenz: `UpdateSection`
+  in `SettingsContent.kt`.
 - **Magic-dp/-Farben inline statt Token.** Stock-Material-Controls (Slider, kontinuierlich) auf E-Ink.
 - **Asymmetrie bei Geschwister-Elementen.** Gleiche Zeile / gleiche Rolle → **geteilte Maß-Konstante**:
   Button neben Eingabefeld = gleich hoch; flankierende Slots links/rechts = gleich breit; Aktions-Buttons

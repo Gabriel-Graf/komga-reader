@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.SyncCoordinator
+import com.komgareader.app.ui.common.holdSpinning
 import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.UserCollection
@@ -44,6 +45,10 @@ class CollectionsViewModel @Inject constructor(
     private val _vanished = MutableStateFlow<List<VanishedCollection>>(emptyList())
     val vanished: StateFlow<List<VanishedCollection>> = _vanished.asStateFlow()
 
+    /** True while a full sync runs — drives the spinning sync button (list header + detail). */
+    private val _syncing = MutableStateFlow(false)
+    val syncing: StateFlow<Boolean> = _syncing.asStateFlow()
+
     private var autoSyncedOnce = false
 
     /** Einmaliger Auto-Sync beim ersten Sichtbarwerden (Recompositions lösen keinen Sturm aus). */
@@ -56,7 +61,9 @@ class CollectionsViewModel @Inject constructor(
     /** Tab-Öffnen: Gating-Entscheidung liegt jetzt im Koordinator (zentralisiert). */
     fun syncOnTabOpen() = viewModelScope.launch { coordinator.onCollectionsTabEntered() }
 
-    private fun runFullSync() = viewModelScope.launch {
+    private fun runFullSync() = viewModelScope.launch { runSync() }
+
+    private suspend fun runSync() = _syncing.holdSpinning {
         _vanished.value = sync.fullSync()
     }
 
@@ -119,9 +126,7 @@ class CollectionsViewModel @Inject constructor(
 
     // Nutzer-initiiertes „jetzt synchronisieren" = voller bidirektionaler Sync (push + pull)
     // über alle Sammlungen/Quellen. Kein Argument: fullSync deckt ohnehin die ganze Bibliothek ab.
-    fun syncNow() = viewModelScope.launch {
-        _vanished.value = sync.fullSync()
-    }
+    fun syncNow() = viewModelScope.launch { runSync() }
 
     /** Alle Sync-Links einer Collection, als Flow — für den Erklär-Dialog. */
     fun syncLinks(collectionId: Long) = repo.syncLinks(collectionId)

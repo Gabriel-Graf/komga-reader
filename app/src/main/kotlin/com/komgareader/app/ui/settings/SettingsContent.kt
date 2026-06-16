@@ -1002,19 +1002,31 @@ private fun UpdateSection(
             Spacer(Modifier.height(8.dp))
             // While downloading show "Lädt… NN %" (the APK is large — without the percent it looks frozen).
             val pct = progress?.let { " ${(it * 100).toInt()} %" }.orEmpty()
-            EinkOutlinedButton(onClick = { onInstall(state.release) }, enabled = !installing) {
-                AnimatedAppIcon(
-                    imageVector = AppIcons.Download,
-                    animation = IconAnimation.BobVertical,
-                    running = installing,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (installing) s.aboutDownloading + pct else s.aboutInstallUpdate,
-                    fontWeight = FontWeight.Bold,
-                )
+            if (installing) {
+                // During download render a full-contrast progress row, NOT a disabled button — the
+                // dimmed disabled content (alpha 0.38) is barely legible on E-Ink. The bobbing
+                // icon keeps signalling that work is in flight.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AnimatedAppIcon(
+                        imageVector = AppIcons.Download,
+                        animation = IconAnimation.BobVertical,
+                        running = true,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        s.aboutDownloading + pct,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            } else {
+                EinkOutlinedButton(onClick = { onInstall(state.release) }) {
+                    Icon(AppIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(s.aboutInstallUpdate, fontWeight = FontWeight.Bold)
+                }
             }
             // Surface the outcome so a failure / missing permission is never silent.
             if (!installing) {

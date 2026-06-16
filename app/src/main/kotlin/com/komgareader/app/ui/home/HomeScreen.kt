@@ -46,6 +46,7 @@ import com.komgareader.app.ui.collections.CollectionDetailScreen
 import com.komgareader.app.ui.collections.CollectionsScreen
 import com.komgareader.app.ui.components.RotatingViewModeButton
 import com.komgareader.app.ui.components.StatusCluster
+import com.komgareader.app.ui.components.SyncIconButton
 import com.komgareader.app.ui.components.TileViewMode
 import com.komgareader.app.ui.components.PluginFilterMenu
 import com.komgareader.app.ui.components.TypeFilterMenu
@@ -155,6 +156,12 @@ fun HomeScreen(
     val groupsViewMode = tileViewModeOf(groupsVm.viewMode.collectAsState().value, TileViewMode.LIST)
     val collectionsViewMode = tileViewModeOf(collectionsVm.viewMode.collectAsState().value, TileViewMode.LARGE_TILE)
 
+    // Sync/reload buttons spin while their work runs (min-duration latch in each VM so even an
+    // instant/offline sync shows a turn — a conflated true→false pulse never animates on E-Ink).
+    val libraryRefreshing by libraryVm.refreshing.collectAsState()
+    val collectionsSyncing by collectionsVm.syncing.collectAsState()
+    val pluginsReloading by pluginsVm.reloading.collectAsState()
+
     val onSettingsTab = selected == TAB_SETTINGS
 
     fun submitSearch() {
@@ -236,9 +243,11 @@ fun HomeScreen(
             }
         },
         actions = {
-            IconButton(onClick = { libraryVm.refresh() }) {
-                Icon(AppIcons.Refresh, contentDescription = null)
-            }
+            SyncIconButton(
+                onClick = { libraryVm.refresh() },
+                syncing = libraryRefreshing,
+                contentDescription = null,
+            )
         },
     )
 
@@ -258,9 +267,11 @@ fun HomeScreen(
             )
             // Ganz rechts: manueller bidirektionaler Sync (push + pull) — dieselbe
             // Refresh-Mechanik wie der Bibliotheks-Reload, ruft den Voll-Sync.
-            IconButton(onClick = { collectionsVm.syncNow() }) {
-                Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow)
-            }
+            SyncIconButton(
+                onClick = { collectionsVm.syncNow() },
+                syncing = collectionsSyncing,
+                contentDescription = s.collectionSyncNow,
+            )
         },
     )
 
@@ -304,9 +315,11 @@ fun HomeScreen(
             IconButton(onClick = { showRepoMgmt = true }) {
                 Icon(AppIcons.Plus, contentDescription = s.pluginManageRepos)
             }
-            IconButton(onClick = { pluginsVm.reload() }) {
-                Icon(AppIcons.Refresh, contentDescription = s.pluginReload)
-            }
+            SyncIconButton(
+                onClick = { pluginsVm.reload() },
+                syncing = pluginsReloading,
+                contentDescription = s.pluginReload,
+            )
         },
     )
 

@@ -54,12 +54,22 @@ fun AnimatedAppIcon(
     // animation when `running`). LCD loops the cycle; E-Ink plays a single bounded cycle then holds.
     val anim = remember { Animatable(0f) }
     LaunchedEffect(running, plan) {
-        if (!running) { anim.snapTo(0f); return@LaunchedEffect }
         val spec = tween<Float>(plan.cycleMillis, easing = LinearEasing)
-        if (plan.continuous) {
-            while (true) { anim.snapTo(0f); anim.animateTo(1f, spec) }
+        if (running) {
+            if (plan.continuous) {
+                while (true) { anim.snapTo(0f); anim.animateTo(1f, spec) }
+            } else {
+                anim.snapTo(0f); anim.animateTo(1f, spec)
+            }
         } else {
-            anim.snapTo(0f); anim.animateTo(1f, spec)
+            // Stopping mid-cycle: finish the in-flight cycle before resting, so even a sync that
+            // completes within a few ms still shows at least one full turn (each cycle starts at
+            // 0). 1f and 0f are the same visual pose, so the closing snap never jumps.
+            if (anim.value > 0f) {
+                val remainMs = (plan.cycleMillis * (1f - anim.value)).toInt().coerceAtLeast(1)
+                anim.animateTo(1f, tween(remainMs, easing = LinearEasing))
+            }
+            anim.snapTo(0f)
         }
     }
     val phase: Float = anim.value

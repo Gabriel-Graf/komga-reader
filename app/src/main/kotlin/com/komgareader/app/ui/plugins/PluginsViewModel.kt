@@ -6,6 +6,7 @@ import com.komgareader.app.data.PluginCatalog
 import com.komgareader.app.data.installedEntriesOf
 import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
+import com.komgareader.app.ui.common.holdSpinning
 import com.komgareader.data.plugin.ColorPresetImporter
 import com.komgareader.data.plugin.repo.BrowsableEntry
 import com.komgareader.data.plugin.repo.BrowserRow
@@ -162,8 +163,14 @@ class PluginsViewModel @Inject constructor(
      *  prunt Verwaistes, zieht Entdeckungs-Install-States nach. Sync-Entscheidung liegt im Koordinator. */
     fun rescanLocal() = viewModelScope.launch { coordinator.onPluginsTabResumed() }.let {}
 
+    /** True while [reload] runs — drives the spinning reload button. */
+    private val _reloading = MutableStateFlow(false)
+    val reloading: StateFlow<Boolean> = _reloading.asStateFlow()
+
     /** Reload-Button: Netz-Repo-Fetch + lokaler Scan über den Koordinator. */
-    fun reload() = viewModelScope.launch { coordinator.onManualReload() }.let {}
+    fun reload() = viewModelScope.launch {
+        _reloading.holdSpinning { coordinator.onManualReload() }
+    }.let {}
 
     fun install(row: BrowserRow) = viewModelScope.launch { catalog.install(row) }.let {}
     fun dismissError() { catalog.dismissError() }

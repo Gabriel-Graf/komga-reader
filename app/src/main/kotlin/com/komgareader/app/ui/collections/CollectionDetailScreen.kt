@@ -53,6 +53,7 @@ import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.FilteredAsyncImage
 import com.komgareader.app.ui.components.LocalContentBottomInset
+import com.komgareader.app.ui.components.SyncIconButton
 import com.komgareader.app.ui.components.TileTitleBand
 import com.komgareader.ui.slots.DetailScaffoldState
 import com.komgareader.ui.icons.AppIcons
@@ -84,6 +85,7 @@ fun CollectionDetailScreen(
     val collections by viewModel.collections.collectAsState()
     val collection = collections.find { it.id == collectionId }
     val syncLinks by viewModel.syncLinks(collectionId).collectAsState(emptyList())
+    val syncing by viewModel.syncing.collectAsState()
 
     var searchActive by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
@@ -110,15 +112,15 @@ fun CollectionDetailScreen(
                         Icon(AppIcons.Plus, contentDescription = s.addWorks, tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
-                IconButton(
+                SyncIconButton(
                     onClick = { showSyncPanel = true },
+                    syncing = syncing,
+                    contentDescription = s.collectionSyncNow,
                     modifier = Modifier.onGloballyPositioned {
                         val p = it.positionInWindow()
                         syncAnchor = IntOffset((p.x + it.size.width).toInt(), (p.y + it.size.height).toInt())
                     },
-                ) {
-                    Icon(AppIcons.Refresh, contentDescription = s.collectionSyncNow, tint = MaterialTheme.colorScheme.onSurface)
-                }
+                )
                 IconButton(onClick = { showDelete = true }) {
                     Icon(AppIcons.Delete, contentDescription = s.deleteCollection, tint = MaterialTheme.colorScheme.onSurface)
                 }

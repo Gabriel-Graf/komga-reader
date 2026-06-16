@@ -31,7 +31,10 @@ Diese fünf Punkte tragen das ganze Projekt. Wer sie verletzt, baut am Kern vorb
 3. **E-Ink-Designsprache ist Pflicht, nicht Geschmack.** Flach, 1.5px-Border statt Schatten, keine
    Animationen, monochrom-kräftig, Lucide-Icons via `AppIcons`-Registry, `BaseDialog`. → `@.claude/rules/eink-design-language.md`
 4. **Viewer-Auflösung ist deterministisch:** `Series.contentTypeOverride ?: Shelf.contentType → ViewerType`.
-   Kein fragiles Auto-Erkennen des Inhaltstyps.
+   Kein fragiles Auto-Erkennen **im Lesepfad**. Auto-Erkennung des Inhaltstyps existiert nur als
+   **vorab persistierter Vorschlag** in eigener, niedriger Stufe 5 (`series_auto_types`/`SuggestContentType`,
+   Pixel-Heuristik) — manueller Override, Server-`readingDirection` und Bibliotheks-Default schlagen ihn alle.
+   → `@.claude/skills/komga-viewer-type-resolution/SKILL.md`
 5. **Offline-first + TDD + E2E.** Lesefortschritt lokal (`dirty`) → Sync-Queue. Jedes Feature mit
    Unit-Tests (Domain/Mapper pure) **und** kleinem E2E gegen die lokale Test-Komga verifizieren.
    → `@.claude/rules/roadmap-and-invariants.md`

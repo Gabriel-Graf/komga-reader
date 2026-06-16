@@ -57,13 +57,13 @@ class ResolveViewerTypeTest {
     }
 
     @Test
-    fun `Stufe 5 — Archiv-Format ohne Bibliotheks-Default ergibt PAGED`() {
+    fun `Stufe 6 — Archiv-Format ohne Bibliotheks-Default ergibt PAGED`() {
         val result = resolve(series(direction = ReadingDirection.LTR), book(BookFormat.CBR), fallback = null)
         assertEquals(ViewerType.PAGED, result)
     }
 
     @Test
-    fun `Stufe 6 — kein Signal ergibt PAGED als Default`() {
+    fun `Stufe 7 — kein Signal ergibt PAGED als Default`() {
         val result = resolve(series(), book(BookFormat.CBZ), fallback = null)
         assertEquals(ViewerType.PAGED, result)
     }
@@ -72,6 +72,36 @@ class ResolveViewerTypeTest {
     fun `COMIC-Override ergibt COMIC`() {
         val result = resolve(series(override = ContentType.COMIC), book(BookFormat.CBZ), fallback = null)
         assertEquals(ViewerType.COMIC, result)
+    }
+
+    @Test
+    fun `Stufe 5 — Auto-Vorschlag greift ohne Override Richtung oder Bibliothek`() {
+        val result = resolve(series(), book(BookFormat.CBZ), fallback = null, auto = ContentType.MANGA)
+        assertEquals(ViewerType.PAGED, result) // MANGA -> PAGED
+    }
+
+    @Test
+    fun `Stufe 5 — Auto-Vorschlag WEBTOON ergibt WEBTOON bei CBZ`() {
+        val result = resolve(series(), book(BookFormat.CBZ), fallback = null, auto = ContentType.WEBTOON)
+        assertEquals(ViewerType.WEBTOON, result)
+    }
+
+    @Test
+    fun `Bibliotheks-Default schlaegt Auto-Vorschlag`() {
+        val result = resolve(series(), book(BookFormat.CBZ), fallback = ContentType.COMIC, auto = ContentType.MANGA)
+        assertEquals(ViewerType.COMIC, result)
+    }
+
+    @Test
+    fun `manueller Override schlaegt Auto-Vorschlag`() {
+        val result = resolve(series(override = ContentType.COMIC), book(BookFormat.CBZ), fallback = null, auto = ContentType.WEBTOON)
+        assertEquals(ViewerType.COMIC, result)
+    }
+
+    @Test
+    fun `Server-Leserichtung schlaegt Auto-Vorschlag`() {
+        val result = resolve(series(direction = ReadingDirection.WEBTOON), book(BookFormat.CBZ), fallback = null, auto = ContentType.MANGA)
+        assertEquals(ViewerType.WEBTOON, result)
     }
 
     @Test

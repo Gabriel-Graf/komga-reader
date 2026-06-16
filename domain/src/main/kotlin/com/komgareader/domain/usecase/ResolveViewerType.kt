@@ -15,17 +15,28 @@ import com.komgareader.domain.model.ViewerType
  * 2. Buch-Format EPUB                 → NOVEL
  * 3. Leserichtung VERTICAL/WEBTOON    → WEBTOON
  * 4. Bibliotheks-Default (Fallback)   → map(fallback)
- * 5. Archiv-Format (CBZ/CBR/PDF)      → PAGED
- * 6. sonst                            → PAGED
+ * 5. Auto-Vorschlag (Pixel-Heuristik) → map(auto)
+ * 6. Archiv-Format (CBZ/CBR/PDF)      → PAGED
+ * 7. sonst                            → PAGED
  *
- * Der Bibliotheks-Default (Stufe 4) steht bewusst VOR dem Format-Default
- * (Stufe 5): Webtoons liegen fast immer als CBZ vor, daher muss ein
- * explizites WEBTOON-Bibliothek-Tag den Format-Default (PAGED) schlagen —
- * sonst bliebe der Bibliotheks-Default für Comics wirkungslos.
+ * Der Bibliotheks-Default (Stufe 4) steht bewusst VOR dem Format-Default:
+ * Webtoons liegen fast immer als CBZ vor, daher muss ein explizites
+ * WEBTOON-Bibliothek-Tag den Format-Default (PAGED) schlagen — sonst bliebe
+ * der Bibliotheks-Default für Comics wirkungslos.
+ *
+ * Der Auto-Vorschlag (Stufe 5) ist eine persistierte Pixel-Heuristik
+ * (B/W-vs-Farbe → MANGA/COMIC, lange Strips → WEBTOON). Er füllt nur die
+ * Lücke, wenn weder manueller Override noch Server-Leserichtung noch
+ * Bibliotheks-Default greifen — alle drei schlagen ihn bewusst.
  */
 class ResolveViewerType {
 
-    operator fun invoke(series: Series, book: Book, fallback: ContentType?): ViewerType {
+    operator fun invoke(
+        series: Series,
+        book: Book,
+        fallback: ContentType?,
+        auto: ContentType? = null,
+    ): ViewerType {
         series.contentTypeOverride?.let { return map(it) }
         if (book.format == BookFormat.EPUB) return ViewerType.NOVEL
         if (series.readingDirection == ReadingDirection.VERTICAL ||
@@ -34,6 +45,7 @@ class ResolveViewerType {
             return ViewerType.WEBTOON
         }
         fallback?.let { return map(it) }
+        auto?.let { return map(it) }
         if (book.format == BookFormat.CBZ ||
             book.format == BookFormat.CBR ||
             book.format == BookFormat.PDF

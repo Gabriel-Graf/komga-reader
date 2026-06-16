@@ -1007,7 +1007,10 @@ private fun UpdateSection(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(if (installing) s.aboutDownloading + pct else s.aboutInstallUpdate)
+                Text(
+                    if (installing) s.aboutDownloading + pct else s.aboutInstallUpdate,
+                    fontWeight = FontWeight.Bold,
+                )
             }
             // Surface the outcome so a failure / missing permission is never silent.
             if (!installing) {
@@ -1029,7 +1032,7 @@ private fun UpdateSection(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(s.aboutCheckUpdates)
+                Text(s.aboutCheckUpdates, fontWeight = FontWeight.Bold)
             }
             when (state) {
                 AppUpdateState.Checking -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutChecking, query) }

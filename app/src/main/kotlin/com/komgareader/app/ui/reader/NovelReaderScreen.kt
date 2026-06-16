@@ -487,18 +487,20 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFlag(
     val centerY = rect.bottom.toFloat()
     val top = centerY - poleHeight / 2f
     val width = if (highlighted) 6f else 4f
-    // Sit well inside the space before the word (~16px gap to the glyphs) so the flag has clear room
-    // on both sides and reads as a mark *between* words, not hugging the word (request 2026-06-16).
-    val x = (rect.left - 16).coerceAtLeast(0).toFloat()
+    // Seat the pole close to the bookmarked word (~5px left of its glyphs) so it leaves generous room
+    // on the LEFT to the previous word's last letter — centring it in the gap looked squeezed against
+    // that letter (request 2026-06-16, "more room from the last letter on the left"). The number leans
+    // right (left-aligned to the pole) so it never reaches back over the previous word.
+    val x = (rect.left - 5).coerceAtLeast(0).toFloat()
     drawRect(color = Color.Black, topLeft = Offset(x, top), size = Size(width, poleHeight))
     if (number > 0) {
         val measured = textMeasurer.measure(
             text = number.toString(),
-            style = TextStyle(color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+            style = TextStyle(color = Color.Black, fontSize = 13.sp, fontWeight = FontWeight.Bold),
         )
         drawText(
             textLayoutResult = measured,
-            topLeft = Offset(x - measured.size.width / 2f + width / 2f, top - measured.size.height),
+            topLeft = Offset(x, top - measured.size.height),
         )
     }
 }

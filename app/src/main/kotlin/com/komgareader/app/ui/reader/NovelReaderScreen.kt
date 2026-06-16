@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -342,52 +342,62 @@ private fun BoxScope.NovelPageFooter(
 }
 
 /**
- * KOReader-artiger Fortschrittsbalken: ein längliches **Oval (Pill)** als Track, gefüllt von
- * links bis [progress]. Auf dem Balken sitzen kleine **Kapitel-Punkte** ([chapterFractions],
- * je Startposition 0–1), die in die Linie übergehen — bereits gelesene liegen in der schwarzen
- * Füllung, kommende auf dem hellen Track.
+ * KOReader-artiger Fortschrittsbalken: ein längliches **Oval (Pill)** als **Umriss** (leer = weiß mit
+ * dünnem Rand). Der Fortschritt ist eine **mittige dünne Linie**, die von links bis [progress] wächst
+ * — oben und unten im Oval bleibt weiß, sodass es eine Linie *im* Oval ist, kein voll geschwärztes
+ * Oval. Auf der Mittellinie sitzen **kleine Kapitel-Punkte** ([chapterFractions], je Startposition
+ * 0–1): kommende heben sich auf dem Weiß ab, gelesene gehen in der Fortschritts-Linie unter.
  *
- * **E-Ink (Pflicht):** monochrom schwarz, **keine Animation** — der Füllstand folgt direkt der
- * Seite (sofortiger State-Wechsel). Track-Hairline = [outlineVariant], Füllung/Punkte = Schwarz.
+ * Füllt die volle Breite seines Slots. **E-Ink (Pflicht):** monochrom schwarz, **keine Animation** —
+ * der Füllstand folgt direkt der Seite (sofortiger State-Wechsel).
  */
 @Composable
 private fun NovelProgressBar(
     progress: Float,
     chapterFractions: List<Float>,
 ) {
-    val track = MaterialTheme.colorScheme.outlineVariant
     Canvas(
         Modifier
-            .width(BAR_WIDTH)
+            .fillMaxWidth()
             .height(BAR_HEIGHT),
     ) {
         val h = size.height
         val w = size.width
         val r = h / 2f
-        val radius = CornerRadius(r, r)
-        // Track-Pill (heller Hintergrund über die volle Breite).
-        drawRoundRect(color = track, cornerRadius = radius)
-        // Gefüllter Anteil (schwarz), als eigene Pill bis progress*w.
-        val fillW = (w * progress).coerceIn(0f, w)
+        val strokePx = BAR_STROKE.toPx()
+        // Oval-Umriss (Pill): dünner schwarzer Rand, weißes Inneres.
+        drawRoundRect(
+            color = Color.Black,
+            cornerRadius = CornerRadius(r, r),
+            style = Stroke(width = strokePx),
+            topLeft = Offset(strokePx / 2f, strokePx / 2f),
+            size = Size(w - strokePx, h - strokePx),
+        )
+        // Fortschritt als mittige dünne Linie zwischen den Rundungen; oben/unten bleibt weiß.
+        val left = r
+        val trackW = (w - 2f * r).coerceAtLeast(0f)
+        val lineH = h * 0.30f
+        val lineR = lineH / 2f
+        val fillW = (trackW * progress).coerceIn(0f, trackW)
         if (fillW > 0f) {
             drawRoundRect(
                 color = Color.Black,
-                size = Size(fillW.coerceAtLeast(h), h),
-                cornerRadius = radius,
+                topLeft = Offset(left, (h - lineH) / 2f),
+                size = Size(fillW, lineH),
+                cornerRadius = CornerRadius(lineR, lineR),
             )
         }
-        // Kapitel-Punkte auf der Mittellinie: in der Füllung „verschwinden" sie (gleiche Farbe),
-        // auf dem hellen Track heben sie sich als schwarze Punkte ab.
-        val dotR = h * 0.35f
+        // Kleine Kapitel-Punkte auf der Mittellinie (dezente Ticks, gleiche Stärke wie die Linie).
+        val dotR = lineR
         chapterFractions.forEach { f ->
-            val cx = (r + (w - 2f * r) * f.coerceIn(0f, 1f))
+            val cx = left + trackW * f.coerceIn(0f, 1f)
             drawCircle(color = Color.Black, radius = dotR, center = Offset(cx, h / 2f))
         }
     }
 }
 
-private val BAR_WIDTH = 180.dp
-private val BAR_HEIGHT = 8.dp
+private val BAR_HEIGHT = 12.dp
+private val BAR_STROKE = 1.5.dp
 
 /**
  * Zeichnet die Bookmark-Marker über die gerenderte Seite. Die Rects kommen aus der

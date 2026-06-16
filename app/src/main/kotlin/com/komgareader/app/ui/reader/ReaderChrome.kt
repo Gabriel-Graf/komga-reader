@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -158,11 +160,15 @@ fun BoxScope.ReaderInfoBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (center != null) {
-                // Mit Mittel-Slot: [start] links, [center] zentriert, [end] rechtsbündig.
-                // Beide Seiten gleich gewichtet → der Balken bleibt mittig.
-                Box(Modifier.weight(1f)) { start() }
-                center()
-                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) { end() }
+                // Mit Mittel-Slot: [start] (Kapitel) links inhaltsbreit, dann Gap, [center] (Balken)
+                // füllt die **ganze** restliche Breite, Gap, [end] (Seite) rechts inhaltsbreit.
+                // fill = false → das Label nimmt nur seine Inhaltsbreite (gedeckelt, kürzt mit …),
+                // damit der Balken alles Übrige bekommt — nicht nur einen festen Anteil.
+                Box(Modifier.weight(1f, fill = false)) { start() }
+                Spacer(Modifier.width(BAR_GAP))
+                Box(Modifier.weight(3f), contentAlignment = Alignment.Center) { center() }
+                Spacer(Modifier.width(BAR_GAP))
+                end()
             } else {
                 // [start] füllt die Breite (linksbündig, kürzt mit …); [end] sitzt damit
                 // bündig am rechten Rand — mit demselben Abstand wie [start] links (BAR_INSET).
@@ -176,6 +182,9 @@ fun BoxScope.ReaderInfoBar(
 
 /** Gemeinsamer horizontaler Rand-Abstand der Info-Leiste — links wie rechts identisch. */
 private val BAR_INSET = 14.dp
+
+/** Abstand zwischen den Seiten-Labels und dem Fortschrittsbalken im Footer-Mittel-Slot. */
+private val BAR_GAP = 12.dp
 
 @Composable
 private fun Hairline(color: Color) {

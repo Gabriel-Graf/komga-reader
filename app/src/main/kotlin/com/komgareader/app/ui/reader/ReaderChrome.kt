@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -160,13 +161,13 @@ fun BoxScope.ReaderInfoBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (center != null) {
-                // Mit Mittel-Slot: [start] (Kapitel) links inhaltsbreit, dann Gap, [center] (Balken)
-                // füllt die **ganze** restliche Breite, Gap, [end] (Seite) rechts inhaltsbreit.
-                // fill = false → das Label nimmt nur seine Inhaltsbreite (gedeckelt, kürzt mit …),
-                // damit der Balken alles Übrige bekommt — nicht nur einen festen Anteil.
-                Box(Modifier.weight(1f, fill = false)) { start() }
+                // [start] (Kapitel) links inhaltsbreit (gedeckelt, kürzt mit …), [end] (Seite) rechts
+                // inhaltsbreit; **nur** der [center] (Balken) trägt Gewicht und füllt damit die ganze
+                // Mitte zwischen den beiden Labels — so klebt der Balken nicht links, sondern sitzt
+                // mittig, und die Seitenzahl steht ganz rechts. Gap zu beiden Labels.
+                Box(Modifier.widthIn(max = LABEL_MAX)) { start() }
                 Spacer(Modifier.width(BAR_GAP))
-                Box(Modifier.weight(3f), contentAlignment = Alignment.Center) { center() }
+                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { center() }
                 Spacer(Modifier.width(BAR_GAP))
                 end()
             } else {
@@ -185,6 +186,9 @@ private val BAR_INSET = 14.dp
 
 /** Abstand zwischen den Seiten-Labels und dem Fortschrittsbalken im Footer-Mittel-Slot. */
 private val BAR_GAP = 12.dp
+
+/** Obergrenze für das linke Kapitel-Label, damit ein langer Titel den Balken nicht verdrängt. */
+private val LABEL_MAX = 160.dp
 
 @Composable
 private fun Hairline(color: Color) {

@@ -486,8 +486,10 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawFlag(
     val poleHeight = lineHeight * 0.6f
     val centerY = rect.bottom.toFloat()
     val top = centerY - poleHeight / 2f
-    val width = if (highlighted) 5f else 3f
-    val x = (rect.left - 7).coerceAtLeast(0).toFloat()
+    val width = if (highlighted) 6f else 4f
+    // Sit well inside the space before the word (~16px gap to the glyphs) so the flag has clear room
+    // on both sides and reads as a mark *between* words, not hugging the word (request 2026-06-16).
+    val x = (rect.left - 16).coerceAtLeast(0).toFloat()
     drawRect(color = Color.Black, topLeft = Offset(x, top), size = Size(width, poleHeight))
     if (number > 0) {
         val measured = textMeasurer.measure(

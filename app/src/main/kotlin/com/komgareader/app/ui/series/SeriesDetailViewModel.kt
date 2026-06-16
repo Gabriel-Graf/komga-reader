@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.data.ContentTypeDetector
 import com.komgareader.app.ui.common.ErrorKind
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
@@ -18,6 +19,7 @@ import com.komgareader.domain.model.Series
 import com.komgareader.domain.model.ViewerType
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.ReadProgressRepository
+import com.komgareader.domain.repository.SeriesAutoTypeRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -99,6 +101,8 @@ class SeriesDetailViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val shelfRepository: ShelfRepository,
     private val overrideRepository: SeriesOverrideRepository,
+    private val autoTypeRepository: SeriesAutoTypeRepository,
+    private val detector: ContentTypeDetector,
     private val readProgressRepository: ReadProgressRepository,
     private val settings: SettingsRepository,
 ) : ViewModel() {
@@ -151,10 +155,18 @@ class SeriesDetailViewModel @Inject constructor(
                             val manualType: ContentType? = overrideRepository.get(source.id, seriesId)
                             // Bibliothek hat Vorrang vor manuell; beide speisen den Stufe-4-Fallback.
                             val effectiveType: ContentType? = libraryDefault ?: manualType
+                            // Stufe 5: persistierter Pixel-Vorschlag — schlägt nur den Format-Default.
+                            val autoType: ContentType? = autoTypeRepository.get(source.id, seriesId)
                             val viewerModes = books.associate { book ->
                                 book.remoteId to mapViewerMode(
-                                    resolveViewerType(seriesForResolve, book, effectiveType),
+                                    resolveViewerType(seriesForResolve, book, effectiveType, autoType),
                                 ).name
+                            }
+                            // Detect off the read path; result lands on next open via autoTypeRepository.
+                            if (autoType == null) {
+                                viewModelScope.launch {
+                                    runCatching { detector.detectIfNeeded(source, seriesId, books) }
+                                }
                             }
                             SeriesDetailUiState.Content(
                                 books = books,

@@ -63,9 +63,23 @@ class OnyxEinkController(
                 EinkModeOption(COLOR_MONO, "Mono", "Greyscale, colour off."),
             ),
             // Index space over the device's own value list (0 = off, maxIndex = brightest); null when
-            // the device has no controllable frontlight. Derived from the real provider, NOT a
-            // hardcoded 0..255 scale (which only fits legacy single-light FL devices, not the
-            // warm/cold Kaleido frontlight of the Go Color 7 Gen2).
+            // the SDK reports no controllable frontlight (UI then hides the brightness control entirely).
+            //
+            // DEVICE LIMITATION — verified on a physical Go Color 7 Gen2 (2026-06-16): this is `null`
+            // here, and that is CORRECT. The frontlight is NOT controllable by a sideloaded app on this
+            // device, proven across every channel:
+            //   - onyxsdk-device 1.3.5 (the newest release) does not know the qcom/`lito` chipset, so
+            //     `Device.currentDevice()` is a default `BaseDevice` whose checkCTM/hasFL/hasCTM all
+            //     return false → `getBrightnessType()==NONE` → every provider/setter is a no-op
+            //     (setColdLightDeviceValue/setBrightness/setNaturalBrightness all return false).
+            //   - Settings.System.{screen_brightness,screen_ctm_brightness} do not propagate to the HW.
+            //   - The Activity window `screenBrightness` attribute does not drive the frontlight.
+            //   - The real HW node /sys/class/backlight/onyx_bl_br (0..32) works only from a system
+            //     SELinux context; an app (untrusted_app) gets EACCES. KOReader, also untrusted_app,
+            //     is blocked the same way. Only system apps (NeoReader, Onyx Settings) can drive it.
+            // => Do NOT "fix" this by reinstating a hardcoded range (e.g. 0..255): that only brings back
+            //    a fake slider that moves nothing. The control is hidden by design until the SDK gains
+            //    real support for this chipset. The seam stays for Onyx devices the SDK DOES support.
             brightnessRange = brightnessMaxIndex.takeIf { it > 0 }?.let { 0..it },
         )
     }

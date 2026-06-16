@@ -113,6 +113,8 @@ interface Strings {
     val create: String
     val cancel: String
     val save: String
+    val exitConfirmTitle: String
+    val exitConfirmLeave: String
     val noServerHint: String
     val deleteGroup: String
     val noGroupsHint: String
@@ -414,15 +416,6 @@ interface Strings {
     fun readerPresetConfirmBody(name: String): String
     // Feature C — Sprache
     val languagePluginInstalledHint: String
-    // Hardware buttons (read-only overview of the device long-press shortcuts)
-    val settingsButtons: String
-    val settingsButtonsDesc: String
-    val buttonActionHome: String
-    val buttonActionHomeDesc: String
-    val buttonActionRefresh: String
-    val buttonActionRefreshDesc: String
-    val buttonKeyVolumeUpLong: String
-    val buttonKeyVolumeDownLong: String
     // Statistics
     val statsTitle: String
     val statsTotalTime: String
@@ -550,6 +543,8 @@ object StringsDe : Strings {
     override val create = "Erstellen"
     override val cancel = "Abbrechen"
     override val save = "Speichern"
+    override val exitConfirmTitle = "Möchtest du Komga Reader verlassen?"
+    override val exitConfirmLeave = "Verlassen"
     override val noServerHint = "Kein Server verbunden. Bitte zuerst in den Einstellungen einen Server hinzufügen."
     override val deleteGroup = "Bibliothek löschen"
     override val noGroupsHint = "Noch keine Bibliotheken. Tippe auf + um eine anzulegen."
@@ -837,14 +832,6 @@ object StringsDe : Strings {
     override val readerPresetConfirmTitle = "Preset anwenden?"
     override fun readerPresetConfirmBody(name: String) = "„$name“ überschreibt die betroffenen Reader-Einstellungen."
     override val languagePluginInstalledHint = "Installiert über Plugin"
-    override val settingsButtons = "Tasten"
-    override val settingsButtonsDesc = "Belegung der Geräte-Tasten beim Doppel-Druck (nur lesbar)."
-    override val buttonActionHome = "Zur Startseite"
-    override val buttonActionHomeDesc = "Schließt den Reader und springt zur Startseite zurück."
-    override val buttonActionRefresh = "Vollbild-Refresh"
-    override val buttonActionRefreshDesc = "Erzwingt einen vollständigen Refresh gegen Ghosting."
-    override val buttonKeyVolumeUpLong = "Doppel-Lauter ▲▲"
-    override val buttonKeyVolumeDownLong = "Doppel-Leiser ▼▼"
     override val statsTitle = "Statistik"
     override val statsTotalTime = "Gesamtlesezeit"
     override val statsPerReader = "Nach Lesemodus"
@@ -971,6 +958,8 @@ object StringsEn : Strings {
     override val create = "Create"
     override val cancel = "Cancel"
     override val save = "Save"
+    override val exitConfirmTitle = "Leave Komga Reader?"
+    override val exitConfirmLeave = "Leave"
     override val noServerHint = "No server connected. Please add a server in Settings first."
     override val deleteGroup = "Delete library"
     override val noGroupsHint = "No libraries yet. Tap + to create one."
@@ -1258,14 +1247,6 @@ object StringsEn : Strings {
     override val readerPresetConfirmTitle = "Apply preset?"
     override fun readerPresetConfirmBody(name: String) = "\"$name\" overwrites the affected reader settings."
     override val languagePluginInstalledHint = "Installed via plugin"
-    override val settingsButtons = "Buttons"
-    override val settingsButtonsDesc = "Hardware button assignments on double press (read-only)."
-    override val buttonActionHome = "Go to home"
-    override val buttonActionHomeDesc = "Closes the reader and returns to the home screen."
-    override val buttonActionRefresh = "Full refresh"
-    override val buttonActionRefreshDesc = "Forces a full screen refresh to clear ghosting."
-    override val buttonKeyVolumeUpLong = "Double Volume Up ▲▲"
-    override val buttonKeyVolumeDownLong = "Double Volume Down ▼▼"
     override val statsTitle = "Statistics"
     override val statsTotalTime = "Total reading time"
     override val statsPerReader = "By reader mode"

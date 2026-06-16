@@ -12,7 +12,6 @@ import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
-import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
@@ -241,16 +240,14 @@ class ReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
-            // Long presses are reader shortcuts (Home / refresh), handled by ReaderShortcutsViewModel.
-            if (event.press == PressKind.LONG) return@collect
             // Im Comic-Modus übernimmt der ComicReaderViewModel die Tasten.
             if (viewerMode.value == ViewerMode.COMIC) return@collect
             // Im Webtoon-Modus bedeutet eine Taste einen Frame-Sprung (Pixel-Scroll),
             // nicht einen Seitenindex.
             if (viewerMode.value == ViewerMode.WEBTOON) {
                 val dir = when (event.button) {
-                    HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN -> 1
-                    HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP -> -1
+                    HardwareButton.PAGE_NEXT -> 1
+                    HardwareButton.PAGE_PREV -> -1
                 }
                 _frameStep.tryEmit(dir)
                 return@collect
@@ -263,10 +260,8 @@ class ReaderViewModel @Inject constructor(
                 else -> return@collect
             }
             val next = when (event.button) {
-                HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN ->
-                    (current + 1).coerceAtMost(pageCount - 1)
-                HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP ->
-                    (current - 1).coerceAtLeast(0)
+                HardwareButton.PAGE_NEXT -> (current + 1).coerceAtMost(pageCount - 1)
+                HardwareButton.PAGE_PREV -> (current - 1).coerceAtLeast(0)
             }
             if (next != current) {
                 _currentPage.value = next

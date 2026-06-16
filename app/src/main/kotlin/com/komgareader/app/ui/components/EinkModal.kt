@@ -168,6 +168,49 @@ fun EinkInfoDialog(
 }
 
 /**
+ * Kompaktes Ja/Nein-Confirm im Onyx-Look — schmaler als [EinkModal] (das volle Sticky-Header/
+ * Footer-Gerüst mit scrollendem Body für reichen Inhalt). Für kurze Entscheidungen (Verlassen,
+ * Löschen): **schwarzer Rand** (strongBorder/outline), weiße Surface, kompakter [titleMedium]-Titel,
+ * optionale [message], darunter zwei gleich breite Buttons (Abbrechen links, Bestätigen rechts).
+ * Streng S/W (host-erzwungene E-Ink-Invariante), keine Animation. Genau ein Modal gleichzeitig.
+ */
+@Composable
+fun EinkConfirmDialog(
+    title: String,
+    confirmLabel: String,
+    onConfirm: () -> Unit,
+    dismissLabel: String,
+    onDismiss: () -> Unit,
+    message: String? = null,
+    widthFraction: Float = 0.62f,
+) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(widthFraction)
+                .border(EinkTokens.strongBorder, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.large),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                if (message != null) {
+                    Text(
+                        message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    EinkOutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(dismissLabel) }
+                    Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text(confirmLabel) }
+                }
+            }
+        }
+    }
+}
+
+/**
  * Scroll-Richtungs-Anzeige am rechten Rand des Dialog-Bodys, über [LocalEinkMode] gegatet:
  * **E-Ink** zeigt statische Chevrons (oben ▲ wenn nach oben scrollbar, unten ▼ wenn nach
  * unten scrollbar — am Anfang nur ▼, am Ende nur ▲, mittig beide). **Smartphone** zeigt

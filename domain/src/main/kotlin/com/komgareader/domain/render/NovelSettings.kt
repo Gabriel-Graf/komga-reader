@@ -82,17 +82,17 @@ data class NovelSettings(
          * sodass z. B. 24/48 beide auf 8 kollabierten und der Rand-Regler wirkungslos blieb.
          * Confirmed-listed: 12, 20, 25, 40, 50 → NARROW < SNUG < NORMAL < RELAXED < WIDE.
          *
-         * XWIDE = 60 is the *probable* next listed step but NOT confirmed here: verify on device
-         * that 60 is crengine-listed; if it silently collapses to the default (8), drop XWIDE to a
-         * confirmed-listed value (e.g. reuse 50, or another value once verified). Do NOT invent
-         * unlisted intermediates between the confirmed values.
+         * XWIDE = 100: device-confirmed that 60 IS crengine-listed (it rendered wider, not collapsed
+         * to 8), but 50→60 was only marginally wider, so XWIDE jumps to 100 for a clearly "extra wide"
+         * margin (100 is a standard crengine-listed value). Do NOT invent unlisted intermediates
+         * between the confirmed values.
          */
         fun marginFor(preset: String): Margins = when (preset) {
             MARGIN_NARROW -> Margins(12, 12, 12, 12)
             MARGIN_SNUG -> Margins(20, 20, 20, 20)
             MARGIN_RELAXED -> Margins(40, 40, 40, 40)
             MARGIN_WIDE -> Margins(50, 50, 50, 50)
-            MARGIN_XWIDE -> Margins(60, 60, 60, 60)
+            MARGIN_XWIDE -> Margins(100, 100, 100, 100)
             else -> Margins.NORMAL
         }
 

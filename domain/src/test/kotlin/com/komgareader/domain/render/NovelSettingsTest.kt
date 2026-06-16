@@ -54,10 +54,11 @@ class NovelSettingsTest {
         assertEquals(Margins(40, 40, 40, 40), cfg.margin)
     }
 
-    @Test fun `margin-preset XWIDE ergibt 60px-Raender`() {
-        // NB: 60 must be crengine-listed on device; if it collapses, drop XWIDE to a listed value.
+    @Test fun `margin-preset XWIDE ergibt 100px-Raender`() {
+        // 100 = a clearly "extra wide" margin (60 was device-confirmed listed but only marginally
+        // wider than WIDE=50); 100 is a standard crengine-listed value.
         val cfg = NovelSettings(marginPreset = NovelSettings.MARGIN_XWIDE).toReflowConfig()
-        assertEquals(Margins(60, 60, 60, 60), cfg.margin)
+        assertEquals(Margins(100, 100, 100, 100), cfg.margin)
     }
 
     @Test fun `unbekanntes margin-preset faellt auf NORMAL zurueck`() {
@@ -67,7 +68,7 @@ class NovelSettingsTest {
 
     @Test fun `MARGIN_STEPS sind aufsteigend nach Rand-px geordnet`() {
         val px = NovelSettings.MARGIN_STEPS.map { NovelSettings.marginFor(it).left }
-        assertEquals(listOf(12, 20, 25, 40, 50, 60), px)
+        assertEquals(listOf(12, 20, 25, 40, 50, 100), px)
     }
 
     @Test fun `jeder MARGIN_STEP mappt auf seinen eigenen gelisteten px-Wert`() {

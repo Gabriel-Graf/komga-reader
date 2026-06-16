@@ -10,7 +10,6 @@ import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.eink.HardwareButton
-import com.komgareader.domain.eink.PressKind
 import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.BookFormat
@@ -291,29 +290,6 @@ class ReaderViewModelTest {
     }
 
     @Test
-    fun `long press events do not turn the page`() = runTest {
-        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        try {
-            val bus = HardwareButtonBus()
-            val vm = readerVm(FakeSource(pageCount = 5), mode = "PAGED", bus = bus)
-
-            // Wait until the content is loaded (5 streamed pages).
-            vm.content.first { it !is ReaderContent.Loading }
-
-            val pageBefore = vm.requestedPage.value
-
-            // Emit a long-press — must NOT turn the page.
-            bus.emit(ButtonEvent(HardwareButton.VOLUME_DOWN, PressKind.LONG))
-            // Let coroutines drain.
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(pageBefore, vm.requestedPage.value, "Long press must not change requestedPage")
-        } finally {
-            Dispatchers.resetMain()
-        }
-    }
-
-    @Test
     fun `short press events do turn the page`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         try {
@@ -323,8 +299,8 @@ class ReaderViewModelTest {
             // Wait until the content is loaded.
             vm.content.first { it !is ReaderContent.Loading }
 
-            // Emit a short PAGE_NEXT press — must advance to page 1.
-            bus.emit(ButtonEvent(HardwareButton.PAGE_NEXT, PressKind.SHORT))
+            // Emit a PAGE_NEXT press — must advance to page 1.
+            bus.emit(ButtonEvent(HardwareButton.PAGE_NEXT))
             testScheduler.advanceUntilIdle()
 
             assertEquals(1, vm.requestedPage.value, "Short press must advance requestedPage")

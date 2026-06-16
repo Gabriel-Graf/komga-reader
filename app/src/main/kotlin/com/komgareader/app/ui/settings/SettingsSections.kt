@@ -102,26 +102,6 @@ fun buildSettingsSections(
                 ),
             )
         }
-        // Hardware buttons (read-only overview of the long-press shortcuts) — only on devices with
-        // physical buttons (Onyx). NOT gated on display mode: the volume keys are physical and work
-        // regardless of E-Ink vs Smartphone theme (unlike E-Ink Dynamics, which has no effect on LCD).
-        if (viewModel.einkHasHardwareButtons) {
-            add(
-                SettingsSection(
-                    id = SettingsSectionId.BUTTONS,
-                    icon = AppIcons.Settings,
-                    title = s.settingsButtons,
-                    searchTerms = listOf(
-                        s.settingsButtons, s.settingsButtonsDesc,
-                        s.buttonActionHome, s.buttonActionHomeDesc,
-                        s.buttonActionRefresh, s.buttonActionRefreshDesc,
-                        s.buttonKeyVolumeUpLong, s.buttonKeyVolumeDownLong,
-                        "volume", "taste", "button", "hardware", "shortcut",
-                    ),
-                    content = { ButtonsSettingsContent() },
-                ),
-            )
-        }
         add(
             SettingsSection(
                 id = SettingsSectionId.DOWNLOADS,

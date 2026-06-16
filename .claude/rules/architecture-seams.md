@@ -367,7 +367,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Farbe/Marker/Löschen auf der Auswahl), engere Zeilen mit Farb-Swatch → `EinkColorPicker` (Palette +
   `#RRGGBB`, Schwarz default; Screen besitzt das eine Modal). (3) **Typografie-Tab:** Seitenrand +
   Schriftgröße/Zeilenabstand/Stärke als diskreter `EinkSliderRow` (−/+ + gerasterte Spur + Landmarks;
-  Rand-Stufen `NovelSettings.MARGIN_STEPS` 12·20·25·40·50·60 mit Landmarks Schmal/Normal/Breit/Extra),
+  Rand-Stufen `NovelSettings.MARGIN_STEPS` 12·20·25·40·50·100 mit Landmarks Schmal/Normal/Breit/Extra),
   Ausrichtung als `SegmentedChoiceRow`, Silbentrennung-Reihenfolge Aus/Auto/Sprache. Schmalere `SheetTabRow`.
   `EinkSliderRow`/`EinkColorPicker` sind neue geteilte `ui/components`-Bausteine. Build grün
   (`:app:assembleDebug`, `:domain:test`); Wort-Tap-Render + Farbe selbst sind arm64-crengine, nur auf

@@ -9,12 +9,9 @@ enum class RefreshMode { A2, FAST, PARTIAL, FULL }
 data class Region(val x: Int, val y: Int, val width: Int, val height: Int)
 
 /** Physische Geräte-Taste. */
-enum class HardwareButton { PAGE_NEXT, PAGE_PREV, VOLUME_UP, VOLUME_DOWN }
+enum class HardwareButton { PAGE_NEXT, PAGE_PREV }
 
-/** Press duration class, so a held button can mean a different action than a tap. */
-enum class PressKind { SHORT, LONG }
-
-data class ButtonEvent(val button: HardwareButton, val press: PressKind = PressKind.SHORT)
+data class ButtonEvent(val button: HardwareButton)
 
 /** Device capabilities at runtime (Boox vs. generic tablet). */
 data class EinkCapabilities(

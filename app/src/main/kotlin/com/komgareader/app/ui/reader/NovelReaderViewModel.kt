@@ -10,7 +10,6 @@ import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
 import com.komgareader.domain.eink.HardwareButton
-import com.komgareader.domain.eink.PressKind
 import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.NovelBookmark
 import com.komgareader.domain.render.Chapter
@@ -611,11 +610,9 @@ class NovelReaderViewModel @Inject constructor(
 
     private fun collectButtonEvents() = viewModelScope.launch {
         bus.events.collect { event ->
-            // Long presses are reader shortcuts (Home / refresh), handled by ReaderShortcutsViewModel.
-            if (event.press == PressKind.LONG) return@collect
             when (event.button) {
-                HardwareButton.PAGE_NEXT, HardwareButton.VOLUME_DOWN -> nextPage()
-                HardwareButton.PAGE_PREV, HardwareButton.VOLUME_UP -> prevPage()
+                HardwareButton.PAGE_NEXT -> nextPage()
+                HardwareButton.PAGE_PREV -> prevPage()
             }
         }
     }

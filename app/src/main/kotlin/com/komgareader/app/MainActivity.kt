@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.compose.foundation.layout.Row
@@ -39,6 +41,7 @@ import com.komgareader.app.data.ExternalOpenTarget
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.i18n.resolveStrings
+import com.komgareader.app.ui.components.EinkConfirmDialog
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.LocalColorProfile
 import com.komgareader.app.ui.components.LocalDisplayBehavior
@@ -68,9 +71,6 @@ import com.komgareader.ui.slots.UiSlotPack
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-/** logcat tag for the hardware-button path (adb logcat -s HwButtons). */
-private const val HW_TAG = "HwButtons"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -126,67 +126,23 @@ class MainActivity : ComponentActivity() {
         if (!granted) requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    // Volume keys whose gesture was already consumed by onKeyLongPress (on OEMs that dispatch it),
-    // so the following key-up does not also emit a short (page-turn) event.
-    private val longPressConsumed = mutableSetOf<Int>()
-
-    /** uptime (ms) of the previous tap of each volume key, for double-press detection. */
-    private val lastTapUptime = mutableMapOf<Int, Long>()
-
-    /**
-     * Two taps of the same volume key within this window = a double-press shortcut (Home / refresh).
-     * Long-press is NOT usable on the Onyx Boox Go Color 7 Gen2: its firmware collapses any hold to a
-     * single instantaneous tap (downTime == eventTime, no repeats, no separate release event — proven
-     * on device), so neither onKeyLongPress nor a held-duration check can ever see a hold. A double
-     * tap is two clean discrete events, which the firmware does deliver reliably.
-     */
-    private val doublePressMs = 300L
-
+    // Volume keys page-turn only. Long-press / double-press shortcuts were removed: the Onyx Boox Go
+    // Color 7 Gen2 firmware intercepts volume keys in its own policy layer before the app, so a held
+    // press collapses to a tap and never reaches app KeyEvents nor an AccessibilityService key filter
+    // (both verified on device). Only system apps reading /dev/input directly can use the hold, which a
+    // sideloaded app cannot. We consume the key on down and emit the page turn on up.
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
-            KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                // startTracking so onKeyLongPress still fires on OEMs that dispatch it (not the Boox).
-                if (event != null && event.repeatCount == 0) event.startTracking()
-                true // consume; the actual emit happens on long-press or key-up
-            }
+            KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> true // consume; emit on key-up
             else -> super.onKeyDown(keyCode, event)
-        }
-    }
-
-    override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
-        // Only fires on devices that dispatch it (the Boox does not — see doublePressMs).
-        val emitted = com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = true)
-        return if (emitted != null) {
-            buttonBus.emit(emitted)
-            longPressConsumed.add(keyCode)
-            true
-        } else {
-            super.onKeyLongPress(keyCode, event)
         }
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (longPressConsumed.remove(keyCode)) {
-                    true // onKeyLongPress already handled this gesture (non-Boox)
-                } else {
-                    val now = android.os.SystemClock.uptimeMillis()
-                    val isDouble = now - (lastTapUptime[keyCode] ?: 0L) <= doublePressMs
-                    if (isDouble) {
-                        // Second quick tap → the shortcut action (double Volume Up = Home, Down = refresh).
-                        android.util.Log.i(HW_TAG, "double-press code=$keyCode -> shortcut")
-                        lastTapUptime[keyCode] = 0L
-                        com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = true)
-                            ?.let { buttonBus.emit(it) }
-                    } else {
-                        // First tap → page turn, and arm the double-press window.
-                        lastTapUptime[keyCode] = now
-                        com.komgareader.app.eink.volumeButtonEvent(keyCode, longPress = false)
-                            ?.let { buttonBus.emit(it) }
-                    }
-                    true
-                }
+                com.komgareader.app.eink.volumeButtonEvent(keyCode)?.let { buttonBus.emit(it) }
+                true
             }
             else -> super.onKeyUp(keyCode, event)
         }
@@ -389,6 +345,26 @@ class MainActivity : ComponentActivity() {
                         composable("settings") {
                             SettingsRoute(onBack = { nav.popBackStack() })
                         }
+                    }
+
+                    // --- Exit confirmation ------------------------------------------------------
+                    // At the library root, the system Back gesture would finish the activity. Catch
+                    // it and confirm via the shared EinkModal before leaving the app.
+                    val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+                    var showExit by remember { mutableStateOf(false) }
+                    BackHandler(enabled = currentRoute == "home") { showExit = true }
+                    if (showExit) {
+                        val exitStrings = LocalStrings.current
+                        EinkConfirmDialog(
+                            title = exitStrings.exitConfirmTitle,
+                            confirmLabel = exitStrings.exitConfirmLeave,
+                            onConfirm = {
+                                showExit = false
+                                this@MainActivity.finish()
+                            },
+                            dismissLabel = exitStrings.cancel,
+                            onDismiss = { showExit = false },
+                        )
                     }
 
                     // --- External book open (VIEW intent) driver -------------------------------

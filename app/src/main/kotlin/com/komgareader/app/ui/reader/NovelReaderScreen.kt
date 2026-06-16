@@ -87,6 +87,7 @@ fun NovelReaderScreen(
     val bookmarks by novelVm.bookmarksFlow.collectAsState()
     val bookmarkMode by novelVm.bookmarkMode.collectAsState()
     val markerStyleName by novelVm.markerStyle.collectAsState()
+    val highlightedBookmark by novelVm.highlightedBookmark.collectAsState()
     val strings = LocalStrings.current
     var sheetExpanded by remember { mutableStateOf(false) }
     var sheetTab by rememberSaveable { mutableStateOf(NovelSheetTab.TYPOGRAPHY) }
@@ -284,6 +285,7 @@ fun NovelReaderScreen(
                                 currentPage = state.currentPage,
                                 layoutGeneration = state.layoutGeneration,
                                 markerStyleName = markerStyleName,
+                                highlightedXpointer = highlightedBookmark,
                             )
                         } else {
                             LoadingIndicator()
@@ -412,6 +414,7 @@ private fun BookmarkMarkers(
     currentPage: Int,
     layoutGeneration: Int,
     markerStyleName: String,
+    highlightedXpointer: String?,
 ) {
     val rects by produceState(
         initialValue = emptyMap<String, IntRect>(),
@@ -424,18 +427,28 @@ private fun BookmarkMarkers(
     if (rects.isEmpty()) return
     val margin = markerStyleName == BookmarkMarkerStyle.MARGIN.name
     Canvas(Modifier.fillMaxSize()) {
-        rects.values.forEach { r ->
+        rects.forEach { (xpointer, r) ->
+            val highlighted = xpointer == highlightedXpointer
             if (margin) {
                 drawRect(
                     color = Color.Black,
                     topLeft = Offset(0f, r.top.toFloat()),
-                    size = Size(8f, (r.bottom - r.top).toFloat()),
+                    size = Size(if (highlighted) 14f else 8f, (r.bottom - r.top).toFloat()),
                 )
             } else {
+                // Underline BELOW the glyphs. getRectEx returns the LINE box whose bottom sits around
+                // the glyph vertical center (not the baseline — verified pixel-exact on a real Boox:
+                // for a 62px line the baseline is ~12px below rect.bottom), so a line at rect.bottom
+                // cut through the text (strikethrough). Drop ~22% of the line height below rect.bottom
+                // to clear the baseline; this scales with the font size. The highlighted (just-jumped)
+                // word draws much thicker so it stands out among several marks (request 2026-06-16).
+                val lineHeight = (r.bottom - r.top).toFloat()
+                val y = r.bottom + lineHeight * 0.22f
+                val thickness = if (highlighted) 9f else 3f
                 drawRect(
                     color = Color.Black,
-                    topLeft = Offset(r.left.toFloat(), (r.bottom - 3).toFloat()),
-                    size = Size((r.right - r.left).toFloat(), 3f),
+                    topLeft = Offset(r.left.toFloat(), y),
+                    size = Size((r.right - r.left).toFloat(), thickness),
                 )
             }
         }

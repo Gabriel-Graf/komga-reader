@@ -196,6 +196,13 @@ class NovelReaderViewModel @Inject constructor(
     val bookmarkMode: StateFlow<Boolean> = _bookmarkMode.asStateFlow()
     fun toggleBookmarkMode() { _bookmarkMode.value = !_bookmarkMode.value }
 
+    /**
+     * The xpointer last jumped to from the bookmark list. Its on-page marker is drawn extra-thick so
+     * that, with several bookmarks on the same page, it is clear which word was opened.
+     */
+    private val _highlightedBookmark = MutableStateFlow<String?>(null)
+    val highlightedBookmark: StateFlow<String?> = _highlightedBookmark.asStateFlow()
+
     /** How set bookmarks are drawn on the page (persisted setting). */
     val markerStyle: StateFlow<String> =
         settings.bookmarkMarkerStyle
@@ -516,8 +523,11 @@ class NovelReaderViewModel @Inject constructor(
         }
     }
 
-    /** Jump to a bookmark's (layout-independent) anchor — same path as TOC/search. */
-    fun jumpToBookmark(xpointer: String) = goToAnchor(xpointer)
+    /** Jump to a bookmark's (layout-independent) anchor — same path as TOC/search; highlight it. */
+    fun jumpToBookmark(xpointer: String) {
+        _highlightedBookmark.value = xpointer
+        goToAnchor(xpointer)
+    }
 
     fun renameBookmark(id: Long, label: String?) =
         viewModelScope.launch { bookmarks.rename(id, label?.ifBlank { null }) }

@@ -2,11 +2,16 @@ package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,41 +63,54 @@ fun NovelSettingsSheet(
 ) {
     val strings = LocalStrings.current
 
-    SheetTabRow(
-        tabs = listOf(
-            NovelSheetTab.TYPOGRAPHY to strings.novelTypography,
-            NovelSheetTab.BOOKMARKS to strings.novelBookmarks,
-        ),
-        selected = selectedTab,
-        onSelect = onTabChange,
-    )
-
-    when (selectedTab) {
-        NovelSheetTab.TYPOGRAPHY -> NovelTypographyControls(
-            fontSizeEm = config.fontSizeEm,
-            onFontSize = onFontSizeEm,
-            lineHeight = config.lineHeight,
-            onLineHeight = onLineHeight,
-            fontWeight = config.fontWeight,
-            onFontWeight = onFontWeight,
-            marginPreset = config.marginPreset(),
-            onMargin = onMargin,
-            textAlign = if (config.textAlign == TextAlign.LEFT) "LEFT" else "JUSTIFY",
-            onTextAlign = onTextAlign,
-            hyphenationLang = config.hyphenationLang(),
-            onHyphenation = onHyphenation,
-            fontFamily = config.fontFamily,
-            onFontFamily = onFontFamily,
-            availableFonts = availableFonts,
-            fontFiles = fontFiles,
+    // Pinned tab row + independently scrolling body so the [Typography | Bookmarks] header stays
+    // fixed at the top of the (fixed-height) sheet while the tab content scrolls (request 2026-06-16).
+    Column(Modifier.fillMaxSize()) {
+        SheetTabRow(
+            tabs = listOf(
+                NovelSheetTab.TYPOGRAPHY to strings.novelTypography,
+                NovelSheetTab.BOOKMARKS to strings.novelBookmarks,
+            ),
+            selected = selectedTab,
+            onSelect = onTabChange,
         )
-        NovelSheetTab.BOOKMARKS -> NovelBookmarkList(
-            bookmarks = bookmarks,
-            onJump = onBookmarkJump,
-            onRename = onBookmarkRename,
-            onDelete = onBookmarkDelete,
-            onJumped = onBookmarkJumped,
-        )
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                when (selectedTab) {
+                    NovelSheetTab.TYPOGRAPHY -> NovelTypographyControls(
+                        fontSizeEm = config.fontSizeEm,
+                        onFontSize = onFontSizeEm,
+                        lineHeight = config.lineHeight,
+                        onLineHeight = onLineHeight,
+                        fontWeight = config.fontWeight,
+                        onFontWeight = onFontWeight,
+                        marginPreset = config.marginPreset(),
+                        onMargin = onMargin,
+                        textAlign = if (config.textAlign == TextAlign.LEFT) "LEFT" else "JUSTIFY",
+                        onTextAlign = onTextAlign,
+                        hyphenationLang = config.hyphenationLang(),
+                        onHyphenation = onHyphenation,
+                        fontFamily = config.fontFamily,
+                        onFontFamily = onFontFamily,
+                        availableFonts = availableFonts,
+                        fontFiles = fontFiles,
+                    )
+                    NovelSheetTab.BOOKMARKS -> NovelBookmarkList(
+                        bookmarks = bookmarks,
+                        onJump = onBookmarkJump,
+                        onRename = onBookmarkRename,
+                        onDelete = onBookmarkDelete,
+                        onJumped = onBookmarkJumped,
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -10,7 +10,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,12 +18,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -155,21 +151,21 @@ private fun ReaderBottomSheetPeek(label: String, onExpand: () -> Unit, modifier:
 
 @Composable
 private fun ReaderBottomSheetExpanded(sheet: ReaderBottomSheet, modifier: Modifier = Modifier) {
-    // Floating card, not edge-to-edge: narrower than the screen and shorter, with a margin from the
-    // bottom and rounded corners (novel-reader request 2026-06-16). contentAlignment centers the
-    // narrowed column for both the E-Ink (align passed via modifier) and the phone (slide) paths.
-    val shape = RoundedCornerShape(16.dp)
-    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        val cap = maxHeight * 0.45f
+    // Full-width, bottom-anchored panel with a FIXED height (not content-driven) and only its top
+    // corners rounded — the content owns its own scroll so its header (e.g. the novel tab row) can
+    // stay pinned while the body scrolls (novel-reader request 2026-06-16).
+    val shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val sheetHeight = maxHeight * 0.5f
         Column(
             Modifier
-                .fillMaxWidth(0.92f)
-                .padding(bottom = 12.dp)
+                .fillMaxWidth()
+                .height(sheetHeight)
                 .clip(shape)
                 .background(MaterialTheme.colorScheme.surface)
                 .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, shape),
         ) {
-            // Grabber handle row — drag down to dismiss (the scrollable body does not).
+            // Grabber handle row — drag down to dismiss. Pinned (outside the content's scroll).
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -183,17 +179,9 @@ private fun ReaderBottomSheetExpanded(sheet: ReaderBottomSheet, modifier: Modifi
             ) {
                 Box(Modifier.size(width = 32.dp, height = 3.dp).background(MaterialTheme.colorScheme.outline))
             }
-            // Scrollable content, height-capped (mirrors EinkInfoDialog's Box(heightIn)+verticalScroll).
-            Box(Modifier.heightIn(max = cap)) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    sheet.content()
-                }
+            // Content fills the remaining fixed height and owns its scroll (so a pinned sub-header works).
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                sheet.content()
             }
         }
     }

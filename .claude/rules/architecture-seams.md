@@ -44,12 +44,22 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `openPage` den rohen Zip-Eintrag (`java.util.zip`, kein Decode); für PDF/CBR/EPUB gibt `pages()`
   `emptyList()` zurück → der Reader rendert whole-file (s. u. „Reader-Lesepfad"). `SyncingSource`
   wird **nicht** implementiert (kein Server zum Syncen — Fortschritt bleibt lokal). **Cover (Ist,
-  2026-06-15):** `coverBytes` liefert nur für **CBZ** Bytes (erstes Zip-Bild); für PDF/EPUB/CBR
-  gibt es ByteArray(0), weil das Rendern eine Engine braucht und `:source-local` renderer-frei
-  bleibt. Das Cover dieser Formate entsteht daher in der **App-Schicht**: `LocalCoverRenderer`
-  (`app/data`) rendert als **Fallback** im `SourceCoverFetcher` (Coil) die erste Seite via
-  `DocumentFactory` (MuPDF) — greift nur bei leeren Primär-Bytes + `sourceId == LOCAL`, sonst
-  unverändert. Metadaten
+  2026-06-16 — entlang Format aufgeteilt):** `coverBytes` liefert die **renderer-freien** Formate
+  direkt durch die Naht: **CBZ** = erstes Zip-Bild (`CbzArchive`), **EPUB** = das **eingebettete
+  Cover-Bild** aus dem EPUB-Zip (`EpubCover.kt`: OPF folgen — EPUB3 `properties="cover-image"`, sonst
+  EPUB2 `<meta name="cover">`→Manifest-Item; pures Zip+Text-Parsing, JVM-unit-getestet `EpubCoverTest`).
+  Das EPUB-Cover ist damit **Vollbild wie das Server-Cover** (Komga liefert dasselbe eingebettete Bild),
+  **nicht** die reflowte erste Seite mit Lese-Rändern. **PDF/CBR** brauchen echt eine Render-Engine →
+  `coverBytes` gibt `ByteArray(0)`, und das Cover entsteht in der **App-Schicht**: der `@Singleton`
+  **`LocalCoverStore`** (`app/data`) **rendert vor** (Seite 0 via `DocumentFactory`/MuPDF) und
+  **persistiert** nach `filesDir/local-covers/<key>.png` — signatur-gekeyt (`coverCacheKey(remoteId,
+  size:mtime)`, pure, unit-getestet), gebündelte Nebenläufigkeit (`Semaphore`), gepruned
+  (`coverPrunePlan`, pure). Der **Hintergrund-Prewarm** läuft als `appScope.launch` am Ende von
+  `LocalDownloadSync.sync()` (nicht-blockierend, idempotent) → das Bibliotheks-Grid lädt sofort statt
+  pro Cover synchron in Coils `fetch` zu rendern (E-Ink-Jank). `LocalCoverRenderer` (`app/data`) ist
+  nur noch der dünne **on-demand-Fallback** im `SourceCoverFetcher` (Coil), der bei leeren
+  Primär-Bytes + `sourceId == LOCAL` an `LocalCoverStore.get` delegiert (PDF/CBR; CBZ/EPUB liefert die
+  Source). Metadaten
   best-effort: Dateiname als Basis, `seriesDetail` reichert aus der **ersten** CBZ-`ComicInfo.xml`
   an (ein Materialize, nicht pro Buch — sonst kopierte ein Listing jede Datei). **Wichtig — opake
   remoteIds:** lokale Pfade enthalten `/`, die App fädelt remoteIds aber als einzelne Nav-Pfad-Segmente

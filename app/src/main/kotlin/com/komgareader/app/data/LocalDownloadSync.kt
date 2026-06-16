@@ -1,9 +1,12 @@
 package com.komgareader.app.data
 
+import com.komgareader.app.di.ApplicationScope
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.source.SourceId
 import com.komgareader.source.local.LocalSource
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,6 +25,8 @@ import javax.inject.Singleton
 class LocalDownloadSync @Inject constructor(
     private val active: ActiveSource,
     private val downloads: DownloadRepository,
+    private val coverStore: LocalCoverStore,
+    @ApplicationScope private val appScope: CoroutineScope,
 ) {
     suspend fun sync() {
         val source = active.get(SourceId.LOCAL) as? LocalSource
@@ -36,5 +41,10 @@ class LocalDownloadSync @Inject constructor(
 
         // Upsert the current local works.
         books.forEach { downloads.put(it) }
+
+        // Precompute the render-heavy covers (PDF/EPUB/CBR) in the background so the library grid
+        // loads instantly instead of rendering each cover synchronously in Coil's fetch. Off the
+        // sync path (non-blocking) — never delays app-start; idempotent on cache hits.
+        appScope.launch { coverStore.prewarmAndPrune(books) }
     }
 }

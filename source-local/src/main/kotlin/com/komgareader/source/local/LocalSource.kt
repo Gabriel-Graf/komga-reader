@@ -130,8 +130,16 @@ class LocalSource internal constructor(
             decode(remoteId)
         }
         realBookPath ?: return ByteArray(0)
-        val cbz = withContext(Dispatchers.IO) { cbzOf(realBookPath) } ?: return ByteArray(0)
-        return withContext(Dispatchers.IO) { cbz.coverBytes() }
+        return when (index().book(realBookPath)?.format) {
+            // CBZ: first zip image. EPUB: embedded cover image (full-bleed, like the server cover) —
+            // both are renderer-free zip reads. PDF/CBR need a render engine → empty here, the app
+            // layer renders + precomputes those (LocalCoverStore).
+            BookFormat.CBZ -> withContext(Dispatchers.IO) { cbzOf(realBookPath)?.coverBytes() } ?: ByteArray(0)
+            BookFormat.EPUB -> withContext(Dispatchers.IO) {
+                materialize(realBookPath)?.let { extractEpubCoverImage(it.readBytes()) } ?: ByteArray(0)
+            }
+            else -> ByteArray(0)
+        }
     }
 
     // --- helpers (operate on REAL relative paths; the seam exposes only encoded ids) ---

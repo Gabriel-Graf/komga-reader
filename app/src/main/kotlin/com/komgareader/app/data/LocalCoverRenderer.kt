@@ -2,13 +2,10 @@ package com.komgareader.app.data
 
 import android.graphics.Bitmap
 import com.komgareader.app.data.coil.SourceCover
-import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.source.SourceId
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,8 +23,7 @@ import javax.inject.Singleton
 @Singleton
 class LocalCoverRenderer @Inject constructor(
     private val downloads: DownloadRepository,
-    private val localBookBytes: LocalBookBytes,
-    private val documentFactory: DocumentFactory,
+    private val coverStore: LocalCoverStore,
 ) {
     suspend fun render(model: SourceCover): ByteArray? {
         if (model.sourceId != SourceId.LOCAL) return null
@@ -38,13 +34,9 @@ class LocalCoverRenderer @Inject constructor(
         } else {
             local.firstOrNull { it.bookRemoteId == model.remoteId }
         } ?: return null
-        if (book.format.equals("cbz", ignoreCase = true)) return null // CBZ → LocalSource.coverBytes
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                val bytes = localBookBytes.bytesOf(book)
-                renderFirstPageCover(documentFactory, bytes, ".${book.format.lowercase()}")
-            }.getOrNull()
-        }
+        // Reads the precomputed cover if present, renders + persists on a cold miss (CBZ → null,
+        // already covered by LocalSource.coverBytes). See [LocalCoverStore].
+        return coverStore.get(book)
     }
 }
 

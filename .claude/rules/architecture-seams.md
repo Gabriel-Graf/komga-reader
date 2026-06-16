@@ -343,6 +343,17 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   setzt das Wort-Lesezeichen (per `adb input tap` + `adb logcat -s cr3bridge` bewiesen: `wordAt: HIT` →
   Eintrag „#1 …" in der Liste); die Wort-Auflösung trifft das angetippte Wort, der Marker ist
   margin-korrigiert. Der Koordinaten-Fix oben war der eigentliche „markiert keine Wörter"-Bug.
+  **Marker-Fix (2026-06-16, auf echter Boox: gespeichert aber kein Marker gezeichnet):**
+  `nativeRectsForXPointers` maß den gespeicherten Start-XPointer per `ptr.getRect` — das gibt für
+  eine Einzel-Textposition einen leeren/degenerierten Caret-Rect → `rect.isEmpty()` → Marker still
+  übersprungen. Fix: den **Wort-Bereich rekonstruieren** wie `wordAt` (`ldomXRange::getWordRange` +
+  `getRectEx`, `getRect` nur als Fallback) → derselbe Rect, den `wordAt` beim Setzen maß; Marker
+  zeichnet jetzt. **UI-Swap (2026-06-16):** Inhaltsverzeichnis ist jetzt ein **Chrome-Button** oben
+  (`NovelTocPanel`-Modal über `NovelTocList`), Lesezeichen sind ein **Tab im Bottom-Sheet**
+  (`NovelBookmarkList` frameless, neben Typografie; `NovelSheetTab{TYPOGRAPHY,BOOKMARKS}`) — getauscht
+  gegenüber vorher (TOC-Tab im Sheet, Lesezeichen-Liste als Top-Modal). Das Expanded-Sheet ist ein
+  **schmalerer (0.92), kürzerer (0.45) schwebender Karten**-Look (gerundet, Rand-Abstand), der Scrim
+  bleibt transparent (Live-Vorschau).
 - **Geräte-Naht (Ist):** `EinkController` (`domain/eink/EinkController.kt`) kapselt das Gerät:
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`

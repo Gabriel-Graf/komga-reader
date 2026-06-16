@@ -16,49 +16,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.domain.model.NovelBookmark
 import com.komgareader.ui.icons.AppIcons
 
 /**
- * Lists the novel's bookmarks (#number · optional name · snippet). Tap a row to
- * jump to the bookmark's xpointer; the trailing buttons rename and delete. Built on
- * [EinkInfoDialog] like the other novel panels.
+ * Lists the novel's bookmarks (#number · optional name · snippet) as a frameless list — for the
+ * settings bottom sheet's bookmarks tab (mirrors [NovelTocList], no dialog frame:
+ * shared-structure-before-variants). Tap a row to jump to the bookmark's xpointer (then
+ * [onJumped] lets the caller close the sheet); the trailing buttons rename and delete.
  *
  * **No animation** (`animation-gating`), monochrome. Texts via [LocalStrings] (DE+EN).
  */
 @Composable
-fun NovelBookmarkPanel(
+fun NovelBookmarkList(
     bookmarks: List<NovelBookmark>,
     onJump: (String) -> Unit,
     onRename: (Long) -> Unit,
     onDelete: (Long) -> Unit,
-    onDismiss: () -> Unit,
+    onJumped: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     val strings = LocalStrings.current
 
-    EinkInfoDialog(
-        title = strings.novelBookmarks,
-        onDismiss = onDismiss,
-        closeLabel = strings.close,
-        contentSpacing = 0.dp,
-    ) {
-        if (bookmarks.isEmpty()) {
-            Text(
-                strings.novelBookmarksEmpty,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            return@EinkInfoDialog
-        }
+    if (bookmarks.isEmpty()) {
+        Text(
+            strings.novelBookmarksEmpty,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier,
+        )
+        return
+    }
 
+    Column(modifier.fillMaxWidth()) {
         bookmarks.forEach { bookmark ->
             Row(
                 Modifier
                     .fillMaxWidth()
                     .clickable {
                         onJump(bookmark.xpointer)
-                        onDismiss()
+                        onJumped()
                     }
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,

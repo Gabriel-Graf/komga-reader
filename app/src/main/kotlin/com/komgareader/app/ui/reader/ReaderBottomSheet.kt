@@ -23,12 +23,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -153,13 +155,19 @@ private fun ReaderBottomSheetPeek(label: String, onExpand: () -> Unit, modifier:
 
 @Composable
 private fun ReaderBottomSheetExpanded(sheet: ReaderBottomSheet, modifier: Modifier = Modifier) {
-    BoxWithConstraints(modifier.fillMaxWidth()) {
-        val cap = maxHeight * 0.55f
+    // Floating card, not edge-to-edge: narrower than the screen and shorter, with a margin from the
+    // bottom and rounded corners (novel-reader request 2026-06-16). contentAlignment centers the
+    // narrowed column for both the E-Ink (align passed via modifier) and the phone (slide) paths.
+    val shape = RoundedCornerShape(16.dp)
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+        val cap = maxHeight * 0.45f
         Column(
             Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
+                .padding(bottom = 12.dp)
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.surface)
-                .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline),
+                .border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, shape),
         ) {
             // Grabber handle row — drag down to dismiss (the scrollable body does not).
             Column(

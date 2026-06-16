@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign as UiTextAlign
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
-import com.komgareader.domain.render.Chapter
+import com.komgareader.domain.model.NovelBookmark
 import com.komgareader.domain.render.Hyphenation
 import com.komgareader.domain.render.NovelFont
 import com.komgareader.domain.render.NovelFonts
@@ -27,13 +27,14 @@ import com.komgareader.ui.theme.LocalDesignTokens
 import java.io.File
 
 /** Which tab of the novel settings bottom sheet is active. Novel-local; the host does not see tabs. */
-enum class NovelSheetTab { TYPOGRAPHY, TOC }
+enum class NovelSheetTab { TYPOGRAPHY, BOOKMARKS }
 
 /**
- * Content of the novel settings bottom sheet: two tabs [Typography | TOC]. Stateless — values in,
- * callbacks out; the caller (screen) owns the `expanded` state + the close action. Both tabs reuse
- * the already-shared building blocks ([NovelTypographyControls] / [NovelTocList]) — no dialog frame
- * (shared-structure-before-variants). No animation (animation-gating).
+ * Content of the novel settings bottom sheet: two tabs [Typography | Bookmarks]. Stateless — values
+ * in, callbacks out; the caller (screen) owns the `expanded` state + the close action. Both tabs reuse
+ * the already-shared building blocks ([NovelTypographyControls] / [NovelBookmarkList]) — no dialog
+ * frame (shared-structure-before-variants). The TOC moved out to a chrome button ([NovelTocPanel]).
+ * No animation (animation-gating).
  */
 @Composable
 fun NovelSettingsSheet(
@@ -47,15 +48,21 @@ fun NovelSettingsSheet(
     onTextAlign: (String) -> Unit,
     onHyphenation: (String) -> Unit,
     onFontFamily: (String) -> Unit,
-    chapters: List<Chapter>,
-    onChapterSelected: (String) -> Unit,
+    bookmarks: List<NovelBookmark>,
+    onBookmarkJump: (String) -> Unit,
+    onBookmarkRename: (Long) -> Unit,
+    onBookmarkDelete: (Long) -> Unit,
+    onBookmarkJumped: () -> Unit,
     availableFonts: List<NovelFont> = NovelFonts.ALL,
     fontFiles: Map<String, File> = emptyMap(),
 ) {
     val strings = LocalStrings.current
 
     SheetTabRow(
-        tabs = listOf(NovelSheetTab.TYPOGRAPHY to strings.novelTypography, NovelSheetTab.TOC to strings.novelToc),
+        tabs = listOf(
+            NovelSheetTab.TYPOGRAPHY to strings.novelTypography,
+            NovelSheetTab.BOOKMARKS to strings.novelBookmarks,
+        ),
         selected = selectedTab,
         onSelect = onTabChange,
     )
@@ -79,9 +86,12 @@ fun NovelSettingsSheet(
             availableFonts = availableFonts,
             fontFiles = fontFiles,
         )
-        NovelSheetTab.TOC -> NovelTocList(
-            chapters = chapters,
-            onChapterSelected = onChapterSelected,
+        NovelSheetTab.BOOKMARKS -> NovelBookmarkList(
+            bookmarks = bookmarks,
+            onJump = onBookmarkJump,
+            onRename = onBookmarkRename,
+            onDelete = onBookmarkDelete,
+            onJumped = onBookmarkJumped,
         )
     }
 }

@@ -22,8 +22,39 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.komgareader.app.i18n.LocalStrings
 import androidx.compose.foundation.layout.Column
+import com.komgareader.app.ui.components.EinkInfoDialog
 import com.komgareader.ui.icons.AppIcons
 import com.komgareader.domain.render.Chapter
+
+/**
+ * Table of contents as a modal (opened from the reader-chrome TOC button). Wraps the frameless
+ * [NovelTocList] in [EinkInfoDialog] — same dialog frame as the other novel panels
+ * (shared-structure-before-variants). Selecting a chapter jumps and dismisses.
+ *
+ * **No animation** (`animation-gating`), monochrome. Texts via [LocalStrings] (DE+EN).
+ */
+@Composable
+fun NovelTocPanel(
+    chapters: List<Chapter>,
+    onChapterSelected: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val strings = LocalStrings.current
+    EinkInfoDialog(
+        title = strings.novelToc,
+        onDismiss = onDismiss,
+        closeLabel = strings.close,
+        contentSpacing = 0.dp,
+    ) {
+        NovelTocList(
+            chapters = chapters,
+            onChapterSelected = {
+                onChapterSelected(it)
+                onDismiss()
+            },
+        )
+    }
+}
 
 /** Eine oberste TOC-Ebene mit ihren (tieferen) Unter-Einträgen. */
 internal data class TocGroup(val parent: Chapter, val children: List<Chapter>)

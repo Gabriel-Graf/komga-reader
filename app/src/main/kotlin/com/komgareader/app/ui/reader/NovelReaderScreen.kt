@@ -91,7 +91,7 @@ fun NovelReaderScreen(
     var sheetExpanded by remember { mutableStateOf(false) }
     var sheetTab by rememberSaveable { mutableStateOf(NovelSheetTab.TYPOGRAPHY) }
     var searchPanelOpen by remember { mutableStateOf(false) }
-    var bookmarkPanelOpen by remember { mutableStateOf(false) }
+    var tocPanelOpen by remember { mutableStateOf(false) }
     var renameId by remember { mutableStateOf<Long?>(null) }
 
     ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.currentPage)
@@ -111,12 +111,10 @@ fun NovelReaderScreen(
             onGoToProgress = novelVm::goToProgress,
             onDismiss = { searchPanelOpen = false },
         )
-        bookmarkPanelOpen -> NovelBookmarkPanel(
-            bookmarks = bookmarks,
-            onJump = novelVm::jumpToBookmark,
-            onRename = { renameId = it },
-            onDelete = novelVm::deleteBookmark,
-            onDismiss = { bookmarkPanelOpen = false },
+        tocPanelOpen -> NovelTocPanel(
+            chapters = chapters,
+            onChapterSelected = novelVm::goToAnchor,
+            onDismiss = { tocPanelOpen = false },
         )
     }
 
@@ -160,8 +158,8 @@ fun NovelReaderScreen(
                     tint = Color.White,
                 )
             }
-            IconButton(onClick = { bookmarkPanelOpen = true }) {
-                Icon(AppIcons.ListView, contentDescription = strings.novelBookmarks, tint = Color.White)
+            IconButton(onClick = { tocPanelOpen = true }) {
+                Icon(AppIcons.ListView, contentDescription = strings.novelToc, tint = Color.White)
             }
             IconButton(onClick = { searchPanelOpen = true }) {
                 Icon(
@@ -198,11 +196,11 @@ fun NovelReaderScreen(
                     onTextAlign = novelVm::setTextAlign,
                     onHyphenation = novelVm::setHyphenation,
                     onFontFamily = novelVm::setFontFamily,
-                    chapters = chapters,
-                    onChapterSelected = { anchor ->
-                        novelVm.goToAnchor(anchor)
-                        sheetExpanded = false
-                    },
+                    bookmarks = bookmarks,
+                    onBookmarkJump = novelVm::jumpToBookmark,
+                    onBookmarkRename = { renameId = it },
+                    onBookmarkDelete = novelVm::deleteBookmark,
+                    onBookmarkJumped = { sheetExpanded = false },
                     availableFonts = availableNovelFonts,
                     fontFiles = fontSampleFiles,
                 )

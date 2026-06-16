@@ -550,9 +550,17 @@ Java_com_komgareader_render_crengine_CrengineNative_nativeRectsForXPointers(
         ldomXPointer ptr = doc->createXPointer(xpStr);
         if (ptr.isNull())
             continue;
+        // Reconstruct the word range from the stored start xpointer and measure it with getRectEx —
+        // mirroring nativeXPointerAtPoint. A bare ldomXPointer.getRect() on a single text position
+        // returns an empty/degenerate caret rect, so the markers were silently skipped ("bookmark
+        // saved but no mark drawn", confirmed on a real Boox). getWordRange + getRectEx yields the
+        // same rect wordAt measured; getRect() stays as a fallback for non-word positions.
         lvRect rect;
-        if (!ptr.getRect(rect) || rect.isEmpty())
-            continue;
+        ldomXRange wordRange;
+        if (!(ldomXRange::getWordRange(wordRange, ptr) && wordRange.getRectEx(rect) && !rect.isEmpty())) {
+            if (!ptr.getRect(rect) || rect.isEmpty())
+                continue;
+        }
         // Skip xpointers that don't intersect the current page vertically.
         if (rect.bottom <= pageTop || rect.top >= pageBottom)
             continue;

@@ -58,15 +58,15 @@ arm64 Boox, not the x86 emulator.
 
 **Novel‑reader polish (2026-06-16).** A batch of fixes/refinements: (1) the word‑bookmark seam became
 **page‑aware** (`wordAt`/`rectsFor` take a `page` index → native `goToPage` before the hit‑test) to fix a
-render‑cache page‑desync where taps resolved the wrong page; (2) the Onyx **frontlight** now drives an
-**index‑based `BaseBrightnessProvider`** (cold/CTM/FL per `BrightnessController.getBrightnessType`) instead
-of the legacy `FrontLightController.setBrightness`, which is a silent no‑op on the split warm/cold Go Color 7
-(this was "brightness does nothing"); (3) the brightness control is now a **floating rounded pill** inset
-from the edge; (4) a read‑only **Buttons** settings section lists the hardware long‑press shortcuts (gated by
+render‑cache page‑desync where taps resolved the wrong page; (2)+(3) an Onyx **frontlight** control was added
+here but **removed again on 2026-06-17** — the frontlight is hardware‑uncontrollable by a sideloaded app on
+the Go Color 7 Gen2 (onyxsdk‑device 1.3.5 reports `getBrightnessType()==NONE`; the sysfs node needs system
+context), so the whole surface (`brightnessRange`, `setBrightness`, `BrightnessBar`, the edge‑swipe strips)
+was dead weight and is gone; (4) a read‑only **Buttons** settings section lists the hardware long‑press shortcuts (gated by
 the new `EinkCapabilities.hasHardwareButtons`); (5) the novel reader excludes the screen's **back‑gesture
 edges** (`Modifier.systemGestureExclusion`; the system home swipe‑up is an OS guarantee and cannot be
 disabled); (6) the typography/TOC bottom sheet no longer dims the page (transparent dismisser → live
-preview). Frontlight + gesture behaviour remain **device‑verification pending** on a real Boox.
+preview). Gesture behaviour remains **device‑verification pending** on a real Boox.
 
 **Novel‑reader wide‑panel sheet overhaul (Ist 2026-06-16, UI/UX only).** The novel settings/TOC bottom
 sheet was redesigned for a wide panel. Marker style **and colour** are now **per bookmark**

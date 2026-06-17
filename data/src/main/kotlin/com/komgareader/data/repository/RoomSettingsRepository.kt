@@ -68,9 +68,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val lastSeenVersion: Flow<String> = dao.observe(KEY_LAST_SEEN_VERSION).map { it ?: "" }
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> =
         dao.observe(KEY_EINK_CONTEXT_PROFILES).map { decodeEinkContextProfiles(it) }
-    // Default -1: key absent means the user has never set a brightness preference.
-    override val frontlightLevel: Flow<Int> =
-        dao.observe(KEY_FRONTLIGHT_LEVEL).map { it?.toIntOrNull() ?: -1 }
     override val screenSaverMode: Flow<String> =
         dao.observe(KEY_SCREENSAVER_MODE).map { it ?: ScreenSaverMode.OFF.name }
     override val screenSaverCustomUri: Flow<String> =
@@ -131,9 +128,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
 
-    override suspend fun setFrontlightLevel(level: Int) =
-        dao.put(SettingEntity(KEY_FRONTLIGHT_LEVEL, level.toString()))
-
     private companion object {
         const val KEY_THEME = "theme_mode"
         const val KEY_LANG = "language"
@@ -160,7 +154,6 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_ACTIVE_UI_PACK = "active_ui_pack"
         const val KEY_LAST_SEEN_VERSION = "last_seen_version"
         const val KEY_EINK_CONTEXT_PROFILES = "eink_context_profiles"
-        const val KEY_FRONTLIGHT_LEVEL = "frontlight_level"
         const val KEY_SCREENSAVER_MODE = "screensaver_mode"
         const val KEY_SCREENSAVER_CUSTOM_URI = "screensaver_custom_uri"
         const val KEY_SCREENSAVER_FILL_CROP = "screensaver_fill_crop"

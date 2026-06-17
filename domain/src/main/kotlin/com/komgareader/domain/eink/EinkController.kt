@@ -22,8 +22,6 @@ data class EinkCapabilities(
     val refreshModes: List<EinkModeOption> = emptyList(),
     /** System colour modes this device can switch; empty = axis unsupported. */
     val colorModes: List<EinkModeOption> = emptyList(),
-    /** Frontlight brightness range, or null if the device has no controllable frontlight. */
-    val brightnessRange: IntRange? = null,
     /** True if the device exposes physical buttons the reader remaps (e.g. Onyx volume keys). */
     val hasHardwareButtons: Boolean = false,
 )
@@ -48,12 +46,6 @@ interface EinkController {
 
     /** Device-specific sane default profile for the given context (app stores only overrides). */
     fun defaultProfile(context: EinkContext): EinkContextProfile
-
-    /** Sets the frontlight brightness, clamped to [EinkCapabilities.brightnessRange]; no-op if null. */
-    fun setBrightness(level: Int)
-
-    /** Current frontlight brightness (0 if unsupported). */
-    fun brightness(): Int
 
     /**
      * Sets the device standby/screensaver image to the file at [absolutePath]. Returns true if the

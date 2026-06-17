@@ -11,12 +11,6 @@ import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.EinkModeOption
 import com.komgareader.domain.eink.RefreshMode
 import com.komgareader.domain.eink.Region
-import com.onyx.android.sdk.api.device.brightness.BaseBrightnessProvider
-import com.onyx.android.sdk.api.device.brightness.BrightnessController
-import com.onyx.android.sdk.api.device.brightness.BrightnessType
-import com.onyx.android.sdk.api.device.brightness.CTMBrightnessProvider
-import com.onyx.android.sdk.api.device.brightness.ColdBrightnessProvider
-import com.onyx.android.sdk.api.device.brightness.FLBrightnessProvider
 import com.onyx.android.sdk.api.device.epd.EpdController
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 import com.onyx.android.sdk.api.device.epd.UpdateOption
@@ -43,8 +37,6 @@ class OnyxEinkController(
     // canColor = true: correct for Onyx Boox Go Color 7 Gen2 (Kaleido screen). The EpdController API
     // v1.3.5 has no device-class query — hardcoded is the safe choice for the only supported Onyx model.
     // When extending to mono Boox devices, differentiate via Build.MODEL.
-    // Lazy: brightnessRange is derived from the live device (see brightnessProvider below), which is
-    // only safe to query once the SDK is up — capabilities is first read at composition, not construction.
     override val capabilities: EinkCapabilities by lazy {
         EinkCapabilities(
             hasEink = true,
@@ -64,25 +56,6 @@ class OnyxEinkController(
                 EinkModeOption(COLOR_ON, "Colour", "Onyx colour enhancement on."),
                 EinkModeOption(COLOR_MONO, "Mono", "Greyscale, colour off."),
             ),
-            // Index space over the device's own value list (0 = off, maxIndex = brightest); null when
-            // the SDK reports no controllable frontlight (UI then hides the brightness control entirely).
-            //
-            // DEVICE LIMITATION — verified on a physical Go Color 7 Gen2 (2026-06-16): this is `null`
-            // here, and that is CORRECT. The frontlight is NOT controllable by a sideloaded app on this
-            // device, proven across every channel:
-            //   - onyxsdk-device 1.3.5 (the newest release) does not know the qcom/`lito` chipset, so
-            //     `Device.currentDevice()` is a default `BaseDevice` whose checkCTM/hasFL/hasCTM all
-            //     return false → `getBrightnessType()==NONE` → every provider/setter is a no-op
-            //     (setColdLightDeviceValue/setBrightness/setNaturalBrightness all return false).
-            //   - Settings.System.{screen_brightness,screen_ctm_brightness} do not propagate to the HW.
-            //   - The Activity window `screenBrightness` attribute does not drive the frontlight.
-            //   - The real HW node /sys/class/backlight/onyx_bl_br (0..32) works only from a system
-            //     SELinux context; an app (untrusted_app) gets EACCES. KOReader, also untrusted_app,
-            //     is blocked the same way. Only system apps (NeoReader, Onyx Settings) can drive it.
-            // => Do NOT "fix" this by reinstating a hardcoded range (e.g. 0..255): that only brings back
-            //    a fake slider that moves nothing. The control is hidden by design until the SDK gains
-            //    real support for this chipset. The seam stays for Onyx devices the SDK DOES support.
-            brightnessRange = brightnessMaxIndex.takeIf { it > 0 }?.let { 0..it },
         )
     }
 
@@ -145,62 +118,6 @@ class OnyxEinkController(
         val refresh = if (context == EinkContext.WEBTOON) REFRESH_SPEED else REFRESH_HD
         return EinkContextProfile(refreshModeId = refresh, colorModeId = COLOR_SYSTEM)
     }
-
-    // ---------------------------------------------------------------
-    // Frontlight brightness (Naht B — device capability)
-    // ---------------------------------------------------------------
-
-    /**
-     * The device's brightness channel as an index-based provider. The Go Color 7 Gen2 has a SPLIT
-     * warm+cold frontlight (`BrightnessType.WARM_AND_COLD`), for which the legacy
-     * `FrontLightController.setBrightness` is a silent no-op — verified against onyxsdk-device 1.3.5
-     * bytecode, it early-returns when `hasFLBrightness()` is false and never drives the warm/cold
-     * LEDs. We map each device class to its OWN concrete provider (matching the SDK's own
-     * `BrightnessController.initProviderMap`): WARM_AND_COLD → the COLD light (the main reading
-     * light), CTM → the CTM brightness channel, FL → the legacy single light; `NONE` → no frontlight.
-     *
-     * Lazily resolved (queries `Device.currentDevice()`, safe once the SDK is up — first read at
-     * composition, not construction). Any failure degrades to "no frontlight" so the UI hides the bar.
-     */
-    private val brightnessProvider: BaseBrightnessProvider? by lazy {
-        runCatching {
-            when (BrightnessController.getBrightnessType(appContext)) {
-                BrightnessType.WARM_AND_COLD -> ColdBrightnessProvider(appContext)
-                BrightnessType.CTM -> CTMBrightnessProvider(appContext)
-                BrightnessType.FL -> FLBrightnessProvider(appContext)
-                else -> null // NONE
-            }
-        }.onFailure { Log.e(TAG, "brightness provider init failed", it) }.getOrNull()
-    }
-
-    /** Highest selectable index of [brightnessProvider] (0 if none) — the UI range is `0..maxIndex`. */
-    private val brightnessMaxIndex: Int by lazy {
-        runCatching { brightnessProvider?.maxIndex ?: 0 }.getOrDefault(0)
-    }
-
-    /** Last set index — fallback for [brightness] if the provider read fails. */
-    private var brightnessLevel = 0
-
-    override fun setBrightness(level: Int) {
-        val provider = brightnessProvider ?: run {
-            Log.w(TAG, "setBrightness: device has no controllable frontlight"); return
-        }
-        val idx = level.coerceIn(0, brightnessMaxIndex)
-        val ok = runCatching {
-            if (idx <= 0) {
-                provider.close() // bottom of the range = light off (index 0 of a value list may still glow)
-            } else {
-                if (!provider.isLightOn) provider.open()
-                provider.setIndex(idx)
-            }
-        }.getOrElse { Log.e(TAG, "setBrightness($idx) failed", it); false }
-        // logcat confirmation for on-device verification:  adb logcat -s OnyxEinkController
-        Log.i(TAG, "setBrightness(level=$level idx=$idx max=$brightnessMaxIndex) -> $ok")
-        if (ok) brightnessLevel = idx
-    }
-
-    override fun brightness(): Int =
-        runCatching { brightnessProvider?.index ?: brightnessLevel }.getOrDefault(brightnessLevel)
 
     // ---------------------------------------------------------------
     // Screensaver (Naht B — device standby image). PoC: does the SDK path stick?

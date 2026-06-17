@@ -28,7 +28,4 @@ class RecordingEinkController : EinkController {
     override fun applyRefreshMode(id: String?) {}
     override fun applyColorMode(id: String?) {}
     override fun defaultProfile(context: EinkContext) = EinkContextProfile()
-    var lastBrightness: Int? = null
-    override fun setBrightness(level: Int) { lastBrightness = level }
-    override fun brightness(): Int = lastBrightness ?: 0
 }

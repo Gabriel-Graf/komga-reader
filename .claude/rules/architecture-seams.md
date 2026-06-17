@@ -376,9 +376,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `OnyxEinkController` (Boox-SDK, **HW-gated** über `Build.MANUFACTURER`), `NoOpEinkController` als
   Fallback. **Entwicklung crasht nie auf Nicht-Boox-HW.** Trägt `EinkCapabilities`
   (hasEink/canColor/canInvert, `refreshModes: List<EinkModeOption>`, `colorModes: List<EinkModeOption>`;
-  leere Liste = Achse nicht unterstützt, UI blendet Sektion aus; `brightnessRange: IntRange?` = Frontlight-
-  Index-Raum oder null; `hasHardwareButtons: Boolean` = physische Tasten, Onyx=true/NoOp=false) — siehe
-  Big-Picture-Doku zur Geräteklassen-Frage.
+  leere Liste = Achse nicht unterstützt, UI blendet Sektion aus; `hasHardwareButtons: Boolean` = physische
+  Tasten, Onyx=true/NoOp=false) — siehe Big-Picture-Doku zur Geräteklassen-Frage.
 - **Screensaver / Standby-Bild (Ist, 2026-06-16):** `EinkController.setScreenSaverImage(absolutePath): Boolean`
   (domain, Default `false`; NoOp inert) setzt das Geräte-Standby-Bild. **Onyx-Impl** nutzt
   `ScreenSaverUtils.setScreenResource(ctx, path, TYPE_SCREENSAVER, true)` (`com.onyx.android.sdk.api.device.screensaver`) —
@@ -393,8 +392,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   Cover als Screensaver (fire-and-forget, off the load path). **Nicht per adb visuell verifizierbar** (Onyx-Standby ist
   ein Daydream-Overlay, SurfaceFlinger sieht es nicht); `ScreenSaverManager` end-to-end auf Boox verifiziert
   (`adb logcat -s ScreenSaverManager OnyxEinkController` + Onyx „scanned successfully").
-- **Reader-Input + Frontlight (Ist, 2026-06-15 — Hardware-Tasten, manueller Refresh, Helligkeit):**
-  Drei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
+- **Reader-Input (Ist, 2026-06-15 — Hardware-Tasten, manueller Refresh):**
+  Zwei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
   (NoOp inert). (1) **Press-Art:** `ButtonEvent` trägt jetzt `press: PressKind {SHORT, LONG}`
   (Default SHORT, quell-kompatibel). `MainActivity` klassifiziert kurze/lange Volume-Drücke über
   den Android-Long-Press-Lifecycle (`startTracking`/`onKeyLongPress`/`onKeyUp`). **Befund + Korrektur
@@ -415,23 +414,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `VOLUME_DOWN,LONG` → **manueller Full-Refresh**. (2) **Manueller GC-Refresh:** `EinkController.refresh`
   ist auf Onyx jetzt **real** für `RefreshMode.FULL` (`EpdController.applyTransientUpdate(UpdateMode.GC)`
   — `repaintEveryThing` existiert in SDK 1.3.5 **nicht**); `EinkContextController.manualFullRefresh()`
-  ist der agnostische Auslöser (NoOp = no-op). (3) **Frontlight:** neue Capability
-  `EinkCapabilities.brightnessRange: IntRange?` (null = kein Frontlight → UI versteckt) +
-  `EinkController.setBrightness(level)`/`brightness()`. **Onyx (korrigiert 2026-06-16 — index-Provider):**
-  das Frontlight läuft über einen **index-basierten `BaseBrightnessProvider`**, NICHT über das legacy
-  `FrontLightController.setBrightness` (das ist auf dem Go Color 7 ein **stiller No-Op** — Split-Warm/Kalt-
-  Licht, `hasFLBrightness()==false`, via 1.3.5-Bytecode bestätigt — die Ur-Ursache des „Helligkeit bewirkt
-  nichts"). `BrightnessController.getBrightnessType(ctx)` wählt den Provider (WARM_AND_COLD→`ColdBrightness
-  Provider`, CTM→`CTMBrightnessProvider`, FL→`FLBrightnessProvider`, NONE→kein Frontlight); `brightnessRange
-  = 0..provider.maxIndex` (Index-Raum, lazy abgeleitet, **0 = aus** via `provider.close()`, sonst
-  `open()`+`setIndex`). Bedienung: **zwei dünne Randstreifen** (links/rechts, ~24dp) in
-  `DefaultReaderScaffold`, **nur** wenn `brightnessRange != null`, fangen den Einwärts-Wisch und öffnen die
-  host-gerenderte, flache, animationsfreie `BrightnessBar` — seit 2026-06-16 ein **schwebender, kurzer,
-  abgerundeter Pill** mit Rand-Abstand (diskrete Stufen, ≤16 über den Index-Raum). **Bewusst NICHT über
-  `ReaderTapZones`** (ein Full-Width-Drag-Detektor würde die `HorizontalPager`-Blätter-Wische klauen;
-  Helligkeit ist host-erzwungene Device-Capability, kein per-Screen-Action). Pegel persistiert
-  (`SettingsRepository.frontlightLevel`, -1 = ungesetzt, keine Migration). **Boox-Verifikation offen**
-  (Tasten/Refresh/Frontlight auf echter HW; `adb logcat -s OnyxEinkController` zeigt den gewählten Typ + ok).
+  ist der agnostische Auslöser (NoOp = no-op). **Boox-verifiziert** (Tasten/Refresh auf echter HW;
+  `adb logcat -s OnyxEinkController HwButtons`).
+- **Frontlight ENTFERNT (Ist, 2026-06-17):** die frühere Helligkeits-Capability (`EinkCapabilities.brightnessRange`,
+  `EinkController.setBrightness`/`brightness()`, `BrightnessBar`, `FrontlightHolder`, `SettingsRepository.frontlightLevel`,
+  die Rand-Wisch-Streifen in `DefaultReaderScaffold`) ist **vollständig gelöscht**. Grund: auf dem einzigen Zielgerät
+  (Go Color 7 Gen2) ist das Frontlight von einer sideloaded App **hardware-unmöglich** zu steuern — onyxsdk-device 1.3.5
+  kennt den qcom/`lito`-Chipsatz nicht (`getBrightnessType()==NONE`, jeder Provider/Setter ein No-Op), und der
+  sysfs-Knoten `/sys/class/backlight/onyx_bl_br` braucht System-Kontext (App = EACCES, SELinux untrusted_app). Es war
+  also reine tote Fläche (Cap lieferte `null` → UI immer versteckt). Eine künftige Boox, deren SDK das Frontlight
+  *wirklich* steuert, bekommt die Capability als **additive** Naht-B-Erweiterung neu — kein Kern-Umbau. → [[onyx-frontlight-index-providers]]
 - **Reader-Gesten + Tasten-Übersicht (Ist, 2026-06-16, Novel-Reader-Politur):** (4) **System-Gesten-Ausschluss:**
   `ReaderScaffoldState.gestureExclusion` (host-erzwungen, opt-in pro Reader) legt zwei volle Rand-Streifen mit
   `Modifier.systemGestureExclusion()` an → Rand-Wisch geht an den Reader statt System-Zurück (OS-Cap 200dp/Kante,
@@ -699,7 +691,7 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     - **Bottom-Sheet-Capability (Ist, 2026-06-15):** `ReaderScaffoldState` trägt zusätzlich ein
       **optionales** `bottomSheet: ReaderBottomSheet?` (`:ui-api`, Felder `expanded`/`onExpandedChange`/
       `peekLabel`/`content`; `null` = keins, Default). Die **Mechanik gehört dem Host**: `DefaultReaderScaffold`
-      rendert (an *einer* Stelle, neben Tap-Zonen + Frontlight-Streifen) über `BoxScope.ReaderBottomSheetLayer`
+      rendert (an *einer* Stelle, neben den Tap-Zonen) über `BoxScope.ReaderBottomSheetLayer`
       (`app/ui/reader/ReaderBottomSheet.kt`) den Aufwärts-Wisch am unteren Rand (nur vertikaler Drag konsumiert
       → Blätter-Taps bleiben durch), den ein-/ausklappbaren Peek-Balken (nur bei `chromeVisible`), den Scrim
       (`readerOverlayScrim`) und den vollbreiten, höhen-gedeckelten Container; der **Reader liefert nur

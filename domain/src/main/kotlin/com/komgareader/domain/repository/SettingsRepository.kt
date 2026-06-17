@@ -41,8 +41,6 @@ interface SettingsRepository {
     val lastSeenVersion: Flow<String>
     /** Per-context E-Ink mode overrides; unset axes fall back to the device default. */
     val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>>
-    /** Persisted frontlight brightness level (0–100). -1 = never set (leave device current). */
-    val frontlightLevel: Flow<Int>
     /** Device screensaver mode (E-Ink only): "OFF" | "CUSTOM" | "BOOK_COVER". Default OFF. */
     val screenSaverMode: Flow<String>
     /** Content URI of the user-picked custom screensaver image, or "" if none. */
@@ -74,7 +72,6 @@ interface SettingsRepository {
     suspend fun setActiveUiPack(packageName: String)
     suspend fun setLastSeenVersion(version: String)
     suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile)
-    suspend fun setFrontlightLevel(level: Int)
     suspend fun setScreenSaverMode(value: String)
     suspend fun setScreenSaverCustomUri(uri: String)
     suspend fun setScreenSaverFillCrop(value: Boolean)

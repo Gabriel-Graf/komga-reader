@@ -1,7 +1,6 @@
 package com.komgareader.app.ui.reader
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.systemGestureExclusion
 import androidx.compose.foundation.layout.Box
@@ -23,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.ui.slots.LocalResolvedSlots
 import com.komgareader.ui.slots.ReaderBottomSheet
@@ -128,7 +126,7 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
         // links/rechts melden sich beim OS als Gesten-Ausschluss-Region an, damit ein Rand-Wisch
         // an den Reader geht statt das System-Zurück (predictive-back) auszulösen. Das OS deckelt
         // den Ausschluss auf 200dp/Kante; reine Markierung (kein pointerInput) → überlagert die
-        // Tap-Zonen/Frontlight-Streifen konfliktfrei. Der System-Home-Wisch (von unten) lässt sich
+        // Tap-Zonen konfliktfrei. Der System-Home-Wisch (von unten) lässt sich
         // NICHT deaktivieren (OS-Garantie) — nur die Zurück-Kanten werden abgehalten.
         if (state.gestureExclusion) {
             Box(Modifier.align(Alignment.CenterStart).fillMaxHeight().width(40.dp).systemGestureExclusion())
@@ -154,63 +152,6 @@ fun DefaultReaderScaffold(state: ReaderScaffoldState) {
                         }
                     },
             )
-        }
-
-        // Frontlight edge strips — only on devices with a controllable frontlight. Two thin
-        // (24dp) strips at the left and right edges detect an inward horizontal drag and open
-        // the BrightnessBar. Thin so they never steal central HorizontalPager page swipes.
-        // On the emulator (NoOpEinkController) brightnessRange is null → whole block skipped.
-        val frontlight: FrontlightHolder = hiltViewModel()
-        val brightnessRange = frontlight.brightnessRange
-        if (brightnessRange != null) {
-            var barAlign by remember { mutableStateOf<Alignment?>(null) }
-            val level by frontlight.level.collectAsState()
-            // Clamp into the device index range: a level persisted under an earlier value scale
-            // would otherwise render as a full bar until the first drag re-snaps it.
-            val effectiveLevel = if (level < 0) brightnessRange.first else level.coerceIn(brightnessRange)
-
-            // Left strip: inward drag (dragAmount > 0) opens the bar on the start side.
-            Box(
-                Modifier
-                    .align(Alignment.CenterStart)
-                    .fillMaxHeight()
-                    .width(24.dp)
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures { change, dragAmount ->
-                            if (dragAmount > 0f) {
-                                barAlign = Alignment.CenterStart
-                                change.consume()
-                            }
-                        }
-                    },
-            )
-            // Right strip: inward drag (dragAmount < 0) opens the bar on the end side.
-            Box(
-                Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-                    .width(24.dp)
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures { change, dragAmount ->
-                            if (dragAmount < 0f) {
-                                barAlign = Alignment.CenterEnd
-                                change.consume()
-                            }
-                        }
-                    },
-            )
-            barAlign?.let { align ->
-                BrightnessBar(
-                    level = effectiveLevel,
-                    range = brightnessRange,
-                    alignment = align,
-                    onLevel = { frontlight.setLevel(it) },
-                    onDismiss = { barAlign = null },
-                    // Snap to at most 16 perceptual steps over the device index range (fewer E-Ink
-                    // refreshes); a small device range maps each index to its own step.
-                    steps = (brightnessRange.last - brightnessRange.first).coerceIn(1, 16),
-                )
-            }
         }
 
         // Dauerhafte Info-Leisten (Roman-Page-Header/-Footer): immer sichtbar, liegen unter

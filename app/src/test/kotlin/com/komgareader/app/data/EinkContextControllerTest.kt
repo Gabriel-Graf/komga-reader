@@ -74,8 +74,6 @@ class EinkContextControllerTest {
         override suspend fun setActiveUiPack(packageName: String) {}
         override suspend fun setLastSeenVersion(version: String) {}
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
-        override val frontlightLevel: Flow<Int> = flowOf(-1)
-        override suspend fun setFrontlightLevel(level: Int) {}
         override val screenSaverMode: Flow<String> = flowOf("OFF")
         override val screenSaverCustomUri: Flow<String> = flowOf("")
         override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
@@ -118,8 +116,6 @@ class EinkContextControllerTest {
             override fun applyRefreshMode(id: String?) {}
             override fun applyColorMode(id: String?) {}
             override fun defaultProfile(context: EinkContext) = EinkContextProfile()
-            override fun setBrightness(level: Int) {}
-            override fun brightness(): Int = 0
         }
         // Must not throw — NoOp simply absorbs the call
         controllerWith(noOp).manualFullRefresh()

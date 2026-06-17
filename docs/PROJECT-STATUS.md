@@ -51,7 +51,13 @@ is built** (`ComicReaderScreen` +
 `ComicReaderViewModel` with panel‑zoom/geometry logic). Panel detection is supplied by the external
 **comic‑cutter** library through a `PanelSource` seam (`PanelSourceProvider`): geometric by default,
 or an ONNX **ML** detector when a `PANEL_MODEL` data‑plugin is installed and `useMlDetection` is on.
-The former in‑tree `guided-view` module has been removed.
+The former in‑tree `guided-view` module has been removed. **comic‑cutter 0.4.0** (2026‑06‑17) adds
+`PanelRect.score`/`NormRect.score` (ML confidence, geometric=1.0f) carried through
+`PanelGeometry.normalize`; `PanelSourceProvider` reads `min_confidence` from `plugincfg:<pkg>:min_confidence`
+(default 0.25, `resolveMinConfidence`) instead of a hardcoded constant. A debug overlay draws
+`#<index> <score>` per panel. A **misdetection‑capture loop** is available: `misdetectionDir`
+(Room key, SAF tree URI, no migration) gates a capture button that writes the page PNG + a pixel‑space
+sidecar JSON (`misdetectionSidecarJson`, mllabeltool format) via `MisdetectionWriter`.
 
 The novel reader gained **tap‑a‑word bookmarks** (Ist 2026-06-15): two new engine‑neutral render‑seam
 methods `ReflowableDocument.wordAt(page, …)` / `rectsFor(page, …)` (crengine JNI `nativeXPointerAtPoint` /
@@ -126,14 +132,19 @@ filter**, not the UI chrome. So this is not a "lag" or a gap. The 2‑axis model
 wanted, the model already supports it with no rework — only the enum/mapping would extend.
 
 ### Plugins — ✅ (source + data) / 🟢 (UI‑view deliberately deferred)
-`plugin-api` (ABI `VERSION=3` / `MIN_SUPPORTED=1`, `PluginCategory{COLOR_PRESET, READER_PRESET,
+`plugin-api` (ABI `VERSION=4` / `MIN_SUPPORTED=1`, `PluginCategory{COLOR_PRESET, READER_PRESET,
 LANGUAGE, UI_PACK, PANEL_MODEL, FONT}`), `plugin-host` (`PluginHost`, `AbiGate`, `PluginSignature` TOFU
 pinning, `PathClassLoader`, `DataPluginManifest`), and a shaded `plugin-sdk` are all real. Source
 plugins (Kavita) and all six data‑only categories work. The **`PANEL_MODEL`** category ships a binary
 ONNX model and uses a binary/metadata‑split discovery (`discoverDataPluginInfos` / `binaryDataPluginBytes`)
 so multi‑MB assets are never read during a scan; the comic reader's `PanelSourceProvider` consumes it for
-ML panel detection. **Font** plugins register TTFs into crengine at runtime (`registerFont` /
-`nativeAddFont`) and are gated by a hard SPDX license allowlist (`FontLicensePolicy`).
+ML panel detection. **Configurable data‑plugins (ABI 4, 2026‑06‑17):** a `DATA_CONFIG` manifest key can
+carry a `config.json` schema asset; `PluginHost.dataPluginConfigJson()` reads it resource‑only;
+`parseConfigSchema` (`:data`) supports the new `FieldType.NUMBER` (with `min`/`max`/`step`); values are
+persisted as `plugincfg:<pkg>:<key>` Room KV (no new table); a gear icon on the `PANEL_MODEL` row opens
+an `EinkModal` with the shared `PluginConfigForm` (`EinkSliderRow` for NUMBER fields). **Font** plugins
+register TTFs into crengine at runtime (`registerFont` / `nativeAddFont`) and are gated by a hard SPDX
+license allowlist (`FontLicensePolicy`).
 Arbitrary‑Compose UI plugins are **intentionally not built** (host‑crash + un‑enforceable E‑Ink
 invariants) — the declarative path is the chosen replacement. This is a correct decision, not a gap.
 

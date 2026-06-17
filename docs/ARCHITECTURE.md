@@ -256,9 +256,10 @@ brightness before display:
 A runtime plugin mechanism (the Mihon model — OS‑installed APKs, no downloaded `.dex`):
 
 - **`plugin-api`** (pure JVM): the ABI contract — `SourcePlugin`, `PluginMetadata`,
-  `ConfigSchema`, `PluginAbi` (two integers: `VERSION` = 3 / `MIN_SUPPORTED` = 1),
+  `ConfigSchema`, `PluginAbi` (two integers: `VERSION` = 4 / `MIN_SUPPORTED` = 1),
   `PluginCategory { COLOR_PRESET, READER_PRESET, LANGUAGE, UI_PACK, PANEL_MODEL, FONT }`. It
-  `api(project(":source-api"))`, re‑exporting the Seam‑A types.
+  `api(project(":source-api"))`, re‑exporting the Seam‑A types. ABI 4 added `FieldType.NUMBER`
+  (with `min`/`max`/`step`) and the `DATA_CONFIG` manifest key for per‑plugin config schemas.
 - **`plugin-host`** (Android lib): `PluginHost` discovers installed plugin APKs
   (`QUERY_ALL_PACKAGES`), `AbiGate` checks the two‑int range, and loading uses
   `PathClassLoader(sourceDir, nativeLibDir, hostClassLoader)`. **Trust model: TOFU** — a plugin

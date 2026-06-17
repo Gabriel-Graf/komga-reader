@@ -523,8 +523,21 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     `openPage` nur mit (bookRemoteId, pageNumber) füttern (kein `PageRef.url` durchgereicht), cached
     `OpdsSource` die PSE-Stream-Vorlage pro `remoteId` (`@Volatile`, unveränderliche URL-Vorlagen → keine
     Stale-Sorge; von `pages()` gewärmt, `openPage` kalt-fallback). Platzhalter **0-basiert per Spec**.
-    Unit-getestet (Parser + MockWebServer, `OpdsFeedParserTest`/`OpdsSourceTest`). Live gegen echten
-    PSE-Server (Komga-OPDS) **noch zu verifizieren** (Soll).
+    Unit-getestet (Parser + MockWebServer, `OpdsFeedParserTest`/`OpdsSourceTest`).
+  - **OPDS-Navigation (Ist, 2026-06-17):** `OpdsSource` versteht **hierarchische** Feeds
+    (catalog→series→books) — der Normalfall echter OPDS-Server. Parser liest den `subsection`-Nav-Link
+    (`navigationHref`) + matcht den Acquisition-rel per **Prefix** (Komga `…/acquisition`, Kavita
+    `…/acquisition/open-access`). `browse()` mappt Nav-Einträge→Series; `books(seriesId)` **folgt** dem
+    Subsection-Link auf den Acquisition-Feed der Serie (PSE inklusive). Flat-Katalog bleibt
+    rückwärtskompatibel. `remoteId` = stabile OPDS-`<id>`; Buch-Ops lösen URLs aus `browse`/`books`-
+    gewärmten Caches (`entriesById`/`seriesAcqFeed`/`bookSeries`). **Live durch `OpdsSource` verifiziert**
+    (env-gated `OpdsLiveTest`, `OPDS_LIVE=1`): echtes Komga (`/opds/v1.2/series`) + Kavita
+    (`/api/opds/<key>/libraries/1`) navigieren+streamen PSE end-to-end. **Soll:** voller In-App-E2E auf
+    Gerät, `browse`-Pagination (nur Seite 0), tiefere Bäume (>1 Nav-Ebene), Komga-OPDS-Serien-Cover.
+  - **Prefetch (Ist, 2026-06-17):** der Paged-Reader (`PagedReaderScreen`) wärmt via `prefetchIndices`
+    (pure, `ReaderPrefetchTest`) + Coil `enqueue` die nächsten 3 Seiten in den Cache → Streaming-
+    Seitenwechsel (OPDS-PSE/Komga) aus Cache statt frischem Roundtrip. Reine Decode-/Cache-Arbeit, keine
+    UI-Bewegung → E-Ink-sicher (kein Gating).
 - **Geteilte Chrome-Shortcuts (Ist, 2026-06-10):** `ReaderScaffold`/`ReaderChromeOverlay` tragen
   jetzt `onHome`/`onSettings` und rendern oben rechts an **einer** Stelle die geteilten Buttons
   **[Home][Einstellungen]** (in dieser Reihenfolge), **danach** die reader-spezifischen `actions`

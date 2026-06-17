@@ -21,6 +21,20 @@ class SuggestContentTypeTest {
         assertEquals(ContentType.WEBTOON, r)
     }
 
+    @Test fun `moderately tall strips above the aspect floor yield WEBTOON`() {
+        // h/w = 2.5: well above any real comic/manga page (<=1.83), so it is a strip.
+        val r = suggest(signals(page(800, 2000, 0.3f), page(800, 2000, 0.4f)))
+        assertEquals(ContentType.WEBTOON, r)
+    }
+
+    @Test fun `tall comic-or-manga page below the floor does not become WEBTOON`() {
+        // h/w = 1.6 (a tall normal page) must NOT trip the webtoon aspect rule.
+        val gray = suggest(signals(page(1000, 1600, 0.99f), page(1000, 1600, 0.98f)))
+        assertEquals(ContentType.MANGA, gray)
+        val colour = suggest(signals(page(1000, 1600, 0.2f), page(1000, 1600, 0.3f)))
+        assertEquals(ContentType.COMIC, colour)
+    }
+
     @Test fun `grayscale normal pages yield MANGA`() {
         val r = suggest(signals(page(1000, 1500, 0.98f), page(1000, 1500, 0.95f), page(1000, 1500, 0.99f)))
         assertEquals(ContentType.MANGA, r)

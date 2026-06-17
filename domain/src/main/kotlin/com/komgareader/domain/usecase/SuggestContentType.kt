@@ -35,15 +35,19 @@ class SuggestContentType {
     }
 
     companion object {
-        // Calibrated against the labelled NAS corpus (45 books/type, 3 interior samples each,
+        // Calibrated against the labelled NAS corpus (per-file median over 3 interior samples,
         // box-downsampled to 200px long edge — same as ContentTypeDetector):
-        //   manga   grayFraction = 1.000 at every percentile (true-grayscale storage)
-        //   comic   grayFraction median 0.44, p90 0.56 (coloured)
-        //   webtoon grayFraction median 0.67, max 0.98; aspect median 1.71, p90 5.56
-        // Manga is cleanly separable on gray (>=0.96 excludes even the greyest webtoon at 0.977).
-        // Webtoon is only reliably caught when stored as a tall strip (aspect >=3); paginated
-        // webtoons overlap comics on both signals and fall to null (no guess) — see KDoc.
-        const val WEBTOON_MIN_ASPECT = 3.0f
+        //   manga   grayFraction = 1.000 at every percentile (true-grayscale storage); aspect <= 1.50
+        //   comic   grayFraction median 0.44, p90 0.56 (coloured);                     aspect <= 1.54
+        //   webtoon true strips (Solo Levelling): aspect 3.15..5.56 (100% >= 3.0)
+        //           paginated (Tower of God): aspect <= 1.83, gray coloured — stored as normal pages
+        // Aspect gap is clean+empty between normal pages (<=1.83) and true strips (>=3.15), so
+        // WEBTOON_MIN_ASPECT = 2.0 catches strips (incl. moderately tall ones from other sources)
+        // with wide margin above any real comic/manga page. Manga separable on gray (>=0.96
+        // excludes even the greyest webtoon at 0.977). A *paginated* webtoon is physically just
+        // normal pages — no pixel signal can tell it from a comic; it falls to null (no guess) and
+        // needs the library/server reading-direction tag.
+        const val WEBTOON_MIN_ASPECT = 2.0f
         const val MANGA_MIN_GRAY = 0.96f
         const val COMIC_MAX_GRAY = 0.60f
     }

@@ -35,17 +35,20 @@ manga-vs-comic-Lücke (CBZ trägt den Typ nicht im Format). Er ist deterministis
 Invariante 4 bleibt gewahrt.
 
 - **Signale (rein, unit-getestet):** mehrere Innenseiten werden gesampelt; Median
-  des Seiten-Aspekts `h/w ≥ 3` → WEBTOON (lange Strips); sonst Median der
+  des Seiten-Aspekts `h/w ≥ 2.0` → WEBTOON (Strips); sonst Median der
   Graufraktion `≥ 0.96` → MANGA (S/W-Interieur), `≤ 0.60` → COMIC (farbig); mittleres
   Band → kein Vorschlag (`null`, nie raten). `SuggestContentType` + `measureGrayFraction`.
-- **Schwellen kalibriert** am gelabelten NAS-Korpus (je 45 Bücher, 3 Innenseiten,
-  box-downsampled auf 200px): Manga ist **echt-graustufig** (Graufraktion = 1.000 in
-  allen Perzentilen), Comic farbig (Median 0.44, p90 0.56), Webtoon Median 0.67 / max
-  0.98. `0.96` trennt Manga sauber (schließt selbst den gräulichsten Webtoon bei 0.977
-  aus). **Webtoon-Limit:** nur als **langer Strip** (Aspect ≥ 3) zuverlässig erkannt;
-  **paginierte** Webtoons (im Korpus als Normalseiten gespeichert) überlappen Comics auf
-  beiden Signalen und fallen auf `null` (kein Falsch-Rat) — sie brauchen das Bibliotheks-/
-  Server-Tag.
+- **Schwellen kalibriert** am gelabelten NAS-Korpus (per-Datei-Median über 3 Innenseiten,
+  box-downsampled auf 200px). **Aspect:** normale Seiten capen niedrig — Manga ≤ 1.50,
+  Comic ≤ 1.54, sogar ein **paginiert** gespeicherter Webtoon (Tower of God) ≤ 1.83; **echte
+  Strips** (Solo Levelling) liegen bei **3.15–5.56** (100% ≥ 3.0). Zwischen 1.83 und 3.15 ist
+  eine **leere Lücke**, daher `≥ 2.0` — fängt Strips (auch mäßig hohe anderer Quellen) mit
+  breiter Margin über jeder echten Comic/Manga-Seite. **Grau:** Manga ist **echt-graustufig**
+  (Graufraktion = 1.000), Comic farbig (Median 0.44), Webtoon farbig (Median 0.67); `0.96`
+  trennt Manga sauber (schließt selbst den gräulichsten Webtoon bei 0.977 aus).
+  **Webtoon-Limit:** ein **paginiert** gespeicherter Webtoon *ist* physisch nur normale Seiten —
+  **kein** Pixel-Signal trennt ihn von einem Comic; er fällt auf `null` (kein Falsch-Rat) und
+  braucht das Bibliotheks-/Server-Tag.
 - **Vorbehalt:** Grau entscheidet **S/W-vs-Farbe**, **nie** die Leserichtung — ein
   S/W-Westcomic liest nicht rückwärts; RTL bleibt allein metadaten-getrieben.
 - **Sampler (Shell):** `ContentTypeDetector` (`app/data`) lädt Seiten über die Naht

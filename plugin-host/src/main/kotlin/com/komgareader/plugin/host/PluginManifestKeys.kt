@@ -28,4 +28,7 @@ object PluginManifestKeys {
      * Plugin-Info-Modal and to gate sideload installs for font plugins.
      */
     const val LICENSE = "com.komgareader.plugin.LICENSE"
+
+    /** Asset-Dateiname (relativ zu `assets/`) eines optionalen Config-Schemas (ConfigSchema-JSON) für data-only Plugins. */
+    const val DATA_CONFIG = "com.komgareader.plugin.DATA_CONFIG"
 }

@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImagePainter
 import coil.imageLoader
-import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.data.coil.ReaderPageImage
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import com.komgareader.ui.icons.AppIcons
@@ -35,7 +35,7 @@ import com.komgareader.domain.model.ReaderKind
 
 @Composable
 fun PagedReaderScreen(
-    pages: List<SourceImage>,
+    pages: List<ReaderPageImage>,
     initialPage: Int,
     readerKind: ReaderKind,
     bookRemoteId: String,

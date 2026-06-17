@@ -6,7 +6,7 @@ import android.graphics.drawable.BitmapDrawable
 import androidx.core.graphics.scale
 import coil.ImageLoader
 import coil.request.ImageRequest
-import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.data.coil.ReaderPageImage
 import com.panela.comiccutter.PanelRect
 import com.panela.comiccutter.PanelSource
 import com.panela.comiccutter.ReadingDirection
@@ -36,7 +36,7 @@ class ComicPageLoader(
 
     data class PageDetection(val panels: List<PanelRect>, val pageWidth: Int, val pageHeight: Int)
 
-    suspend fun detect(pageImage: SourceImage, panelSource: PanelSource): PageDetection =
+    suspend fun detect(pageImage: ReaderPageImage, panelSource: PanelSource): PageDetection =
         withContext(Dispatchers.Default) {
             val bitmap = decode(pageImage) ?: return@withContext PageDetection(emptyList(), 0, 0)
             val scaled = downscale(bitmap)
@@ -46,7 +46,14 @@ class ComicPageLoader(
             PageDetection(panels, page.width, page.height)
         }
 
-    private suspend fun decode(pageImage: SourceImage): Bitmap? =
+    /**
+     * Returns the full-resolution (non-downscaled) bitmap for [pageImage].
+     * Intended for the misdetection-capture path, which needs pixel-accurate dimensions to build
+     * the sidecar JSON in pixel space.
+     */
+    suspend fun loadFullBitmap(pageImage: ReaderPageImage): Bitmap? = decode(pageImage)
+
+    private suspend fun decode(pageImage: ReaderPageImage): Bitmap? =
         withContext(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
                 .data(pageImage)

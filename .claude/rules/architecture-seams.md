@@ -135,8 +135,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 - **Plugin-Loader gebaut (Ist, 2026-06-11):** Der Runtime-Plugin-Mechanismus für Quellen-Plugins (Phase 4,
   Typ a) ist real. `plugin-api` (pure JVM, `com.komgareader:plugin-api:0.1.0`) enthält den ABI-Vertrag:
   `SourcePlugin` (Interface: `metadata`, `configSchema()`, `create(config): BrowsableSource`),
-  `PluginMetadata`, `ConfigSchema`/`ConfigField`/`FieldType{TEXT,SECRET,URL,BOOL}`, `PluginAbi`
-  (VERSION=1, MIN_SUPPORTED=1) und `ColorPresetSpec`. Es macht `api(project(":source-api"))`, re-exportiert
+  `PluginMetadata`, `ConfigSchema`/`ConfigField`/`FieldType{TEXT,SECRET,URL,BOOL,NUMBER}`, `PluginAbi`
+  (VERSION=4, MIN_SUPPORTED=1) und `ColorPresetSpec`. Es macht `api(project(":source-api"))`, re-exportiert
   damit alle Naht-A-Typen; `domain` und `source-api` werden ebenfalls als 0.1.0 nach mavenLocal publiziert,
   damit Plugins die transitive Abhängigkeit auflösen können.
   `plugin-host` (Android-Lib) enthält: `AbiGate` (reines 2-Int-Gate), `PluginSignature`/`PluginConfigHash`
@@ -173,8 +173,9 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (Fingerprint-Anzeige), dann generisches `PluginConfigForm` aus dem `ConfigSchema`.
 - **Data-only Discovery generalisiert (Ist, 2026-06-12):** Die data-only-Mechanik ist jetzt
   **kategorisiert**: `PluginCategory{COLOR_PRESET,READER_PRESET,LANGUAGE,UI_PACK,PANEL_MODEL}`
-  (plugin-api, ABI `VERSION=3`/`MIN_SUPPORTED=1`, additiv — `PANEL_MODEL` ist seit 2026-06-14 die
-  5. Kategorie, der `VERSION`-Bump 2→3 kam mit ihr). Manifest-Keys `DATA_CATEGORY`+`DATA_ASSET` (mit
+  (plugin-api, ABI `VERSION=4`/`MIN_SUPPORTED=1`, additiv — `PANEL_MODEL` ist seit 2026-06-14 die
+  5. Kategorie, der `VERSION`-Bump 2→3 kam mit ihr; 3→4 brachte `FieldType.NUMBER` + generische
+  Data-Plugin-Config, s. u.). Manifest-Keys `DATA_CATEGORY`+`DATA_ASSET` (mit
   Legacy-Alias `COLOR_PRESETS`). `PluginHost.discoverDataPlugins(category)` ist die generische
   Discovery; der **geteilte private `scanDataPluginManifests`**-Helfer (über
   `resolveDataPluginManifest`) trägt sie, und beide Metadata-Discovery-Methoden
@@ -219,7 +220,8 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
 - **Panel-Modell-Plugin (Ist, 2026-06-14, ML-Panel-Detektor):** fünfte data-only Kategorie
   `PANEL_MODEL` (ABI-Bump `VERSION=2`→`3`). Ein PANEL_MODEL-Plugin ist ein **data-only APK**, das ein
   binäres **ONNX-Modell** als Asset shippt (Manifest `DATA_CATEGORY=PANEL_MODEL`,
-  `DATA_ASSET=<modell>.onnx`, `ABI_VERSION=3`). **Besonderheit gegenüber den anderen data-Kategorien:**
+  `DATA_ASSET=<modell>.onnx`, `ABI_VERSION=3`; seit ABI 4 optional auch `DATA_CONFIG=config.json` für
+  konfigurierbare Parameter — s. „Generische Data-Plugin-Config" unten). **Besonderheit gegenüber den anderen data-Kategorien:**
   das Asset ist mehrere MB groß, darf also **nie beim Scan** gelesen werden. Darum hat `plugin-host`
   jetzt eine **Binär-/Metadaten-getrennte** Discovery: `DataPluginInfo` (nur Metadaten, keine
   Asset-Bytes), `PluginHost.discoverDataPluginInfos(category)` (metadata-only, für Listen/UI) und
@@ -231,8 +233,22 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`SettingsRepository`, Default **true**, Room-Key `use_ml_detection`, **keine** Migration; Toggle in
   Settings → Comic). Distribution wie die anderen Kategorien über `KomgaReaderPlugins` (`type:panel_model`,
   `abiVersion:3`).
+- **Generische Data-Plugin-Config (Ist, 2026-06-17):** ABI-Bump `VERSION=3`→`4` (additiv, MIN_SUPPORTED
+  bleibt 1). Neues Manifest-Key `PluginManifestKeys.DATA_CONFIG` (`com.komgareader.plugin.DATA_CONFIG`)
+  trägt den Asset-Namen einer `config.json`-Schemadatei (parallel zu `DATA_ASSET`). `DataPluginInfo`
+  trägt das neue Feld `configAssetName: String?`. `PluginHost.dataPluginConfigJson(packageName): String?`
+  liest das Asset ressourcen-only (derzeit auf `PANEL_MODEL` beschränkt). Neuer `FieldType.NUMBER` in
+  `ConfigSchema`/`ConfigField` (mit nullable `min`/`max`/`step: Double?`). Parsing: pure
+  `parseConfigSchema(json): ConfigSchema?` in `data/.../plugin/ConfigSchemaParser.kt` (org.json; unbekannte
+  Typen werden übersprungen; null bei ungültigem JSON). Persistenz: `SettingsRepository.pluginConfig(pkg,
+  key): Flow<String?>` + `setPluginConfig(...)`, Key-Schema `plugincfg:<pkg>:<key>` — **kein neuer
+  Room-Table, keine Migration**. UI: Zahnrad-Icon auf PANEL_MODEL-Zeile in `PluginsScreen` (nur wenn Schema
+  nicht leer) öffnet `EinkModal` mit dem geteilten `PluginConfigForm`; NUMBER-Felder rendern als diskrete
+  `EinkSliderRow` (E-Ink-sicher, kein Material-Slider). `PluginConfigForm` ist geteilt zwischen
+  Code-Plugins und Data-Plugins.
 - **Font-Plugins (Ist, 2026-06-14, P2):** sechste data-only Kategorie `PluginCategory.FONT` über
-  `discoverDataPlugins(FONT)` (additiv; `PluginAbi.VERSION` ist 3, von PANEL_MODEL gebumpt) — ein **extern installierbarer** APK
+  `discoverDataPlugins(FONT)` (additiv; `PluginAbi.VERSION` ist 4, von PANEL_MODEL auf 3 und
+  Config-Feature auf 4 gebumpt) — ein **extern installierbarer** APK
   liefert TTFs als Assets (Manifest `DATA_CATEGORY=FONT`/`DATA_ASSET=<index.json>`/`LICENSE=<SPDX>`,
   `android:hasCode="false"`, `assets/fonts/*.ttf`). `DiscoveredDataPlugin` trägt dafür jetzt `license` +
   `versionCode`; Manifest-Key `PluginManifestKeys.LICENSE` neu. `PluginHost.extractFontAsset(pkg, assetPath,
@@ -471,24 +487,38 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `enterFastMode`/`fullRefreshNow`/`fullRefreshIfNeeded` in `OnyxEinkController`.
 - **Panel-Erkennungs-Naht (Ist, 2026-06-14 — externe Lib + ML-Tausch):** Die Comic-Panel-Erkennung
   (geführter Comic-Reader) sitzt **nicht mehr** im gelöschten In-Tree-Modul `:guided-view`, sondern
-  in der **veröffentlichten Lib `comic-cutter`** (`io.github.gabriel-graf:comic-cutter-jvm:0.3.1` +
-  `comic-cutter-onnx-jvm:0.3.1`, Paket `com.panela.comiccutter.*`; + `com.microsoft.onnxruntime:
-  onnxruntime-android` für die ML-Runtime). Die Lib ist der alte guided-view-Detektor als Artefakt
-  (identische Klassen `PanelDetector`/`PanelGeometry`/`NormRect`/`PanelRect`/`GuidedNavigator`/
+  in der **veröffentlichten Lib `comic-cutter`** (`io.github.gabriel-graf:comic-cutter-jvm:0.4.0` +
+  `comic-cutter-onnx-jvm:0.4.0`, Paket `com.panela.comiccutter.*`; + `com.microsoft.onnxruntime:
+  onnxruntime-android` für die ML-Runtime). **0.4.0-Neuerung:** `PanelRect.score: Float` (ML-Konfidenz,
+  Default `1.0f`) + `NormRect.score` werden durch `PanelGeometry.normalize` durchgereicht — die
+  ML-Quelle befüllt sie, die geometrische Quelle gibt `1.0f`. Die Lib ist der alte guided-view-Detektor
+  als Artefakt (identische Klassen `PanelDetector`/`PanelGeometry`/`NormRect`/`PanelRect`/`GuidedNavigator`/
   `GuidedPosition`/`ReadingOrder`/`ReadingDirection`) **plus** ein ML-Stack (`PanelSource`,
   `GeometricPanelSource`, `MlPanelSource`, `MlFilter`, `ModelRunner`, `OnnxModelRunner` —
   Letztere im Unter-Paket `com.panela.comiccutter.onnx`). **Die Naht ist `PanelSource`:** der
   `@Singleton` **`PanelSourceProvider`** (`app/ui/reader/PanelSourceProvider.kt`) liefert die zu
   nutzende `com.panela.comiccutter.PanelSource` — `GeometricPanelSource()` per Default, oder
-  `MlPanelSource(OnnxModelRunner(bytes), MlFilter(...))`, wenn `SettingsRepository.useMlDetection`
-  an ist **und** ein `PANEL_MODEL`-Plugin installiert ist (`PluginHost.binaryDataPluginBytes`); jeder
-  Fehler (kein Plugin, ONNX-Init) **degradiert sauber** auf geometrisch, die gewählte Quelle wird
-  gecacht. `ComicReaderViewModel` injiziert den Provider; `ComicPageLoader.detect(page, panelSource)`
-  erkennt und **sortiert das Ergebnis in Lesereihenfolge** (`ReadingOrder.sort(panels,
-  LEFT_TO_RIGHT)` — die ML-Quelle liefert Confidence-Reihenfolge, geometrisch war schon sortiert →
-  idempotent). Alles dahinter (`PanelGeometry.normalize`, der Degenerate-Guard
-  `<2 Panels || maxAreaFraction>0.85`, `GuidedNavigator`-Stepping, die E-Ink-Dynamik-Verdrahtung)
-  ist **unverändert** — der Reader ist agnostisch gegen geometrisch-vs-ML.
+  `MlPanelSource(OnnxModelRunner(bytes), MlFilter(minConfidence, ...))`, wenn
+  `SettingsRepository.useMlDetection` an ist **und** ein `PANEL_MODEL`-Plugin installiert ist
+  (`PluginHost.binaryDataPluginBytes`); jeder Fehler (kein Plugin, ONNX-Init) **degradiert sauber**
+  auf geometrisch, die gewählte Quelle wird gecacht. **`min_confidence` konfigurierbar (Ist,
+  2026-06-17):** `PanelSourceProvider` liest den Wert über `SettingsRepository.pluginConfig(pkg,
+  "min_confidence")` via `resolveMinConfidence(stored): Float` (pure, Default `0.25`, Paket
+  `com.komgareader.model.panel.yolo`) statt hardcoded; Cache invalidiert bei Wertänderung.
+  NMS/IoU bleiben hardcoded. `ComicReaderViewModel` injiziert den Provider;
+  `ComicPageLoader.detect(page, panelSource)` erkennt und **sortiert das Ergebnis in
+  Lesereihenfolge** (`ReadingOrder.sort(panels, LEFT_TO_RIGHT)` — die ML-Quelle liefert
+  Confidence-Reihenfolge, geometrisch war schon sortiert → idempotent). Alles dahinter
+  (`PanelGeometry.normalize`, der Degenerate-Guard `<2 Panels || maxAreaFraction>0.85`,
+  `GuidedNavigator`-Stepping, die E-Ink-Dynamik-Verdrahtung) ist **unverändert** — der Reader ist
+  agnostisch gegen geometrisch-vs-ML. **Debug-Overlay (Ist, 2026-06-17):** `ComicReaderScreen`
+  zeichnet per Panel `#<reading-order-index> <score>` oben links (nur im Debug-Build).
+  **Misdetection-Capture-Loop (Ist, 2026-06-17):** `SettingsRepository.misdetectionDir:
+  Flow<String?>` (Room-Key `misdetection_dir`, SAF-Tree-URI, keine Migration); ein Capture-Button
+  im Comic-Reader-Overlay (nur wenn `misdetectionDir` gesetzt) schreibt die Seite als PNG +
+  einen Pixel-Space-Sidecar (`misdetectionSidecarJson`, mllabeltool-Prediction-Format) via
+  `MisdetectionWriter` (SAF/`DocumentFile`) in den konfigurierten Ordner. Das PC-seitige
+  Relabeling (mllabeltool → Retraining) liegt außerhalb der App.
   **Verhaltens-Vorbehalt:** der geometrische `PanelDetector` der Lib hat einen anderen Algorithmus
   als der alte In-Tree-Detektor (mit Merge-über-Split-Arbitrierung), darum können geometrische
   Panel-*Ergebnisse* leicht von früher abweichen — erwartet, kein Regress.
@@ -508,13 +538,32 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   implementiert **`Viewer`** statt einer Parallel-Linie. **Kein `refreshScheduler`** im `Viewer`
   (seit 2026-06-13 entfernt — E-Ink-Refresh läuft jetzt über den kontext-basierten
   `EinkContextController`-Pfad, nicht über die Viewer-Naht).
-- **Reader-Lesepfad: streamen vs. whole-file (Ist, aktualisiert 2026-06-17):** `ReaderViewModel.loadBook`
-  wählt **quellen-agnostisch**: liegt ein lokaler Download vor → `documentFactory.open(bytes)` (MuPDF,
-  `ReaderContent.Rendered`); sonst `source.pages(bookId)`. Ist `pages()` **leer** (Quelle ohne seitenweises
-  Streaming — `LocalSource` für PDF/CBR, OPDS **ohne** PSE), wird whole-file gelesen (`source.downloadFile(bookId)`
-  → `documentFactory.open` → `Rendered`) statt einer leeren `Streamed`-Liste. Nur nicht-leeres `pages()` geht
-  den Coil-`openPage`-Streaming-Pfad (`Streamed`). Diese eine Verzweigung ist **quellen-agnostisch** (sie nennt
-  keinen Quellentyp).
+- **Reader-Lesepfad: vereinheitlichtes Coil-Page-Model (Ist, aktualisiert 2026-06-17):**
+  `ReaderViewModel.loadBook` produziert **einen** Content-Typ `ReaderContent.Pages(pages:
+  List<ReaderPageImage>, initialPage)` für beide Quellen-Arten — streamen **und** whole-file. Das
+  Page-Model `ReaderPageImage` (`app/data/coil`, sealed) hat zwei Spielarten: **`SourceImage`**
+  (gestreamt über die Quellen-Naht → Coil-`SourcePageFetcher` → `openPage`; Komga/Kavita/OPDS-PSE)
+  und **`RenderedPageImage`** (whole-file: lokaler Download, lokale PDF/CBR, OPDS ohne PSE — von
+  MuPDF gerendert). Coil löst jede Spielart über ihre eigene registrierte `Fetcher.Factory` (per
+  konkretem Typ) auf, sodass ein Reader beide über denselben `ImageRequest.data(page)`-Aufruf zeigt.
+  **Wahl quellen-agnostisch:** liegt ein lokaler Download vor → whole-file; sonst `source.pages(bookId)`
+  — ist das **leer** (kein seitenweises Streaming), ebenfalls whole-file; nur nicht-leeres `pages()` geht
+  den Stream-Pfad. **Whole-file rendert der `@Singleton RenderedPageStore`** (`app/data`, hängt nur am
+  `DocumentFactory`-Interface von Naht B): öffnet das Dokument **einmal pro Buch** (Ein-Doc-Cache,
+  `Mutex`-serialisiert weil MuPDF nicht thread-safe + Coil mehrere Seiten parallel prefetcht), liefert
+  `prepare()` (Seitenzahl) + `render()` (Seite→Bitmap); Bytes seam-treu (lokaler Download via
+  `LocalBookBytes`, sonst `source.downloadFile`). Der `RenderedPageFetcher` (Coil) gibt die gerenderte
+  Seite als `DrawableResult` zurück (kein Re-Encode) — Panel-Detektor (`ComicPageLoader`) **und**
+  `AsyncImage` konsumieren sie wie eine Stream-Seite. **Folge — der eigentliche Fix:** der Reader-Host
+  dispatcht `ReaderContent.Pages` über `when(ViewerMode)` auf paged/comic/webtoon **auch für
+  whole-file/heruntergeladene Werke** — ein lokaler Comic/Webtoon öffnet jetzt im aufgelösten Viewer
+  statt immer paged. Der frühere `ReaderContent.Rendered` + der separate `EpubReaderScreen` (nur paged,
+  Mode ignoriert) sind **entfernt**; `renderEpubPage`/das Doc-Handle im VM ebenso (Rendering liegt nun
+  im `RenderedPageStore`, `release()` am Reader-Ende über den App-Scope). **Verifikation:** `:app`
+  compile + `:app:testDebugUnitTest` (inkl. `ReaderViewModelTest` rendered→`Pages`-Pfad,
+  `ReaderFilterCoverageTest`) + androidTest-Compile + `assembleDebug` grün. **Runtime gerätegebunden
+  (Soll):** MuPDF-Render + Panel-Detektion auf gerenderten Seiten sind arm64-crengine/MuPDF — der
+  Comic-/Webtoon-Modus für whole-file/heruntergeladene Werke ist erst auf echter Boox final verifiziert.
   - **OPDS-PSE (Ist, 2026-06-17):** `OpdsSource` liefert jetzt für PSE-fähige Einträge (OPDS Page Streaming
     Extension: `pse:count` + `{pageNumber}`-Vorlage, NS `http://vaemendis.net/opds-pse/ns`) nicht-leere
     `pages()` und streamt einzelne Seiten über `openPage` — **derselbe `Streamed`-Pfad wie Komga, kein
@@ -704,8 +753,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     **abgeleiteten** `chromeVisible: Boolean` + `onToggleChrome: () -> Unit` statt des `Viewer`. So bleiben
     Refresh-Scheduler + Engine-Navigation (Naht B) vollständig aus der austauschbaren Surface — ein Chrome-Pack
     kann sie nicht berühren. `ReaderScaffold(chrome, …)` bleibt ein **dünner Host-Wrapper** (collectAsState +
-    Surface bauen + `LocalResolvedSlots.current.readerChrome(state)`); **die fünf Reader-Call-Sites bleiben
-    unverändert** (PagedReaderScreen/WebtoonReaderScreen/ComicReaderScreen/NovelReaderScreen/EpubReaderScreen).
+    Surface bauen + `LocalResolvedSlots.current.readerChrome(state)`); **die vier Reader-Call-Sites bleiben
+    unverändert** (PagedReaderScreen/WebtoonReaderScreen/ComicReaderScreen/NovelReaderScreen — `EpubReaderScreen`
+    ist mit dem vereinheitlichten Page-Model entfallen; whole-file läuft jetzt über `PagedReaderScreen`/den
+    Mode-Dispatch, s. „Reader-Lesepfad").
     `DefaultReaderScaffold(state)` ist der verbatim extrahierte Onyx-Renderer; der innere Overlay-Aufruf bleibt
     über die `overlay`-Region (Komposition). Der E-Ink-Scrim (`readerOverlayScrim`) + die Animation-Gating-Pfade
     bleiben host-erzwungen. Reader-Engines / `Viewer.kt` / die `ReaderChrome.kt`-Helfer

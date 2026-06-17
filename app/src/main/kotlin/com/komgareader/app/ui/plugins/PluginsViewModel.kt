@@ -11,6 +11,7 @@ import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.app.ui.common.holdSpinning
 import com.komgareader.data.plugin.ColorPresetImporter
+import com.komgareader.data.plugin.parseConfigSchema
 import com.komgareader.data.plugin.repo.BrowsableEntry
 import com.komgareader.data.plugin.repo.BrowserRow
 import com.komgareader.data.plugin.repo.InstallState
@@ -25,7 +26,10 @@ import com.komgareader.data.plugin.repo.visibleRows
 import com.komgareader.domain.model.ColorProfile
 import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.ServerRepository
+import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.ConfigSchema
+import com.komgareader.plugin.host.PluginHost
 import com.komgareader.plugin.host.DataPluginInfo
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
@@ -33,6 +37,7 @@ import com.komgareader.plugin.host.DiscoveredPresetPlugin
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -59,6 +64,8 @@ class PluginsViewModel @Inject constructor(
     private val servers: ServerRepository,
     private val colorProfiles: ColorProfileRepository,
     private val apkSession: ApkSessionInstaller,
+    private val pluginHost: PluginHost,
+    private val settings: SettingsRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -232,4 +239,17 @@ class PluginsViewModel @Inject constructor(
     fun removeImportedProfile(profile: ColorProfile) = viewModelScope.launch {
         colorProfiles.delete(profile.id)
     }.let {}
+
+    /** Parsed config schema for a data-only plugin, or null if none declared. */
+    fun configSchemaFor(pkg: String): ConfigSchema? =
+        pluginHost.dataPluginConfigJson(pkg)?.let { parseConfigSchema(it) }
+
+    /** Returns the currently saved values for all schema fields (falls back to field defaults). */
+    suspend fun savedConfig(pkg: String, schema: ConfigSchema): Map<String, String> =
+        schema.fields.associate { f -> f.key to (settings.pluginConfig(pkg, f.key).first() ?: f.default) }
+
+    /** Persists a map of field values for the given plugin package. */
+    suspend fun saveConfig(pkg: String, values: Map<String, String>) {
+        values.forEach { (k, v) -> settings.setPluginConfig(pkg, k, v) }
+    }
 }

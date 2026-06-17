@@ -12,20 +12,19 @@ import com.komgareader.plugin.PluginCategory
 import com.komgareader.plugin.SourcePlugin
 
 /**
- * Entdeckt, prüft und lädt Quellen-Plugin-APKs (Plugin-Plan-Entscheidungen 3–5).
- * Lädt via [PathClassLoader] auf dem installierten APK-Pfad mit Host als Parent (siehe
- * [instantiate]) — kein DexClassLoader heruntergeladener .dex (OS macht Signatur/Integrität
- * beim Install).
+ * Discovers, verifies, and loads source plugin APKs (plugin plan decisions 3–5).
+ * Loads via [PathClassLoader] on the installed APK path with the host as parent (see
+ * [instantiate]) — no DexClassLoader of downloaded .dex (the OS handles signature/integrity
+ * at install time).
  *
- * Sicherheitsmodell: CONTEXT_IGNORE_SECURITY wird absichtlich beibehalten, damit
- * Drittanbieter-signierte Plugins überhaupt ladbar sind. Das eigentliche Trust-Gate
- * ist die gepinnte Cert-SHA-256 in [sourceFor] — ein Plugin wird nur ausgeführt,
- * wenn die aktuelle Paket-Signatur mit dem beim Hinzufügen bestätigten Pin übereinstimmt
- * (TOFU: Trust-on-First-Use).
+ * Security model: CONTEXT_IGNORE_SECURITY is intentionally kept so that third-party-signed
+ * plugins can be loaded at all. The actual trust gate is the pinned cert SHA-256 in [sourceFor]
+ * — a plugin is only executed when the current package signature matches the pin confirmed at
+ * add-time (TOFU: Trust-on-First-Use).
  */
 class PluginHost(private val context: Context) {
 
-    /** Alle installierten, ABI-kompatiblen Quellen-Plugins. */
+    /** All installed, ABI-compatible source plugins. */
     fun discoverPlugins(): List<DiscoveredPlugin> {
         val pm = context.packageManager
         val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
@@ -41,13 +40,13 @@ class PluginHost(private val context: Context) {
     }
 
     /**
-     * Generische Discovery aller installierten, ABI-kompatiblen **data-only** Plugins einer
-     * [category]. Liest pro Paket die Kategorie+Asset aus den Manifest-Metadaten (über den reinen
-     * [resolveDataPluginManifest], legacy-`COLOR_PRESETS`-fähig) und das Asset via
-     * `createPackageContext(pkg, 0)` — **Flags 0 = nur Ressourcen, KEIN Code**: kein PathClassLoader,
-     * keine Signatur-Prüfung, kein Multidex. Es wird ausschließlich eine Datei gelesen, nie
-     * Plugin-Code ausgeführt. Paket-Sicht via app-Manifest-`QUERY_ALL_PACKAGES`. Die JSON-Interpretation
-     * macht der Aufrufer (z.B. [discoverColorPresetPlugins] → [parsePresetSpecs]).
+     * Generic discovery of all installed, ABI-compatible **data-only** plugins of a [category].
+     * Reads the category + asset from the manifest metadata per package (via the pure
+     * [resolveDataPluginManifest], with legacy `COLOR_PRESETS` support) and the asset via
+     * `createPackageContext(pkg, 0)` — **flags 0 = resources only, NO code**: no PathClassLoader,
+     * no signature check, no Multidex. Only a file is read; plugin code is never executed.
+     * Package visibility via app-manifest `QUERY_ALL_PACKAGES`. JSON interpretation is left to
+     * the caller (e.g. [discoverColorPresetPlugins] → [parsePresetSpecs]).
      */
     fun discoverDataPlugins(category: PluginCategory): List<DiscoveredDataPlugin> =
         scanDataPluginManifests(category).mapNotNull { s ->
@@ -59,12 +58,12 @@ class PluginHost(private val context: Context) {
         }
 
     /**
-     * Wie [discoverDataPlugins], aber OHNE das Asset zu lesen — nur Identität/ABI/Asset-Name. Für
-     * Kategorien mit großen Binär-Assets (PANEL_MODEL): das Listing soll nie mehrere MB pro Scan laden.
+     * Like [discoverDataPlugins], but WITHOUT reading the asset — identity/ABI/asset-name only. For
+     * categories with large binary assets (PANEL_MODEL): the listing must never load multiple MB per scan.
      */
     fun discoverDataPluginInfos(category: PluginCategory): List<DataPluginInfo> =
         scanDataPluginManifests(category)
-            .map { s -> DataPluginInfo(s.packageName, s.category, s.abi, s.assetName, s.label) }
+            .map { s -> DataPluginInfo(s.packageName, s.category, s.abi, s.assetName, s.label, s.configAssetName) }
 
     private data class ScannedDataPlugin(
         val packageName: String,
@@ -76,13 +75,15 @@ class PluginHost(private val context: Context) {
         val license: String = "",
         /** Android versionCode of the plugin APK; 0 when unavailable. */
         val versionCode: Long = 0,
+        /** Asset name of the optional config schema (DATA_CONFIG), null when not declared. */
+        val configAssetName: String? = null,
     )
 
     /**
-     * Reiner Manifest-Scan aller installierten, ABI-kompatiblen data-only Plugins einer [category]:
-     * getInstalledPackages → [resolveDataPluginManifest] → Kategorie-Filter → [readAbiVersion] →
-     * [AbiGate] → Label-Fallback. Liest KEIN Asset. Geteilte Basis von [discoverDataPlugins]
-     * (liest danach das JSON) und [discoverDataPluginInfos] (überspringt das Asset).
+     * Pure manifest scan of all installed, ABI-compatible data-only plugins of a [category]:
+     * getInstalledPackages → [resolveDataPluginManifest] → category filter → [readAbiVersion] →
+     * [AbiGate] → label fallback. Reads NO asset. Shared base for [discoverDataPlugins]
+     * (which then reads the JSON) and [discoverDataPluginInfos] (which skips the asset).
      */
     private fun scanDataPluginManifests(category: PluginCategory): List<ScannedDataPlugin> {
         val pm = context.packageManager
@@ -101,14 +102,15 @@ class PluginHost(private val context: Context) {
                 ?: pkg.packageName
             val license = meta.getString(PluginManifestKeys.LICENSE)?.trim().orEmpty()
             @Suppress("DEPRECATION") val versionCode = pkg.versionCode.toLong()
-            ScannedDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, license, versionCode)
+            val configAssetName = meta.getString(PluginManifestKeys.DATA_CONFIG)?.trim()?.ifBlank { null }
+            ScannedDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, license, versionCode, configAssetName)
         }
     }
 
     /**
-     * Liest die rohen Asset-Bytes des ersten installierten, ABI-kompatiblen data-only Plugins der
-     * [category] (via `createPackageContext(pkg, 0)`, Flags 0 = nur Ressourcen, KEIN Code). null,
-     * wenn keines installiert ist oder das Asset nicht lesbar ist. Für binäre Assets (ONNX-Modell).
+     * Reads the raw asset bytes of the first installed, ABI-compatible data-only plugin of the
+     * [category] (via `createPackageContext(pkg, 0)`, flags 0 = resources only, NO code). Returns null
+     * when none is installed or the asset cannot be read. For binary assets (ONNX model).
      */
     fun binaryDataPluginBytes(category: PluginCategory): ByteArray? {
         val info = discoverDataPluginInfos(category).firstOrNull() ?: return null
@@ -119,9 +121,27 @@ class PluginHost(private val context: Context) {
     }
 
     /**
-     * Alle installierten, ABI-kompatiblen **data-only** Color-Preset-Plugins (Typ c) — dünner Wrapper
-     * über [discoverDataPlugins] für [com.komgareader.plugin.PluginCategory.COLOR_PRESET]. Parst den
-     * Asset-JSON via [parsePresetSpecs]; leere/kaputte Assets werden verworfen.
+     * Reads the optional config-schema asset (DATA_CONFIG) of the installed data-only plugin
+     * [packageName] as a JSON string — resource-only via `createPackageContext(pkg, 0)`, NO code.
+     * Returns null when the plugin declares no DATA_CONFIG or the asset cannot be read.
+     *
+     * Note: currently scoped to [PluginCategory.PANEL_MODEL] only; a data plugin in another
+     * category that declares DATA_CONFIG will always return null until this method accepts a
+     * category parameter.
+     */
+    fun dataPluginConfigJson(packageName: String): String? {
+        val info = discoverDataPluginInfos(PluginCategory.PANEL_MODEL)
+            .firstOrNull { it.packageName == packageName } ?: return null
+        val asset = info.configAssetName ?: return null
+        return runCatching {
+            context.createPackageContext(packageName, 0).assets.open(asset).bufferedReader().use { it.readText() }
+        }.getOrNull()
+    }
+
+    /**
+     * All installed, ABI-compatible **data-only** color-preset plugins (type c) — thin wrapper around
+     * [discoverDataPlugins] for [com.komgareader.plugin.PluginCategory.COLOR_PRESET]. Parses the
+     * asset JSON via [parsePresetSpecs]; empty/broken assets are discarded.
      */
     fun discoverColorPresetPlugins(): List<DiscoveredPresetPlugin> =
         discoverDataPlugins(PluginCategory.COLOR_PRESET).mapNotNull { d ->
@@ -153,9 +173,9 @@ class PluginHost(private val context: Context) {
     }.getOrNull()
 
     /**
-     * Erzeugt die laufende BrowsableSource für eine konfigurierte Plugin-Quelle — NUR wenn die
-     * aktuelle Paket-Signatur dem beim Hinzufügen gepinnten [expectedSignature] entspricht (TOFU).
-     * Bei Signatur-Mismatch (ausgetauschtes/untergeschobenes APK) wird NICHT geladen → null.
+     * Creates the live BrowsableSource for a configured plugin source — ONLY when the current
+     * package signature matches the [expectedSignature] pinned at add-time (TOFU).
+     * On signature mismatch (swapped/substituted APK) the plugin is NOT loaded → null.
      */
     fun sourceFor(
         packageName: String,
@@ -169,15 +189,15 @@ class PluginHost(private val context: Context) {
         return plugin.create(config)
     }
 
-    /** Stabile sourceId für eine Plugin-Quelle (packageName + configHash als Namespace). */
+    /** Stable sourceId for a plugin source (packageName + configHash as namespace). */
     fun sourceId(packageName: String, displayName: String, config: Map<String, String>): Long =
         SourceId.of(displayName, SourceKind.PLUGIN, "$packageName/${PluginConfigHash.of(config)}")
 
     /**
-     * Liest die ABI-Version aus den Manifest-Metadaten robust als Int ODER String. `aapt`
-     * typisiert `android:value="1"` je nach Deklaration als Integer oder String; `getInt`
-     * scheitert still (Default) bei String-Werten. Plugin-Autoren dürfen beide Formen nutzen,
-     * darum beide Pfade prüfen. `null` = Schlüssel fehlt/unlesbar.
+     * Reads the ABI version from manifest metadata robustly as either Int OR String. `aapt`
+     * types `android:value="1"` as integer or string depending on the declaration; `getInt`
+     * silently falls back to its default when the value is a string. Plugin authors may use either
+     * form, so both paths are checked. `null` = key missing or unreadable.
      */
     private fun readAbiVersion(meta: Bundle): Int? {
         val asInt = meta.getInt(PluginManifestKeys.ABI_VERSION, Int.MIN_VALUE)
@@ -185,7 +205,7 @@ class PluginHost(private val context: Context) {
         return meta.getString(PluginManifestKeys.ABI_VERSION)?.trim()?.toIntOrNull()
     }
 
-    /** Liest die SHA-256-Hex des ersten Signing-Zertifikats des Pakets (API 28+). */
+    /** Reads the SHA-256 hex of the first signing certificate of the package (API 28+). */
     private fun signatureSha256(packageName: String): String? = runCatching {
         val info = context.packageManager.getPackageInfo(
             packageName, PackageManager.GET_SIGNING_CERTIFICATES,
@@ -196,14 +216,14 @@ class PluginHost(private val context: Context) {
     }.getOrNull()
 
     /**
-     * Lädt die Plugin-Klasse über einen [PathClassLoader] auf dem APK-Pfad (`sourceDir`) mit dem
-     * Host als Parent-Classloader (Mihon-Modell). **Bewusst nicht `createPackageContext`:** dessen
-     * Classloader lädt für ein Fremdpaket nur die primäre `classes.dex` — ein Plugin mit größeren
-     * Libs (Retrofit/serialization/coroutines) ist immer Multidex, seine Entry-Klasse landet dann in
-     * einer Sekundär-`classesN.dex` → `ClassNotFoundException`. `PathClassLoader` über den APK-Pfad
-     * enumeriert **alle** dex. Parent = Host-Classloader → die Vertrags-Interfaces (SourcePlugin &
-     * Naht-Typen) sind dieselben Klassen wie im Host (kein `ClassCastException`). Kein DexClassLoader
-     * heruntergeladener `.dex` — geladen wird nur das vom OS installierte, signatur-geprüfte APK.
+     * Loads the plugin class via a [PathClassLoader] on the APK path (`sourceDir`) with the host as
+     * parent classloader (Mihon model). **Deliberately not `createPackageContext`:** its classloader
+     * only loads the primary `classes.dex` for a third-party package — a plugin with larger libs
+     * (Retrofit/serialization/coroutines) is always Multidex, so its entry class ends up in a
+     * secondary `classesN.dex` → `ClassNotFoundException`. `PathClassLoader` over the APK path
+     * enumerates **all** dex files. Parent = host classloader → the contract interfaces (SourcePlugin &
+     * seam types) are the same classes as in the host (no `ClassCastException`). No DexClassLoader
+     * of downloaded `.dex` — only the OS-installed, signature-verified APK is loaded.
      */
     private fun instantiate(packageName: String, entryClass: String): SourcePlugin? = runCatching {
         val appInfo = context.packageManager.getApplicationInfo(packageName, 0)

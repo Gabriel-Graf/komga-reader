@@ -24,11 +24,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,10 +45,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.EinkInfoDialog
+import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkTextField
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.app.ui.components.LoadingIndicator
+import com.komgareader.app.ui.settings.PluginConfigForm
+import com.komgareader.app.ui.settings.rememberPluginFormState
 import com.komgareader.ui.icons.AppIcons
 import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.data.plugin.repo.BrowserRow
@@ -53,6 +59,7 @@ import com.komgareader.data.plugin.repo.InstallState
 import com.komgareader.data.plugin.repo.PluginKind
 import com.komgareader.data.plugin.repo.RepoSource
 import com.komgareader.plugin.ColorPresetSpec
+import com.komgareader.plugin.ConfigSchema
 import com.komgareader.plugin.host.DataPluginInfo
 import com.komgareader.plugin.host.DiscoveredDataPlugin
 import com.komgareader.plugin.host.DiscoveredPlugin
@@ -99,6 +106,8 @@ fun PluginsScreen(
 
     var tofuFor by remember { mutableStateOf<DiscoveredPlugin?>(null) }
     var presetDetailFor by remember { mutableStateOf<DiscoveredPresetPlugin?>(null) }
+    var configTarget by remember { mutableStateOf<Pair<String, ConfigSchema>?>(null) }
+    val scope = rememberCoroutineScope()
 
     fun uninstall(pkg: String) {
         ctx.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")))
@@ -190,6 +199,7 @@ fun PluginsScreen(
                     )
                 }
                 PluginKind.PANEL_MODEL -> panelModelFor(item.packageName)?.let { model ->
+                    val schema = remember(model.packageName) { viewModel.configSchemaFor(model.packageName) }
                     DataPluginRow(
                         title = model.displayName,
                         typeLabel = s.pluginTabPanelModelLabel,
@@ -198,6 +208,10 @@ fun PluginsScreen(
                         uninstallLabel = s.pluginUninstall,
                         onInfo = { viewModel.openInfoForInstalled(item) },
                         onUninstall = { uninstall(model.packageName) },
+                        configureLabel = s.pluginConfigure,
+                        onConfigure = if (schema != null && schema.fields.isNotEmpty()) {
+                            { configTarget = model.packageName to schema }
+                        } else null,
                     )
                 }
                 PluginKind.FONT -> fontFor(item.packageName)?.let { fp ->
@@ -280,6 +294,26 @@ fun PluginsScreen(
             }
         }
     }
+
+    configTarget?.let { (pkg, schema) ->
+        val formState = rememberPluginFormState(schema)
+        LaunchedEffect(pkg) {
+            viewModel.savedConfig(pkg, schema).forEach { (k, v) -> formState.values[k] = v }
+        }
+        EinkModal(
+            title = s.pluginConfigure,
+            confirmLabel = s.save,
+            dismissLabel = s.cancel,
+            confirmEnabled = formState.isValid,
+            onConfirm = {
+                scope.launch { viewModel.saveConfig(pkg, formState.snapshot()) }
+                configTarget = null
+            },
+            onDismiss = { configTarget = null },
+        ) {
+            PluginConfigForm(formState)
+        }
+    }
 }
 
 /** Abschnitts-Überschrift („Installiert"/„Verfügbar"): kleine, kräftige Label-Zeile, gedämpft. */
@@ -357,8 +391,9 @@ private fun PluginRow(
 }
 
 /**
- * Plugin-Zeile für data-only Plugins (Sprache, Reader-Preset): Name + Typ-Label + ABI links,
- * ℹ + 🗑 rechts — kein ⚙ (keine konfigurierbaren Werte). Flach, 1.5px-Border, keine Animation.
+ * Plugin-Zeile für data-only Plugins (Sprache, Reader-Preset usw.): Name + Typ-Label + ABI links,
+ * ℹ + optionales ⚙ + 🗑 rechts. Das Zahnrad erscheint nur, wenn [onConfigure] nicht null ist.
+ * Flach, 1.5px-Border, keine Animation.
  */
 @Composable
 private fun DataPluginRow(
@@ -369,6 +404,8 @@ private fun DataPluginRow(
     uninstallLabel: String,
     onInfo: () -> Unit,
     onUninstall: () -> Unit,
+    configureLabel: String? = null,
+    onConfigure: (() -> Unit)? = null,
 ) {
     val s = LocalStrings.current
     Row(
@@ -388,6 +425,11 @@ private fun DataPluginRow(
         }
         IconButton(onClick = onInfo) {
             Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
+        }
+        if (onConfigure != null) {
+            IconButton(onClick = onConfigure) {
+                Icon(AppIcons.Settings, contentDescription = configureLabel ?: s.pluginConfigure, modifier = Modifier.size(22.dp))
+            }
         }
         IconButton(onClick = onUninstall) {
             Icon(AppIcons.Delete, contentDescription = uninstallLabel, modifier = Modifier.size(22.dp))

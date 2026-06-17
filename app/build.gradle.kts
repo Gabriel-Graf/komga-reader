@@ -102,8 +102,8 @@ dependencies {
     // jvm/js variants, no android); it is pure Kotlin/JVM so Android consumes it. onnx-jvm pulls the
     // desktop onnxruntime transitively — excluded and replaced by onnxruntime-android (the ML path
     // degrades gracefully to the geometric detector on ABIs/devices without the native runtime).
-    implementation("com.github.Gabriel-Graf.ComicCutter:comic-cutter-jvm:0.3.1")
-    implementation("com.github.Gabriel-Graf.ComicCutter:comic-cutter-onnx-jvm:0.3.1") {
+    implementation("com.github.Gabriel-Graf.ComicCutter:comic-cutter-jvm:0.4.0")
+    implementation("com.github.Gabriel-Graf.ComicCutter:comic-cutter-onnx-jvm:0.4.0") {
         exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime")
     }
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
@@ -132,6 +132,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
+    testImplementation(libs.org.json)
 
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

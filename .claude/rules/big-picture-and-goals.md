@@ -138,7 +138,7 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
 
 1. **Vertrag in eigenem Modul `plugin-api`** (pure JVM/Kotlin) — **Ist: gebaut.** `plugin-api`
    (0.1.0, mavenLocal) enthält `SourcePlugin`, `PluginMetadata`, `ConfigSchema`/`ConfigField`/
-   `FieldType`, `PluginAbi` (VERSION=1) und `ColorPresetSpec`. Macht `api(project(":source-api"))`
+   `FieldType` (inkl. `NUMBER` seit ABI 4), `PluginAbi` (VERSION=4, MIN_SUPPORTED=1) und `ColorPresetSpec`. Macht `api(project(":source-api"))`
    → re-exportiert die Naht-A-Typen. **Distribution (Ist, 2026-06-11): ein einzelnes geshadetes
    `:plugin-sdk`** (`com.komgareader:plugin-sdk:0.1.0`, Shadow ohne Relocation) bündelt
    plugin-api+source-api+domain (nur `com.komgareader.**`, keine Fremd-Libs, saubere POM); Plugins
@@ -189,16 +189,16 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
      `PluginRepoClient.fetchText` lädt das README, `resolveRepoUrl` löst relative URLs). `license` wird in P1 nur
      **angezeigt** (Allowlist/Block = Font-Plugins P2). **Soll (späterer Slice):** Auto-Refresh/Update-Badge,
      Plugin-Icons, Signierung des Index selbst.
-   - **(d) Panel-Modelle (ML) — Ist: data-only Kategorie + Engine-Tausch gebaut (2026-06-14):** über die
-     generische data-only-Discovery kam die 5. Kategorie `PluginCategory.PANEL_MODEL` (ABI-Bump
-     `VERSION=2`→`3`). Ein PANEL_MODEL-Plugin shippt ein **binäres ONNX-Modell** als Asset
-     (`DATA_CATEGORY=PANEL_MODEL`, `DATA_ASSET=<modell>.onnx`, `ABI_VERSION=3`). Weil das Asset mehrere MB
-     groß ist, gibt es eine **binär-/metadaten-getrennte** Discovery (`DataPluginInfo`,
-     `discoverDataPluginInfos` metadata-only; `binaryDataPluginBytes` liest die Bytes lazy). Die Comic-
-     Panel-Erkennung selbst wurde aus dem In-Tree-Modul `:guided-view` (gelöscht) in die externe Lib
-     **comic-cutter** ausgelagert; der `PanelSourceProvider` wählt geometrisch (Default) oder ML
-     (`MlPanelSource`+ONNX, wenn `useMlDetection` an **und** ein PANEL_MODEL-Plugin installiert), degradiert
-     sauber. Details: Naht B + Naht-A-Panel-Modell-Item in `architecture-seams.md`.
+   - **(d) Panel-Modelle (ML) — Ist: data-only Kategorie + Engine-Tausch gebaut (2026-06-14);
+     konfigurierbar (2026-06-17):** über die generische data-only-Discovery kam die 5. Kategorie
+     `PluginCategory.PANEL_MODEL` (ABI-Bump `VERSION=2`→`3`→`4`). Ein PANEL_MODEL-Plugin shippt ein
+     **binäres ONNX-Modell** als Asset (`DATA_CATEGORY=PANEL_MODEL`, `DATA_ASSET=<modell>.onnx`,
+     optional `DATA_CONFIG=config.json`). Die Comic-Panel-Erkennung läuft über die externe Lib
+     **comic-cutter** (0.4.0); `PanelSourceProvider` wählt geometrisch (Default) oder ML
+     (`MlPanelSource`+ONNX, wenn `useMlDetection` an **und** Plugin installiert), liest `min_confidence`
+     aus `plugincfg:<pkg>:min_confidence` (Default 0.25), degradiert sauber. `PanelRect.score`/
+     `NormRect.score` seit 0.4.0 durchgereicht. Details: Naht B + Naht-A-Panel-Modell-Item +
+     „Generische Data-Plugin-Config" in `architecture-seams.md`.
    - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert
      `BrowsableSource`-Impls → `PluginHost.sourceFor(...)` → `SourceRegistration` → `SourceManager`.
      Kavita-Quelle (`plugin/komga-kavita-source/`, separates Git-Repo, gitignored) ist das erste

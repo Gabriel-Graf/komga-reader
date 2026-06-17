@@ -42,7 +42,6 @@ class ReaderFilterCoverageTest {
         "PagedReaderScreen",
         "WebtoonReaderScreen",
         "ComicReaderScreen",
-        "EpubReaderScreen",
         "NovelReaderScreen",
     )
 

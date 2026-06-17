@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.reader
 
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -21,12 +22,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.data.coil.ReaderPageImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
@@ -51,7 +54,7 @@ import com.panela.comiccutter.PanelGeometry
  */
 @Composable
 fun ComicReaderScreen(
-    pages: List<SourceImage>,
+    pages: List<ReaderPageImage>,
     initialPage: Int,
     readerKind: ReaderKind,
     bookRemoteId: String,
@@ -72,6 +75,15 @@ fun ComicReaderScreen(
         comicVm.init(pages, initialPage)
     }
 
+    // Toast feedback for capture result.
+    LaunchedEffect(Unit) {
+        comicVm.captureEvent.collect { ok ->
+            val msg = if (ok) s.misdetectionCaptured else s.misdetectionCaptureFailed
+            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val misdetectionDir by comicVm.misdetectionDir.collectAsState()
     val state by comicVm.uiState.collectAsState()
 
     ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.position.page)
@@ -107,6 +119,15 @@ fun ComicReaderScreen(
         tapZones = null,
         showTapZoneHints = false,
         actions = {
+            if (misdetectionDir != null) {
+                IconButton(onClick = { comicVm.captureMisdetection() }) {
+                    Icon(
+                        AppIcons.Download,
+                        contentDescription = s.misdetectionCapture,
+                        tint = Color.White,
+                    )
+                }
+            }
             IconButton(onClick = { comicVm.toggleGuided() }) {
                 Icon(
                     AppIcons.PanelMode,
@@ -170,17 +191,31 @@ fun ComicReaderScreen(
                 )
             }
 
-            // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke (kein pointerInput → Taps passieren durch).
+            // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke mit Lesereihenfolge-Index
+            // und Confidence-Score (#1  0.83) oben-links. rememberTextMeasurer muss in der
+            // Composable-Scope stehen (nicht im DrawScope-Lambda).
+            // kein pointerInput → Taps passieren durch.
             if (showOverlay && !state.zoomed && state.currentPanels.isNotEmpty()) {
+                val textMeasurer = rememberTextMeasurer()
                 Canvas(Modifier.fillMaxSize()) {
                     val stroke = Stroke(width = 9f)
-                    state.currentPanels.forEach { p ->
+                    state.currentPanels.forEachIndexed { i, p ->
+                        val tl = Offset(offX + p.left * contentW, offY + p.top * contentH)
                         drawRect(
                             color = Color(0xFF00C800),
-                            topLeft = Offset(offX + p.left * contentW, offY + p.top * contentH),
+                            topLeft = tl,
                             size = Size(p.width * contentW, p.height * contentH),
                             style = stroke,
                         )
+                        val label = "#${i + 1}  ${"%.2f".format(p.score)}"
+                        val measured = textMeasurer.measure(label)
+                        // Dunkler Hintergrund hinter dem Label für E-Ink-Lesbarkeit (kein Anti-Aliasing nötig).
+                        drawRect(
+                            color = Color(0xCC000000),
+                            topLeft = tl,
+                            size = Size(measured.size.width + 12f, measured.size.height + 8f),
+                        )
+                        drawText(measured, color = Color.White, topLeft = Offset(tl.x + 6f, tl.y + 4f))
                     }
                 }
             }

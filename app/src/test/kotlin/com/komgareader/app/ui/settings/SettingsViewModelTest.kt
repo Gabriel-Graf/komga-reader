@@ -198,6 +198,7 @@ private class StubSettingsRepository : SettingsRepository {
     override val bookmarkMarkerStyle: Flow<String> = flowOf("UNDERLINE")
     override val externalOpenBehavior: Flow<String> = flowOf("ASK")
     override val downloadDir: Flow<String?> = flowOf(null)
+    override val misdetectionDir: Flow<String?> = flowOf(null)
     override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
     override val useMlDetection: Flow<Boolean> = flowOf(true)
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
@@ -219,6 +220,8 @@ private class StubSettingsRepository : SettingsRepository {
     override val screenSaverMode: Flow<String> = flowOf("OFF")
     override val screenSaverCustomUri: Flow<String> = flowOf("")
     override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
+    override fun pluginConfig(pkg: String, key: String): Flow<String?> = flowOf(null)
+    override suspend fun setPluginConfig(pkg: String, key: String, value: String) {}
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -226,6 +229,7 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setBookmarkMarkerStyle(value: String) {}
     override suspend fun setExternalOpenBehavior(value: String) {}
     override suspend fun setDownloadDir(uri: String?) {}
+    override suspend fun setMisdetectionDir(uri: String?) {}
     override suspend fun setGuidedPanelOverlay(value: Boolean) {}
     override suspend fun setUseMlDetection(value: Boolean) {}
     override suspend fun setActiveColorProfileId(id: Long) {}
@@ -277,6 +281,7 @@ private class CapturingSettingsRepository(
     override val bookmarkMarkerStyle: Flow<String> = flowOf("UNDERLINE")
     override val externalOpenBehavior: Flow<String> = flowOf("ASK")
     override val downloadDir: Flow<String?> = flowOf(null)
+    override val misdetectionDir: Flow<String?> = flowOf(null)
     override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
     override val useMlDetection: Flow<Boolean> = flowOf(true)
     override val activeColorProfileId: Flow<Long?> = flowOf(null)
@@ -305,6 +310,7 @@ private class CapturingSettingsRepository(
     override suspend fun setBookmarkMarkerStyle(value: String) {}
     override suspend fun setExternalOpenBehavior(value: String) {}
     override suspend fun setDownloadDir(uri: String?) {}
+    override suspend fun setMisdetectionDir(uri: String?) {}
     override suspend fun setGuidedPanelOverlay(value: Boolean) {}
     override suspend fun setUseMlDetection(value: Boolean) {}
     override suspend fun setActiveColorProfileId(id: Long) {}
@@ -323,6 +329,8 @@ private class CapturingSettingsRepository(
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setLastSeenVersion(version: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
+    override fun pluginConfig(pkg: String, key: String): Flow<String?> = flowOf(null)
+    override suspend fun setPluginConfig(pkg: String, key: String, value: String) {}
     override suspend fun setScreenSaverMode(value: String) {}
     override suspend fun setScreenSaverCustomUri(uri: String) {}
     override suspend fun setScreenSaverFillCrop(value: Boolean) {}

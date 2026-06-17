@@ -35,8 +35,16 @@ class SuggestContentType {
     }
 
     companion object {
+        // Calibrated against the labelled NAS corpus (45 books/type, 3 interior samples each,
+        // box-downsampled to 200px long edge — same as ContentTypeDetector):
+        //   manga   grayFraction = 1.000 at every percentile (true-grayscale storage)
+        //   comic   grayFraction median 0.44, p90 0.56 (coloured)
+        //   webtoon grayFraction median 0.67, max 0.98; aspect median 1.71, p90 5.56
+        // Manga is cleanly separable on gray (>=0.96 excludes even the greyest webtoon at 0.977).
+        // Webtoon is only reliably caught when stored as a tall strip (aspect >=3); paginated
+        // webtoons overlap comics on both signals and fall to null (no guess) — see KDoc.
         const val WEBTOON_MIN_ASPECT = 3.0f
-        const val MANGA_MIN_GRAY = 0.92f
+        const val MANGA_MIN_GRAY = 0.96f
         const val COMIC_MAX_GRAY = 0.60f
     }
 }

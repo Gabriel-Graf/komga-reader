@@ -10,12 +10,18 @@ import com.komgareader.domain.model.ContentType
  * algorithm bump without touching manual overrides.
  */
 interface SeriesAutoTypeRepository {
-    /** Detected type, or `null` if none stored. */
+    /** Detected type, or `null` if none stored or detection produced no verdict. */
     suspend fun get(sourceId: Long, seriesRemoteId: String): ContentType?
 
-    /** Detector version that produced the stored value, or `null` if none stored. */
+    /**
+     * Detector version recorded for this series, or `null` if detection never ran. Present even
+     * when [get] is `null` (ambiguous verdict), so the detector skips an already-sampled series.
+     */
     suspend fun detectorVersion(sourceId: Long, seriesRemoteId: String): Int?
 
-    /** Stores ([type] != null) or clears ([type] == null) the detected type. */
+    /**
+     * Records a detection result at [detectorVersion]. A non-null [type] is the verdict; a `null`
+     * [type] records "ran, no verdict" so the series is not re-sampled on every open.
+     */
     suspend fun set(sourceId: Long, seriesRemoteId: String, type: ContentType?, detectorVersion: Int)
 }

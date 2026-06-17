@@ -36,8 +36,16 @@ Invariante 4 bleibt gewahrt.
 
 - **Signale (rein, unit-getestet):** mehrere Innenseiten werden gesampelt; Median
   des Seiten-Aspekts `h/w ≥ 3` → WEBTOON (lange Strips); sonst Median der
-  Graufraktion `≥ 0.92` → MANGA (S/W-Interieur), `≤ 0.60` → COMIC (farbig); mittleres
+  Graufraktion `≥ 0.96` → MANGA (S/W-Interieur), `≤ 0.60` → COMIC (farbig); mittleres
   Band → kein Vorschlag (`null`, nie raten). `SuggestContentType` + `measureGrayFraction`.
+- **Schwellen kalibriert** am gelabelten NAS-Korpus (je 45 Bücher, 3 Innenseiten,
+  box-downsampled auf 200px): Manga ist **echt-graustufig** (Graufraktion = 1.000 in
+  allen Perzentilen), Comic farbig (Median 0.44, p90 0.56), Webtoon Median 0.67 / max
+  0.98. `0.96` trennt Manga sauber (schließt selbst den gräulichsten Webtoon bei 0.977
+  aus). **Webtoon-Limit:** nur als **langer Strip** (Aspect ≥ 3) zuverlässig erkannt;
+  **paginierte** Webtoons (im Korpus als Normalseiten gespeichert) überlappen Comics auf
+  beiden Signalen und fallen auf `null` (kein Falsch-Rat) — sie brauchen das Bibliotheks-/
+  Server-Tag.
 - **Vorbehalt:** Grau entscheidet **S/W-vs-Farbe**, **nie** die Leserichtung — ein
   S/W-Westcomic liest nicht rückwärts; RTL bleibt allein metadaten-getrieben.
 - **Sampler (Shell):** `ContentTypeDetector` (`app/data`) lädt Seiten über die Naht
@@ -45,7 +53,10 @@ Invariante 4 bleibt gewahrt.
   und persistiert. Läuft **off the read path** (Hintergrund, lazy bei fehlendem Vorschlag),
   idempotent über `detectorVersion`. Cover (Index 0) wird übersprungen (oft farbig).
 - **Persistenz:** Tabelle `series_auto_types` über `SeriesAutoTypeRepository`
-  (parallel zum manuellen `SeriesOverrideRepository`, AppDatabase v21).
+  (parallel zum manuellen `SeriesOverrideRepository`, AppDatabase v21). Auch ein
+  **Null-Verdikt** (mehrdeutig) schreibt eine Zeile (leerer Typname + `detectorVersion`),
+  damit eine mehrdeutige Serie **einmal** gesampelt und nicht bei jedem Öffnen neu
+  gescannt wird; `get` mappt den leeren Marker zurück auf `null`.
 - **Out of scope (v1):** ComicInfo-`<Manga>`-Parsing + Sprach-Tiebreaker — additive
   Folge-Erweiterung; Komgas `readingDirection` deckt den manga-RTL-Server-Fall bereits.
 

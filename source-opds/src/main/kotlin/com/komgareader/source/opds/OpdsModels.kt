@@ -24,3 +24,13 @@ data class OpdsEntry(
      */
     val navigationHref: String? = null,
 )
+
+/**
+ * Ein geparster OPDS-Feed: die [entries] plus der feed-weite Paginierungs-Cursor [nextHref]
+ * (Href des `<link rel="next">` direkt unter `<feed>`; `null` = letzte Seite). OPDS paginiert
+ * cursor-basiert — die nächste Seite ist nur über diesen Link adressierbar, nicht über `?page=N`.
+ */
+data class OpdsFeed(
+    val entries: List<OpdsEntry>,
+    val nextHref: String? = null,
+)

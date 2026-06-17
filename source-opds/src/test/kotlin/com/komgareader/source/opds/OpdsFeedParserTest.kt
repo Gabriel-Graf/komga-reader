@@ -100,6 +100,21 @@ class OpdsFeedParserTest {
     }
 
     @Test
+    fun `parseFeed liest den next-Cursor der Feed-Wurzel`() {
+        val feed = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <link rel="next" href="/opds/v1.2/series?page=1"/>
+  <entry><title>A</title><id>a</id></entry>
+</feed>"""
+        assertEquals("/opds/v1.2/series?page=1", parser.parseFeed(feed).nextHref)
+    }
+
+    @Test
+    fun `parseFeed ohne next-Link hat nextHref null`() {
+        assertNull(parser.parseFeed(exampleFeed).nextHref)
+    }
+
+    @Test
     fun `erkennt acquisition-open-access-rel als Acquisition`() {
         // Kavita nutzt `…/acquisition/open-access` statt des blanken `…/acquisition` (Komga).
         val feed = """<?xml version="1.0"?>

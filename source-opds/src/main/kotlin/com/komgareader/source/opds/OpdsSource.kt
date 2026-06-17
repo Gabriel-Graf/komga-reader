@@ -72,6 +72,14 @@ class OpdsSource internal constructor(
     @Volatile private var bookSeries: Map<String, String> = emptyMap()
 
     /**
+     * Seitennummer → absolute URL dieser Browse-Seite. OPDS paginiert cursor-basiert
+     * (`<link rel="next">`), nicht über `?page=N` — Seite `n+1` ist erst adressierbar, nachdem
+     * Seite `n` geholt wurde. [browse] wird sequenziell aufgerufen (0,1,2,…) und füllt die nächste
+     * URL je Schritt. Seite 0 ist immer der `catalogUrl`.
+     */
+    @Volatile private var pageUrls: Map<Int, String> = mapOf(0 to catalogUrl)
+
+    /**
      * Löst einen Eintrag über die `remoteId` auf. Cache-Treffer bevorzugt; bei kaltem Cache wird
      * der `catalogUrl`-Feed einmal nachgeholt.
      *
@@ -84,16 +92,22 @@ class OpdsSource internal constructor(
     private suspend fun entryFor(remoteId: String): OpdsEntry? =
         entriesById[remoteId] ?: run { fetchFeed(catalogUrl); entriesById[remoteId] }
 
+    /**
+     * Eine Seite Serien. Folgt dem cursor-basierten `<link rel="next">`: Seite `n` cached die URL
+     * von Seite `n+1`, sodass der sequenzielle Aufruf 0,1,2,… den ganzen Katalog durchblättert.
+     * Eine noch nicht entdeckte (nicht-sequenziell angeforderte) Seite liefert leer.
+     */
     override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> {
-        val entries = fetchFeed(catalogUrl)
-        val series = entries.map { it.toSeries() }
-        return PagedResult(items = series, hasNextPage = false)
+        val url = pageUrls[page] ?: return PagedResult(items = emptyList(), hasNextPage = false)
+        val feed = fetchFeed(url)
+        val nextUrl = feed.nextHref?.let { baseUrl.resolve(it)?.toString() ?: it }
+        if (nextUrl != null) pageUrls = pageUrls + (page + 1 to nextUrl)
+        return PagedResult(items = feed.entries.map { it.toSeries() }, hasNextPage = nextUrl != null)
     }
 
     override suspend fun search(query: String, page: Int): PagedResult<Series> {
         val url = baseUrl.newBuilder().addQueryParameter("query", query).build().toString()
-        val entries = fetchFeed(url)
-        val series = entries.map { it.toSeries() }
+        val series = fetchFeed(url).entries.map { it.toSeries() }
         return PagedResult(items = series, hasNextPage = false)
     }
 
@@ -107,7 +121,7 @@ class OpdsSource internal constructor(
             fetchFeed(catalogUrl)
         }
         seriesAcqFeed[seriesRemoteId]?.let { acqFeedUrl ->
-            val entries = fetchFeed(acqFeedUrl).filter { it.isReadable() }
+            val entries = fetchFeed(acqFeedUrl).entries.filter { it.isReadable() }
             bookSeries = bookSeries + entries.associate { it.id to seriesRemoteId }
             return entries.map { it.toBook() }
         }
@@ -223,21 +237,21 @@ class OpdsSource internal constructor(
     override suspend fun seriesIdOf(bookRemoteId: String): String =
         bookSeries[bookRemoteId] ?: bookRemoteId
 
-    private suspend fun fetchFeed(url: String): List<OpdsEntry> = withContext(Dispatchers.IO) {
+    private suspend fun fetchFeed(url: String): OpdsFeed = withContext(Dispatchers.IO) {
         val request = buildRequest(url)
         val xml = client.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "Feed-Abruf fehlgeschlagen: HTTP ${response.code} für $url" }
             response.body!!.string()
         }
-        val entries = parser.parse(xml)
+        val feed = parser.parseFeed(xml)
         // Einträge + Serien-Subsection-Feeds dieses Feeds in die Caches mergen
         // (unveränderliche URLs/Vorlagen → für spätere Buch-Ops, keine Stale-Sorge).
-        entriesById = entriesById + entries.associateBy { it.id }
-        val navs = entries.mapNotNull { e ->
+        entriesById = entriesById + feed.entries.associateBy { it.id }
+        val navs = feed.entries.mapNotNull { e ->
             e.navigationHref?.let { e.id to (baseUrl.resolve(it)?.toString() ?: it) }
         }
         if (navs.isNotEmpty()) seriesAcqFeed = seriesAcqFeed + navs
-        entries
+        feed
     }
 
     /** Baut einen [Request] mit optionalem Basic-Auth-Header. */

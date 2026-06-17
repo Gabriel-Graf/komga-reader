@@ -1,5 +1,6 @@
 package com.komgareader.source.opds
 
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
 import javax.xml.parsers.DocumentBuilderFactory
@@ -31,7 +32,36 @@ private fun DocumentBuilderFactory.trySetFeature(name: String, value: Boolean) {
  */
 class OpdsFeedParser {
 
-    fun parse(xml: String): List<OpdsEntry> {
+    /** Parst Einträge **und** den Paginierungs-Cursor (`<link rel="next">` der Feed-Wurzel). */
+    fun parseFeed(xml: String): OpdsFeed {
+        val doc = parseDocument(xml)
+        val entryNodes: NodeList = doc.getElementsByTagNameNS(ATOM_NS, "entry")
+        val entries = (0 until entryNodes.length).map { i -> parseEntry(entryNodes.item(i) as Element) }
+        return OpdsFeed(entries = entries, nextHref = feedNextHref(doc))
+    }
+
+    /** Nur die Einträge (Rückwärtskompatibilität für reine Eintrags-Konsumenten). */
+    fun parse(xml: String): List<OpdsEntry> = parseFeed(xml).entries
+
+    /**
+     * Href des feed-weiten `<link rel="next">` — nur **direkte** Kinder der `<feed>`-Wurzel
+     * (Einträge tragen eigene Links, die hier nicht zählen). `null` = letzte Seite.
+     */
+    private fun feedNextHref(doc: Document): String? {
+        val root = doc.documentElement ?: return null
+        val children = root.childNodes
+        for (i in 0 until children.length) {
+            val node = children.item(i)
+            if (node is Element && node.namespaceURI == ATOM_NS && node.localName == "link" &&
+                node.getAttribute("rel") == "next"
+            ) {
+                return node.getAttribute("href").takeIf { it.isNotEmpty() }
+            }
+        }
+        return null
+    }
+
+    private fun parseDocument(xml: String): Document {
         // XXE-Härtung: OPDS-Feeds kommen von fremden Servern → DTDs und externe
         // Entitäten deaktivieren (verhindert Datei-Leak/SSRF). Die Feature-Namen sind
         // parser-abhängig: Androids Harmony-Parser kennt z. B. `disallow-doctype-decl`
@@ -48,11 +78,7 @@ class OpdsFeedParser {
             runCatching { isXIncludeAware = false }
             runCatching { isExpandEntityReferences = false }
         }
-        val doc = factory.newDocumentBuilder().parse(xml.byteInputStream())
-        val entryNodes: NodeList = doc.getElementsByTagNameNS(ATOM_NS, "entry")
-        return (0 until entryNodes.length).map { i ->
-            parseEntry(entryNodes.item(i) as Element)
-        }
+        return factory.newDocumentBuilder().parse(xml.byteInputStream())
     }
 
     private fun parseEntry(entry: Element): OpdsEntry {

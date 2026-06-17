@@ -76,12 +76,24 @@ class OpdsSourceTest {
     }
 
     @Test
-    fun `browse hat hasNextPage false (MVP)`() = runTest {
+    fun `browse meldet keine Folgeseite ohne next-Link`() = runTest {
+        // exampleFeed trägt keinen <link rel="next"> → letzte (einzige) Seite.
         server.enqueue(MockResponse().setBody(exampleFeed).addHeader("Content-Type", "application/atom+xml"))
 
         val result = source().browse(page = 0, filter = SourceFilter())
 
         assertEquals(false, result.hasNextPage)
+    }
+
+    @Test
+    fun `browse einer nicht-entdeckten Seite liefert leer ohne HTTP-Request`() = runTest {
+        // Cursor-Modell: Seite 5 ist erst nach sequenziellem Durchblättern adressierbar.
+        // Ein Sprung dorthin liefert leer und löst KEINEN Feed-Abruf aus.
+        val result = source().browse(page = 5, filter = SourceFilter())
+
+        assertTrue(result.items.isEmpty())
+        assertEquals(false, result.hasNextPage)
+        assertEquals(0, server.requestCount, "Sprung-Seite darf keinen Request auslösen")
     }
 
     @Test
@@ -213,6 +225,34 @@ class OpdsSourceTest {
     <link rel="http://opds-spec.org/acquisition" href="/dl/aot1.cbz" type="application/zip"/>
     <link rel="http://vaemendis.net/opds-pse/stream" href="/books/b-aot1/pages/{pageNumber}" type="image/jpeg" pse:count="3"/></entry>
 </feed>"""
+
+    @Test
+    fun `browse paginiert sequenziell über den next-Cursor`() = runTest {
+        val page0 = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <link rel="next" href="/opds/v1.2/series?page=1"/>
+  <entry><title>S1</title><id>s1</id></entry>
+</feed>"""
+        val page1 = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><title>S2</title><id>s2</id></entry>
+</feed>"""
+        server.enqueue(MockResponse().setBody(page0).addHeader("Content-Type", "application/atom+xml"))
+        server.enqueue(MockResponse().setBody(page1).addHeader("Content-Type", "application/atom+xml"))
+
+        val src = source()
+        val r0 = src.browse(0, SourceFilter())
+        assertEquals(listOf("s1"), r0.items.map { it.remoteId })
+        assertTrue(r0.hasNextPage, "Seite 0 sollte eine Folgeseite melden")
+
+        val r1 = src.browse(1, SourceFilter()) // erst nach Seite 0 adressierbar
+        assertEquals(listOf("s2"), r1.items.map { it.remoteId })
+        assertTrue(!r1.hasNextPage, "Seite 1 ist die letzte")
+
+        server.takeRequest() // Seite 0 (catalogUrl)
+        val page1Request = server.takeRequest()
+        assertTrue(page1Request.path!!.endsWith("/opds/v1.2/series?page=1"), "next-Cursor: ${page1Request.path}")
+    }
 
     @Test
     fun `browse mapt Navigations-Einträge zu Series`() = runTest {

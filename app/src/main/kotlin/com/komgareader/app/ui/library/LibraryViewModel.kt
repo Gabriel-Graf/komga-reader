@@ -16,7 +16,6 @@ import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerConfig
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.ShelfRepository
-import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.usecase.ResolveShelfContentType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -119,7 +118,7 @@ class LibraryViewModel @Inject constructor(
                         .flatMap { runCatching { overrideRepository.all(it.id) }.getOrDefault(emptyMap()).entries }
                         .associate { it.key to it.value }
                     val results = sources.map { source ->
-                        runCatching { source.browse(0, SourceFilter()).items }
+                        runCatching { browseAllSeries(source) }
                     }
                     emit(
                         if (results.any { it.isSuccess }) {

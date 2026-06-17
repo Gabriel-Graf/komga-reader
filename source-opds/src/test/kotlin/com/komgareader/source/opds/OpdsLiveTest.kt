@@ -26,20 +26,35 @@ class OpdsLiveTest {
             password = "testpass123",
         )
 
-        val series = source.browse(0, com.komgareader.domain.source.SourceFilter()).items
-        assertTrue(series.isNotEmpty(), "Komga: keine Serien aus dem OPDS-Feed")
-        // Auf Seite 0 (browse paginiert noch nicht) und mit stabilem Mount lesbar.
-        val berserk = series.first { it.title.contains("Attack on Titan", ignoreCase = true) }
+        // Pagination: alle Seiten über den next-Cursor durchblättern (wie browseAllSeries).
+        val filter = com.komgareader.domain.source.SourceFilter()
+        val allSeries = mutableListOf<com.komgareader.domain.model.Series>()
+        var page = 0
+        var page0Size = 0
+        while (page < 50) {
+            val r = source.browse(page, filter)
+            if (page == 0) page0Size = r.items.size
+            allSeries += r.items
+            if (!r.hasNextPage) break
+            page++
+        }
+        assertTrue(page > 0, "Komga: browse sollte mehr als eine Seite haben (paginiert nicht?)")
+        assertTrue(allSeries.size > page0Size, "Pagination brachte keine zusätzlichen Serien")
+        // Berserk liegt alphabetisch jenseits Seite 0 — beweist, dass Pagination es erreicht.
+        assertTrue(allSeries.any { it.title.contains("Berserk", ignoreCase = true) }, "Berserk (Seite 1+) nicht gefunden")
 
-        val books = source.books(berserk.remoteId)
-        assertTrue(books.isNotEmpty(), "Komga: keine Bücher in Serie ${berserk.title}")
+        // Attack on Titan (Seite 0, stabiler Mount) für den Lese-/PSE-Pfad.
+        val aot = allSeries.first { it.title.contains("Attack on Titan", ignoreCase = true) }
+
+        val books = source.books(aot.remoteId)
+        assertTrue(books.isNotEmpty(), "Komga: keine Bücher in Serie ${aot.title}")
         val book = books.first { it.pageCount > 0 }
 
         val refs = source.pages(book.remoteId)
         assertTrue(refs.size == book.pageCount, "Komga: pages() != pseCount (${refs.size} vs ${book.pageCount})")
         val bytes = source.openPage(refs.first())
         assertTrue(bytes.size > 100, "Komga: PSE-Seite 0 lieferte ${bytes.size} Bytes")
-        println("KOMGA OK: ${berserk.title} -> ${book.remoteId}, ${refs.size} Seiten, Seite0=${bytes.size}B")
+        println("KOMGA OK: ${aot.title} -> ${book.remoteId}, ${refs.size} Seiten, Seite0=${bytes.size}B")
     }
 
     @Test

@@ -12,6 +12,7 @@ import com.komgareader.data.repository.RoomColorProfileRepository
 import com.komgareader.data.repository.RoomDownloadRepository
 import com.komgareader.data.repository.RoomNovelProgressRepository
 import com.komgareader.data.repository.RoomReadProgressRepository
+import com.komgareader.data.repository.RoomSeriesAutoTypeRepository
 import com.komgareader.data.repository.RoomSeriesOverrideRepository
 import com.komgareader.data.repository.RoomServerRepository
 import com.komgareader.data.repository.RoomSettingsRepository
@@ -23,6 +24,7 @@ import com.komgareader.domain.repository.ColorProfileRepository
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.NovelProgressRepository
 import com.komgareader.domain.repository.ReadProgressRepository
+import com.komgareader.domain.repository.SeriesAutoTypeRepository
 import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -75,6 +77,10 @@ object TestDataModule {
     @Provides @Singleton
     fun seriesOverrideRepository(db: AppDatabase): SeriesOverrideRepository =
         RoomSeriesOverrideRepository(db.seriesOverrideDao())
+
+    @Provides @Singleton
+    fun seriesAutoTypeRepository(db: AppDatabase): SeriesAutoTypeRepository =
+        RoomSeriesAutoTypeRepository(db.seriesAutoTypeDao())
 
     @Provides @Singleton
     fun readProgressRepository(db: AppDatabase): ReadProgressRepository =

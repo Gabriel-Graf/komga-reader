@@ -64,7 +64,7 @@ class PluginHost(private val context: Context) {
      */
     fun discoverDataPluginInfos(category: PluginCategory): List<DataPluginInfo> =
         scanDataPluginManifests(category)
-            .map { s -> DataPluginInfo(s.packageName, s.category, s.abi, s.assetName, s.label) }
+            .map { s -> DataPluginInfo(s.packageName, s.category, s.abi, s.assetName, s.label, s.configAssetName) }
 
     private data class ScannedDataPlugin(
         val packageName: String,
@@ -76,6 +76,8 @@ class PluginHost(private val context: Context) {
         val license: String = "",
         /** Android versionCode of the plugin APK; 0 when unavailable. */
         val versionCode: Long = 0,
+        /** Asset-Name des optionalen Config-Schemas (DATA_CONFIG), null wenn nicht deklariert. */
+        val configAssetName: String? = null,
     )
 
     /**
@@ -101,7 +103,8 @@ class PluginHost(private val context: Context) {
                 ?: pkg.packageName
             val license = meta.getString(PluginManifestKeys.LICENSE)?.trim().orEmpty()
             @Suppress("DEPRECATION") val versionCode = pkg.versionCode.toLong()
-            ScannedDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, license, versionCode)
+            val configAssetName = meta.getString(PluginManifestKeys.DATA_CONFIG)?.trim()?.ifBlank { null }
+            ScannedDataPlugin(pkg.packageName, resolvedCategory, abi, assetName, label, license, versionCode, configAssetName)
         }
     }
 
@@ -115,6 +118,20 @@ class PluginHost(private val context: Context) {
         return runCatching {
             context.createPackageContext(info.packageName, 0)
                 .assets.open(info.assetName).use { it.readBytes() }
+        }.getOrNull()
+    }
+
+    /**
+     * Liest das optionale Config-Schema-Asset (DATA_CONFIG) des installierten data-only Plugins
+     * [packageName] als JSON-String — resource-only via `createPackageContext(pkg, 0)`, KEIN Code.
+     * null, wenn das Plugin kein DATA_CONFIG deklariert oder das Asset nicht lesbar ist.
+     */
+    fun dataPluginConfigJson(packageName: String): String? {
+        val info = discoverDataPluginInfos(PluginCategory.PANEL_MODEL)
+            .firstOrNull { it.packageName == packageName } ?: return null
+        val asset = info.configAssetName ?: return null
+        return runCatching {
+            context.createPackageContext(packageName, 0).assets.open(asset).bufferedReader().use { it.readText() }
         }.getOrNull()
     }
 

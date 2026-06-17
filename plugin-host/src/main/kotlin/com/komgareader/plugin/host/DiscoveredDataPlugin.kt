@@ -34,4 +34,6 @@ data class DataPluginInfo(
     val abiVersion: Int,
     val assetName: String,
     val displayName: String,
+    /** Asset-Name des optionalen Config-Schemas (DATA_CONFIG), null wenn das Plugin keins deklariert. */
+    val configAssetName: String? = null,
 )

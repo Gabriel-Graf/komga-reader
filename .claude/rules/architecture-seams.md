@@ -508,13 +508,32 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   implementiert **`Viewer`** statt einer Parallel-Linie. **Kein `refreshScheduler`** im `Viewer`
   (seit 2026-06-13 entfernt — E-Ink-Refresh läuft jetzt über den kontext-basierten
   `EinkContextController`-Pfad, nicht über die Viewer-Naht).
-- **Reader-Lesepfad: streamen vs. whole-file (Ist, aktualisiert 2026-06-17):** `ReaderViewModel.loadBook`
-  wählt **quellen-agnostisch**: liegt ein lokaler Download vor → `documentFactory.open(bytes)` (MuPDF,
-  `ReaderContent.Rendered`); sonst `source.pages(bookId)`. Ist `pages()` **leer** (Quelle ohne seitenweises
-  Streaming — `LocalSource` für PDF/CBR, OPDS **ohne** PSE), wird whole-file gelesen (`source.downloadFile(bookId)`
-  → `documentFactory.open` → `Rendered`) statt einer leeren `Streamed`-Liste. Nur nicht-leeres `pages()` geht
-  den Coil-`openPage`-Streaming-Pfad (`Streamed`). Diese eine Verzweigung ist **quellen-agnostisch** (sie nennt
-  keinen Quellentyp).
+- **Reader-Lesepfad: vereinheitlichtes Coil-Page-Model (Ist, aktualisiert 2026-06-17):**
+  `ReaderViewModel.loadBook` produziert **einen** Content-Typ `ReaderContent.Pages(pages:
+  List<ReaderPageImage>, initialPage)` für beide Quellen-Arten — streamen **und** whole-file. Das
+  Page-Model `ReaderPageImage` (`app/data/coil`, sealed) hat zwei Spielarten: **`SourceImage`**
+  (gestreamt über die Quellen-Naht → Coil-`SourcePageFetcher` → `openPage`; Komga/Kavita/OPDS-PSE)
+  und **`RenderedPageImage`** (whole-file: lokaler Download, lokale PDF/CBR, OPDS ohne PSE — von
+  MuPDF gerendert). Coil löst jede Spielart über ihre eigene registrierte `Fetcher.Factory` (per
+  konkretem Typ) auf, sodass ein Reader beide über denselben `ImageRequest.data(page)`-Aufruf zeigt.
+  **Wahl quellen-agnostisch:** liegt ein lokaler Download vor → whole-file; sonst `source.pages(bookId)`
+  — ist das **leer** (kein seitenweises Streaming), ebenfalls whole-file; nur nicht-leeres `pages()` geht
+  den Stream-Pfad. **Whole-file rendert der `@Singleton RenderedPageStore`** (`app/data`, hängt nur am
+  `DocumentFactory`-Interface von Naht B): öffnet das Dokument **einmal pro Buch** (Ein-Doc-Cache,
+  `Mutex`-serialisiert weil MuPDF nicht thread-safe + Coil mehrere Seiten parallel prefetcht), liefert
+  `prepare()` (Seitenzahl) + `render()` (Seite→Bitmap); Bytes seam-treu (lokaler Download via
+  `LocalBookBytes`, sonst `source.downloadFile`). Der `RenderedPageFetcher` (Coil) gibt die gerenderte
+  Seite als `DrawableResult` zurück (kein Re-Encode) — Panel-Detektor (`ComicPageLoader`) **und**
+  `AsyncImage` konsumieren sie wie eine Stream-Seite. **Folge — der eigentliche Fix:** der Reader-Host
+  dispatcht `ReaderContent.Pages` über `when(ViewerMode)` auf paged/comic/webtoon **auch für
+  whole-file/heruntergeladene Werke** — ein lokaler Comic/Webtoon öffnet jetzt im aufgelösten Viewer
+  statt immer paged. Der frühere `ReaderContent.Rendered` + der separate `EpubReaderScreen` (nur paged,
+  Mode ignoriert) sind **entfernt**; `renderEpubPage`/das Doc-Handle im VM ebenso (Rendering liegt nun
+  im `RenderedPageStore`, `release()` am Reader-Ende über den App-Scope). **Verifikation:** `:app`
+  compile + `:app:testDebugUnitTest` (inkl. `ReaderViewModelTest` rendered→`Pages`-Pfad,
+  `ReaderFilterCoverageTest`) + androidTest-Compile + `assembleDebug` grün. **Runtime gerätegebunden
+  (Soll):** MuPDF-Render + Panel-Detektion auf gerenderten Seiten sind arm64-crengine/MuPDF — der
+  Comic-/Webtoon-Modus für whole-file/heruntergeladene Werke ist erst auf echter Boox final verifiziert.
   - **OPDS-PSE (Ist, 2026-06-17):** `OpdsSource` liefert jetzt für PSE-fähige Einträge (OPDS Page Streaming
     Extension: `pse:count` + `{pageNumber}`-Vorlage, NS `http://vaemendis.net/opds-pse/ns`) nicht-leere
     `pages()` und streamt einzelne Seiten über `openPage` — **derselbe `Streamed`-Pfad wie Komga, kein
@@ -704,8 +723,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
     **abgeleiteten** `chromeVisible: Boolean` + `onToggleChrome: () -> Unit` statt des `Viewer`. So bleiben
     Refresh-Scheduler + Engine-Navigation (Naht B) vollständig aus der austauschbaren Surface — ein Chrome-Pack
     kann sie nicht berühren. `ReaderScaffold(chrome, …)` bleibt ein **dünner Host-Wrapper** (collectAsState +
-    Surface bauen + `LocalResolvedSlots.current.readerChrome(state)`); **die fünf Reader-Call-Sites bleiben
-    unverändert** (PagedReaderScreen/WebtoonReaderScreen/ComicReaderScreen/NovelReaderScreen/EpubReaderScreen).
+    Surface bauen + `LocalResolvedSlots.current.readerChrome(state)`); **die vier Reader-Call-Sites bleiben
+    unverändert** (PagedReaderScreen/WebtoonReaderScreen/ComicReaderScreen/NovelReaderScreen — `EpubReaderScreen`
+    ist mit dem vereinheitlichten Page-Model entfallen; whole-file läuft jetzt über `PagedReaderScreen`/den
+    Mode-Dispatch, s. „Reader-Lesepfad").
     `DefaultReaderScaffold(state)` ist der verbatim extrahierte Onyx-Renderer; der innere Overlay-Aufruf bleibt
     über die `overlay`-Region (Komposition). Der E-Ink-Scrim (`readerOverlayScrim`) + die Animation-Gating-Pfade
     bleiben host-erzwungen. Reader-Engines / `Viewer.kt` / die `ReaderChrome.kt`-Helfer

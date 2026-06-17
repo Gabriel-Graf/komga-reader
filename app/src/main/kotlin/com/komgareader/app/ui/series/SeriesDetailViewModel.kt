@@ -128,8 +128,16 @@ class SeriesDetailViewModel @Inject constructor(
     /** Optimistischer manueller Typ (Box, da `null` ein gültiger Wert „Auto" ist). */
     private val _typeOverride = MutableStateFlow<TypeOverride?>(null)
 
+    /**
+     * Bumped once background auto-detection persists a verdict, to re-run [baseState] so the freshly
+     * detected type drives BOTH the chip and the per-book viewer modes immediately — without leaving
+     * + re-entering the screen. (Detection writes to a separate table that [servers] config never
+     * re-emits, so without this trigger the first open would stay paged until the next visit.)
+     */
+    private val _autoRefresh = MutableStateFlow(0)
+
     private val baseState: StateFlow<SeriesDetailUiState> =
-        servers.config.flatMapLatest { config ->
+        combine(servers.config, _autoRefresh) { config, _ -> config }.flatMapLatest { config ->
             flow {
                 emit(SeriesDetailUiState.Loading)
                 val source = active.get(sourceId)
@@ -164,10 +172,12 @@ class SeriesDetailViewModel @Inject constructor(
                                     resolveViewerType(seriesForResolve, book, effectiveType, autoType),
                                 ).name
                             }
-                            // Detect off the read path; result lands on next open via autoTypeRepository.
+                            // Detect off the read path; when it lands a verdict, bump _autoRefresh so
+                            // baseState re-runs and the new type drives the chip + viewer modes now.
                             if (autoType == null) {
                                 viewModelScope.launch {
-                                    runCatching { detector.detectIfNeeded(source, seriesId, books) }
+                                    val verdict = runCatching { detector.detectIfNeeded(source, seriesId, books) }.getOrNull()
+                                    if (verdict != null) _autoRefresh.update { it + 1 }
                                 }
                             }
                             SeriesDetailUiState.Content(
@@ -213,8 +223,12 @@ class SeriesDetailViewModel @Inject constructor(
                 content = content.copy(
                     manualContentType = manual,
                     effectiveContentType = effective,
+                    // Auto-Vorschlag mitführen, sonst fiele die Stufe-5-Auflösung nach einem manuellen
+                    // setType auf den Format-Default (paged) zurück, obwohl effective null bleibt.
                     viewerModes = content.books.associate { book ->
-                        book.remoteId to mapViewerMode(resolveViewerType(series, book, effective)).name
+                        book.remoteId to mapViewerMode(
+                            resolveViewerType(series, book, effective, content.autoContentType),
+                        ).name
                     },
                 )
             }

@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import com.komgareader.domain.model.Book
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.ContentSignals
+import com.komgareader.domain.model.ContentType
 import com.komgareader.domain.model.PageSample
 import com.komgareader.domain.repository.SeriesAutoTypeRepository
 import com.komgareader.domain.source.BrowsableSource
@@ -27,12 +28,19 @@ class ContentTypeDetector @Inject constructor(
 ) {
     private val suggest = SuggestContentType()
 
-    suspend fun detectIfNeeded(source: BrowsableSource, seriesRemoteId: String, books: List<Book>) {
-        if (autoTypes.detectorVersion(source.id, seriesRemoteId) == DETECTOR_VERSION) return
-        val book = books.firstOrNull { it.format.isImageArchive() } ?: return
-        val signals = runCatching { sample(source, book) }.getOrNull() ?: return
+    /**
+     * Samples + persists the suggestion if not already done at the current version. Returns the
+     * persisted verdict (non-null) so the caller can refresh its viewer-type resolution as soon as
+     * detection lands — `null` means nothing actionable changed (already detected, no image archive,
+     * sampling failed, or an ambiguous verdict that produces no suggestion).
+     */
+    suspend fun detectIfNeeded(source: BrowsableSource, seriesRemoteId: String, books: List<Book>): ContentType? {
+        if (autoTypes.detectorVersion(source.id, seriesRemoteId) == DETECTOR_VERSION) return null
+        val book = books.firstOrNull { it.format.isImageArchive() } ?: return null
+        val signals = runCatching { sample(source, book) }.getOrNull() ?: return null
         val verdict = suggest(signals)
         autoTypes.set(source.id, seriesRemoteId, verdict, DETECTOR_VERSION)
+        return verdict
     }
 
     private suspend fun sample(source: BrowsableSource, book: Book): ContentSignals = withContext(Dispatchers.IO) {

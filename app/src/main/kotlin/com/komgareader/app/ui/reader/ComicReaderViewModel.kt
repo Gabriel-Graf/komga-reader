@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
-import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.data.coil.ReaderPageImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.repository.SettingsRepository
@@ -62,13 +62,13 @@ class ComicReaderViewModel @Inject constructor(
         settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private var pageCount: Int = 0
-    private var pages: List<SourceImage> = emptyList()
+    private var pages: List<ReaderPageImage> = emptyList()
 
     init {
         collectButtonEvents()
     }
 
-    fun init(pageImages: List<SourceImage>, startPage: Int) {
+    fun init(pageImages: List<ReaderPageImage>, startPage: Int) {
         if (pageImages.isEmpty()) {
             pages = emptyList(); pageCount = 0
             _uiState.value = ComicUiState()

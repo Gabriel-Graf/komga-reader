@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.data.coil.ReaderPageImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
@@ -53,7 +53,7 @@ private const val FRAME_OVERLAP = 0.30f
  */
 @Composable
 fun WebtoonReaderScreen(
-    pages: List<SourceImage>,
+    pages: List<ReaderPageImage>,
     initialPage: Int,
     readerKind: ReaderKind,
     bookRemoteId: String,
@@ -136,7 +136,7 @@ fun WebtoonReaderScreen(
         ) {
             itemsIndexed(
                 pages,
-                key = { _, img -> "${img.bookRemoteId}-${img.pageNumber}" },
+                key = { _, img -> "${img.bookRemoteId}-${img.pageKey}" },
             ) { index, pageImage ->
                 val request = remember(pageImage) {
                     ImageRequest.Builder(ctx)

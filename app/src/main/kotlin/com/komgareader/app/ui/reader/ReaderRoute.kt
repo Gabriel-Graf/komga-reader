@@ -85,20 +85,7 @@ fun ReaderRoute(
                 onSettings = onSettings,
             )
         }
-        is ReaderContent.Rendered -> {
-            EpubReaderScreen(
-                pageCount = c.pageCount,
-                initialPage = c.initialPage,
-                readerKind = ReaderKind.PAGED,
-                bookRemoteId = viewModel.bookRemoteId,
-                sourceId = viewModel.sourceId,
-                onBack = onBack,
-                onHome = onHome,
-                onSettings = onSettings,
-                viewModel = viewModel,
-            )
-        }
-        is ReaderContent.Streamed -> {
+        is ReaderContent.Pages -> {
             when (mode) {
                 ViewerMode.PAGED -> PagedReaderScreen(
                     pages = c.pages,

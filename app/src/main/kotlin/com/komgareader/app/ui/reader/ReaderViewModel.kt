@@ -1,30 +1,30 @@
 package com.komgareader.app.ui.reader
 
-import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.data.RenderedPageStore
 import com.komgareader.app.data.ScreenSaverManager
+import com.komgareader.app.di.ApplicationScope
+import com.komgareader.app.data.coil.RenderedPageImage
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.ErrorKind
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
-import com.komgareader.data.download.LocalBookBytes
 import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
 import com.komgareader.domain.model.ScreenSaverMode
 import com.komgareader.domain.reader.WebtoonChapter
-import com.komgareader.domain.render.Document
-import com.komgareader.domain.render.DocumentFactory
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SyncingSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,8 +37,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -53,10 +51,10 @@ class ReaderViewModel @Inject constructor(
     private val active: ActiveSource,
     private val bus: HardwareButtonBus,
     private val downloadRepository: DownloadRepository,
-    private val localBookBytes: LocalBookBytes,
-    private val documentFactory: DocumentFactory,
+    private val renderedPages: RenderedPageStore,
     private val settings: SettingsRepository,
     private val screenSaver: ScreenSaverManager,
+    @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel(), Viewer {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -114,11 +112,6 @@ class ReaderViewModel @Inject constructor(
     private val _frameStep = MutableSharedFlow<Int>(extraBufferCapacity = 8)
     val frameStep: SharedFlow<Int> = _frameStep.asSharedFlow()
 
-    // MuPDF-Dokument (EPUB-Stream oder lokaler Download)
-    private var document: Document? = null
-    private val renderCache = mutableMapOf<Int, Bitmap>()
-    private val renderMutex = Mutex()
-
     /**
      * Schaltet den **Anzeige**-Modus paged⟷webtoon (bzw. comic⟷webtoon) auf demselben bereits
      * geladenen [ReaderContent] um — kein Neuladen, nur ein anderes Layout über dieselbe
@@ -163,25 +156,11 @@ class ReaderViewModel @Inject constructor(
                 return@launch
             }
 
-            // Zuerst prüfen ob lokal vorhanden — außer wenn forceStream gesetzt ist
-            if (!forceStream) {
-                val localDownload = downloadRepository.get(bookId)
-                if (localDownload != null) {
-                    val bytes = withContext(Dispatchers.IO) { localBookBytes.bytesOf(localDownload) }
-                    val ext = ".${localDownload.format.lowercase()}"
-                    val doc = withContext(Dispatchers.IO) { documentFactory.open(bytes, ext) }
-                    document = doc
-                    val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
-                    // Auch beim lokalen Download auf der letzten Seite fortsetzen:
-                    // Server-Progress best-effort holen (offline → Seite 0).
-                    val startPage = runCatching {
-                        (active.get(routeSourceId) as? SyncingSource)?.pullProgress(bookId)
-                            ?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
-                    }.getOrNull() ?: 0
-                    _currentPage.value = startPage
-                    _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
-                    return@launch
-                }
+            // Zuerst prüfen ob lokal vorhanden — außer wenn forceStream gesetzt ist.
+            // Lokaler Download = whole-file → MuPDF-Render, unabhängig vom Modus.
+            if (!forceStream && downloadRepository.get(bookId) != null) {
+                loadRendered(active.get(routeSourceId))
+                return@launch
             }
 
             // Kein lokaler Download (oder forceStream) → Stream über die Quelle dieses Werks.
@@ -196,25 +175,16 @@ class ReaderViewModel @Inject constructor(
             } else {
                 val pages = source.pages(bookId)
                 if (pages.isEmpty()) {
-                    // Source cannot stream pages (OPDS, LocalSource PDF/CBR) → render whole file via MuPDF.
-                    val bytes = withContext(Dispatchers.IO) { source.downloadFile(bookId) }
-                    val ext = ".${format.name.lowercase()}"
-                    val doc = withContext(Dispatchers.IO) { documentFactory.open(bytes, ext) }
-                    document = doc
-                    val pageCount = withContext(Dispatchers.IO) { doc.pageCount() }
-                    val startPage = runCatching {
-                        (source as? SyncingSource)?.pullProgress(bookId)
-                            ?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
-                    }.getOrNull() ?: 0
-                    _currentPage.value = startPage
-                    _content.value = ReaderContent.Rendered(pageCount = pageCount, initialPage = startPage)
+                    // Source cannot stream pages (OPDS without PSE, LocalSource PDF/CBR)
+                    // → render whole file via MuPDF.
+                    loadRendered(source)
                 } else {
                     val startPage = runCatching { (source as? SyncingSource)?.pullProgress(bookId) }
                         .getOrNull()
                         ?.let { progress -> (progress.page - 1).coerceIn(0, pages.size - 1) }
                         ?: 0
                     _currentPage.value = startPage
-                    _content.value = ReaderContent.Streamed(
+                    _content.value = ReaderContent.Pages(
                         pages = pages.map { SourceImage(source.id, bookId, it.pageNumber) },
                         initialPage = startPage,
                     )
@@ -223,6 +193,26 @@ class ReaderViewModel @Inject constructor(
         }.onFailure { e ->
             _content.value = ReaderContent.Error(uiErrorOf(e))
         }
+    }
+
+    /**
+     * Whole-file path (downloaded book, local PDF/CBR, OPDS without PSE): MuPDF renders each page
+     * via the shared [RenderedPageStore], exposed as a list of [RenderedPageImage] so the reader
+     * host can dispatch paged/comic/webtoon on the resolved [ViewerMode] — the same as a streamed
+     * book. [source] may be null for a purely local/offline download (progress then starts at 0).
+     */
+    private suspend fun loadRendered(source: BrowsableSource?) {
+        val ext = ".${format.name.lowercase()}"
+        val pageCount = renderedPages.prepare(routeSourceId, bookId, ext)
+        val startPage = runCatching {
+            (source as? SyncingSource)?.pullProgress(bookId)
+                ?.let { (it.page - 1).coerceIn(0, pageCount - 1) }
+        }.getOrNull() ?: 0
+        _currentPage.value = startPage
+        _content.value = ReaderContent.Pages(
+            pages = (0 until pageCount).map { RenderedPageImage(routeSourceId, bookId, it, ext) },
+            initialPage = startPage,
+        )
     }
 
     /**
@@ -273,9 +263,8 @@ class ReaderViewModel @Inject constructor(
             }
             val current = _currentPage.value
             val pageCount = when (val c = _content.value) {
-                is ReaderContent.Streamed -> c.pages.size
+                is ReaderContent.Pages -> c.pages.size
                 is ReaderContent.Webtoon -> c.pages.size
-                is ReaderContent.Rendered -> c.pageCount
                 else -> return@collect
             }
             val next = when (event.button) {
@@ -285,15 +274,6 @@ class ReaderViewModel @Inject constructor(
             if (next != current) {
                 _currentPage.value = next
                 _requestedPage.value = next
-            }
-        }
-    }
-
-    suspend fun renderEpubPage(index: Int): Bitmap = withContext(Dispatchers.IO) {
-        renderMutex.withLock {
-            renderCache.getOrPut(index) {
-                val rp = document!!.renderPage(index, zoom = 2f, rotation = 0)
-                Bitmap.createBitmap(rp.pixels, rp.width, rp.height, Bitmap.Config.ARGB_8888)
             }
         }
     }
@@ -310,8 +290,7 @@ class ReaderViewModel @Inject constructor(
                 val chapterPages = c.strip.chapters[pos.chapterIndex].pageCount
                 pushProgress(pos.bookRemoteId, page = pos.pageInChapter + 1, totalPages = chapterPages)
             }
-            is ReaderContent.Streamed -> pushProgress(bookId, page = index + 1, totalPages = c.pages.size)
-            is ReaderContent.Rendered -> pushProgress(bookId, page = index + 1, totalPages = c.pageCount)
+            is ReaderContent.Pages -> pushProgress(bookId, page = index + 1, totalPages = c.pages.size)
             else -> Unit
         }
     }
@@ -347,7 +326,9 @@ class ReaderViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        document?.close()
-        renderCache.clear()
+        // Whole-file render path: free the cached MuPDF document for this book. Runs on the app
+        // scope (not viewModelScope, which is already cancelled here); the store also self-evicts
+        // when a different book is opened, so this is just timely cleanup.
+        appScope.launch { renderedPages.release(routeSourceId, bookId) }
     }
 }

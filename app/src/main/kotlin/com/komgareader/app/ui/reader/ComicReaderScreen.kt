@@ -26,7 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.data.coil.ReaderPageImage
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
 import coil.request.ImageRequest
 import com.komgareader.app.i18n.LocalStrings
@@ -51,7 +51,7 @@ import com.panela.comiccutter.PanelGeometry
  */
 @Composable
 fun ComicReaderScreen(
-    pages: List<SourceImage>,
+    pages: List<ReaderPageImage>,
     initialPage: Int,
     readerKind: ReaderKind,
     bookRemoteId: String,

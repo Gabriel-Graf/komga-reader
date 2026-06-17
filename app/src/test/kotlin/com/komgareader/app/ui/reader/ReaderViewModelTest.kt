@@ -3,9 +3,11 @@ package com.komgareader.app.ui.reader
 import androidx.lifecycle.SavedStateHandle
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.KomgaSourceProvider
+import com.komgareader.app.data.RenderedPageStore
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.plugin.host.PluginHost
 import io.mockk.mockk
+import com.komgareader.app.data.coil.RenderedPageImage
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.domain.eink.ButtonEvent
@@ -33,6 +35,7 @@ import com.komgareader.domain.source.SourceFilter
 import com.komgareader.domain.source.SourceManager
 import com.komgareader.domain.source.SyncingSource
 import com.komgareader.domain.source.buildPageRefs
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -199,18 +202,26 @@ class ReaderViewModelTest {
         localBytes: ByteArray = ByteArray(0),
         documentFactory: DocumentFactory = FakeDocumentFactory(FakeDocument(0)),
         bus: HardwareButtonBus = HardwareButtonBus(),
-    ): ReaderViewModel = ReaderViewModel(
-        savedStateHandle = SavedStateHandle(
-            mapOf("bookId" to "b1", "sourceId" to sourceId, "format" to "CBZ", "viewerMode" to mode, "stream" to stream),
-        ),
-        active = active,
-        bus = bus,
-        downloadRepository = FakeDownloads(downloadBook),
-        localBookBytes = FakeLocalBookBytes(localBytes),
-        documentFactory = documentFactory,
-        settings = FakeSettings(),
-        screenSaver = mockk(relaxed = true),
-    )
+    ): ReaderViewModel {
+        val downloads = FakeDownloads(downloadBook)
+        return ReaderViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf("bookId" to "b1", "sourceId" to sourceId, "format" to "CBZ", "viewerMode" to mode, "stream" to stream),
+            ),
+            active = active,
+            bus = bus,
+            downloadRepository = downloads,
+            renderedPages = RenderedPageStore(
+                documentFactory = documentFactory,
+                downloads = downloads,
+                localBookBytes = FakeLocalBookBytes(localBytes),
+                sources = SourceManager(),
+            ),
+            settings = FakeSettings(),
+            screenSaver = mockk(relaxed = true),
+            appScope = CoroutineScope(Dispatchers.Unconfined),
+        )
+    }
 
     private fun downloadedBook() = DownloadedBook(
         bookRemoteId = "b1", sourceId = 42L, seriesRemoteId = "s1",
@@ -223,7 +234,7 @@ class ReaderViewModelTest {
         try {
             val vm = readerVm(FakeSource(pageCount = 5), mode = "PAGED")
 
-            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Streamed
+            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Pages
             assertEquals(5, content.pages.size)
             assertEquals(SourceImage(sourceId = 42L, bookRemoteId = "b1", pageNumber = 1), content.pages.first())
             assertEquals(SourceImage(sourceId = 42L, bookRemoteId = "b1", pageNumber = 5), content.pages.last())
@@ -264,7 +275,7 @@ class ReaderViewModelTest {
                 active = FakeActiveSource(listOf(first, second)),
             )
 
-            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Streamed
+            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Pages
             assertEquals(2, content.pages.size)
             assertEquals(SourceImage(sourceId = 99L, bookRemoteId = "b1", pageNumber = 1), content.pages.first())
         } finally {
@@ -273,7 +284,7 @@ class ReaderViewModelTest {
     }
 
     @Test
-    fun `rendered-pfad oeffnet lokalen download ueber injizierte DocumentFactory`() = runTest {
+    fun `rendered-pfad oeffnet lokalen download als RenderedPageImage-seiten ueber den RenderedPageStore`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         try {
             val factory = FakeDocumentFactory(FakeDocument(pages = 3))
@@ -286,8 +297,14 @@ class ReaderViewModelTest {
                 documentFactory = factory,
             )
 
-            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Rendered
-            assertEquals(3, content.pageCount)
+            // Whole-file download → one RenderedPageImage per page (0-based), opened via the
+            // injected DocumentFactory. The reader then dispatches paged/comic/webtoon on the mode.
+            val content = vm.content.first { it !is ReaderContent.Loading } as ReaderContent.Pages
+            assertEquals(3, content.pages.size)
+            assertEquals(
+                RenderedPageImage(sourceId = 42L, bookRemoteId = "b1", pageIndex = 0, ext = ".cbz"),
+                content.pages.first(),
+            )
             assertEquals("BYTES", factory.openedWith)
         } finally {
             Dispatchers.resetMain()

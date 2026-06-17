@@ -62,4 +62,65 @@ class AppUpdateParsingTest {
     @Test fun nullWhenNoTag() = assertNull(parseLatestRelease("""{ "message": "Not Found" }"""))
 
     @Test fun nullOnGarbage() = assertNull(parseLatestRelease("not json"))
+
+    // --- parseReleaseList -----------------------------------------------------
+
+    @Test fun parsesReleaseArrayNewestFirst() {
+        val json = """
+            [
+              { "tag_name": "v0.3.21", "body": "C", "assets": [] },
+              { "tag_name": "v0.3.20", "body": "B", "assets": [] },
+              { "tag_name": "v0.3.19", "body": "A", "assets": [] }
+            ]
+        """.trimIndent()
+        val list = parseReleaseList(json)
+        assertEquals(listOf("0.3.21", "0.3.20", "0.3.19"), list.map { it.versionName })
+    }
+
+    @Test fun emptyListOnGarbage() = assertTrue(parseReleaseList("not json").isEmpty())
+
+    @Test fun skipsTaglessEntryKeepsRest() {
+        // A tag-less entry mid-list is skipped (mapNotNull), the valid ones survive — no crash.
+        val json = """
+            [
+              { "tag_name": "v0.3.21", "body": "C", "assets": [] },
+              { "message": "no tag here" },
+              { "tag_name": "v0.3.20", "body": "B", "assets": [] }
+            ]
+        """.trimIndent()
+        assertEquals(listOf("0.3.21", "0.3.20"), parseReleaseList(json).map { it.versionName })
+    }
+
+    // --- pendingReleases ------------------------------------------------------
+
+    @Test fun pendingKeepsOnlyNewerThanCurrentNewestFirst() {
+        val all = listOf(
+            ReleaseInfo("v0.3.20", "0.3.20", "", null, "B"),
+            ReleaseInfo("v0.3.21", "0.3.21", "", null, "C"),
+            ReleaseInfo("v0.3.19", "0.3.19", "", null, "A"),
+        )
+        // On 0.3.19: 0.3.20 and 0.3.21 are pending, sorted newest first; 0.3.19 itself excluded.
+        assertEquals(listOf("0.3.21", "0.3.20"), pendingReleases(all, "0.3.19").map { it.versionName })
+    }
+
+    @Test fun pendingEmptyWhenUpToDate() {
+        val all = listOf(ReleaseInfo("v0.3.21", "0.3.21", "", null, "C"))
+        assertTrue(pendingReleases(all, "0.3.21").isEmpty())
+    }
+
+    // --- combinedReleaseNotes -------------------------------------------------
+
+    @Test fun combinedNotesJoinsTaggedBlocksAndSkipsEmpty() {
+        val pending = listOf(
+            ReleaseInfo("v0.3.21", "0.3.21", "", null, "C"),
+            ReleaseInfo("v0.3.20", "0.3.20", "", null, ""),   // no notes → skipped
+            ReleaseInfo("v0.3.19b", "0.3.19b", "", null, "A"),
+        )
+        assertEquals("v0.3.21\nC\n\nv0.3.19b\nA", combinedReleaseNotes(pending))
+    }
+
+    @Test fun combinedNotesTrimsBodyWhitespace() {
+        val pending = listOf(ReleaseInfo("v0.3.21", "0.3.21", "", null, "  C  \n"))
+        assertEquals("v0.3.21\nC", combinedReleaseNotes(pending))
+    }
 }

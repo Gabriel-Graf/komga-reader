@@ -24,4 +24,6 @@ object AppUpdateDefaults {
     fun latestReleaseApi(slug: String = REPO_SLUG) = "https://api.github.com/repos/$slug/releases/latest"
     fun releaseByTagApi(tag: String, slug: String = REPO_SLUG) =
         "https://api.github.com/repos/$slug/releases/tags/$tag"
+    /** List of recent releases (newest first), for the "you are N versions behind" changelog. */
+    fun releasesApi(slug: String = REPO_SLUG) = "https://api.github.com/repos/$slug/releases?per_page=30"
 }

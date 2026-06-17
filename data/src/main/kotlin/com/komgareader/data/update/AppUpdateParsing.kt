@@ -1,5 +1,6 @@
 package com.komgareader.data.update
 
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -29,10 +30,17 @@ private fun parseVersion(v: String): List<Int> =
  * Parses the GitHub `/releases/latest` response into a [ReleaseInfo]; null on a missing tag or
  * invalid JSON (the caller treats that as "no update info"). Picks the first `.apk` asset.
  */
-fun parseLatestRelease(json: String): ReleaseInfo? = runCatching {
-    val o = JSONObject(json)
+fun parseLatestRelease(json: String): ReleaseInfo? =
+    runCatching { parseRelease(JSONObject(json)) }.getOrNull()
+
+/** Parses a GitHub `/releases` array (newest first) into [ReleaseInfo]s; empty on invalid JSON. */
+fun parseReleaseList(json: String): List<ReleaseInfo> = runCatching {
+    val arr = JSONArray(json)
+    (0 until arr.length()).mapNotNull { i -> arr.optJSONObject(i)?.let(::parseRelease) }
+}.getOrDefault(emptyList())
+
+private fun parseRelease(o: JSONObject): ReleaseInfo? {
     val tag = o.optString("tag_name").ifBlank { return null }
-    val htmlUrl = o.optString("html_url")
     val assets = o.optJSONArray("assets")
     var apkUrl: String? = null
     if (assets != null) {
@@ -44,11 +52,27 @@ fun parseLatestRelease(json: String): ReleaseInfo? = runCatching {
             }
         }
     }
-    ReleaseInfo(
+    return ReleaseInfo(
         tag = tag,
         versionName = tag.removePrefix("v").removePrefix("V"),
-        htmlUrl = htmlUrl,
+        htmlUrl = o.optString("html_url"),
         apkUrl = apkUrl,
         body = o.optString("body"),
     )
-}.getOrNull()
+}
+
+/**
+ * The releases newer than [currentVersion], newest first — the versions a single install will apply
+ * at once. Pure (sortable view over a fetched list); used for the "N versions behind" changelog.
+ */
+fun pendingReleases(all: List<ReleaseInfo>, currentVersion: String): List<ReleaseInfo> =
+    all.filter { isNewerVersion(it.versionName, currentVersion) }
+        .sortedWith { a, b -> if (isNewerVersion(a.versionName, b.versionName)) -1 else 1 }
+
+/**
+ * Combined release notes for [pending] (already newest-first): each version's tag as a header
+ * followed by its notes, blocks separated by a blank line. Versions without notes are skipped.
+ */
+fun combinedReleaseNotes(pending: List<ReleaseInfo>): String =
+    pending.filter { it.body.isNotBlank() }
+        .joinToString("\n\n") { "${it.tag}\n${it.body.trim()}" }

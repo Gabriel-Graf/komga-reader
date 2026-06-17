@@ -4,7 +4,9 @@ import com.komgareader.app.BuildConfig
 import com.komgareader.data.update.AppUpdateDefaults
 import com.komgareader.data.update.GithubReleaseClient
 import com.komgareader.data.update.ReleaseInfo
+import com.komgareader.data.update.combinedReleaseNotes
 import com.komgareader.data.update.isNewerVersion
+import com.komgareader.data.update.pendingReleases
 import com.komgareader.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,8 +42,23 @@ class AppUpdateController @Inject constructor(
         val release = client.fetchLatest(AppUpdateDefaults.REPO_SLUG)
         _state.value = when {
             release == null -> AppUpdateState.Unknown
-            isNewerVersion(release.versionName, currentVersion) -> AppUpdateState.Available(release)
+            isNewerVersion(release.versionName, currentVersion) -> available(release)
             else -> AppUpdateState.UpToDate
+        }
+    }
+
+    /**
+     * Builds the [AppUpdateState.Available] for [latest], enriched with how many versions the user is
+     * behind and the combined changelog of all of them (one install still applies them all at once —
+     * Android + cumulative Room migrations handle the jump). Falls back to just the latest's notes if
+     * the releases list can't be fetched.
+     */
+    private suspend fun available(latest: ReleaseInfo): AppUpdateState.Available {
+        val pending = pendingReleases(client.fetchReleases(), currentVersion)
+        return if (pending.isEmpty()) {
+            AppUpdateState.Available(latest, pendingCount = 1, combinedNotes = latest.body)
+        } else {
+            AppUpdateState.Available(latest, pendingCount = pending.size, combinedNotes = combinedReleaseNotes(pending))
         }
     }
 

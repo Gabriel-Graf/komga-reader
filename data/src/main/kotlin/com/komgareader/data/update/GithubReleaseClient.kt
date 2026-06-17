@@ -21,6 +21,21 @@ class GithubReleaseClient(private val http: OkHttpClient) {
     suspend fun fetchByTag(tag: String, slug: String = AppUpdateDefaults.REPO_SLUG): ReleaseInfo? =
         fetch(AppUpdateDefaults.releaseByTagApi(tag, slug))
 
+    /** Fetches the recent releases (newest first); empty on error — for the multi-version changelog. */
+    suspend fun fetchReleases(slug: String = AppUpdateDefaults.REPO_SLUG): List<ReleaseInfo> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val req = Request.Builder()
+                    .url(AppUpdateDefaults.releasesApi(slug))
+                    .header("Accept", "application/vnd.github+json")
+                    .header("User-Agent", "komga-reader-app")
+                    .build()
+                http.newCall(req).execute().use { resp ->
+                    if (!resp.isSuccessful) emptyList() else resp.body?.string()?.let(::parseReleaseList).orEmpty()
+                }
+            }.getOrDefault(emptyList())
+        }
+
     private suspend fun fetch(url: String): ReleaseInfo? = withContext(Dispatchers.IO) {
         runCatching {
             val req = Request.Builder()

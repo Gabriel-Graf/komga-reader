@@ -1108,6 +1108,29 @@ private fun UpdateSection(
                     UpdateInstall.NEEDS_PERMISSION -> { Spacer(Modifier.height(8.dp)); UpdateStatusLine(s.aboutUpdateNeedsPermission, query) }
                     null -> Unit
                 }
+                // Multiple versions behind: one download still updates across all of them (Android
+                // applies the version jump, Room migrations run cumulatively). Inform + show the
+                // combined changelog of the skipped versions as text under the button — no modal.
+                if (state.pendingCount > 1) {
+                    Spacer(Modifier.height(8.dp))
+                    UpdateStatusLine(s.aboutUpdateMultiple(state.pendingCount), query)
+                }
+                if (state.combinedNotes.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        s.aboutWhatsNewHeading,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        state.combinedNotes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         } else {
             EinkOutlinedButton(onClick = onCheck, enabled = state != AppUpdateState.Checking) {

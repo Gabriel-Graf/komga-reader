@@ -158,6 +158,8 @@ interface Strings {
     val aboutUpdateFailed: String
     val aboutUpdateNeedsPermission: String
     fun aboutUpdateAvailable(version: String): String
+    fun aboutUpdateMultiple(count: Int): String
+    val aboutWhatsNewHeading: String
     fun aboutWhatsNew(version: String): String
     val updateInstalledNotice: String
     // Bibliothek: Laden/Download (Snackbar + Fehler-Retry)
@@ -598,6 +600,8 @@ object StringsDe : Strings {
     override val aboutUpdateFailed = "Download fehlgeschlagen – erneut versuchen."
     override val aboutUpdateNeedsPermission = "Erlaube „Unbekannte Apps installieren“ und tippe erneut."
     override fun aboutUpdateAvailable(version: String) = "Update verfügbar: $version"
+    override fun aboutUpdateMultiple(count: Int) = "$count Updates werden mit einem Download installiert."
+    override val aboutWhatsNewHeading = "Was ist neu"
     override fun aboutWhatsNew(version: String) = "Was ist neu in $version"
     override val updateInstalledNotice = "Update installiert – zum Öffnen tippen"
     override val retry = "Wiederholen"
@@ -1024,6 +1028,8 @@ object StringsEn : Strings {
     override val aboutUpdateFailed = "Download failed – try again."
     override val aboutUpdateNeedsPermission = "Allow “Install unknown apps” and tap again."
     override fun aboutUpdateAvailable(version: String) = "Update available: $version"
+    override fun aboutUpdateMultiple(count: Int) = "$count updates will be applied with one download."
+    override val aboutWhatsNewHeading = "What's new"
     override fun aboutWhatsNew(version: String) = "What's new in $version"
     override val updateInstalledNotice = "Update installed — tap to open"
     override val retry = "Retry"

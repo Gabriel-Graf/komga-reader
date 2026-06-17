@@ -162,6 +162,9 @@ class MapBackedStrings(
     override val aboutUpdateNeedsPermission: String get() = overrides["aboutUpdateNeedsPermission"] ?: fallback.aboutUpdateNeedsPermission
     override fun aboutUpdateAvailable(version: String): String =
         overrides["aboutUpdateAvailable"]?.replace("{version}", version) ?: fallback.aboutUpdateAvailable(version)
+    override fun aboutUpdateMultiple(count: Int): String =
+        overrides["aboutUpdateMultiple"]?.replace("{count}", count.toString()) ?: fallback.aboutUpdateMultiple(count)
+    override val aboutWhatsNewHeading: String get() = overrides["aboutWhatsNewHeading"] ?: fallback.aboutWhatsNewHeading
     override fun aboutWhatsNew(version: String): String =
         overrides["aboutWhatsNew"]?.replace("{version}", version) ?: fallback.aboutWhatsNew(version)
     override val updateInstalledNotice: String get() = overrides["updateInstalledNotice"] ?: fallback.updateInstalledNotice

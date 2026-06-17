@@ -15,11 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.komgareader.app.ui.components.EinkSliderRow
 import com.komgareader.app.ui.components.EinkTextField
 import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.plugin.ConfigField
 import com.komgareader.plugin.ConfigSchema
 import com.komgareader.plugin.FieldType
+import kotlin.math.roundToInt
 
 /**
  * Gehaltener Zustand eines Plugin-Konfigurations-Formulars — ermöglicht es dem Aufrufer
@@ -54,14 +56,21 @@ class PluginFormState(
 
 /**
  * Erzeugt und merkt sich einen [PluginFormState] für das gegebene [schema].
- * Vorbelegt: gesetzter Default oder leerer String (BOOL-Felder → "false" wenn leer).
+ * Vorbelegt: gesetzter Default oder typ-spezifischer Fallback:
+ * - BOOL   → "false"
+ * - NUMBER → "%.2f".format(min ?: 0.0) — passend zum Slider-Speicherformat, kein Rundungs-Drift
+ * - sonst  → "" (Pflichtfelder → isValid prüft auf Leer-String)
  */
 @Composable
 fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
     val values: SnapshotStateMap<String, String> = remember(schema) {
         schema.fields.map { field ->
             val initial = field.default.ifEmpty {
-                if (field.type == FieldType.BOOL) "false" else ""
+                when (field.type) {
+                    FieldType.BOOL -> "false"
+                    FieldType.NUMBER -> "%.2f".format(field.min ?: 0.0)
+                    else -> ""
+                }
             }
             field.key to initial
         }.toMutableStateMap()
@@ -107,8 +116,9 @@ private fun PluginConfigFields(state: PluginFormState) {
 
 /**
  * Ein einzelnes Konfigurations-Control, je nach [ConfigField.type]:
- * - TEXT/URL → beschriftetes [OutlinedTextField] (URL: URI-Tastatur)
- * - SECRET   → beschriftetes [OutlinedTextField] mit Passwort-Maske
+ * - TEXT/URL → beschriftetes [EinkTextField] (URL: URI-Tastatur)
+ * - SECRET   → beschriftetes [EinkTextField] mit Passwort-Maske
+ * - NUMBER   → diskreter [EinkSliderRow] (E-Ink-sicher: kein Drag/Fling, kein Ghosting)
  * - BOOL     → Label-Zeile mit [EinkToggle] rechts
  *
  * Das Label kommt direkt aus dem Plugin ([ConfigField.label], bereits lokalisiert) —
@@ -138,6 +148,23 @@ private fun PluginConfigField(
             label = field.label,
             isPassword = true,
         )
+        FieldType.NUMBER -> {
+            // Map the floating-point range (min/max/step) onto EinkSliderRow's integer position
+            // space so the control is discrete-only — no continuous drag, no E-Ink ghosting.
+            val min = field.min ?: 0.0
+            val max = field.max ?: 1.0
+            val step = field.step?.takeIf { it > 0.0 } ?: 0.05
+            val stepCount = ((max - min) / step).roundToInt().coerceAtLeast(1)
+            val current = value.toDoubleOrNull()?.coerceIn(min, max) ?: min
+            val position = ((current - min) / step).roundToInt().coerceIn(0, stepCount)
+            EinkSliderRow(
+                label = field.label,
+                valueText = "%.2f".format(current),
+                position = position,
+                stepCount = stepCount,
+                onPosition = { p -> onValueChange("%.2f".format(min + p * step)) },
+            )
+        }
         FieldType.BOOL -> {
             val checked = value == "true"
             Row(
@@ -160,11 +187,5 @@ private fun PluginConfigField(
                 )
             }
         }
-        FieldType.NUMBER -> EinkTextField(
-            value = value,
-            onValueChange = onValueChange,
-            label = field.label,
-            keyboardType = KeyboardType.Decimal,
-        )
     }
 }

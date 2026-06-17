@@ -63,6 +63,8 @@ sealed interface SeriesDetailUiState {
         val effectiveContentType: ContentType? = null,
         /** Manuell gesetzter Typ — preselektiert das Burger-Menü. */
         val manualContentType: ContentType? = null,
+        /** Auto-erkannter Typ (Pixel-Heuristik) — Hero-Chip, wenn kein wirksamer Typ existiert. */
+        val autoContentType: ContentType? = null,
         /** Bibliotheks-Default (Vorrang vor manuell) — für optimistische Neuberechnung. */
         val libraryDefault: ContentType? = null,
         /** Leserichtung der Serie — für optimistische Viewer-Neuberechnung bei Typwechsel. */
@@ -178,6 +180,7 @@ class SeriesDetailViewModel @Inject constructor(
                                 viewerModes = viewerModes,
                                 effectiveContentType = effectiveType,
                                 manualContentType = manualType,
+                                autoContentType = autoType,
                                 libraryDefault = libraryDefault,
                                 readingDirection = seriesForResolve.readingDirection,
                             )

@@ -176,6 +176,7 @@ fun SeriesDetailScreen(
                             seriesStatus = current.seriesStatus,
                             seriesGenres = current.seriesGenres,
                             contentType = current.effectiveContentType,
+                            autoContentType = current.autoContentType,
                             viewerModes = current.viewerModes,
                             localIds = localIds,
                             downloadingIds = downloadingIds,
@@ -277,6 +278,7 @@ private fun SeriesDetailContent(
     seriesStatus: String?,
     seriesGenres: List<String>,
     contentType: ContentType?,
+    autoContentType: ContentType?,
     viewerModes: Map<String, String>,
     localIds: Set<String>,
     downloadingIds: Set<String>,
@@ -356,6 +358,7 @@ private fun SeriesDetailContent(
                 status = seriesStatus,
                 genres = seriesGenres,
                 contentType = contentType,
+                autoContentType = autoContentType,
                 description = description,
                 currentBook = currentBook,
                 allLocal = books.isNotEmpty() && books.all { it.remoteId in localIds },
@@ -463,6 +466,7 @@ private fun SeriesHeroCard(
     status: String?,
     genres: List<String>,
     contentType: ContentType?,
+    autoContentType: ContentType?,
     description: String?,
     currentBook: Book?,
     allLocal: Boolean,
@@ -524,10 +528,10 @@ private fun SeriesHeroCard(
                     Spacer(Modifier.height(8.dp))
                     GenreChips(genres = genres)
                 }
-                // Eigener Typ-Chip unter den Genres: zeigt Bibliotheks- oder manuellen Typ,
-                // sonst „Unbekannt" (fällt beim Lesen auf paginiert zurück).
+                // Typ-Chip unter den Genres: wirksamer (Bibliothek/manuell) Typ; sonst der
+                // auto-erkannte Typ mit „Auto"-Badge; sonst „Unbekannt".
                 Spacer(Modifier.height(8.dp))
-                TypeChip(label = s.localizedContentType(contentType))
+                HeroTypeRow(contentType = contentType, autoContentType = autoContentType)
                 Spacer(Modifier.height(8.dp))
                 TruncatedDescription(
                     text = description ?: s.noDescription,
@@ -651,6 +655,45 @@ private fun TypeChip(label: String) {
             label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.surface,
+            maxLines = 1,
+        )
+    }
+}
+
+/**
+ * Hero type row: the authoritative filled chip when an effective type exists; otherwise the
+ * auto-detected type plus an outlined „Auto" badge (reads as a guess, not a fact); otherwise
+ * the plain „Unbekannt" chip.
+ */
+@Composable
+private fun HeroTypeRow(contentType: ContentType?, autoContentType: ContentType?) {
+    val s = LocalStrings.current
+    when {
+        contentType != null -> TypeChip(label = s.localizedContentType(contentType))
+        autoContentType != null -> Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TypeChip(label = s.localizedContentType(autoContentType))
+            AutoBadge(label = s.tagAuto)
+        }
+        else -> TypeChip(label = s.localizedContentType(null))
+    }
+}
+
+/** Outlined badge marking an auto-detected (heuristic) value — distinct from the filled type chip. */
+@Composable
+private fun AutoBadge(label: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+            .padding(horizontal = 10.dp, vertical = 3.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
         )
     }

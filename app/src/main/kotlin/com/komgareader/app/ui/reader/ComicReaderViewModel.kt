@@ -230,6 +230,7 @@ class ComicReaderViewModel @Inject constructor(
             val dir = settings.misdetectionDir.first()
             if (dir == null) { _captureEvent.emit(false); return@launch }
             val page = _uiState.value.position.page
+            if (pages.isEmpty()) { _captureEvent.emit(false); return@launch }
             val bmp = loader.loadFullBitmap(pages[page])
             if (bmp == null) { _captureEvent.emit(false); return@launch }
             val panels = panelCache[page].orEmpty()

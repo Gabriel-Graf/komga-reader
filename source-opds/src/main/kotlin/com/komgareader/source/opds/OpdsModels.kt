@@ -18,4 +18,9 @@ data class OpdsEntry(
     val acquisitionType: String?,
     val pseCount: Int? = null,
     val pseTemplateHref: String? = null,
+    /**
+     * Href des Navigations-Subsection-Links (hierarchischer Katalog): zeigt von einem
+     * Serien-Eintrag auf dessen Acquisition-Feed (Buch-Ebene). `null` bei Buch-/Flat-Einträgen.
+     */
+    val navigationHref: String? = null,
 )

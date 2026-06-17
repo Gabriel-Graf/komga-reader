@@ -88,6 +88,31 @@ class OpdsFeedParserTest {
     }
 
     @Test
+    fun `parst Navigations-Subsection-Link der Serie`() {
+        val feed = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><title>Attack on Titan</title><id>s-aot</id>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="subsection" href="/opds/v1.2/series/s-aot"/></entry>
+</feed>"""
+        val entries = parser.parse(feed)
+        assertEquals("/opds/v1.2/series/s-aot", entries[0].navigationHref)
+        assertNull(entries[0].acquisitionHref) // Serien-Eintrag, kein Buch
+    }
+
+    @Test
+    fun `erkennt acquisition-open-access-rel als Acquisition`() {
+        // Kavita nutzt `…/acquisition/open-access` statt des blanken `…/acquisition` (Komga).
+        val feed = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><title>Chapter 0</title><id>b-c0</id>
+    <link rel="http://opds-spec.org/acquisition/open-access" href="/dl/c0.cbz" type="application/x-cbz"/></entry>
+</feed>"""
+        val entries = parser.parse(feed)
+        assertEquals("/dl/c0.cbz", entries[0].acquisitionHref)
+        assertNull(entries[0].navigationHref)
+    }
+
+    @Test
     fun `Thumbnail hat Vorrang vor image-Link`() {
         val feed = """<?xml version="1.0"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

@@ -7,7 +7,12 @@ import javax.xml.parsers.DocumentBuilderFactory
 private const val ATOM_NS = "http://www.w3.org/2005/Atom"
 private const val REL_THUMBNAIL = "http://opds-spec.org/image/thumbnail"
 private const val REL_IMAGE = "http://opds-spec.org/image"
-private const val REL_ACQUISITION = "http://opds-spec.org/acquisition"
+// Acquisition-rels gibt es in mehreren Spielarten: das blanke `…/acquisition` (Komga)
+// und `…/acquisition/open-access` (Kavita) u. a. Per Prefix matchen, sonst verfehlt der
+// Parser die Download-Quelle mancher Server.
+private const val REL_ACQUISITION_PREFIX = "http://opds-spec.org/acquisition"
+// Navigations-Subsection: führt von der Serien- zur Buch-Ebene (hierarchischer OPDS-Baum).
+private const val REL_SUBSECTION = "subsection"
 
 // OPDS-PSE (Page Streaming Extension, vaemendis.net): erlaubt seitenweises Streamen
 // statt whole-file-Download. Der Stream-Link trägt eine `{pageNumber}`-Href-Vorlage und
@@ -63,9 +68,14 @@ class OpdsFeedParser {
             ?.getAttribute("href")?.takeIf { it.isNotEmpty() }
         val coverHref = thumbnailHref ?: imageHref
 
-        val acquisitionLink = links.firstOrNull { it.getAttribute("rel") == REL_ACQUISITION }
+        val acquisitionLink = links.firstOrNull { it.getAttribute("rel").startsWith(REL_ACQUISITION_PREFIX) }
         val acquisitionHref = acquisitionLink?.getAttribute("href")?.takeIf { it.isNotEmpty() }
         val acquisitionType = acquisitionLink?.getAttribute("type")?.takeIf { it.isNotEmpty() }
+
+        // Navigations-Link (Subsection): nur relevant, wenn der Eintrag KEIN Buch ist —
+        // er zeigt auf den Acquisition-Feed der Serie (Drill-down im hierarchischen Katalog).
+        val navigationHref = links.firstOrNull { it.getAttribute("rel") == REL_SUBSECTION }
+            ?.getAttribute("href")?.takeIf { it.isNotEmpty() }
 
         val pseLink = links.firstOrNull { it.getAttribute("rel") == REL_PSE_STREAM }
         val pseTemplateHref = pseLink?.getAttribute("href")?.takeIf { it.isNotEmpty() }
@@ -84,6 +94,7 @@ class OpdsFeedParser {
             acquisitionType = acquisitionType,
             pseCount = pseCount,
             pseTemplateHref = pseTemplateHref,
+            navigationHref = navigationHref,
         )
     }
 }

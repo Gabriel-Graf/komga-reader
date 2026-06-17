@@ -33,14 +33,8 @@ class OpdsE2ETest {
     <link rel="http://opds-spec.org/acquisition" href="/dl/mb.epub" type="application/epub+zip"/></entry>
 </feed>""").addHeader("Content-Type", "application/atom+xml"))
 
-        // 2. Feed für downloadFile (books-Lookup)
-        server.enqueue(MockResponse().setBody("""<?xml version="1.0"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-  <entry><title>Vinland Saga 01</title><id>urn:vs:1</id>
-    <link rel="http://opds-spec.org/acquisition" href="/dl/1.cbz" type="application/x-cbz"/></entry>
-</feed>""").addHeader("Content-Type", "application/atom+xml"))
-
-        // 3. Die eigentliche Datei
+        // 2. Die eigentliche Datei — kein zweiter Feed-Abruf nötig: browse hat den
+        //    Eintrag bereits gecacht, downloadFile löst ihn ohne Re-Fetch auf.
         server.enqueue(MockResponse().setBody("CBZ_DATEI_INHALT"))
 
         val source = OpdsSourceFactory.create(
@@ -63,11 +57,9 @@ class OpdsE2ETest {
         val bytes = source.downloadFile(ersteSerie.remoteId)
         assertEquals("CBZ_DATEI_INHALT", bytes.decodeToString())
 
-        // Requests prüfen: erst Feed, dann Feed (nochmals für downloadFile), dann Download
-        val feedRequest1 = server.takeRequest()
-        assertTrue(feedRequest1.path!!.contains("catalog"), "Erster Request: ${feedRequest1.path}")
-        val feedRequest2 = server.takeRequest()
-        assertTrue(feedRequest2.path!!.contains("catalog"), "Zweiter Request: ${feedRequest2.path}")
+        // Requests prüfen: nur Feed (browse) + Download — der Eintrags-Cache spart den Re-Fetch.
+        val feedRequest = server.takeRequest()
+        assertTrue(feedRequest.path!!.contains("catalog"), "Erster Request: ${feedRequest.path}")
         val downloadRequest = server.takeRequest()
         assertTrue(downloadRequest.path!!.endsWith("/dl/1.cbz"), "Download-Pfad: ${downloadRequest.path}")
     }

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImagePainter
+import coil.imageLoader
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.i18n.LocalStrings
 import com.komgareader.app.ui.components.FilteredReaderAsyncImage
@@ -65,6 +66,16 @@ fun PagedReaderScreen(
     // Report page settle for progress tracking
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onPageSettled(pagerState.currentPage)
+    }
+
+    // Prefetch: warm the next few pages into Coil's cache so a streamed source (OPDS-PSE,
+    // Komga) serves the next page-turn from cache instead of a fresh network round-trip.
+    // Pure decode/cache work — no UI motion, so E-Ink-safe (no gating needed).
+    LaunchedEffect(pagerState.currentPage, pageCount) {
+        val loader = ctx.imageLoader
+        prefetchIndices(pagerState.currentPage, pageCount).forEach { idx ->
+            loader.enqueue(ImageRequest.Builder(ctx).data(pages[idx]).build())
+        }
     }
 
     ReaderScaffold(

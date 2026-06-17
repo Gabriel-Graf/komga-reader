@@ -197,6 +197,85 @@ class OpdsSourceTest {
         assertTrue(pageRequest.path!!.endsWith("/books/bk/pages/1?zero_based=true"), "Seiten-Pfad: ${pageRequest.path}")
     }
 
+    // --- Hierarchische Navigation (Komga/Kavita-Form: Serien-Feed → Subsection → Bücher-Feed) ---
+
+    private val navFeed = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><title>Attack on Titan</title><id>s-aot</id>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="subsection" href="/opds/v1.2/series/s-aot"/></entry>
+  <entry><title>Berserk</title><id>s-bk</id>
+    <link type="application/atom+xml;profile=opds-catalog;kind=navigation" rel="subsection" href="/opds/v1.2/series/s-bk"/></entry>
+</feed>"""
+
+    private val aotBooksFeed = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:pse="http://vaemendis.net/opds-pse/ns">
+  <entry><title>AoT vol.01</title><id>b-aot1</id>
+    <link rel="http://opds-spec.org/acquisition" href="/dl/aot1.cbz" type="application/zip"/>
+    <link rel="http://vaemendis.net/opds-pse/stream" href="/books/b-aot1/pages/{pageNumber}" type="image/jpeg" pse:count="3"/></entry>
+</feed>"""
+
+    @Test
+    fun `browse mapt Navigations-Einträge zu Series`() = runTest {
+        server.enqueue(MockResponse().setBody(navFeed).addHeader("Content-Type", "application/atom+xml"))
+
+        val result = source().browse(page = 0, filter = SourceFilter())
+
+        assertEquals(2, result.items.size)
+        assertEquals(listOf("s-aot", "s-bk"), result.items.map { it.remoteId })
+    }
+
+    @Test
+    fun `books folgt dem Subsection-Link zum Bücher-Feed`() = runTest {
+        server.enqueue(MockResponse().setBody(navFeed).addHeader("Content-Type", "application/atom+xml"))      // catalog (cold)
+        server.enqueue(MockResponse().setBody(aotBooksFeed).addHeader("Content-Type", "application/atom+xml")) // subsection
+
+        val books = source().books("s-aot")
+
+        assertEquals(1, books.size)
+        assertEquals("b-aot1", books[0].remoteId)
+        assertEquals(BookFormat.CBZ, books[0].format)
+        assertEquals(3, books[0].pageCount)
+        server.takeRequest() // catalog
+        val subsectionRequest = server.takeRequest()
+        assertTrue(subsectionRequest.path!!.endsWith("/opds/v1.2/series/s-aot"), "Subsection-Pfad: ${subsectionRequest.path}")
+    }
+
+    @Test
+    fun `pages streamt PSE nach hierarchischem books ohne Re-Fetch`() = runTest {
+        server.enqueue(MockResponse().setBody(navFeed).addHeader("Content-Type", "application/atom+xml"))
+        server.enqueue(MockResponse().setBody(aotBooksFeed).addHeader("Content-Type", "application/atom+xml"))
+
+        val src = source()
+        src.books("s-aot") // wärmt entriesById mit dem Buch-Eintrag (inkl. PSE)
+        val refs = src.pages("b-aot1") // kein dritter Request — Cache-Treffer
+
+        assertEquals(3, refs.size)
+        assertTrue(refs[1].url.endsWith("/books/b-aot1/pages/1"), "url[1]: ${refs[1].url}")
+    }
+
+    @Test
+    fun `pages ohne vorheriges books findet hierarchisches Buch nicht`() = runTest {
+        // Bekannte Grenze: kalter Cache + hierarchischer Katalog. catalogUrl trägt nur Serien-Nav-
+        // Einträge, nicht das Buch — ohne vorheriges books() (das den Bücher-Feed lädt) ist das
+        // Buch unbekannt → leere Seiten (der Reader fällt auf whole-file zurück, der dann scheitert).
+        server.enqueue(MockResponse().setBody(navFeed).addHeader("Content-Type", "application/atom+xml"))
+
+        val refs = source().pages("b-aot1")
+
+        assertEquals(0, refs.size)
+    }
+
+    @Test
+    fun `seriesIdOf liefert die Eltern-Serie nach books`() = runTest {
+        server.enqueue(MockResponse().setBody(navFeed).addHeader("Content-Type", "application/atom+xml"))
+        server.enqueue(MockResponse().setBody(aotBooksFeed).addHeader("Content-Type", "application/atom+xml"))
+
+        val src = source()
+        src.books("s-aot")
+
+        assertEquals("s-aot", src.seriesIdOf("b-aot1"))
+    }
+
     @Test
     fun `books übernimmt pseCount als pageCount`() = runTest {
         server.enqueue(MockResponse().setBody(pseFeed).addHeader("Content-Type", "application/atom+xml"))

@@ -23,12 +23,27 @@ private const val PSE_PAGE_PLACEHOLDER = "{pageNumber}"
  * OPDS-Katalog als [BrowsableSource]. Liest einen Atom-Feed via OkHttp und bildet
  * Einträge auf [Series] und [Book] ab.
  *
- * Lesepfad — zwei Wege, je nach Server-Fähigkeit:
+ * **Katalog-Form — zwei Wege:**
+ * - **Hierarchisch (Komga/Kavita/Stump/Ubooquity/Calibre):** der konfigurierte `catalogUrl`-Feed
+ *   listet *Serien* als Navigations-Einträge (`navigationHref` = Subsection-Link). [browse] zeigt
+ *   sie; [books] **folgt** dem Subsection-Link auf den Acquisition-Feed der Serie und liest dort
+ *   die Bücher. Eine Navigations-Ebene (Serie→Bücher); tiefere Bäume sind noch nicht abgedeckt.
+ * - **Flach:** listet `catalogUrl` direkt Acquisition-Einträge, ist jeder Eintrag zugleich Serie
+ *   und Buch (Rückwärtskompatibilität) — [books] gibt dann den Eintrag selbst zurück.
+ *
+ * **Lesepfad — zwei Wege, je nach Server-Fähigkeit:**
  * - **PSE (OPDS Page Streaming Extension):** trägt ein Eintrag einen PSE-Stream-Link
  *   (`pseTemplateHref`/`pseCount`), liefert [pages] echte [PageRef]s und [openPage] streamt
  *   die einzelne Seite — der Reader paginiert ohne Voll-Download (gleicher Pfad wie Komga).
  * - **whole-file:** ohne PSE liefert [pages] eine leere Liste → der Reader lädt das ganze
  *   Buch über [downloadFile] (MuPDF/Reflow). EPUB/PDF gehen immer diesen Weg.
+ *
+ * **Identität & Cache:** `remoteId` bleibt die stabile OPDS-`<id>` (Progress/DB überleben). Da
+ * Buch-Operationen ([pages]/[openPage]/[downloadFile]/[coverBytes]) nur die `remoteId` bekommen,
+ * die nötigen URLs aber im Feed-Eintrag stehen, werden geparste Einträge in [entriesById] gecacht
+ * (unveränderliche URLs/Vorlagen → keine Stale-Sorge), die Serien-Subsection-Feeds in
+ * [seriesAcqFeed]. Der Lesepfad ruft stets [browse]→[books] vor dem Öffnen → Cache warm; kalte
+ * Buch-Ops holen den `catalogUrl`-Feed best-effort nach (deckt den Flat-Fall).
  *
  * Authentifizierung: optional Basic-Auth über [username]/[password].
  * OPDS-Server (u. a. Komga) akzeptieren keinen `X-API-Key`-Header am OPDS-Endpunkt.
@@ -47,14 +62,27 @@ class OpdsSource internal constructor(
 
     private val baseUrl: HttpUrl = catalogUrl.toHttpUrl()
 
+    /** Jeder je geparste Eintrag (Serie und Buch), keyed by OPDS-`<id>` — Quelle für Buch-Ops. */
+    @Volatile private var entriesById: Map<String, OpdsEntry> = emptyMap()
+
+    /** Serien-`remoteId` → absolute URL ihres Acquisition-(Bücher-)Feeds (aus dem Subsection-Link). */
+    @Volatile private var seriesAcqFeed: Map<String, String> = emptyMap()
+
+    /** Buch-`remoteId` → `remoteId` der Serie, in deren Feed es entdeckt wurde (für [seriesIdOf]). */
+    @Volatile private var bookSeries: Map<String, String> = emptyMap()
+
     /**
-     * Cache der PSE-Stream-Vorlagen (`remoteId` → Href-Vorlage), gefüllt bei jedem Feed-Parse.
-     * [openPage] bekommt nur (bookRemoteId, pageNumber) — die Vorlage lebt im Feed-Eintrag, nicht
-     * im [PageRef]. Da [pages] im Lesepfad stets vor [openPage] läuft, ist der Cache dann warm;
-     * eine kalte [openPage] holt den Feed einmal nach. Gecacht werden nur **unveränderliche**
-     * URL-Vorlagen (keine Inhalte) → keine Stale-Sorge wie bei Cover-/Datei-Bytes.
+     * Löst einen Eintrag über die `remoteId` auf. Cache-Treffer bevorzugt; bei kaltem Cache wird
+     * der `catalogUrl`-Feed einmal nachgeholt.
+     *
+     * **Bekannte Grenze (hierarchisch + kalt):** im hierarchischen Katalog trägt `catalogUrl` nur
+     * Serien-Nav-Einträge, nicht die Bücher. Wird eine Buch-Op aufgerufen, ohne dass [books] vorher
+     * den Serien-Feed geladen hat (z. B. Prozess-Neustart direkt in den Reader), bleibt das Buch
+     * unbekannt → der catalog-Refetch findet es nicht. Der normale Lesepfad Library→SeriesDetail→Reader
+     * ruft [books] stets zuvor → Cache warm. Härtung (Buch→Feed persistieren) ist Soll.
      */
-    @Volatile private var pseTemplates: Map<String, String> = emptyMap()
+    private suspend fun entryFor(remoteId: String): OpdsEntry? =
+        entriesById[remoteId] ?: run { fetchFeed(catalogUrl); entriesById[remoteId] }
 
     override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> {
         val entries = fetchFeed(catalogUrl)
@@ -69,12 +97,27 @@ class OpdsSource internal constructor(
         return PagedResult(items = series, hasNextPage = false)
     }
 
+    /**
+     * Bücher einer Serie. Hierarchisch: dem Subsection-Link der Serie auf ihren Acquisition-Feed
+     * folgen und die dortigen Buch-Einträge abbilden. Flach: der Serien-Eintrag *ist* das Buch.
+     */
     override suspend fun books(seriesRemoteId: String): List<Book> {
-        val entries = fetchFeed(catalogUrl)
-        return entries
-            .filter { it.id == seriesRemoteId }
-            .map { it.toBook() }
+        // Eltern-Feed mindestens einmal gesehen haben, damit der Subsection-Link bekannt ist.
+        if (seriesAcqFeed[seriesRemoteId] == null && entriesById[seriesRemoteId] == null) {
+            fetchFeed(catalogUrl)
+        }
+        seriesAcqFeed[seriesRemoteId]?.let { acqFeedUrl ->
+            val entries = fetchFeed(acqFeedUrl).filter { it.isReadable() }
+            bookSeries = bookSeries + entries.associate { it.id to seriesRemoteId }
+            return entries.map { it.toBook() }
+        }
+        // Flat-Fall: kein Subsection-Link → der Serien-Eintrag selbst ist das Buch.
+        val entry = entriesById[seriesRemoteId] ?: return emptyList()
+        return if (entry.isReadable()) listOf(entry.toBook()) else emptyList()
     }
+
+    /** Ein Eintrag ist als Buch lesbar, wenn er einen Download- oder PSE-Stream-Link trägt. */
+    private fun OpdsEntry.isReadable(): Boolean = acquisitionHref != null || pseCount != null
 
     /**
      * OPDS-Atom-Einträge tragen keine reichhaltigen Serien-Metadaten (kein Summary,
@@ -82,7 +125,7 @@ class OpdsSource internal constructor(
      * (Titel + Cover) oder `null`, wenn kein passender Eintrag existiert.
      */
     override suspend fun seriesDetail(seriesRemoteId: String): Series? =
-        fetchFeed(catalogUrl).firstOrNull { it.id == seriesRemoteId }?.toSeries()
+        entryFor(seriesRemoteId)?.toSeries()
 
     /**
      * Liefert seitenweise [PageRef]s, wenn der Eintrag PSE anbietet (`pseCount`/`pseTemplateHref`).
@@ -90,7 +133,7 @@ class OpdsSource internal constructor(
      * der Reader fällt dann auf den whole-file-Download zurück.
      */
     override suspend fun pages(bookRemoteId: String): List<PageRef> {
-        val entry = fetchFeed(catalogUrl).firstOrNull { it.id == bookRemoteId } ?: return emptyList()
+        val entry = entryFor(bookRemoteId) ?: return emptyList()
         val count = entry.pseCount ?: return emptyList()
         val template = entry.pseTemplateHref ?: return emptyList()
         return (1..count).map { n ->
@@ -104,14 +147,13 @@ class OpdsSource internal constructor(
     }
 
     /**
-     * Streamt eine einzelne PSE-Seite. Die Stream-Vorlage kommt aus dem [pseTemplates]-Cache
-     * (von [pages] gewärmt); fehlt sie, wird der Feed einmal nachgeholt. Hat der Eintrag kein
+     * Streamt eine einzelne PSE-Seite. Die Stream-Vorlage kommt aus dem [entriesById]-Cache
+     * (von [pages]/[books] gewärmt); fehlt sie, wird der Feed einmal nachgeholt. Hat der Eintrag kein
      * PSE, gibt es keine streambare Seite → [UnsupportedOperationException] (der Reader liest
      * solche Bücher über [downloadFile], nicht über diesen Pfad).
      */
     override suspend fun openPage(ref: PageRef): ByteArray {
-        val template = pseTemplates[ref.bookRemoteId]
-            ?: fetchFeed(catalogUrl).firstOrNull { it.id == ref.bookRemoteId }?.pseTemplateHref
+        val template = entryFor(ref.bookRemoteId)?.pseTemplateHref
             ?: throw UnsupportedOperationException(
                 "OPDS-Eintrag '${ref.bookRemoteId}' bietet kein PSE-Streaming — liest via Download",
             )
@@ -141,8 +183,7 @@ class OpdsSource internal constructor(
         bookRemoteId: String,
         onProgress: (read: Long, total: Long) -> Unit,
     ): ByteArray {
-        val entries = fetchFeed(catalogUrl)
-        val entry = entries.firstOrNull { it.id == bookRemoteId }
+        val entry = entryFor(bookRemoteId)
             ?: error("Kein OPDS-Eintrag mit ID '$bookRemoteId' gefunden")
         val href = entry.acquisitionHref
             ?: error("Eintrag '$bookRemoteId' hat keinen Acquisition-Link")
@@ -165,8 +206,7 @@ class OpdsSource internal constructor(
      * Ohne Cover-Link → leere Bytes (die UI zeigt dann den Platzhalter).
      */
     override suspend fun coverBytes(remoteId: String, isSeriesCover: Boolean): ByteArray {
-        val entries = fetchFeed(catalogUrl)
-        val href = entries.firstOrNull { it.id == remoteId }?.coverHref ?: return ByteArray(0)
+        val href = entryFor(remoteId)?.coverHref ?: return ByteArray(0)
         val absoluteUrl = baseUrl.resolve(href) ?: return ByteArray(0)
         return withContext(Dispatchers.IO) {
             val request = buildRequest(absoluteUrl.toString())
@@ -177,11 +217,11 @@ class OpdsSource internal constructor(
     }
 
     /**
-     * In einem flachen OPDS-Katalog trägt derselbe Atom-Eintrag sowohl die Serie als auch
-     * das Buch — die `remoteId` des Buchs ist zugleich die der Serie. Daher ist die
-     * Serien-ID schlicht die übergebene Buch-ID.
+     * Serie eines Buchs. Hierarchisch: die beim [books]-Aufruf entdeckte Eltern-Serie aus dem
+     * [bookSeries]-Cache. Flach (oder unbekannt): der Eintrag ist seine eigene Serie → Buch-ID.
      */
-    override suspend fun seriesIdOf(bookRemoteId: String): String = bookRemoteId
+    override suspend fun seriesIdOf(bookRemoteId: String): String =
+        bookSeries[bookRemoteId] ?: bookRemoteId
 
     private suspend fun fetchFeed(url: String): List<OpdsEntry> = withContext(Dispatchers.IO) {
         val request = buildRequest(url)
@@ -190,9 +230,13 @@ class OpdsSource internal constructor(
             response.body!!.string()
         }
         val entries = parser.parse(xml)
-        // PSE-Vorlagen aus diesem Feed in den Cache mergen (für spätere openPage-Aufrufe).
-        val templates = entries.mapNotNull { e -> e.pseTemplateHref?.let { e.id to it } }
-        if (templates.isNotEmpty()) pseTemplates = pseTemplates + templates
+        // Einträge + Serien-Subsection-Feeds dieses Feeds in die Caches mergen
+        // (unveränderliche URLs/Vorlagen → für spätere Buch-Ops, keine Stale-Sorge).
+        entriesById = entriesById + entries.associateBy { it.id }
+        val navs = entries.mapNotNull { e ->
+            e.navigationHref?.let { e.id to (baseUrl.resolve(it)?.toString() ?: it) }
+        }
+        if (navs.isNotEmpty()) seriesAcqFeed = seriesAcqFeed + navs
         entries
     }
 

@@ -54,8 +54,9 @@ aktive" Quelle auf, sondern **die des konkreten Werks** über `ActiveSource.get(
 gleichzeitig aktiv sind und das Werk zur **zweiten** gehört? `current()` als Werk-Resolver = Bug.
 Settings verwaltet eine Server-Liste (Hinzufügen/Einzel-Entfernen). **Ist (2026-06-09): OPDS als
 zweite Live-Quelle live gemischt verifiziert** — Komga-REST + OPDS gleichzeitig registriert,
-`ActiveSource.all()` liefert beide, OPDS-Werk über `downloadFile` geladen (OPDS hat kein
-`openPage`, liest über den Download-Pfad). Basic-Auth für OPDS wird über `OpdsSourceFactory`
+`ActiveSource.all()` liefert beide, OPDS-Werk über `downloadFile` geladen (whole-file-Pfad; seit
+2026-06-17 streamt OPDS für PSE-fähige Einträge zusätzlich seitenweise über `openPage` — s.
+`architecture-seams.md`). Basic-Auth für OPDS wird über `OpdsSourceFactory`
 und `SourceRegistration` aus `ServerConfig.username`/`.password` durchgereicht.
 Test: `app/src/androidTest/.../MixedSourcesLiveTest.kt`.
 

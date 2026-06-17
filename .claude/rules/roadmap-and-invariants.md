@@ -13,8 +13,15 @@ prüfen, ob eine Entscheidung eine spätere Phase verbaut** — wenn ja, hinter 
   über die externe Lib **comic-cutter**; das frühere In-Tree-Modul `guided-view` ist entfernt).
 - **Phase 3 — offen:** Cover-Farbfilter (Kaleido-Sättigung/Kontrast vor Anzeige) · per-Region-Refresh-
   Feintuning · erweiterte E-Ink-Settings · **weiterer Server: Kavita** (`source-kavita` nach Naht A).
+  **Teil-Ist (2026-06-17): OPDS-PSE gebaut** — `OpdsSource` streamt PSE-fähige Einträge seitenweise
+  (statt nur whole-file). Das deckt mit *einer* Codebasis die ganze Klasse-1-OPDS-Familie ab
+  (Stump/Ubooquity/Calibre); Kavita-Native nur noch für OPDS-fremde Features. Siehe
+  `big-picture-and-goals.md` → „Source classes".
 - **Phase 4 — offen:** **Runtime-Plugin-Loader** (nutzer-installierbare Online-Quellen, Mihon-Modell) ·
   optional crengine als EPUB-Engine hinter `Document`.
+  **Offene Frage (Brainstorm):** Online-Aggregatoren (Suwayomi/Tachidesk) = Quell-**Klasse 2**
+  (streamt/scraped, „Werk ≠ Datei") → als **isoliertes Plugin** aus dem Kern halten, plus
+  Lizenz-/Legal-Klärung. Architektur-Einordnung in `big-picture-and-goals.md` → „Source classes".
 
 ## Noch offen / nicht vergessen (auch außerhalb der Phasen)
 

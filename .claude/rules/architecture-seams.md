@@ -508,14 +508,23 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   implementiert **`Viewer`** statt einer Parallel-Linie. **Kein `refreshScheduler`** im `Viewer`
   (seit 2026-06-13 entfernt — E-Ink-Refresh läuft jetzt über den kontext-basierten
   `EinkContextController`-Pfad, nicht über die Viewer-Naht).
-- **Reader-Lesepfad: streamen vs. whole-file (Ist, aktualisiert 2026-06-14):** `ReaderViewModel.loadBook`
+- **Reader-Lesepfad: streamen vs. whole-file (Ist, aktualisiert 2026-06-17):** `ReaderViewModel.loadBook`
   wählt **quellen-agnostisch**: liegt ein lokaler Download vor → `documentFactory.open(bytes)` (MuPDF,
-  `ReaderContent.Rendered`); sonst `source.pages(bookId)`. **Neu (2026-06-14):** ist `pages()` **leer**
-  (Quelle ohne seitenweises Streaming — OPDS, `LocalSource` für PDF/CBR), wird whole-file gelesen
-  (`source.downloadFile(bookId)` → `documentFactory.open` → `Rendered`) statt einer leeren `Streamed`-Liste.
-  Nur nicht-leeres `pages()` geht den Coil-`openPage`-Streaming-Pfad (`Streamed`). Diese eine Verzweigung
-  ist **quellen-agnostisch** (sie nennt keinen Quellentyp) und schaltet nebenbei OPDS-Lesen **ohne**
-  vorherigen Download frei.
+  `ReaderContent.Rendered`); sonst `source.pages(bookId)`. Ist `pages()` **leer** (Quelle ohne seitenweises
+  Streaming — `LocalSource` für PDF/CBR, OPDS **ohne** PSE), wird whole-file gelesen (`source.downloadFile(bookId)`
+  → `documentFactory.open` → `Rendered`) statt einer leeren `Streamed`-Liste. Nur nicht-leeres `pages()` geht
+  den Coil-`openPage`-Streaming-Pfad (`Streamed`). Diese eine Verzweigung ist **quellen-agnostisch** (sie nennt
+  keinen Quellentyp).
+  - **OPDS-PSE (Ist, 2026-06-17):** `OpdsSource` liefert jetzt für PSE-fähige Einträge (OPDS Page Streaming
+    Extension: `pse:count` + `{pageNumber}`-Vorlage, NS `http://vaemendis.net/opds-pse/ns`) nicht-leere
+    `pages()` und streamt einzelne Seiten über `openPage` — **derselbe `Streamed`-Pfad wie Komga, kein
+    Voll-Download**. Ohne PSE (EPUB/PDF, Server ohne PSE) bleibt `pages()` leer → whole-file. **Rein
+    quell-intern, kein App-/Naht-Edit** (`ReaderViewModel` unverändert). Da `SourceImage`/`loadPageBytes`
+    `openPage` nur mit (bookRemoteId, pageNumber) füttern (kein `PageRef.url` durchgereicht), cached
+    `OpdsSource` die PSE-Stream-Vorlage pro `remoteId` (`@Volatile`, unveränderliche URL-Vorlagen → keine
+    Stale-Sorge; von `pages()` gewärmt, `openPage` kalt-fallback). Platzhalter **0-basiert per Spec**.
+    Unit-getestet (Parser + MockWebServer, `OpdsFeedParserTest`/`OpdsSourceTest`). Live gegen echten
+    PSE-Server (Komga-OPDS) **noch zu verifizieren** (Soll).
 - **Geteilte Chrome-Shortcuts (Ist, 2026-06-10):** `ReaderScaffold`/`ReaderChromeOverlay` tragen
   jetzt `onHome`/`onSettings` und rendern oben rechts an **einer** Stelle die geteilten Buttons
   **[Home][Einstellungen]** (in dieser Reihenfolge), **danach** die reader-spezifischen `actions`

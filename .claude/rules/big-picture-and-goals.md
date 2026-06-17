@@ -81,6 +81,56 @@ nicht nur die Animation.
 > Wenn eine Aufgabe „Display-Modus" oder Geräte-Verhalten berührt: nicht den binären Ist-Stand
 > als gegeben nehmen — die Lösung muss mindestens die drei Klassen *aufnehmen können*.
 
+## Source classes — library servers vs. online aggregators (the Multi-Server lever)
+
+The Multi-Server goal is not "support every e-reader server type" — sources fall into **two
+fundamentally different classes**, and the difference matters for what Seam A may assume. Bake
+no assumption into `MediaSource` that only holds for one class (that re-introduces the very
+coupling the seam removes).
+
+**Class 1 — library servers (you own the files).** Komga, Kavita, and anything speaking OPDS
+(Calibre Web/Content Server, Ubooquity, Stump, …). A work is a **finished file** (CBZ/CBR/PDF/EPUB)
+you download; the offline-first model, the Download Manager and progress sync all rest on
+"a work is a file". This is the class our invariants are built for.
+
+> **The highest-leverage move is not another dedicated server type — it is a strong OPDS
+> implementation.** A good OPDS client (esp. OPDS-PSE page streaming) implicitly covers Stump,
+> Ubooquity, Calibre and many more with **one** codebase. That is exactly "sources are
+> interchangeable" applied: spend effort on the common denominator, not on N bespoke clients.
+> Add a native REST source (e.g. Kavita) **only** for things OPDS cannot express (per-book novel
+> progress, reading lists, want-to-read) — and then as a plugin, not a core rewrite.
+
+- **OPDS-PSE built (Ist, 2026-06-17):** `OpdsSource` now reads OPDS Page Streaming Extension.
+  A PSE entry (`pse:count` + `{pageNumber}` stream template, namespace
+  `http://vaemendis.net/opds-pse/ns`) makes `pages()` return real `PageRef`s and `openPage()`
+  stream a single page — the same paginated read path as Komga, **no whole-file download**.
+  Without PSE (or for EPUB/PDF) `pages()` stays empty → the existing whole-file branch. Purely a
+  source-internal change: **zero app/interface edits** — the reader's `pages().isEmpty()` branch
+  picks streamed vs. whole-file automatically. The PSE stream template is cached per `remoteId`
+  in `OpdsSource` (immutable URL templates, no staleness) so `openPage` is O(1) like Komga.
+  Placeholder is **0-based per spec** (`pageNumber - 1`). Unit-tested (parser + MockWebServer).
+  → `source-opds`, `source-extensibility.md` (Kochrezept A/B).
+
+**Class 2 — online aggregators (you do NOT own the files; you stream/scrape).** Suwayomi
+(Tachidesk) and the like proxy external online sources via Mihon/Tachiyomi extensions. This class
+**breaks the "a work is a file" semantics**: the catalog is dynamic (not your collection),
+chapters load on demand (not a stored file), and the legal status per extension ranges from grey
+to black. Suwayomi *can* present itself as OPDS or GraphQL, so it technically fits the seam — but
+it brings streaming semantics that the file-based invariants do not.
+
+> **Direction (Soll):** keep online aggregators **out of the core** — model them as an **isolated
+> plugin (Class-2)**, not a core `MediaSource`, so the clean file-based invariants (offline-first,
+> Download Manager, progress sync) do not soften. They are the only way to reach online manga/webtoon
+> catalogs (fits the Mihon ecosystem), but their on-demand/streaming nature and licensing risk must
+> stay quarantined behind the plugin boundary. **Nogo:** wiring Suwayomi/streaming semantics into the
+> core source path and thereby weakening "a work is a file" for every other source. License/legal
+> implications are a separate open question (see roadmap brainstorm), distinct from the architecture.
+
+Coverage with these two classes: comics/manga via Komga/Kavita/OPDS, novels via OPDS/Calibre/Kavita,
+webtoons via the Komga/Kavita webtoon mode, and the online-aggregator world via Suwayomi-as-plugin.
+A known gap the architecture cannot fix: closed official webtoon platforms (LINE Webtoon, …) ship no
+open server standard — they fall under Class-2 extensions or out of scope, not an architecture defect.
+
 ## Plugins — festgelegte Architektur-Entscheidungen (Referenz, Phase 4)
 
 **Update (2026-06-11): Loader + erstes APK-Plugin sind gebaut** — die unten beschriebenen

@@ -67,6 +67,27 @@ class OpdsFeedParserTest {
     }
 
     @Test
+    fun `parst PSE-Stream-Link mit count und Vorlage`() {
+        val feed = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:pse="http://vaemendis.net/opds-pse/ns">
+  <entry><title>Berserk 01</title><id>urn:bk:1</id>
+    <link rel="http://opds-spec.org/acquisition" href="/dl/bk.cbz" type="application/x-cbz"/>
+    <link rel="http://vaemendis.net/opds-pse/stream" href="/books/bk/pages/{pageNumber}?zero_based=true" type="image/jpeg" pse:count="42"/>
+  </entry>
+</feed>"""
+        val entries = parser.parse(feed)
+        assertEquals(42, entries[0].pseCount)
+        assertEquals("/books/bk/pages/{pageNumber}?zero_based=true", entries[0].pseTemplateHref)
+    }
+
+    @Test
+    fun `Eintrag ohne PSE hat pseCount und Vorlage null`() {
+        val entries = parser.parse(exampleFeed)
+        assertNull(entries[0].pseCount)
+        assertNull(entries[0].pseTemplateHref)
+    }
+
+    @Test
     fun `Thumbnail hat Vorrang vor image-Link`() {
         val feed = """<?xml version="1.0"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

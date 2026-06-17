@@ -16,10 +16,19 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
+/** PSE-Href-Platzhalter für die Seitennummer (0-basiert per PSE-Spec). */
+private const val PSE_PAGE_PLACEHOLDER = "{pageNumber}"
+
 /**
  * OPDS-Katalog als [BrowsableSource]. Liest einen Atom-Feed via OkHttp und bildet
- * Einträge auf [Series] und [Book] ab. Lesen erfolgt über [downloadFile] + MuPDF;
- * seitenweises Streaming wird nicht unterstützt.
+ * Einträge auf [Series] und [Book] ab.
+ *
+ * Lesepfad — zwei Wege, je nach Server-Fähigkeit:
+ * - **PSE (OPDS Page Streaming Extension):** trägt ein Eintrag einen PSE-Stream-Link
+ *   (`pseTemplateHref`/`pseCount`), liefert [pages] echte [PageRef]s und [openPage] streamt
+ *   die einzelne Seite — der Reader paginiert ohne Voll-Download (gleicher Pfad wie Komga).
+ * - **whole-file:** ohne PSE liefert [pages] eine leere Liste → der Reader lädt das ganze
+ *   Buch über [downloadFile] (MuPDF/Reflow). EPUB/PDF gehen immer diesen Weg.
  *
  * Authentifizierung: optional Basic-Auth über [username]/[password].
  * OPDS-Server (u. a. Komga) akzeptieren keinen `X-API-Key`-Header am OPDS-Endpunkt.
@@ -37,6 +46,15 @@ class OpdsSource internal constructor(
     override val kind: SourceKind = SourceKind.OPDS
 
     private val baseUrl: HttpUrl = catalogUrl.toHttpUrl()
+
+    /**
+     * Cache der PSE-Stream-Vorlagen (`remoteId` → Href-Vorlage), gefüllt bei jedem Feed-Parse.
+     * [openPage] bekommt nur (bookRemoteId, pageNumber) — die Vorlage lebt im Feed-Eintrag, nicht
+     * im [PageRef]. Da [pages] im Lesepfad stets vor [openPage] läuft, ist der Cache dann warm;
+     * eine kalte [openPage] holt den Feed einmal nach. Gecacht werden nur **unveränderliche**
+     * URL-Vorlagen (keine Inhalte) → keine Stale-Sorge wie bei Cover-/Datei-Bytes.
+     */
+    @Volatile private var pseTemplates: Map<String, String> = emptyMap()
 
     override suspend fun browse(page: Int, filter: SourceFilter): PagedResult<Series> {
         val entries = fetchFeed(catalogUrl)
@@ -66,10 +84,53 @@ class OpdsSource internal constructor(
     override suspend fun seriesDetail(seriesRemoteId: String): Series? =
         fetchFeed(catalogUrl).firstOrNull { it.id == seriesRemoteId }?.toSeries()
 
-    override suspend fun pages(bookRemoteId: String): List<PageRef> = emptyList()
+    /**
+     * Liefert seitenweise [PageRef]s, wenn der Eintrag PSE anbietet (`pseCount`/`pseTemplateHref`).
+     * Jede [PageRef] trägt die absolute, 0-basiert eingesetzte Seiten-URL. Ohne PSE → leere Liste,
+     * der Reader fällt dann auf den whole-file-Download zurück.
+     */
+    override suspend fun pages(bookRemoteId: String): List<PageRef> {
+        val entry = fetchFeed(catalogUrl).firstOrNull { it.id == bookRemoteId } ?: return emptyList()
+        val count = entry.pseCount ?: return emptyList()
+        val template = entry.pseTemplateHref ?: return emptyList()
+        return (1..count).map { n ->
+            PageRef(
+                index = n - 1,
+                bookRemoteId = bookRemoteId,
+                pageNumber = n,
+                url = baseUrl.resolve(pseHref(template, n))?.toString().orEmpty(),
+            )
+        }
+    }
 
-    override suspend fun openPage(ref: PageRef): ByteArray =
-        throw UnsupportedOperationException("OPDS liest via Download")
+    /**
+     * Streamt eine einzelne PSE-Seite. Die Stream-Vorlage kommt aus dem [pseTemplates]-Cache
+     * (von [pages] gewärmt); fehlt sie, wird der Feed einmal nachgeholt. Hat der Eintrag kein
+     * PSE, gibt es keine streambare Seite → [UnsupportedOperationException] (der Reader liest
+     * solche Bücher über [downloadFile], nicht über diesen Pfad).
+     */
+    override suspend fun openPage(ref: PageRef): ByteArray {
+        val template = pseTemplates[ref.bookRemoteId]
+            ?: fetchFeed(catalogUrl).firstOrNull { it.id == ref.bookRemoteId }?.pseTemplateHref
+            ?: throw UnsupportedOperationException(
+                "OPDS-Eintrag '${ref.bookRemoteId}' bietet kein PSE-Streaming — liest via Download",
+            )
+        val absoluteUrl = baseUrl.resolve(pseHref(template, ref.pageNumber))
+            ?: error("Ungültiger PSE-Href für Seite ${ref.pageNumber}")
+        return withContext(Dispatchers.IO) {
+            val request = buildRequest(absoluteUrl.toString())
+            client.newCall(request).execute().use { response ->
+                check(response.isSuccessful) {
+                    "Seiten-Abruf fehlgeschlagen: HTTP ${response.code} für $absoluteUrl"
+                }
+                response.body!!.bytes()
+            }
+        }
+    }
+
+    /** Setzt die 0-basierte Seitennummer in die PSE-Vorlage ein (`{pageNumber}`, Spec = 0-basiert). */
+    private fun pseHref(template: String, pageNumber: Int): String =
+        template.replace(PSE_PAGE_PLACEHOLDER, (pageNumber - 1).toString())
 
     /**
      * Lädt das Buch über den Acquisition-Link herunter und liefert die rohen Bytes.
@@ -128,7 +189,11 @@ class OpdsSource internal constructor(
             check(response.isSuccessful) { "Feed-Abruf fehlgeschlagen: HTTP ${response.code} für $url" }
             response.body!!.string()
         }
-        parser.parse(xml)
+        val entries = parser.parse(xml)
+        // PSE-Vorlagen aus diesem Feed in den Cache mergen (für spätere openPage-Aufrufe).
+        val templates = entries.mapNotNull { e -> e.pseTemplateHref?.let { e.id to it } }
+        if (templates.isNotEmpty()) pseTemplates = pseTemplates + templates
+        entries
     }
 
     /** Baut einen [Request] mit optionalem Basic-Auth-Header. */
@@ -155,7 +220,7 @@ class OpdsSource internal constructor(
         remoteId = id,
         title = title,
         format = opdsTypeToFormat(acquisitionType),
-        pageCount = 0,
+        pageCount = pseCount ?: 0,
     )
 }
 

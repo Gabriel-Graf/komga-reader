@@ -9,6 +9,12 @@ private const val REL_THUMBNAIL = "http://opds-spec.org/image/thumbnail"
 private const val REL_IMAGE = "http://opds-spec.org/image"
 private const val REL_ACQUISITION = "http://opds-spec.org/acquisition"
 
+// OPDS-PSE (Page Streaming Extension, vaemendis.net): erlaubt seitenweises Streamen
+// statt whole-file-Download. Der Stream-Link trägt eine `{pageNumber}`-Href-Vorlage und
+// die Seitenzahl im `pse:count`-Attribut (eigener Namespace).
+private const val REL_PSE_STREAM = "http://vaemendis.net/opds-pse/stream"
+private const val PSE_NS = "http://vaemendis.net/opds-pse/ns"
+
 /** Setzt ein Parser-Feature tolerant — vom jeweiligen Parser nicht unterstützte Features werden ignoriert. */
 private fun DocumentBuilderFactory.trySetFeature(name: String, value: Boolean) {
     runCatching { setFeature(name, value) }
@@ -61,12 +67,23 @@ class OpdsFeedParser {
         val acquisitionHref = acquisitionLink?.getAttribute("href")?.takeIf { it.isNotEmpty() }
         val acquisitionType = acquisitionLink?.getAttribute("type")?.takeIf { it.isNotEmpty() }
 
+        val pseLink = links.firstOrNull { it.getAttribute("rel") == REL_PSE_STREAM }
+        val pseTemplateHref = pseLink?.getAttribute("href")?.takeIf { it.isNotEmpty() }
+        // `pse:count` lebt im PSE-Namespace. Namespace-aware lesen, mit Fallback auf den
+        // qualifizierten Namen für Parser, die das Attribut nicht namespace-gebunden liefern.
+        val pseCount = pseLink
+            ?.let { it.getAttributeNS(PSE_NS, "count").ifEmpty { it.getAttribute("pse:count") } }
+            ?.takeIf { it.isNotEmpty() }
+            ?.toIntOrNull()
+
         return OpdsEntry(
             id = id,
             title = title,
             coverHref = coverHref,
             acquisitionHref = acquisitionHref,
             acquisitionType = acquisitionType,
+            pseCount = pseCount,
+            pseTemplateHref = pseTemplateHref,
         )
     }
 }

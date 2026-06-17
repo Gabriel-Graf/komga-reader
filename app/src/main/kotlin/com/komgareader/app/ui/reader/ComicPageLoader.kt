@@ -46,6 +46,13 @@ class ComicPageLoader(
             PageDetection(panels, page.width, page.height)
         }
 
+    /**
+     * Returns the full-resolution (non-downscaled) bitmap for [pageImage].
+     * Intended for the misdetection-capture path, which needs pixel-accurate dimensions to build
+     * the sidecar JSON in pixel space.
+     */
+    suspend fun loadFullBitmap(pageImage: ReaderPageImage): Bitmap? = decode(pageImage)
+
     private suspend fun decode(pageImage: ReaderPageImage): Bitmap? =
         withContext(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)

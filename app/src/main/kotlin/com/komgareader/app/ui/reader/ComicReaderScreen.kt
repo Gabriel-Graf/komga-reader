@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.reader
 
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -74,6 +75,15 @@ fun ComicReaderScreen(
         comicVm.init(pages, initialPage)
     }
 
+    // Toast feedback for capture result.
+    LaunchedEffect(Unit) {
+        comicVm.captureEvent.collect { ok ->
+            val msg = if (ok) s.misdetectionCaptured else s.misdetectionCaptureFailed
+            Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val misdetectionDir by comicVm.misdetectionDir.collectAsState()
     val state by comicVm.uiState.collectAsState()
 
     ReadingSessionEffect(readerKind, bookRemoteId, sourceId, state.position.page)
@@ -109,6 +119,15 @@ fun ComicReaderScreen(
         tapZones = null,
         showTapZoneHints = false,
         actions = {
+            if (misdetectionDir != null) {
+                IconButton(onClick = { comicVm.captureMisdetection() }) {
+                    Icon(
+                        AppIcons.Download,
+                        contentDescription = s.misdetectionCapture,
+                        tint = Color.White,
+                    )
+                }
+            }
             IconButton(onClick = { comicVm.toggleGuided() }) {
                 Icon(
                     AppIcons.PanelMode,

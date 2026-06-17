@@ -429,4 +429,7 @@ class MapBackedStrings(
     override val misdetectionDirLabel: String get() = overrides["misdetectionDirLabel"] ?: fallback.misdetectionDirLabel
     override val misdetectionDirPick: String get() = overrides["misdetectionDirPick"] ?: fallback.misdetectionDirPick
     override val misdetectionDirClear: String get() = overrides["misdetectionDirClear"] ?: fallback.misdetectionDirClear
+    override val misdetectionCapture: String get() = overrides["misdetectionCapture"] ?: fallback.misdetectionCapture
+    override val misdetectionCaptured: String get() = overrides["misdetectionCaptured"] ?: fallback.misdetectionCaptured
+    override val misdetectionCaptureFailed: String get() = overrides["misdetectionCaptureFailed"] ?: fallback.misdetectionCaptureFailed
 }

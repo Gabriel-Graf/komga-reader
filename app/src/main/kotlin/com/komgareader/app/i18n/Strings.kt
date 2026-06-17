@@ -448,6 +448,12 @@ interface Strings {
     val misdetectionDirPick: String
     /** Label for the button that clears the misdetection folder. */
     val misdetectionDirClear: String
+    /** Content description for the 1-tap misdetection-capture button in the comic reader. */
+    val misdetectionCapture: String
+    /** Toast / feedback message shown after a successful misdetection capture. */
+    val misdetectionCaptured: String
+    /** Toast / feedback message shown when a misdetection capture fails. */
+    val misdetectionCaptureFailed: String
 }
 
 object StringsDe : Strings {
@@ -879,6 +885,9 @@ object StringsDe : Strings {
     override val misdetectionDirLabel = "Fehlerkennungs-Ordner"
     override val misdetectionDirPick = "Ordner wählen …"
     override val misdetectionDirClear = "Entfernen"
+    override val misdetectionCapture = "Fehlerkannte Seite aufnehmen"
+    override val misdetectionCaptured = "Seite gespeichert"
+    override val misdetectionCaptureFailed = "Aufnahme fehlgeschlagen"
 }
 
 object StringsEn : Strings {
@@ -1310,6 +1319,9 @@ object StringsEn : Strings {
     override val misdetectionDirLabel = "Misdetection Capture Folder"
     override val misdetectionDirPick = "Pick folder …"
     override val misdetectionDirClear = "Clear"
+    override val misdetectionCapture = "Capture misdetected page"
+    override val misdetectionCaptured = "Page saved"
+    override val misdetectionCaptureFailed = "Capture failed"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

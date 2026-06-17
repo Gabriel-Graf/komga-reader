@@ -14,10 +14,13 @@ import com.panela.comiccutter.NormRect
 import com.panela.comiccutter.PanelGeometry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,6 +48,7 @@ class ComicReaderViewModel @Inject constructor(
 ) : ViewModel(), Viewer {
 
     private val loader = ComicPageLoader(context, imageLoader)
+    private val writer = MisdetectionWriter(context)
     private val panelCache = mutableMapOf<Int, List<NormRect>>()
     private val unitsPerPage = mutableMapOf<Int, Int>()
     private val aspectPerPage = mutableMapOf<Int, Float>()
@@ -60,6 +64,14 @@ class ComicReaderViewModel @Inject constructor(
     /** Debug: erkannte Panel-Rahmen als farbige Rechtecke über die Seite legen. */
     val showPanelOverlay: StateFlow<Boolean> =
         settings.guidedPanelOverlay.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** SAF folder URI for misdetection captures; `null` = not set, capture button hidden. */
+    val misdetectionDir: StateFlow<String?> =
+        settings.misdetectionDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Emits `true` on successful capture, `false` on failure (folder not set / I/O error). */
+    private val _captureEvent = MutableSharedFlow<Boolean>()
+    val captureEvent: SharedFlow<Boolean> = _captureEvent
 
     private var pageCount: Int = 0
     private var pages: List<ReaderPageImage> = emptyList()
@@ -206,6 +218,27 @@ class ComicReaderViewModel @Inject constructor(
         )
         ensurePanels(page)
         ensurePanels(page + 1)
+    }
+
+    /**
+     * Captures the current page as a PNG + sidecar JSON into [misdetectionDir].
+     * Emits `true` to [captureEvent] on success, `false` if the folder is not configured or an
+     * I/O error occurs.
+     */
+    fun captureMisdetection() {
+        viewModelScope.launch {
+            val dir = settings.misdetectionDir.first()
+            if (dir == null) { _captureEvent.emit(false); return@launch }
+            val page = _uiState.value.position.page
+            val bmp = loader.loadFullBitmap(pages[page])
+            if (bmp == null) { _captureEvent.emit(false); return@launch }
+            val panels = panelCache[page].orEmpty()
+            val sidecar = misdetectionSidecarJson(panels, bmp.width, bmp.height)
+            val base = "${pages[page].bookRemoteId}_p${page + 1}"
+                .replace(Regex("[^A-Za-z0-9_-]"), "_")
+            val ok = writer.write(dir, base, bmp, sidecar)
+            _captureEvent.emit(ok)
+        }
     }
 
     /**

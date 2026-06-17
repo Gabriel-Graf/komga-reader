@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -170,17 +172,31 @@ fun ComicReaderScreen(
                 )
             }
 
-            // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke (kein pointerInput → Taps passieren durch).
+            // Debug-Overlay: erkannte Panel-Rahmen als grüne Rechtecke mit Lesereihenfolge-Index
+            // und Confidence-Score (#1  0.83) oben-links. rememberTextMeasurer muss in der
+            // Composable-Scope stehen (nicht im DrawScope-Lambda).
+            // kein pointerInput → Taps passieren durch.
             if (showOverlay && !state.zoomed && state.currentPanels.isNotEmpty()) {
+                val textMeasurer = rememberTextMeasurer()
                 Canvas(Modifier.fillMaxSize()) {
                     val stroke = Stroke(width = 9f)
-                    state.currentPanels.forEach { p ->
+                    state.currentPanels.forEachIndexed { i, p ->
+                        val tl = Offset(offX + p.left * contentW, offY + p.top * contentH)
                         drawRect(
                             color = Color(0xFF00C800),
-                            topLeft = Offset(offX + p.left * contentW, offY + p.top * contentH),
+                            topLeft = tl,
                             size = Size(p.width * contentW, p.height * contentH),
                             style = stroke,
                         )
+                        val label = "#${i + 1}  ${"%.2f".format(p.score)}"
+                        val measured = textMeasurer.measure(label)
+                        // Dunkler Hintergrund hinter dem Label für E-Ink-Lesbarkeit (kein Anti-Aliasing nötig).
+                        drawRect(
+                            color = Color(0xCC000000),
+                            topLeft = tl,
+                            size = Size(measured.size.width + 12f, measured.size.height + 8f),
+                        )
+                        drawText(measured, color = Color.White, topLeft = Offset(tl.x + 6f, tl.y + 4f))
                     }
                 }
             }

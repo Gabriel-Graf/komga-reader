@@ -75,4 +75,7 @@ interface SettingsRepository {
     suspend fun setScreenSaverMode(value: String)
     suspend fun setScreenSaverCustomUri(uri: String)
     suspend fun setScreenSaverFillCrop(value: Boolean)
+    /** Wert eines Plugin-Config-Felds (data-only Plugin-Config), null = nicht gesetzt. */
+    fun pluginConfig(pkg: String, key: String): Flow<String?>
+    suspend fun setPluginConfig(pkg: String, key: String, value: String)
 }

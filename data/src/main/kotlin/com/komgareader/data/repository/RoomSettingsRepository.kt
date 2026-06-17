@@ -128,7 +128,13 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override suspend fun setActiveColorProfileId(id: Long) =
         dao.put(SettingEntity(KEY_ACTIVE_COLOR_PROFILE, id.toString()))
 
+    override fun pluginConfig(pkg: String, key: String): Flow<String?> = dao.observe(pluginCfgKey(pkg, key))
+    override suspend fun setPluginConfig(pkg: String, key: String, value: String) =
+        dao.put(SettingEntity(pluginCfgKey(pkg, key), value))
+
     private companion object {
+        fun pluginCfgKey(pkg: String, key: String) = "plugincfg:$pkg:$key"
+
         const val KEY_THEME = "theme_mode"
         const val KEY_LANG = "language"
         const val KEY_DISPLAY = "display_mode"

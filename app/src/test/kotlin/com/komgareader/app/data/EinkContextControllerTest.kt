@@ -49,6 +49,8 @@ class EinkContextControllerTest {
         override val activeUiPack: Flow<String> = flowOf("")
         override val lastSeenVersion: Flow<String> = flowOf("")
         override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
+        override fun pluginConfig(pkg: String, key: String): Flow<String?> = flowOf(null)
+        override suspend fun setPluginConfig(pkg: String, key: String, value: String) {}
         override suspend fun setThemeMode(value: String) {}
         override suspend fun setLanguage(value: String) {}
         override suspend fun setDisplayMode(value: String) {}

@@ -157,6 +157,8 @@ class ReaderViewModelTest {
         override val screenSaverMode: Flow<String> = flowOf("OFF")
         override val screenSaverCustomUri: Flow<String> = flowOf("")
         override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
+        override fun pluginConfig(pkg: String, key: String): Flow<String?> = flowOf(null)
+        override suspend fun setPluginConfig(pkg: String, key: String, value: String) = error("not used")
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")

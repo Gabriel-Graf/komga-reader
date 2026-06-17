@@ -219,6 +219,8 @@ private class StubSettingsRepository : SettingsRepository {
     override val screenSaverMode: Flow<String> = flowOf("OFF")
     override val screenSaverCustomUri: Flow<String> = flowOf("")
     override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
+    override fun pluginConfig(pkg: String, key: String): Flow<String?> = flowOf(null)
+    override suspend fun setPluginConfig(pkg: String, key: String, value: String) {}
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -323,6 +325,8 @@ private class CapturingSettingsRepository(
     override suspend fun setActiveUiPack(packageName: String) {}
     override suspend fun setLastSeenVersion(version: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
+    override fun pluginConfig(pkg: String, key: String): Flow<String?> = flowOf(null)
+    override suspend fun setPluginConfig(pkg: String, key: String, value: String) {}
     override suspend fun setScreenSaverMode(value: String) {}
     override suspend fun setScreenSaverCustomUri(uri: String) {}
     override suspend fun setScreenSaverFillCrop(value: Boolean) {}

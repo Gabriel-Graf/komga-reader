@@ -160,5 +160,14 @@ private fun PluginConfigField(
                 )
             }
         }
+        FieldType.NUMBER -> {
+            // Rendering placeholder: NUMBER field type declared but rendering deferred to later task.
+            EinkTextField(
+                value = value,
+                onValueChange = onValueChange,
+                label = field.label,
+                keyboardType = KeyboardType.Decimal,
+            )
+        }
     }
 }

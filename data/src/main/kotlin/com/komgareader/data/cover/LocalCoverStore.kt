@@ -1,6 +1,7 @@
-package com.komgareader.app.data
+package com.komgareader.data.cover
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.komgareader.data.download.LocalBookBytes
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
 import javax.inject.Inject
@@ -26,9 +28,13 @@ import javax.inject.Singleton
  * loads instantly instead of rendering each cover synchronously inside Coil's fetch (which janks on
  * E-Ink and pops covers in one by one).
  *
+ * Lives in `:data` (not the app layer): it only depends on the [DocumentFactory] **interface**
+ * (Seam B render), which the app wires to MuPDF — so the cache/render orchestration sits with the
+ * other persistence concerns and keeps `:app` a thin shell.
+ *
  * Single owner of the render-and-cache logic: both the background prewarm ([prewarmAndPrune],
  * kicked off after the local download reconcile) and the on-demand Coil fallback
- * ([LocalCoverRenderer]) go through [get]. The cache key folds the file signature (size + mtime),
+ * (`LocalCoverRenderer`) go through [get]. The cache key folds the file signature (size + mtime),
  * so replacing a local file re-renders and the stale file is pruned.
  */
 @Singleton
@@ -120,6 +126,24 @@ fun coverPrunePlan(existingFiles: Set<String>, keepKeys: Set<String>): Set<Strin
     existingFiles
         .filter { it.endsWith(".png") && it.removeSuffix(".png") !in keepKeys }
         .toSet()
+
+/**
+ * Opens [bytes] with [factory] and renders page 0 to PNG cover bytes; `null` if the document has no
+ * pages or yields an empty raster. Pure render glue (no repository / content-URI lookup) so it can be
+ * exercised directly on a device/emulator (MuPDF renders pdf/cbr/epub — see the render-core E2E).
+ */
+fun renderFirstPageCover(factory: DocumentFactory, bytes: ByteArray, formatHint: String): ByteArray? =
+    factory.open(bytes, formatHint).use { doc ->
+        if (doc.pageCount() < 1) return null
+        val page = doc.renderPage(index = 0, zoom = 1f, rotation = 0)
+        if (page.width <= 0 || page.height <= 0) return null
+        val bmp = Bitmap.createBitmap(page.pixels, page.width, page.height, Bitmap.Config.ARGB_8888)
+        ByteArrayOutputStream().use { out ->
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
+            bmp.recycle()
+            out.toByteArray()
+        }
+    }
 
 /** Only PDF/CBR need an app-side render; CBZ/EPUB covers come renderer-free from `:source-local`. */
 private fun needsAppRender(format: String): Boolean =

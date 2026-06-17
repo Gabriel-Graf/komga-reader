@@ -1,12 +1,10 @@
 package com.komgareader.app.data
 
-import android.graphics.Bitmap
 import com.komgareader.app.data.coil.SourceCover
-import com.komgareader.domain.render.DocumentFactory
+import com.komgareader.data.cover.LocalCoverStore
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.source.SourceId
 import kotlinx.coroutines.flow.first
-import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,21 +37,3 @@ class LocalCoverRenderer @Inject constructor(
         return coverStore.get(book)
     }
 }
-
-/**
- * Opens [bytes] with [factory] and renders page 0 to PNG cover bytes; `null` if the document has no
- * pages or yields an empty raster. Pure render glue (no repository / content-URI lookup) so it can be
- * exercised directly on a device/emulator (MuPDF renders pdf/cbr/epub — see the render-core E2E).
- */
-fun renderFirstPageCover(factory: DocumentFactory, bytes: ByteArray, formatHint: String): ByteArray? =
-    factory.open(bytes, formatHint).use { doc ->
-        if (doc.pageCount() < 1) return null
-        val page = doc.renderPage(index = 0, zoom = 1f, rotation = 0)
-        if (page.width <= 0 || page.height <= 0) return null
-        val bmp = Bitmap.createBitmap(page.pixels, page.width, page.height, Bitmap.Config.ARGB_8888)
-        ByteArrayOutputStream().use { out ->
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, out)
-            bmp.recycle()
-            out.toByteArray()
-        }
-    }

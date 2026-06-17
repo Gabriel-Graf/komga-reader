@@ -1,4 +1,4 @@
-package com.komgareader.app.data
+package com.komgareader.data.cover
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

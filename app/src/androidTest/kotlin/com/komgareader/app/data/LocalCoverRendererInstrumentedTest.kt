@@ -3,6 +3,7 @@ package com.komgareader.app.data
 import android.graphics.BitmapFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.komgareader.data.cover.renderFirstPageCover
 import com.komgareader.render.mupdf.MupdfDocumentFactory
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue

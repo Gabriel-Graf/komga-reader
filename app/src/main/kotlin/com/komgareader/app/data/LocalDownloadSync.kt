@@ -1,6 +1,7 @@
 package com.komgareader.app.data
 
 import com.komgareader.app.di.ApplicationScope
+import com.komgareader.data.cover.LocalCoverStore
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.source.SourceId
 import com.komgareader.source.local.LocalSource

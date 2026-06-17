@@ -50,8 +50,10 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   EPUB2 `<meta name="cover">`→Manifest-Item; pures Zip+Text-Parsing, JVM-unit-getestet `EpubCoverTest`).
   Das EPUB-Cover ist damit **Vollbild wie das Server-Cover** (Komga liefert dasselbe eingebettete Bild),
   **nicht** die reflowte erste Seite mit Lese-Rändern. **PDF/CBR** brauchen echt eine Render-Engine →
-  `coverBytes` gibt `ByteArray(0)`, und das Cover entsteht in der **App-Schicht**: der `@Singleton`
-  **`LocalCoverStore`** (`app/data`) **rendert vor** (Seite 0 via `DocumentFactory`/MuPDF) und
+  `coverBytes` gibt `ByteArray(0)`, und das Cover entsteht **außerhalb der Quelle**: der `@Singleton`
+  **`LocalCoverStore`** (`:data`, `com.komgareader.data.cover` — hängt nur am `DocumentFactory`-**Interface**
+  von Naht B, nicht an einer Render-Impl; 2026-06-17 aus `app/data` hierher verschoben, hält `app` dünn)
+  **rendert vor** (Seite 0 via `DocumentFactory`/MuPDF, `renderFirstPageCover`) und
   **persistiert** nach `filesDir/local-covers/<key>.png` — signatur-gekeyt (`coverCacheKey(remoteId,
   size:mtime)`, pure, unit-getestet), gebündelte Nebenläufigkeit (`Semaphore`), gepruned
   (`coverPrunePlan`, pure). Der **Hintergrund-Prewarm** läuft als `appScope.launch` am Ende von

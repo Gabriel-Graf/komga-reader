@@ -20,6 +20,15 @@ interface Strings {
     val shellLayoutCompact: String
     val shellLayoutExpanded: String
     val settingsUiPack: String
+    val settingsScreenSaver: String
+    val screenSaverOff: String
+    val screenSaverCustom: String
+    val screenSaverBookCover: String
+    val screenSaverCustomShort: String
+    val screenSaverBookCoverShort: String
+    val screenSaverPickImage: String
+    val screenSaverFillCrop: String
+    val screenSaverFillCropHelper: String
     val uiPackDefault: String
     val settingsServer: String
     val serverDisplayName: String
@@ -452,6 +461,15 @@ object StringsDe : Strings {
     override val shellLayoutCompact = "Kompakt (Telefon)"
     override val shellLayoutExpanded = "Breit (Tablet)"
     override val settingsUiPack = "UI-Pack"
+    override val settingsScreenSaver = "Bildschirmschoner"
+    override val screenSaverOff = "Aus"
+    override val screenSaverCustom = "Eigenes Bild"
+    override val screenSaverBookCover = "Aktuelles Buchcover"
+    override val screenSaverCustomShort = "Bild"
+    override val screenSaverBookCoverShort = "Cover"
+    override val screenSaverPickImage = "Bild wählen"
+    override val screenSaverFillCrop = "Bild füllen (zuschneiden)"
+    override val screenSaverFillCropHelper = "Füllt die Breite, schneidet oben und unten ab — statt das ganze Bild einzupassen."
     override val uiPackDefault = "Standard"
     override val settingsServer = "Komga-Server"
     override val serverDisplayName = "Anzeigename"
@@ -869,6 +887,15 @@ object StringsEn : Strings {
     override val shellLayoutCompact = "Compact (phone)"
     override val shellLayoutExpanded = "Wide (tablet)"
     override val settingsUiPack = "UI pack"
+    override val settingsScreenSaver = "Screensaver"
+    override val screenSaverOff = "Off"
+    override val screenSaverCustom = "Custom image"
+    override val screenSaverBookCover = "Current book cover"
+    override val screenSaverCustomShort = "Image"
+    override val screenSaverBookCoverShort = "Cover"
+    override val screenSaverPickImage = "Choose image"
+    override val screenSaverFillCrop = "Fill image (crop)"
+    override val screenSaverFillCropHelper = "Fills the width and crops top and bottom — instead of fitting the whole image."
     override val uiPackDefault = "Default"
     override val settingsServer = "Komga Server"
     override val serverDisplayName = "Display Name"

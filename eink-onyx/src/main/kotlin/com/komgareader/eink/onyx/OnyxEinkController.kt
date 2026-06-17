@@ -1,6 +1,7 @@
 package com.komgareader.eink.onyx
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.eink.EinkCapabilities
@@ -19,6 +20,7 @@ import com.onyx.android.sdk.api.device.brightness.FLBrightnessProvider
 import com.onyx.android.sdk.api.device.epd.EpdController
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 import com.onyx.android.sdk.api.device.epd.UpdateOption
+import com.onyx.android.sdk.api.device.screensaver.ScreenSaverUtils
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -199,6 +201,27 @@ class OnyxEinkController(
 
     override fun brightness(): Int =
         runCatching { brightnessProvider?.index ?: brightnessLevel }.getOrDefault(brightnessLevel)
+
+    // ---------------------------------------------------------------
+    // Screensaver (Naht B — device standby image). PoC: does the SDK path stick?
+    // ---------------------------------------------------------------
+
+    override fun setScreenSaverImage(absolutePath: String): Boolean {
+        // ScreenSaverUtils.setScreenResource broadcasts ONYX_SCREENSAVER_ACTION to the system, which
+        // installs the file as the standby image (TYPE_SCREENSAVER). showResultHint=true surfaces the
+        // Onyx toast so we can see acceptance on device.
+        val ok = runCatching {
+            ScreenSaverUtils.setScreenResource(appContext, absolutePath, ScreenSaverUtils.TYPE_SCREENSAVER, true)
+        }.isSuccess
+        // The Onyx daydream/standby service caches the standby bitmap and does not hot-reload when the
+        // image changes — only the FIRST set ever showed. The SDK's own direct-write path follows the
+        // write with an "update_standby_pic" broadcast to force a reload; replicate it so subsequent
+        // sets actually take effect on the live standby.
+        runCatching { appContext.sendBroadcast(Intent(ScreenSaverUtils.UPDATE_STANDBY_PIC_ACTION)) }
+        // adb logcat -s OnyxEinkController
+        Log.i(TAG, "setScreenSaverImage($absolutePath) -> $ok")
+        return ok
+    }
 
     companion object {
         private const val TAG = "OnyxEinkController"

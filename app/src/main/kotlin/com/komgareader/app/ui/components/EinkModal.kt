@@ -3,6 +3,7 @@ package com.komgareader.app.ui.components
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,11 +30,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.komgareader.ui.theme.EinkTokens
+import com.komgareader.ui.theme.LocalDesignTokens
 import com.komgareader.ui.icons.AppIcons
 import com.komgareader.ui.slots.DialogState
 import com.komgareader.ui.slots.LocalResolvedSlots
@@ -103,8 +105,8 @@ fun DefaultDialog(state: DialogState) {
                 }
                 state.content(this)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    EinkOutlinedButton(onClick = state.onDismiss, modifier = Modifier.weight(1f)) { Text(state.dismissLabel) }
-                    Button(onClick = state.onConfirm, enabled = state.confirmEnabled, modifier = Modifier.weight(1f)) { Text(state.confirmLabel) }
+                    FlatActionButton(state.dismissLabel, filled = false, onClick = state.onDismiss, modifier = Modifier.weight(1f))
+                    FlatActionButton(state.confirmLabel, filled = true, onClick = state.onConfirm, enabled = state.confirmEnabled, modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -202,11 +204,54 @@ fun EinkConfirmDialog(
                     )
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    EinkOutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(dismissLabel) }
-                    Button(onClick = onConfirm, modifier = Modifier.weight(1f)) { Text(confirmLabel) }
+                    FlatActionButton(dismissLabel, filled = false, onClick = onDismiss, modifier = Modifier.weight(1f))
+                    FlatActionButton(confirmLabel, filled = true, onClick = onConfirm, modifier = Modifier.weight(1f))
                 }
             }
         }
+    }
+}
+
+/**
+ * The shared modal action button (request 2026-06-17): the ONE flat button style for every dialog
+ * footer ([DefaultDialog] + [EinkConfirmDialog]), matching the settings segmented buttons —
+ * square-ish 8dp corners (not a Material pill), hairline border when outlined, filled in the device
+ * accent (mono E-Ink = black) when [filled]. Secondary outlined, primary filled. [enabled] = false
+ * renders an inactive (muted, non-clickable) state. Keeping all modal footers on this one button
+ * makes the look sustainable — restyle here, every dialog follows.
+ */
+@Composable
+private fun FlatActionButton(
+    label: String,
+    filled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val tokens = LocalDesignTokens.current
+    val shape = RoundedCornerShape(8.dp)
+    val surface = when {
+        !enabled -> Modifier.border(EinkTokens.hairline, MaterialTheme.colorScheme.outlineVariant, shape)
+        filled -> Modifier.background(tokens.accent)
+        else -> Modifier.border(EinkTokens.hairline, MaterialTheme.colorScheme.outline, shape)
+    }
+    Box(
+        modifier = modifier
+            .height(44.dp)
+            .clip(shape)
+            .then(surface)
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = when {
+                !enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                filled -> tokens.onAccent
+                else -> MaterialTheme.colorScheme.onSurface
+            },
+        )
     }
 }
 

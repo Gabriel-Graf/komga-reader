@@ -80,6 +80,7 @@ import com.komgareader.ui.theme.EinkTokens
 import com.komgareader.app.ui.theme.ThemeMode
 import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.DisplayMode
+import com.komgareader.domain.model.ScreenSaverMode
 import com.komgareader.domain.model.ExternalOpenBehavior
 import com.komgareader.domain.model.ReaderPreset
 import com.komgareader.domain.model.ShellLayoutMode
@@ -513,39 +514,109 @@ fun AppearanceSettingsContent(viewModel: SettingsViewModel, query: String) {
     val activeUiPack by viewModel.activeUiPack.collectAsState()
     val uiPacks by viewModel.availableUiPacks.collectAsState()
 
-    // Eigener Column-Root (wie [ReaderSettingsContent]): der Host platziert die Section-`content` in einer
-    // Box (SettingsScreen.kt), die mehrere Geschwister ÜBEREINANDER stapeln würde — die Gruppen
-    // (Anzeige-Modus + Theme + UI-Pack) müssen vertikal gestapelt werden, sonst überlappen sie.
-    Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
-        SettingsGroup(s.settingsDisplayMode, query) {
-            DisplayMode.entries.forEach { mode ->
-                ChoiceRow(displayLabel(mode), selected = mode == displayMode, query = query, dense = true) {
-                    viewModel.setDisplayMode(mode.name)
-                }
-            }
-        }
-        SettingsGroup(s.settingsTheme, query) {
-            ThemeMode.entries.forEach { mode ->
-                val label = when (mode) {
-                    ThemeMode.LIGHT -> s.themeLight
-                    ThemeMode.DARK -> s.themeDark
-                    ThemeMode.SYSTEM -> s.themeSystem
-                }
-                ChoiceRow(label, selected = mode == themeMode, query = query, dense = true) {
-                    viewModel.setTheme(mode.name)
-                }
-            }
-        }
+    // UI-Pack: „Standard" + jeder installierte data-only UI-Pack, als (key,label)-Liste für den Picker.
+    val uiPackOptions = remember(uiPacks) {
+        listOf("" to s.uiPackDefault) + uiPacks.map { it.packageName to it.displayName }
+    }
+    val uiPackLabel = uiPackOptions.firstOrNull { it.first == activeUiPack }?.second ?: s.uiPackDefault
+    var showUiPackPicker by remember { mutableStateOf(false) }
 
-        SettingsGroup(s.settingsUiPack, query) {
-            ChoiceRow(s.uiPackDefault, selected = activeUiPack.isBlank(), query = query, dense = true) {
-                viewModel.setActiveUiPack("")
+    // Inline-Segment-Selektoren statt vertikaler Auswahl-Listen (request 2026-06-17, Reader-Look):
+    // Label links, Optionen als Buttons rechts. UI-Pack als Wert+Picker-Modal (variable Länge).
+    Column(Modifier.padding(start = SettingsGroupIndent), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        SegmentedChoiceRow(
+            label = s.settingsDisplayMode,
+            options = DisplayMode.entries.map { SegmentOption(it.name, displayLabel(it)) },
+            selectedKey = displayMode.name,
+            onSelect = { viewModel.setDisplayMode(it) },
+            query = query,
+        )
+        SegmentedChoiceRow(
+            label = s.settingsTheme,
+            options = listOf(
+                SegmentOption(ThemeMode.LIGHT.name, s.themeLight),
+                SegmentOption(ThemeMode.DARK.name, s.themeDark),
+                SegmentOption(ThemeMode.SYSTEM.name, s.themeSystem),
+            ),
+            selectedKey = themeMode.name,
+            onSelect = { viewModel.setTheme(it) },
+            query = query,
+        )
+        PickerRow(
+            label = s.settingsUiPack,
+            value = uiPackLabel,
+            onClick = { showUiPackPicker = true },
+            query = query,
+        )
+
+        // Screensaver: device standby image. E-Ink only (the Onyx SDK path); hidden otherwise.
+        if (viewModel.hasScreenSaver) {
+            ScreenSaverGroup(viewModel, query)
+        }
+    }
+
+    if (showUiPackPicker) {
+        PickerModal(
+            title = s.settingsUiPack,
+            options = uiPackOptions,
+            selectedKey = activeUiPack,
+            keyOf = { it.first },
+            labelOf = { it.second },
+            onSelect = { viewModel.setActiveUiPack(it) },
+            onDismiss = { showUiPackPicker = false },
+            closeLabel = s.close,
+        )
+    }
+}
+
+/**
+ * Screensaver group: choose the device standby image — off, a user-picked custom image, or the
+ * cover of the book currently being read (auto-refreshed each time a book opens). Picking an image
+ * via SAF persists the URI (persistable read permission) and applies it at once.
+ */
+@Composable
+private fun ScreenSaverGroup(viewModel: SettingsViewModel, query: String) {
+    val s = LocalStrings.current
+    val ctx = LocalContext.current
+    val modeStr by viewModel.screenSaverMode.collectAsState()
+    val mode = runCatching { ScreenSaverMode.valueOf(modeStr) }.getOrDefault(ScreenSaverMode.OFF)
+    val fillCrop by viewModel.screenSaverFillCrop.collectAsState()
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        if (uri != null) {
+            runCatching {
+                ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            uiPacks.forEach { spec ->
-                ChoiceRow(spec.displayName, selected = spec.packageName == activeUiPack, query = query, dense = true) {
-                    viewModel.setActiveUiPack(spec.packageName)
-                }
-            }
+            viewModel.setScreenSaverCustomImage(uri)
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        SegmentedChoiceRow(
+            label = s.settingsScreenSaver,
+            options = listOf(
+                SegmentOption(ScreenSaverMode.OFF.name, s.screenSaverOff),
+                SegmentOption(ScreenSaverMode.CUSTOM.name, s.screenSaverCustomShort),
+                SegmentOption(ScreenSaverMode.BOOK_COVER.name, s.screenSaverBookCoverShort),
+            ),
+            selectedKey = mode.name,
+            onSelect = { viewModel.setScreenSaverMode(it) },
+            query = query,
+        )
+        if (mode == ScreenSaverMode.CUSTOM) {
+            EinkOutlinedButton(
+                onClick = { picker.launch(arrayOf("image/*")) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text(s.screenSaverPickImage) }
+        }
+        if (mode != ScreenSaverMode.OFF) {
+            SwitchRow(
+                label = s.screenSaverFillCrop,
+                helper = s.screenSaverFillCropHelper,
+                checked = fillCrop,
+                onCheckedChange = { viewModel.setScreenSaverFillCrop(it) },
+                query = query,
+            )
         }
     }
 }

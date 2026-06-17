@@ -1,9 +1,11 @@
 package com.komgareader.app.ui.settings
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.PluginCatalog
+import com.komgareader.app.data.ScreenSaverManager
 import com.komgareader.app.data.SourceRegistration
 import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
@@ -14,6 +16,7 @@ import com.komgareader.domain.eink.EinkController
 import com.komgareader.domain.eink.EinkModeOption
 import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.ColorProfile
+import com.komgareader.domain.model.ScreenSaverMode
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.model.SourceKind
 import com.komgareader.domain.render.NovelFonts
@@ -49,6 +52,7 @@ class SettingsViewModel @Inject constructor(
     private val einkController: EinkController,
     @ApplicationContext private val context: Context,
     private val readingStats: ReadingStatsRepository,
+    private val screenSaver: ScreenSaverManager,
 ) : ViewModel() {
     val themeMode = settings.themeMode.stateIn(viewModelScope, SharingStarted.Eagerly, "SYSTEM")
     val language = settings.language.stateIn(viewModelScope, SharingStarted.Eagerly, "de")
@@ -80,6 +84,11 @@ class SettingsViewModel @Inject constructor(
     // E-Ink Dynamics: device capabilities (static) + per-context overrides (persistent).
     val einkRefreshModes: List<EinkModeOption> = einkController.capabilities.refreshModes
     val einkColorModes: List<EinkModeOption> = einkController.capabilities.colorModes
+
+    // Screensaver (E-Ink only): the device standby image. Hidden on hardware without one.
+    val hasScreenSaver: Boolean = einkController.capabilities.hasEink
+    val screenSaverMode = settings.screenSaverMode.stateIn(viewModelScope, SharingStarted.Eagerly, "OFF")
+    val screenSaverFillCrop = settings.screenSaverFillCrop.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val einkContextProfiles = settings.einkContextProfiles
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
@@ -192,6 +201,29 @@ class SettingsViewModel @Inject constructor(
     fun setTheme(value: String) = viewModelScope.launch { settings.setThemeMode(value) }.let {}
     fun setLanguage(value: String) = viewModelScope.launch { settings.setLanguage(value) }.let {}
     fun setDisplayMode(value: String) = viewModelScope.launch { settings.setDisplayMode(value) }.let {}
+
+    /** Screensaver mode. Switching to CUSTOM re-applies the stored custom image immediately. */
+    fun setScreenSaverMode(value: String) = viewModelScope.launch {
+        settings.setScreenSaverMode(value)
+        if (value == ScreenSaverMode.CUSTOM.name) {
+            val uri = settings.screenSaverCustomUri.first()
+            if (uri.isNotBlank()) screenSaver.applyUri(Uri.parse(uri))
+        }
+    }.let {}
+
+    /** Persists the picked custom image, switches to CUSTOM mode, and applies it now. */
+    fun setScreenSaverCustomImage(uri: Uri) = viewModelScope.launch {
+        settings.setScreenSaverCustomUri(uri.toString())
+        settings.setScreenSaverMode(ScreenSaverMode.CUSTOM.name)
+        screenSaver.applyUri(uri)
+    }.let {}
+
+    /** Toggles fill-crop vs letterbox and re-fits the last applied image at once — works for any mode
+     *  (custom or book cover), since the manager caches the last source. */
+    fun setScreenSaverFillCrop(value: Boolean) = viewModelScope.launch {
+        settings.setScreenSaverFillCrop(value)
+        screenSaver.reapply()
+    }.let {}
     fun setShellLayoutMode(value: String) =
         viewModelScope.launch { settings.setShellLayoutMode(value) }.let {}
     fun setActiveUiPack(packageName: String) =

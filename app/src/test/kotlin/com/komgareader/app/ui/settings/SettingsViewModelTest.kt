@@ -104,6 +104,7 @@ class SettingsViewModelTest {
             stubEinkController(),
             mockk(relaxed = true),
             StubReadingStatsRepository(),
+            mockk(relaxed = true),
         )
     }
 
@@ -120,6 +121,7 @@ class SettingsViewModelTest {
             stubEinkController(),
             mockk(relaxed = true),
             StubReadingStatsRepository(),
+            mockk(relaxed = true),
         )
     }
 
@@ -217,6 +219,9 @@ private class StubSettingsRepository : SettingsRepository {
     override val lastSeenVersion: Flow<String> = flowOf("")
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
     override val frontlightLevel: Flow<Int> = flowOf(-1)
+    override val screenSaverMode: Flow<String> = flowOf("OFF")
+    override val screenSaverCustomUri: Flow<String> = flowOf("")
+    override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -243,6 +248,9 @@ private class StubSettingsRepository : SettingsRepository {
     override suspend fun setLastSeenVersion(version: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
     override suspend fun setFrontlightLevel(level: Int) {}
+    override suspend fun setScreenSaverMode(value: String) {}
+    override suspend fun setScreenSaverCustomUri(uri: String) {}
+    override suspend fun setScreenSaverFillCrop(value: Boolean) {}
 }
 
 /**
@@ -292,6 +300,9 @@ private class CapturingSettingsRepository(
     override val lastSeenVersion: Flow<String> = flowOf("")
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
     override val frontlightLevel: Flow<Int> = flowOf(-1)
+    override val screenSaverMode: Flow<String> = flowOf("OFF")
+    override val screenSaverCustomUri: Flow<String> = flowOf("")
+    override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
     override suspend fun setThemeMode(value: String) {}
     override suspend fun setLanguage(value: String) {}
     override suspend fun setDisplayMode(value: String) {}
@@ -318,6 +329,9 @@ private class CapturingSettingsRepository(
     override suspend fun setLastSeenVersion(version: String) {}
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
     override suspend fun setFrontlightLevel(level: Int) {}
+    override suspend fun setScreenSaverMode(value: String) {}
+    override suspend fun setScreenSaverCustomUri(uri: String) {}
+    override suspend fun setScreenSaverFillCrop(value: Boolean) {}
 }
 
 /** Minimal-Stub: leere Sammlungen; Schreib-Operationen werden in diesen Tests nicht ausgeübt. */

@@ -31,6 +31,15 @@ class MapBackedStrings(
     override val shellLayoutCompact: String get() = overrides["shellLayoutCompact"] ?: fallback.shellLayoutCompact
     override val shellLayoutExpanded: String get() = overrides["shellLayoutExpanded"] ?: fallback.shellLayoutExpanded
     override val settingsUiPack: String get() = overrides["settingsUiPack"] ?: fallback.settingsUiPack
+    override val settingsScreenSaver: String get() = overrides["settingsScreenSaver"] ?: fallback.settingsScreenSaver
+    override val screenSaverOff: String get() = overrides["screenSaverOff"] ?: fallback.screenSaverOff
+    override val screenSaverCustom: String get() = overrides["screenSaverCustom"] ?: fallback.screenSaverCustom
+    override val screenSaverBookCover: String get() = overrides["screenSaverBookCover"] ?: fallback.screenSaverBookCover
+    override val screenSaverCustomShort: String get() = overrides["screenSaverCustomShort"] ?: fallback.screenSaverCustomShort
+    override val screenSaverBookCoverShort: String get() = overrides["screenSaverBookCoverShort"] ?: fallback.screenSaverBookCoverShort
+    override val screenSaverPickImage: String get() = overrides["screenSaverPickImage"] ?: fallback.screenSaverPickImage
+    override val screenSaverFillCrop: String get() = overrides["screenSaverFillCrop"] ?: fallback.screenSaverFillCrop
+    override val screenSaverFillCropHelper: String get() = overrides["screenSaverFillCropHelper"] ?: fallback.screenSaverFillCropHelper
     override val uiPackDefault: String get() = overrides["uiPackDefault"] ?: fallback.uiPackDefault
     override val settingsServer: String get() = overrides["settingsServer"] ?: fallback.settingsServer
     override val serverDisplayName: String get() = overrides["serverDisplayName"] ?: fallback.serverDisplayName

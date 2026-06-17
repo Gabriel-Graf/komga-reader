@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.data.ScreenSaverManager
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.ErrorKind
@@ -15,6 +16,7 @@ import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
+import com.komgareader.domain.model.ScreenSaverMode
 import com.komgareader.domain.reader.WebtoonChapter
 import com.komgareader.domain.render.Document
 import com.komgareader.domain.render.DocumentFactory
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,6 +56,7 @@ class ReaderViewModel @Inject constructor(
     private val localBookBytes: LocalBookBytes,
     private val documentFactory: DocumentFactory,
     private val settings: SettingsRepository,
+    private val screenSaver: ScreenSaverManager,
 ) : ViewModel(), Viewer {
 
     private val bookId: String = checkNotNull(savedStateHandle["bookId"])
@@ -132,6 +136,21 @@ class ReaderViewModel @Inject constructor(
     init {
         loadBook()
         collectButtonEvents()
+        updateScreenSaverCover()
+    }
+
+    /**
+     * When the screensaver is set to "current book cover", publish this book's cover so the device
+     * shows it on standby. Fire-and-forget, off the load path (no impact on time-to-first-page);
+     * no-op unless the mode is BOOK_COVER and the device supports a screensaver.
+     */
+    private fun updateScreenSaverCover() = viewModelScope.launch {
+        val mode = runCatching { ScreenSaverMode.valueOf(settings.screenSaverMode.first()) }
+            .getOrDefault(ScreenSaverMode.OFF)
+        if (mode != ScreenSaverMode.BOOK_COVER) return@launch
+        val source = active.get(routeSourceId) ?: return@launch
+        val bytes = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
+        if (bytes != null && bytes.isNotEmpty()) screenSaver.applyBytes(bytes)
     }
 
     private fun loadBook() = viewModelScope.launch {

@@ -43,6 +43,12 @@ interface SettingsRepository {
     val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>>
     /** Persisted frontlight brightness level (0–100). -1 = never set (leave device current). */
     val frontlightLevel: Flow<Int>
+    /** Device screensaver mode (E-Ink only): "OFF" | "CUSTOM" | "BOOK_COVER". Default OFF. */
+    val screenSaverMode: Flow<String>
+    /** Content URI of the user-picked custom screensaver image, or "" if none. */
+    val screenSaverCustomUri: Flow<String>
+    /** Screensaver scaling: true = fill width & crop top/bottom (cover), false = letterbox (contain). */
+    val screenSaverFillCrop: Flow<Boolean>
     suspend fun setThemeMode(value: String)
     suspend fun setLanguage(value: String)
     suspend fun setDisplayMode(value: String)
@@ -69,4 +75,7 @@ interface SettingsRepository {
     suspend fun setLastSeenVersion(version: String)
     suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile)
     suspend fun setFrontlightLevel(level: Int)
+    suspend fun setScreenSaverMode(value: String)
+    suspend fun setScreenSaverCustomUri(uri: String)
+    suspend fun setScreenSaverFillCrop(value: Boolean)
 }

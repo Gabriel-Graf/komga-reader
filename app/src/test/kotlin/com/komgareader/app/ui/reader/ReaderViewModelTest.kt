@@ -152,6 +152,9 @@ class ReaderViewModelTest {
         override val lastSeenVersion: Flow<String> = flowOf("")
         override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> = flowOf(emptyMap())
         override val frontlightLevel: Flow<Int> = flowOf(-1)
+        override val screenSaverMode: Flow<String> = flowOf("OFF")
+        override val screenSaverCustomUri: Flow<String> = flowOf("")
+        override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
         override suspend fun setThemeMode(value: String) = error("not used")
         override suspend fun setLanguage(value: String) = error("not used")
         override suspend fun setDisplayMode(value: String) = error("not used")
@@ -178,6 +181,9 @@ class ReaderViewModelTest {
         override suspend fun setLastSeenVersion(version: String) = error("not used")
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) = error("not used")
         override suspend fun setFrontlightLevel(level: Int) = error("not used")
+        override suspend fun setScreenSaverMode(value: String) = error("not used")
+        override suspend fun setScreenSaverCustomUri(uri: String) = error("not used")
+        override suspend fun setScreenSaverFillCrop(value: Boolean) = error("not used")
     }
 
     private fun book(remoteId: String, pageCount: Int) = Book(
@@ -205,6 +211,7 @@ class ReaderViewModelTest {
         localBookBytes = FakeLocalBookBytes(localBytes),
         documentFactory = documentFactory,
         settings = FakeSettings(),
+        screenSaver = mockk(relaxed = true),
     )
 
     private fun downloadedBook() = DownloadedBook(

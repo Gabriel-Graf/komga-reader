@@ -5,5 +5,15 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:usesCleartextTraffic="true"
-        tools:replace="android:usesCleartextTraffic" />
+        tools:replace="android:usesCleartextTraffic">
+        <!-- Debug-only screensaver PoC trigger (see ScreenSaverPocReceiver). Exported so adb can
+             fire it; never present in release. -->
+        <receiver
+            android:name="com.komgareader.app.debug.ScreenSaverPocReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.komgareader.app.debug.SET_SCREENSAVER" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

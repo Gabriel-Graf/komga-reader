@@ -54,4 +54,11 @@ interface EinkController {
 
     /** Current frontlight brightness (0 if unsupported). */
     fun brightness(): Int
+
+    /**
+     * Sets the device standby/screensaver image to the file at [absolutePath]. Returns true if the
+     * device accepted it. No-op returning false on hardware without a controllable screensaver
+     * (proof-of-concept: verifies the Onyx SDK path works and is not overridden by the system saver).
+     */
+    fun setScreenSaverImage(absolutePath: String): Boolean = false
 }

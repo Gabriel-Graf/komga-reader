@@ -76,6 +76,12 @@ class EinkContextControllerTest {
         override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {}
         override val frontlightLevel: Flow<Int> = flowOf(-1)
         override suspend fun setFrontlightLevel(level: Int) {}
+        override val screenSaverMode: Flow<String> = flowOf("OFF")
+        override val screenSaverCustomUri: Flow<String> = flowOf("")
+        override val screenSaverFillCrop: Flow<Boolean> = flowOf(false)
+        override suspend fun setScreenSaverMode(value: String) {}
+        override suspend fun setScreenSaverCustomUri(uri: String) {}
+        override suspend fun setScreenSaverFillCrop(value: Boolean) {}
     }
 
     private fun controllerWith(eink: EinkController) = EinkContextController(

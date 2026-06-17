@@ -64,6 +64,13 @@ android {
             isMinifyEnabled = false
             if (keystorePropsFile.exists()) signingConfig = signingConfigs.getByName("release")
         }
+        debug {
+            // Distinct applicationId so a debug/test build installs ALONGSIDE the release build on a
+            // real device instead of replacing it (release is release-signed, debug debug-signed —
+            // reinstalling over it would force an uninstall and wipe the user's data). Never overwrite
+            // the on-device release build when testing.
+            applicationIdSuffix = ".debug"
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

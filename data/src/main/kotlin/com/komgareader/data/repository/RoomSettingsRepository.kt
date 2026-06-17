@@ -8,6 +8,7 @@ import com.komgareader.domain.eink.EinkContext
 import com.komgareader.domain.eink.EinkContextProfile
 import com.komgareader.domain.model.BookmarkMarkerStyle
 import com.komgareader.domain.model.ExternalOpenBehavior
+import com.komgareader.domain.model.ScreenSaverMode
 import com.komgareader.domain.model.ShellLayoutMode
 import com.komgareader.domain.render.NovelFonts
 import com.komgareader.domain.repository.SettingsRepository
@@ -70,6 +71,12 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     // Default -1: key absent means the user has never set a brightness preference.
     override val frontlightLevel: Flow<Int> =
         dao.observe(KEY_FRONTLIGHT_LEVEL).map { it?.toIntOrNull() ?: -1 }
+    override val screenSaverMode: Flow<String> =
+        dao.observe(KEY_SCREENSAVER_MODE).map { it ?: ScreenSaverMode.OFF.name }
+    override val screenSaverCustomUri: Flow<String> =
+        dao.observe(KEY_SCREENSAVER_CUSTOM_URI).map { it ?: "" }
+    override val screenSaverFillCrop: Flow<Boolean> =
+        dao.observe(KEY_SCREENSAVER_FILL_CROP).map { it == "true" }
 
     override suspend fun setThemeMode(value: String) = dao.put(SettingEntity(KEY_THEME, value))
     override suspend fun setLanguage(value: String) = dao.put(SettingEntity(KEY_LANG, value))
@@ -109,6 +116,9 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         dao.put(SettingEntity(KEY_OFFICIAL_REPO_ENABLED, enabled.toString()))
     override suspend fun setActiveUiPack(packageName: String) =
         dao.put(SettingEntity(KEY_ACTIVE_UI_PACK, packageName))
+    override suspend fun setScreenSaverMode(value: String) = dao.put(SettingEntity(KEY_SCREENSAVER_MODE, value))
+    override suspend fun setScreenSaverCustomUri(uri: String) = dao.put(SettingEntity(KEY_SCREENSAVER_CUSTOM_URI, uri))
+    override suspend fun setScreenSaverFillCrop(value: Boolean) = dao.put(SettingEntity(KEY_SCREENSAVER_FILL_CROP, value.toString()))
     override suspend fun setEinkContextProfile(context: EinkContext, profile: EinkContextProfile) {
         val current = decodeEinkContextProfiles(dao.observe(KEY_EINK_CONTEXT_PROFILES).first())
         val next = current + (context to profile)
@@ -151,5 +161,8 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_LAST_SEEN_VERSION = "last_seen_version"
         const val KEY_EINK_CONTEXT_PROFILES = "eink_context_profiles"
         const val KEY_FRONTLIGHT_LEVEL = "frontlight_level"
+        const val KEY_SCREENSAVER_MODE = "screensaver_mode"
+        const val KEY_SCREENSAVER_CUSTOM_URI = "screensaver_custom_uri"
+        const val KEY_SCREENSAVER_FILL_CROP = "screensaver_fill_crop"
     }
 }

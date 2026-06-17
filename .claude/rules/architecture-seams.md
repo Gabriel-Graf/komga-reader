@@ -379,6 +379,20 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   leere Liste = Achse nicht unterstützt, UI blendet Sektion aus; `brightnessRange: IntRange?` = Frontlight-
   Index-Raum oder null; `hasHardwareButtons: Boolean` = physische Tasten, Onyx=true/NoOp=false) — siehe
   Big-Picture-Doku zur Geräteklassen-Frage.
+- **Screensaver / Standby-Bild (Ist, 2026-06-16):** `EinkController.setScreenSaverImage(absolutePath): Boolean`
+  (domain, Default `false`; NoOp inert) setzt das Geräte-Standby-Bild. **Onyx-Impl** nutzt
+  `ScreenSaverUtils.setScreenResource(ctx, path, TYPE_SCREENSAVER, true)` (`com.onyx.android.sdk.api.device.screensaver`) —
+  eine **normale, nicht-System-App darf das** (PoC + physisch auf echter Boox verifiziert; nicht vom System
+  überspielt). **Harte Anforderung:** das Bild muss in **öffentlichem Shared-Storage** liegen (der Onyx-System-Prozess
+  läuft als anderer uid) — `filesDir` → „Image file not exists!", `Android/data`-External → EACCES (FUSE); deshalb
+  publiziert der `@Singleton ScreenSaverManager` (`app/data`) über **MediaStore/Pictures** und reicht den aufgelösten
+  absoluten Pfad durch (`coverBytes`/Custom-Bytes → Bitmap → PNG, eine wiederverwendete Datei). **Feature
+  (Ist, 2026-06-16):** Settings → Darstellung → „Bildschirmschoner" (`ScreenSaverMode{OFF,CUSTOM,BOOK_COVER}`,
+  Room-Keys `screensaver_mode`/`screensaver_custom_uri`, **keine Migration**, gegated über `capabilities.hasEink`).
+  CUSTOM = SAF-gewähltes Bild (persistable URI); BOOK_COVER = `ReaderViewModel` setzt beim Öffnen jedes Werks dessen
+  Cover als Screensaver (fire-and-forget, off the load path). **Nicht per adb visuell verifizierbar** (Onyx-Standby ist
+  ein Daydream-Overlay, SurfaceFlinger sieht es nicht); `ScreenSaverManager` end-to-end auf Boox verifiziert
+  (`adb logcat -s ScreenSaverManager OnyxEinkController` + Onyx „scanned successfully").
 - **Reader-Input + Frontlight (Ist, 2026-06-15 — Hardware-Tasten, manueller Refresh, Helligkeit):**
   Drei additive Erweiterungen der Device-Naht für gerätenahen Reader-Input, alle agnostisch
   (NoOp inert). (1) **Press-Art:** `ButtonEvent` trägt jetzt `press: PressKind {SHORT, LONG}`

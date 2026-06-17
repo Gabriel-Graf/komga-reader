@@ -6,9 +6,9 @@ import com.komgareader.plugin.FieldType
 import org.json.JSONObject
 
 /**
- * Reiner Parser eines data-only Plugin-Config-Schemas (org.json, analog [parsePresetSpecs]).
- * Unbekannte/fehlerhafte Feld-Typen werden übersprungen; `min/max/step` nur für NUMBER gelesen.
- * Liefert null bei nicht-parsebarem JSON.
+ * Pure parser for a data-only plugin config schema (org.json, analogous to [parsePresetSpecs]).
+ * Unknown/invalid field types are skipped; `min/max/step` are only read for NUMBER fields.
+ * Returns null for unparseable JSON.
  */
 fun parseConfigSchema(json: String): ConfigSchema? {
     val root = runCatching { JSONObject(json) }.getOrNull() ?: return null

@@ -3,12 +3,12 @@ package com.komgareader.plugin.host
 import com.komgareader.plugin.PluginCategory
 
 /**
- * Ein installiertes, ABI-kompatibles **data-only** Plugin beliebiger Kategorie. Trägt den bereits
- * gelesenen Asset-JSON-String — KEIN Plugin-Code wird geladen (Asset via `createPackageContext(pkg, 0)`,
- * Flags 0 = nur Ressourcen). Die kategorie-spezifische Interpretation (Parsen/Clampen) passiert
- * darüber (z.B. [parsePresetSpecs] für [PluginCategory.COLOR_PRESET]).
+ * An installed, ABI-compatible **data-only** plugin of any category. Carries the already-read
+ * asset JSON string — NO plugin code is loaded (asset via `createPackageContext(pkg, 0)`,
+ * flags 0 = resources only). Category-specific interpretation (parsing/clamping) happens above
+ * (e.g. [parsePresetSpecs] for [PluginCategory.COLOR_PRESET]).
  *
- * Kein `signatureSha256`: data-only Plugins führen nie Code aus → kein TOFU/Signatur-Pinning nötig.
+ * No `signatureSha256`: data-only plugins never execute code → no TOFU/signature pinning needed.
  */
 data class DiscoveredDataPlugin(
     val packageName: String,
@@ -24,9 +24,9 @@ data class DiscoveredDataPlugin(
 )
 
 /**
- * Metadaten eines installierten, ABI-kompatiblen data-only Plugins OHNE dass das Asset gelesen wird.
- * Für Kategorien mit großen Binär-Assets (z.B. PANEL_MODEL/ONNX, mehrere MB): Listen/UI brauchen nur
- * Identität + ABI + Asset-Name, nicht die Bytes. Bytes erst über [PluginHost.binaryDataPluginBytes].
+ * Metadata of an installed, ABI-compatible data-only plugin WITHOUT reading the asset.
+ * For categories with large binary assets (e.g. PANEL_MODEL/ONNX, multiple MB): listings/UI only
+ * need identity + ABI + asset name, not the bytes. Bytes are read lazily via [PluginHost.binaryDataPluginBytes].
  */
 data class DataPluginInfo(
     val packageName: String,
@@ -34,6 +34,6 @@ data class DataPluginInfo(
     val abiVersion: Int,
     val assetName: String,
     val displayName: String,
-    /** Asset-Name des optionalen Config-Schemas (DATA_CONFIG), null wenn das Plugin keins deklariert. */
+    /** Asset name of the optional config schema (DATA_CONFIG), null when the plugin declares none. */
     val configAssetName: String? = null,
 )

@@ -6,7 +6,7 @@ import org.json.JSONObject
 import kotlin.math.roundToInt
 
 /**
- * Baut das mllabeltool-Prediction-Sidecar (pixel-space) zu den aktuell erkannten (falschen) Panels.
+ * Builds the mllabeltool prediction sidecar (pixel-space) for the currently detected (possibly wrong) panels.
  * Format: { "items": [ { "box": [x,y,w,h], "label": "panel", "score": <float> } ] }.
  */
 fun misdetectionSidecarJson(panels: List<NormRect>, imageW: Int, imageH: Int): String {

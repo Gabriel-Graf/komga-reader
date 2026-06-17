@@ -23,13 +23,14 @@ import com.komgareader.plugin.ConfigSchema
 import com.komgareader.plugin.FieldType
 import kotlin.math.roundToInt
 
+private const val DEFAULT_NUMBER_STEP = 0.05
+
 /**
- * Gehaltener Zustand eines Plugin-Konfigurations-Formulars — ermöglicht es dem Aufrufer
- * (z. B. einem [com.komgareader.app.ui.components.EinkModal]), den Bestätigen-Button zu
- * steuern und die Werte beim Bestätigen abzugreifen, ohne den Submit-Button ins Formular
- * zu legen.
+ * Retained state of a plugin configuration form — lets the caller (e.g. an
+ * [com.komgareader.app.ui.components.EinkModal]) control the confirm button and read back
+ * the values on confirmation, without placing a submit button inside the form.
  *
- * Typischer Verwendungsfall:
+ * Typical usage:
  * ```kotlin
  * val formState = rememberPluginFormState(schema)
  * EinkModal(
@@ -44,22 +45,22 @@ class PluginFormState(
     internal val schema: ConfigSchema,
     val values: SnapshotStateMap<String, String>,
 ) {
-    /** true, wenn alle Pflichtfelder (nicht-BOOL) ausgefüllt sind. */
+    /** true when all required fields (non-BOOL) are filled in. */
     val isValid: Boolean
         get() = schema.fields
             .filter { it.required && it.type != FieldType.BOOL }
             .all { field -> values[field.key].orEmpty().isNotBlank() }
 
-    /** Liefert eine unveränderliche Kopie der aktuellen Werte. */
+    /** Returns an immutable snapshot of the current values. */
     fun snapshot(): Map<String, String> = values.toMap()
 }
 
 /**
- * Erzeugt und merkt sich einen [PluginFormState] für das gegebene [schema].
- * Vorbelegt: gesetzter Default oder typ-spezifischer Fallback:
+ * Creates and remembers a [PluginFormState] for the given [schema].
+ * Pre-filled with the configured default or a type-specific fallback:
  * - BOOL   → "false"
- * - NUMBER → "%.2f".format(min ?: 0.0) — passend zum Slider-Speicherformat, kein Rundungs-Drift
- * - sonst  → "" (Pflichtfelder → isValid prüft auf Leer-String)
+ * - NUMBER → "%.2f".format(min ?: 0.0) — matches the slider storage format, no rounding drift
+ * - else   → "" (required fields → isValid checks for empty string)
  */
 @Composable
 fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
@@ -79,28 +80,28 @@ fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
 }
 
 /**
- * Generisches Formular für ein Plugin-[ConfigSchema] zur Integration in ein
- * [com.komgareader.app.ui.components.EinkModal]: rendert je [ConfigField] genau ein
- * E-Ink-konformes Control aus [state] und sammelt die Werte. Es legt bewusst KEINEN
- * Submit-Button ins Formular — der Modal-eigene Bestätigen-Button ist der Submit-Auslöser
+ * Generic form for a plugin [ConfigSchema] for use inside an
+ * [com.komgareader.app.ui.components.EinkModal]: renders exactly one E-Ink-conformant control
+ * per [ConfigField] from [state] and collects the values. Deliberately places NO submit button
+ * in the form — the modal's own confirm button is the submit trigger
  * (`onConfirm = { onSubmit(state.snapshot()) }`, `confirmEnabled = state.isValid`).
- * [state] muss per [rememberPluginFormState] im Aufrufer erzeugt worden sein.
+ * [state] must be created by [rememberPluginFormState] in the caller.
  *
- * Verantwortung: Schema → Werte-Map.
+ * Responsibility: schema → values map.
  *
- * E-Ink-Invarianten:
- * - Flach, 1.5px-Rand (OutlinedTextField + EinkToggle), keine Schatten.
- * - Keinerlei Animationen — alle State-Wechsel sind sofortig.
- * - Labels kommen vom Plugin (bereits lokalisiert) — kein App-i18n-Key nötig.
+ * E-Ink invariants:
+ * - Flat, 1.5 px border (OutlinedTextField + EinkToggle), no shadows.
+ * - No animations — all state transitions are immediate.
+ * - Labels come from the plugin (already localised) — no app i18n key needed.
  *
- * BOOL-Felder speichern intern "true"/"false" als String — konsistent mit [ServerConfig.extras].
+ * BOOL fields store "true"/"false" internally as strings — consistent with [ServerConfig.extras].
  */
 @Composable
 fun PluginConfigForm(state: PluginFormState) {
     PluginConfigFields(state)
 }
 
-/** Rendert alle Schema-Felder eines [PluginFormState] — gemeinsamer Kern beider Formular-Varianten. */
+/** Renders all schema fields of a [PluginFormState] — shared core of both form variants. */
 @Composable
 private fun PluginConfigFields(state: PluginFormState) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -115,14 +116,14 @@ private fun PluginConfigFields(state: PluginFormState) {
 }
 
 /**
- * Ein einzelnes Konfigurations-Control, je nach [ConfigField.type]:
- * - TEXT/URL → beschriftetes [EinkTextField] (URL: URI-Tastatur)
- * - SECRET   → beschriftetes [EinkTextField] mit Passwort-Maske
- * - NUMBER   → diskreter [EinkSliderRow] (E-Ink-sicher: kein Drag/Fling, kein Ghosting)
- * - BOOL     → Label-Zeile mit [EinkToggle] rechts
+ * A single configuration control, depending on [ConfigField.type]:
+ * - TEXT/URL → labelled [EinkTextField] (URL: URI keyboard)
+ * - SECRET   → labelled [EinkTextField] with password masking
+ * - NUMBER   → discrete [EinkSliderRow] (E-Ink-safe: no drag/fling, no ghosting)
+ * - BOOL     → label row with [EinkToggle] on the right
  *
- * Das Label kommt direkt aus dem Plugin ([ConfigField.label], bereits lokalisiert) —
- * kein App-i18n-Key nötig.
+ * The label comes directly from the plugin ([ConfigField.label], already localised) —
+ * no app i18n key needed.
  */
 @Composable
 private fun PluginConfigField(
@@ -153,7 +154,7 @@ private fun PluginConfigField(
             // space so the control is discrete-only — no continuous drag, no E-Ink ghosting.
             val min = field.min ?: 0.0
             val max = field.max ?: 1.0
-            val step = field.step?.takeIf { it > 0.0 } ?: 0.05
+            val step = field.step?.takeIf { it > 0.0 } ?: DEFAULT_NUMBER_STEP
             val stepCount = ((max - min) / step).roundToInt().coerceAtLeast(1)
             val current = value.toDoubleOrNull()?.coerceIn(min, max) ?: min
             val position = ((current - min) / step).roundToInt().coerceIn(0, stepCount)

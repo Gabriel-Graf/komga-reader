@@ -13,32 +13,25 @@ import org.json.JSONObject
 fun parseConfigSchema(json: String): ConfigSchema? {
     val root = runCatching { JSONObject(json) }.getOrNull() ?: return null
     val arr = root.optJSONArray("fields") ?: return ConfigSchema(emptyList())
-    val fields = mutableListOf<ConfigField>()
-    for (i in 0 until arr.length()) {
-        val o = arr.optJSONObject(i)
-        if (o == null) {
-            continue
+    val fields = buildList {
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val type = runCatching { FieldType.valueOf(o.optString("type")) }.getOrNull() ?: continue
+            val key = o.optString("key")
+            if (key.isEmpty()) continue
+            add(
+                ConfigField(
+                    key = key,
+                    label = o.optString("label", key),
+                    type = type,
+                    required = o.optBoolean("required", false),
+                    default = o.optString("default", ""),
+                    min = if (o.has("min")) o.optDouble("min") else null,
+                    max = if (o.has("max")) o.optDouble("max") else null,
+                    step = if (o.has("step")) o.optDouble("step") else null,
+                ),
+            )
         }
-        val type = runCatching { FieldType.valueOf(o.optString("type")) }.getOrNull()
-        if (type == null) {
-            continue
-        }
-        val key = o.optString("key").ifEmpty { "" }
-        if (key.isEmpty()) {
-            continue
-        }
-        fields.add(
-            ConfigField(
-                key = key,
-                label = o.optString("label", key),
-                type = type,
-                required = o.optBoolean("required", false),
-                default = o.optString("default", ""),
-                min = if (o.has("min")) o.optDouble("min") else null,
-                max = if (o.has("max")) o.optDouble("max") else null,
-                step = if (o.has("step")) o.optDouble("step") else null,
-            ),
-        )
     }
     return ConfigSchema(fields)
 }

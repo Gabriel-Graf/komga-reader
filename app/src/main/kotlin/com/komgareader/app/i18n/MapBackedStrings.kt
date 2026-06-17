@@ -115,6 +115,7 @@ class MapBackedStrings(
     override val tagWebtoon: String get() = overrides["tagWebtoon"] ?: fallback.tagWebtoon
     override val tagAuto: String get() = overrides["tagAuto"] ?: fallback.tagAuto
     override val typeUnknown: String get() = overrides["typeUnknown"] ?: fallback.typeUnknown
+    override val readerPageError: String get() = overrides["readerPageError"] ?: fallback.readerPageError
     override val assignType: String get() = overrides["assignType"] ?: fallback.assignType
     override val server: String get() = overrides["server"] ?: fallback.server
     override val create: String get() = overrides["create"] ?: fallback.create

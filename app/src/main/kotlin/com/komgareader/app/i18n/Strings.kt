@@ -108,6 +108,7 @@ interface Strings {
     val tagWebtoon: String
     val tagAuto: String
     val typeUnknown: String
+    val readerPageError: String
     val assignType: String
     val server: String
     val create: String
@@ -540,6 +541,7 @@ object StringsDe : Strings {
     override val tagNovel = "Roman"
     override val tagWebtoon = "Webtoon"
     override val tagAuto = "Auto"
+    override val readerPageError = "Seite konnte nicht geladen werden"
     override val server = "Server"
     override val create = "Erstellen"
     override val cancel = "Abbrechen"
@@ -956,6 +958,7 @@ object StringsEn : Strings {
     override val tagNovel = "Novel"
     override val tagWebtoon = "Webtoon"
     override val tagAuto = "Auto"
+    override val readerPageError = "Couldn't load page"
     override val server = "Server"
     override val create = "Create"
     override val cancel = "Cancel"

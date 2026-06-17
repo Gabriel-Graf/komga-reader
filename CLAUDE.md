@@ -8,6 +8,21 @@ die drei Lesemodi (paged Comic, Webtoon-Scroll, EPUB-Reflow) + nativ Komga + E-I
 - Design-Spec: `docs/superpowers/specs/2026-06-06-komga-eink-reader-design.md` (die ganze Architektur)
 - Pläne: `docs/superpowers/plans/`
 
+## CodeGraph zuerst — Pflicht (dieses Repo ist indexiert)
+
+`.codegraph/` existiert im Repo-Root. Für **jede** Frage zum Code — "wo ist X",
+"was ruft Y", "wie ist Z eingebunden/verdrahtet", Naht-/DI-/Call-Pfad-Fragen —
+**zuerst CodeGraph**, vor `grep`/`find`/`Read`:
+- MCP: `codegraph_explore "<Frage oder Symbole>"` (eine Antwort = verbatim Source +
+  Call-Pfade), `codegraph_node <symbol|datei>`. Deferred → per ToolSearch laden.
+- Shell-Fallback (immer da): `codegraph explore "<…>"`, `codegraph node <…>`.
+
+`grep`/`find`/`Read` nur, um ein konkretes von CodeGraph nicht abgedecktes Detail
+zu bestätigen — typisch **Build-/Native-/Nicht-Code-Dateien** (`build.gradle.kts`,
+`CMakeLists.txt`, `*.md`, Assets). Selbst dann startet die Symbol-/Wiring-Hälfte der
+Frage bei CodeGraph. Direkt mit `grep`/`find` einzusteigen, obwohl CodeGraph greift,
+ist ein Regelverstoß (real passiert bei der crengine-Einbindungs-Frage 2026-06-17).
+
 ## Language
 
 Code-facing artifacts are **always English**: code comments + KDoc, project docs (`docs/`,

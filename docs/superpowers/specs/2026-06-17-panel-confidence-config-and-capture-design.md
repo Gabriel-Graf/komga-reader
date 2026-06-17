@@ -2,7 +2,7 @@
 
 **Datum:** 2026-06-17
 **Branch:** `feat/panel-confidence-config` (komga-reader)
-**Status:** Spec. Spannt **vier Repos**: ComicCutter (Lib), komga-reader (App + `plugin-api`),
+**Status:** komga-reader side BUILT (Tasks 4–15, branch `feat/panel-confidence-config`). ComicCutter 0.4.0 released. KomgaReaderPlugins plugin (`komga-panel-model-yolo`, Task 17) still pending. Spannt **vier Repos**: ComicCutter (Lib), komga-reader (App + `plugin-api`),
 KomgaReaderPlugins (`komga-panel-model-yolo`-Plugin).
 **Baut auf:** `2026-06-12-data-plugin-foundation-design.md` (generisches `PluginCategory` +
 `discoverDataPlugins`) und `2026-06-12-data-plugin-features-design.md` (`PluginConfigForm`,

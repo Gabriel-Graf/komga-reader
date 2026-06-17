@@ -856,12 +856,31 @@ private fun WebtoonScope(viewModel: SettingsViewModel, query: String) {
     }
 }
 
-/** Scope „Comic (Guided)": ML-Erkennung + Panel-Rahmen einblenden. */
+/** Scope „Comic (Guided)": ML-Erkennung + Panel-Rahmen einblenden + Misdetection-Capture-Ordner. */
 @Composable
 private fun ComicScope(viewModel: SettingsViewModel, query: String) {
     val s = LocalStrings.current
+    val ctx = LocalContext.current
     val useMlDetection by viewModel.useMlDetection.collectAsState()
     val panelOverlay by viewModel.guidedPanelOverlay.collectAsState()
+    val misdetectionUri by viewModel.misdetectionDir.collectAsState()
+
+    val misdetectionPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            runCatching {
+                ctx.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+            viewModel.setMisdetectionDir(uri.toString())
+        }
+    }
+
+    val misdetectionPath = misdetectionUri?.let { treeUriToDisplayPath(it) }
+
     Column {
         ScopeHeader(s.settingsScopeComic)
         Column(Modifier.padding(start = SettingsGroupIndent)) {
@@ -877,6 +896,13 @@ private fun ComicScope(viewModel: SettingsViewModel, query: String) {
                 onCheckedChange = { viewModel.setGuidedPanelOverlay(it) },
                 query = query,
             )
+            SettingsGroup(s.misdetectionDirLabel, query) {
+                FolderPickerRow(
+                    path = misdetectionPath ?: s.misdetectionDirPick,
+                    onClick = { misdetectionPicker.launch(null) },
+                    onReset = if (misdetectionUri != null) ({ viewModel.setMisdetectionDir(null) }) else null,
+                )
+            }
         }
     }
 }

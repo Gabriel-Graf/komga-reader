@@ -15,6 +15,8 @@ interface SettingsRepository {
     /** "ASK" | "IMPORT" | "READ_ONLY" — what to do when an external book file is opened. */
     val externalOpenBehavior: Flow<String>
     val downloadDir: Flow<String?>   // SAF-Tree-URI oder null (= interner App-Speicher)
+    /** SAF-Tree-URI of the misdetection-capture folder, null = not set (capture button hidden). */
+    val misdetectionDir: Flow<String?>
     val guidedPanelOverlay: Flow<Boolean>   // Debug: erkannte Panel-Rahmen im Comic-Reader einblenden
     /** Comic-Guided: Panel-Erkennung per ML-Modell-Plugin (PANEL_MODEL); aus = Geometrie-Fallback. Default true. */
     val useMlDetection: Flow<Boolean>
@@ -54,6 +56,8 @@ interface SettingsRepository {
     suspend fun setBookmarkMarkerStyle(value: String)
     suspend fun setExternalOpenBehavior(value: String)
     suspend fun setDownloadDir(uri: String?)
+    /** Sets (or clears) the SAF-Tree-URI of the misdetection-capture folder. */
+    suspend fun setMisdetectionDir(uri: String?)
     suspend fun setGuidedPanelOverlay(value: Boolean)
     suspend fun setUseMlDetection(value: Boolean)
     suspend fun setActiveColorProfileId(id: Long)

@@ -30,6 +30,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val externalOpenBehavior: Flow<String> =
         dao.observe(KEY_EXTERNAL_OPEN_BEHAVIOR).map { it ?: ExternalOpenBehavior.ASK.name }
     override val downloadDir: Flow<String?> = dao.observe(KEY_DOWNLOAD_DIR)
+    override val misdetectionDir: Flow<String?> = dao.observe(KEY_MISDETECTION_DIR)
     override val guidedPanelOverlay: Flow<Boolean> = dao.observe(KEY_PANEL_OVERLAY).map { it == "true" }
     // Default true: abwesender Schlüssel oder jeder Wert außer "false" → ML-Erkennung aktiv.
     override val useMlDetection: Flow<Boolean> = dao.observe(KEY_USE_ML).map { it != "false" }
@@ -84,6 +85,10 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override suspend fun setDownloadDir(uri: String?) {
         if (uri == null) dao.delete(KEY_DOWNLOAD_DIR)
         else dao.put(SettingEntity(KEY_DOWNLOAD_DIR, uri))
+    }
+    override suspend fun setMisdetectionDir(uri: String?) {
+        if (uri == null) dao.delete(KEY_MISDETECTION_DIR)
+        else dao.put(SettingEntity(KEY_MISDETECTION_DIR, uri))
     }
     override suspend fun setGuidedPanelOverlay(value: Boolean) = dao.put(SettingEntity(KEY_PANEL_OVERLAY, value.toString()))
     override suspend fun setUseMlDetection(value: Boolean) = dao.put(SettingEntity(KEY_USE_ML, value.toString()))
@@ -142,6 +147,7 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
         const val KEY_BOOKMARK_MARKER_STYLE = "bookmark_marker_style"
         const val KEY_EXTERNAL_OPEN_BEHAVIOR = "external_open_behavior"
         const val KEY_DOWNLOAD_DIR = "download_dir"
+        const val KEY_MISDETECTION_DIR = "misdetection_dir"
         const val KEY_PANEL_OVERLAY = "guided_panel_overlay"
         const val KEY_USE_ML = "use_ml_detection"
         const val KEY_ACTIVE_COLOR_PROFILE = "active_color_profile_id"

@@ -442,6 +442,12 @@ interface Strings {
     val statsEmpty: String
     /** Human-readable duration, e.g. "3 Std 12 Min" / "3 h 12 min". */
     fun statsDuration(hours: Int, minutes: Int): String
+    /** Label for the misdetection-capture folder setting. */
+    val misdetectionDirLabel: String
+    /** Placeholder shown when no misdetection folder is set; also used as the picker button hint. */
+    val misdetectionDirPick: String
+    /** Label for the button that clears the misdetection folder. */
+    val misdetectionDirClear: String
 }
 
 object StringsDe : Strings {
@@ -870,6 +876,9 @@ object StringsDe : Strings {
     override val statsEmpty = "Noch keine Lesezeit erfasst."
     override fun statsDuration(hours: Int, minutes: Int) =
         if (hours > 0) "$hours Std $minutes Min" else "$minutes Min"
+    override val misdetectionDirLabel = "Fehlerkennungs-Ordner"
+    override val misdetectionDirPick = "Ordner wählen …"
+    override val misdetectionDirClear = "Entfernen"
 }
 
 object StringsEn : Strings {
@@ -1298,6 +1307,9 @@ object StringsEn : Strings {
     override val statsEmpty = "No reading time recorded yet."
     override fun statsDuration(hours: Int, minutes: Int) =
         if (hours > 0) "$hours h $minutes min" else "$minutes min"
+    override val misdetectionDirLabel = "Misdetection Capture Folder"
+    override val misdetectionDirPick = "Pick folder …"
+    override val misdetectionDirClear = "Clear"
 }
 
 enum class Language(val code: String) { DE("de"), EN("en") }

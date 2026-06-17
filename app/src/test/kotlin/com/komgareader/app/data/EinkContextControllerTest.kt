@@ -31,6 +31,7 @@ class EinkContextControllerTest {
         override val bookmarkMarkerStyle: Flow<String> = flowOf("UNDERLINE")
         override val externalOpenBehavior: Flow<String> = flowOf("ASK")
         override val downloadDir: Flow<String?> = flowOf(null)
+        override val misdetectionDir: Flow<String?> = flowOf(null)
         override val guidedPanelOverlay: Flow<Boolean> = flowOf(false)
         override val useMlDetection: Flow<Boolean> = flowOf(true)
         override val activeColorProfileId: Flow<Long?> = flowOf(null)
@@ -58,6 +59,7 @@ class EinkContextControllerTest {
         override suspend fun setBookmarkMarkerStyle(value: String) {}
         override suspend fun setExternalOpenBehavior(value: String) {}
         override suspend fun setDownloadDir(uri: String?) {}
+        override suspend fun setMisdetectionDir(uri: String?) {}
         override suspend fun setGuidedPanelOverlay(value: Boolean) {}
         override suspend fun setUseMlDetection(value: Boolean) {}
         override suspend fun setActiveColorProfileId(id: Long) {}

@@ -63,6 +63,7 @@ class SettingsViewModel @Inject constructor(
     val shellLayoutMode =
         settings.shellLayoutMode.stateIn(viewModelScope, SharingStarted.Eagerly, ShellLayoutMode.AUTO.name)
     val downloadDir = settings.downloadDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    val misdetectionDir = settings.misdetectionDir.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /** What to do when an external book file is opened via a VIEW intent (ASK/IMPORT/READ_ONLY). */
     val externalOpenBehavior =
@@ -229,6 +230,7 @@ class SettingsViewModel @Inject constructor(
     fun setActiveUiPack(packageName: String) =
         viewModelScope.launch { settings.setActiveUiPack(packageName) }.let {}
     fun setDownloadDir(uri: String?) = viewModelScope.launch { settings.setDownloadDir(uri) }.let {}
+    fun setMisdetectionDir(uri: String?) = viewModelScope.launch { settings.setMisdetectionDir(uri) }.let {}
     fun setGuidedPanelOverlay(value: Boolean) = viewModelScope.launch { settings.setGuidedPanelOverlay(value) }.let {}
     fun setUseMlDetection(value: Boolean) = viewModelScope.launch { settings.setUseMlDetection(value) }.let {}
 

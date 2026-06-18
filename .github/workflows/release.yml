@@ -97,3 +97,16 @@ jobs:
         run: |
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
           "$APKSIGNER" verify --print-certs "${{ steps.apk.outputs.path }}"
+      - name: Prune old releases (keep the latest 3; git tags are kept)
+        # Runs only after a successful build+attach (steps are sequential — a failure above aborts the
+        # job). Deletes older GitHub releases so their APK assets don't pile up, but NEVER the git tag
+        # (no --cleanup-tag): history/reproducibility stays intact and any pruned version can be
+        # rebuilt via the workflow_dispatch input. Non-fatal: a delete hiccup must not fail the release.
+        run: |
+          gh release list --limit 1000 --json tagName,createdAt \
+            | jq -r 'sort_by(.createdAt) | reverse | .[3:][].tagName' \
+            | while read -r old; do
+                [ -z "$old" ] && continue
+                echo "Pruning old release $old (tag kept)"
+                gh release delete "$old" --yes || echo "::warning::could not delete release $old"
+              done

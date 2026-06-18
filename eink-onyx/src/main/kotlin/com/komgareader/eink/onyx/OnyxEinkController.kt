@@ -2,6 +2,8 @@ package com.komgareader.eink.onyx
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.komgareader.domain.eink.ButtonEvent
 import com.komgareader.domain.eink.EinkCapabilities
@@ -131,10 +133,15 @@ class OnyxEinkController(
             ScreenSaverUtils.setScreenResource(appContext, absolutePath, ScreenSaverUtils.TYPE_SCREENSAVER, true)
         }.isSuccess
         // The Onyx daydream/standby service caches the standby bitmap and does not hot-reload when the
-        // image changes — only the FIRST set ever showed. The SDK's own direct-write path follows the
-        // write with an "update_standby_pic" broadcast to force a reload; replicate it so subsequent
-        // sets actually take effect on the live standby.
-        runCatching { appContext.sendBroadcast(Intent(ScreenSaverUtils.UPDATE_STANDBY_PIC_ACTION)) }
+        // image changes — only the FIRST set ever showed. A reload is forced with an "update_standby_pic"
+        // broadcast. BUT setScreenResource is ASYNCHRONOUS on Android P+ (it only broadcasts
+        // ONYX_SCREENSAVER_ACTION; the system process then copies the file to standby-1.png) — firing the
+        // reload immediately races ahead of that copy and reloads the PREVIOUS standby image, so every set
+        // after the first appeared to do nothing. Send the reload once immediately AND again after a short
+        // delay, by which point the system has written the new standby file.
+        val reload = { runCatching { appContext.sendBroadcast(Intent(ScreenSaverUtils.UPDATE_STANDBY_PIC_ACTION)) } }
+        reload()
+        Handler(Looper.getMainLooper()).postDelayed({ reload() }, STANDBY_RELOAD_DELAY_MS)
         // adb logcat -s OnyxEinkController
         Log.i(TAG, "setScreenSaverImage($absolutePath) -> $ok")
         return ok
@@ -142,6 +149,9 @@ class OnyxEinkController(
 
     companion object {
         private const val TAG = "OnyxEinkController"
+
+        /** Delay before the second standby-reload broadcast, giving the async system copy time to land. */
+        private const val STANDBY_RELOAD_DELAY_MS = 1500L
 
         const val REFRESH_HD = "hd"
         const val REFRESH_BALANCED = "balanced"

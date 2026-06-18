@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Rect
 import android.net.Uri
@@ -66,9 +68,71 @@ class ScreenSaverManager @Inject constructor(
         // The Onyx screensaver only accepts an image at the EXACT device resolution — a cover/photo at
         // its native size (e.g. 720x1024) is silently rejected (no standby update). Fit it onto a
         // full-screen canvas first (letterbox or fill-crop per setting).
-        val bitmap = fitToScreen(decoded)
+        val bitmap = enhanceForEink(fitToScreen(decoded))
         val path = publishToPictures(bitmap) ?: return false
         return eink.setScreenSaverImage(path)
+    }
+
+    /**
+     * Pre-processes the standby image to survive the Onyx E-Ink standby renderer, which softens and
+     * mutes a colour image (downscale + dither on a Kaleido panel) — a loss we cannot change through the
+     * SDK. Compensate at the source: a contrast + saturation lift so colours still read after the panel
+     * mutes them, then a mild unsharp (Laplacian) pass so edges stay crisp through the dither. Tuned
+     * conservatively to avoid halos/banding on E-Ink. Runs on [Dispatchers.IO] (called from there).
+     */
+    private fun enhanceForEink(src: Bitmap): Bitmap = sharpen(boostContrastSaturation(src))
+
+    private fun boostContrastSaturation(src: Bitmap): Bitmap {
+        val c = 1.18f // contrast
+        val t = (1f - c) * 127.5f
+        val matrix = ColorMatrix().apply {
+            setSaturation(1.35f)
+            postConcat(
+                ColorMatrix(
+                    floatArrayOf(
+                        c, 0f, 0f, 0f, t,
+                        0f, c, 0f, 0f, t,
+                        0f, 0f, c, 0f, t,
+                        0f, 0f, 0f, 1f, 0f,
+                    ),
+                ),
+            )
+        }
+        val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.ARGB_8888)
+        Canvas(out).drawBitmap(src, 0f, 0f, Paint().apply { colorFilter = ColorMatrixColorFilter(matrix) })
+        return out
+    }
+
+    /**
+     * Light unsharp mask via a 3×3 Laplacian kernel (center 1+4*amount, 4-neighbours -amount). Borders
+     * are copied through unchanged. Single pass over the pixel buffer; clamps each channel to 0..255.
+     */
+    private fun sharpen(src: Bitmap, amount: Float = 0.6f): Bitmap {
+        val w = src.width
+        val h = src.height
+        if (w < 3 || h < 3) return src
+        val px = IntArray(w * h)
+        src.getPixels(px, 0, w, 0, 0, w, h)
+        val out = px.copyOf()
+        val center = 1f + 4f * amount
+        for (y in 1 until h - 1) {
+            val row = y * w
+            for (x in 1 until w - 1) {
+                val i = row + x
+                val cP = px[i]; val up = px[i - w]; val dn = px[i + w]; val lf = px[i - 1]; val rt = px[i + 1]
+                val r = (((cP shr 16) and 0xFF) * center - (((up shr 16) and 0xFF) + ((dn shr 16) and 0xFF) + ((lf shr 16) and 0xFF) + ((rt shr 16) and 0xFF)) * amount)
+                val g = (((cP shr 8) and 0xFF) * center - (((up shr 8) and 0xFF) + ((dn shr 8) and 0xFF) + ((lf shr 8) and 0xFF) + ((rt shr 8) and 0xFF)) * amount)
+                val b = (((cP) and 0xFF) * center - (((up) and 0xFF) + ((dn) and 0xFF) + ((lf) and 0xFF) + ((rt) and 0xFF)) * amount)
+                // Keep the source alpha (covers are opaque; this is defensive).
+                out[i] = (cP and 0xFF000000.toInt()) or
+                    (r.toInt().coerceIn(0, 255) shl 16) or
+                    (g.toInt().coerceIn(0, 255) shl 8) or
+                    b.toInt().coerceIn(0, 255)
+            }
+        }
+        val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        result.setPixels(out, 0, w, 0, 0, w, h)
+        return result
     }
 
     /** App-private cache of the last applied original image, for re-fitting on a setting change. */

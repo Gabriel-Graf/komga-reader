@@ -1,17 +1,14 @@
 package com.komgareader.app.ui.reader
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
-import com.komgareader.app.data.LocalCoverRenderer
 import com.komgareader.app.data.RenderedPageStore
-import com.komgareader.app.data.ScreenSaverManager
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.data.coil.RenderedPageImage
-import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.data.coil.SourceImage
+import com.komgareader.app.work.ScreenSaverScheduler
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.ErrorKind
 import com.komgareader.app.ui.common.UiError
@@ -20,7 +17,6 @@ import com.komgareader.domain.eink.HardwareButton
 import com.komgareader.domain.model.BookFormat
 import com.komgareader.domain.model.DisplayMode
 import com.komgareader.domain.model.ReadProgress
-import com.komgareader.domain.model.ScreenSaverMode
 import com.komgareader.domain.reader.WebtoonChapter
 import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.SettingsRepository
@@ -56,8 +52,7 @@ class ReaderViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val renderedPages: RenderedPageStore,
     private val settings: SettingsRepository,
-    private val screenSaver: ScreenSaverManager,
-    private val localCoverRenderer: LocalCoverRenderer,
+    private val screenSaverScheduler: ScreenSaverScheduler,
     @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel(), Viewer {
 
@@ -133,58 +128,7 @@ class ReaderViewModel @Inject constructor(
     init {
         loadBook()
         collectButtonEvents()
-        updateScreenSaverCover()
-    }
-
-    /**
-     * When the screensaver is set to "current book cover", publish this book's cover so the device
-     * shows it on standby. Fire-and-forget, off the load path (no impact on time-to-first-page);
-     * no-op unless the mode is BOOK_COVER and the device supports a screensaver.
-     */
-    private fun updateScreenSaverCover() = viewModelScope.launch {
-        val mode = runCatching { ScreenSaverMode.valueOf(settings.screenSaverMode.first()) }
-            .getOrDefault(ScreenSaverMode.OFF)
-        if (mode != ScreenSaverMode.BOOK_COVER) return@launch
-        val source = active.get(routeSourceId) ?: return@launch
-        // Cover choice by reader type (request 2026-06-18): a Webtoon is a continuous multi-chapter
-        // strip, so a single chapter cover is arbitrary → use the WHOLE-SERIES cover. Paged/Comic/Novel
-        // show the CURRENT work's own cover. The route-supplied [initialViewerMode] is known here in
-        // init (no need to wait for loadBook); EPUB/novel opens as PAGED → book cover, as intended.
-        val bytes = if (initialViewerMode == ViewerMode.WEBTOON) {
-            seriesCoverBytes(source) ?: bookCoverBytes(source)
-        } else {
-            bookCoverBytes(source)
-        }
-        Log.i("ReaderViewModel", "screensaver cover: mode=$initialViewerMode bytes=${bytes?.size ?: 0}")
-        if (bytes != null && bytes.isNotEmpty()) screenSaver.applyBytes(bytes)
-    }
-
-    /**
-     * Cover bytes for this book itself. **Prefers the full-resolution first page** over the source's
-     * cover *thumbnail*: Komga generates per-series thumbnails at wildly different sizes (seen
-     * 200×300 … 720×1024), and the small ones upscale to a blurry standby. For an image work page 0 is
-     * the cover at native resolution → sharp. Falls back to the thumbnail and then the app-side render
-     * (local PDF/CBR) for whole-file/novel works that expose no streamable pages.
-     */
-    private suspend fun bookCoverBytes(source: BrowsableSource): ByteArray? {
-        firstPageBytes(source, bookId)?.let { return it }
-        val primary = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
-        return primary?.takeIf { it.isNotEmpty() }
-            ?: localCoverRenderer.render(SourceCover(routeSourceId, bookId, isSeries = false))
-    }
-
-    /** Full-resolution first page (native cover) of [book], or null if the source has no streamable pages. */
-    private suspend fun firstPageBytes(source: BrowsableSource, book: String): ByteArray? {
-        val first = runCatching { source.pages(book) }.getOrNull()?.firstOrNull() ?: return null
-        return runCatching { source.openPage(first) }.getOrNull()?.takeIf { it.isNotEmpty() }
-    }
-
-    /** Whole-series cover (Webtoon): resolve the series id from the book, then its series cover. */
-    private suspend fun seriesCoverBytes(source: BrowsableSource): ByteArray? {
-        val seriesId = runCatching { source.seriesIdOf(bookId) }.getOrNull() ?: return null
-        val primary = runCatching { source.coverBytes(seriesId, isSeriesCover = true) }.getOrNull()
-        return primary?.takeIf { it.isNotEmpty() }
-            ?: localCoverRenderer.render(SourceCover(routeSourceId, seriesId, isSeries = true))
+        screenSaverScheduler.schedule(routeSourceId, bookId, initialViewerMode, format)
     }
 
     private fun loadBook() = viewModelScope.launch {

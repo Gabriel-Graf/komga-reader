@@ -222,8 +222,7 @@ class ReaderViewModelTest {
                 sources = SourceManager(),
             ),
             settings = FakeSettings(),
-            screenSaver = mockk(relaxed = true),
-            localCoverRenderer = mockk(relaxed = true),
+            screenSaverScheduler = mockk(relaxed = true),
             appScope = CoroutineScope(Dispatchers.Unconfined),
         )
     }

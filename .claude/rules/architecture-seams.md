@@ -405,9 +405,16 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   publiziert der `@Singleton ScreenSaverManager` (`app/data`) über **MediaStore/Pictures** und reicht den aufgelösten
   absoluten Pfad durch (`coverBytes`/Custom-Bytes → Bitmap → PNG, eine wiederverwendete Datei). **Feature
   (Ist, 2026-06-16):** Settings → Darstellung → „Bildschirmschoner" (`ScreenSaverMode{OFF,CUSTOM,BOOK_COVER}`,
-  Room-Keys `screensaver_mode`/`screensaver_custom_uri`, **keine Migration**, gegated über `capabilities.hasEink`).
+  Room-Keys `screensaver_mode`/`screensaver_custom_uri`, **keine Migration**, gegated über `capabilities.hasEink`;
+  **Default `BOOK_COVER`** (2026-06-18 — der Standby zeigt auf dem E-Ink-Ziel standardmäßig das Werk-Cover; explizites
+  OFF wird respektiert, nur ein ungesetzter Wert fällt auf BOOK_COVER). `ScreenSaverManager.applyCached` bricht auf
+  Nicht-E-Ink (`!capabilities.hasEink`) früh ab, damit der Default nicht sinnlos ein Cover in die LCD-Galerie schreibt.
   CUSTOM = SAF-gewähltes Bild (persistable URI); BOOK_COVER = `ReaderViewModel` setzt beim Öffnen jedes Werks dessen
-  Cover als Screensaver (fire-and-forget, off the load path). **Nicht per adb visuell verifizierbar** (Onyx-Standby ist
+  Cover als Screensaver (fire-and-forget, off the load path) — **per Typ**: Webtoon = Serien-Cover, Paged/Comic/Novel =
+  Werk-Cover. Quelle ist die **volle erste Seite** (native Auflösung, = Cover bei Bild-Werken), nicht Komgas Cover-
+  *Thumbnail* (je Serie 200×300…720×1024 → klein = unscharf hochskaliert); Thumbnail/Local-Render nur als Fallback. Das Bild wird vor dem Publish geschärft + in Kontrast/Sättigung angehoben (`enhanceForEink`), um das
+  Weichzeichnen/Entsättigen des Onyx-Standby-Renderers zu kompensieren (kein SDK-Qualitätsregler vorhanden); der
+  Standby-Reload-Broadcast wird sofort **und** nach 1,5 s gesendet (async `setScreenResource`-Race → sonst nur erstes Setzen sichtbar). **Nicht per adb visuell verifizierbar** (Onyx-Standby ist
   ein Daydream-Overlay, SurfaceFlinger sieht es nicht); `ScreenSaverManager` end-to-end auf Boox verifiziert
   (`adb logcat -s ScreenSaverManager OnyxEinkController` + Onyx „scanned successfully").
 - **Reader-Input (Ist, 2026-06-15 — Hardware-Tasten, manueller Refresh):**

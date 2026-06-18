@@ -88,7 +88,7 @@ class SettingsViewModel @Inject constructor(
 
     // Screensaver (E-Ink only): the device standby image. Hidden on hardware without one.
     val hasScreenSaver: Boolean = einkController.capabilities.hasEink
-    val screenSaverMode = settings.screenSaverMode.stateIn(viewModelScope, SharingStarted.Eagerly, "OFF")
+    val screenSaverMode = settings.screenSaverMode.stateIn(viewModelScope, SharingStarted.Eagerly, ScreenSaverMode.BOOK_COVER.name)
     val screenSaverFillCrop = settings.screenSaverFillCrop.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val einkContextProfiles = settings.einkContextProfiles
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())

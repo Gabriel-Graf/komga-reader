@@ -160,14 +160,23 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Cover bytes for this book itself: the source's own cover (Komga thumbnail, local CBZ/EPUB
-     * embedded image) and — for local PDF/CBR, which the source can't extract — the app-side render
-     * path the library grid uses ([LocalCoverRenderer]). `null` only if neither yields anything.
+     * Cover bytes for this book itself. **Prefers the full-resolution first page** over the source's
+     * cover *thumbnail*: Komga generates per-series thumbnails at wildly different sizes (seen
+     * 200×300 … 720×1024), and the small ones upscale to a blurry standby. For an image work page 0 is
+     * the cover at native resolution → sharp. Falls back to the thumbnail and then the app-side render
+     * (local PDF/CBR) for whole-file/novel works that expose no streamable pages.
      */
     private suspend fun bookCoverBytes(source: BrowsableSource): ByteArray? {
+        firstPageBytes(source, bookId)?.let { return it }
         val primary = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
         return primary?.takeIf { it.isNotEmpty() }
             ?: localCoverRenderer.render(SourceCover(routeSourceId, bookId, isSeries = false))
+    }
+
+    /** Full-resolution first page (native cover) of [book], or null if the source has no streamable pages. */
+    private suspend fun firstPageBytes(source: BrowsableSource, book: String): ByteArray? {
+        val first = runCatching { source.pages(book) }.getOrNull()?.firstOrNull() ?: return null
+        return runCatching { source.openPage(first) }.getOrNull()?.takeIf { it.isNotEmpty() }
     }
 
     /** Whole-series cover (Webtoon): resolve the series id from the book, then its series cover. */

@@ -43,7 +43,7 @@ interface SettingsRepository {
     val lastSeenVersion: Flow<String>
     /** Per-context E-Ink mode overrides; unset axes fall back to the device default. */
     val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>>
-    /** Device screensaver mode (E-Ink only): "OFF" | "CUSTOM" | "BOOK_COVER". Default OFF. */
+    /** Device screensaver mode (E-Ink only): "OFF" | "CUSTOM" | "BOOK_COVER". Default BOOK_COVER. */
     val screenSaverMode: Flow<String>
     /** Content URI of the user-picked custom screensaver image, or "" if none. */
     val screenSaverCustomUri: Flow<String>

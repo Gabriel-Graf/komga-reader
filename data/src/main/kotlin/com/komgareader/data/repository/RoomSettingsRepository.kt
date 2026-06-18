@@ -69,8 +69,10 @@ class RoomSettingsRepository(private val dao: SettingsDao) : SettingsRepository 
     override val lastSeenVersion: Flow<String> = dao.observe(KEY_LAST_SEEN_VERSION).map { it ?: "" }
     override val einkContextProfiles: Flow<Map<EinkContext, EinkContextProfile>> =
         dao.observe(KEY_EINK_CONTEXT_PROFILES).map { decodeEinkContextProfiles(it) }
+    // Default BOOK_COVER: on the E-Ink target the standby showing the current work's cover is the
+    // expected behaviour; an explicit OFF is still honoured (only an unset value falls back here).
     override val screenSaverMode: Flow<String> =
-        dao.observe(KEY_SCREENSAVER_MODE).map { it ?: ScreenSaverMode.OFF.name }
+        dao.observe(KEY_SCREENSAVER_MODE).map { it ?: ScreenSaverMode.BOOK_COVER.name }
     override val screenSaverCustomUri: Flow<String> =
         dao.observe(KEY_SCREENSAVER_CUSTOM_URI).map { it ?: "" }
     override val screenSaverFillCrop: Flow<Boolean> =

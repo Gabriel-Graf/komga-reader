@@ -63,8 +63,13 @@ class ScreenSaverManager @Inject constructor(
     }
 
     private suspend fun applyCached(bytes: ByteArray): Boolean {
+        // Only devices with a controllable standby do anything here. With BOOK_COVER now the default,
+        // this stops a non-E-Ink device (NoOp controller) from pointlessly decoding + publishing a
+        // cover into the shared gallery on every book open.
+        if (!eink.capabilities.hasEink) return false
         val decoded = runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull()
             ?: run { Log.w(TAG, "could not decode image bytes"); return false }
+        Log.i(TAG, "source cover decoded ${decoded.width}x${decoded.height} (${bytes.size} bytes)")
         // The Onyx screensaver only accepts an image at the EXACT device resolution — a cover/photo at
         // its native size (e.g. 720x1024) is silently rejected (no standby update). Fit it onto a
         // full-screen canvas first (letterbox or fill-crop per setting).

@@ -378,11 +378,11 @@ private fun PluginRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onInfo) {
-            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
-        }
         IconButton(onClick = onConfigure) {
             Icon(AppIcons.Settings, contentDescription = configureLabel, modifier = Modifier.size(22.dp))
+        }
+        IconButton(onClick = onInfo) {
+            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
         }
         IconButton(onClick = onUninstall) {
             Icon(AppIcons.Delete, contentDescription = uninstallLabel, modifier = Modifier.size(22.dp))
@@ -423,13 +423,13 @@ private fun DataPluginRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onInfo) {
-            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
-        }
         if (onConfigure != null) {
             IconButton(onClick = onConfigure) {
                 Icon(AppIcons.Settings, contentDescription = configureLabel ?: s.pluginConfigure, modifier = Modifier.size(22.dp))
             }
+        }
+        IconButton(onClick = onInfo) {
+            Icon(AppIcons.Info, contentDescription = s.pluginInfo, modifier = Modifier.size(22.dp))
         }
         IconButton(onClick = onUninstall) {
             Icon(AppIcons.Delete, contentDescription = uninstallLabel, modifier = Modifier.size(22.dp))

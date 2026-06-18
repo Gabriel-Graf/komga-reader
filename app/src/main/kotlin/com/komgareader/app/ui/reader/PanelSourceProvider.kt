@@ -1,6 +1,8 @@
 package com.komgareader.app.ui.reader
 
 import com.komgareader.domain.repository.SettingsRepository
+import com.komgareader.plugin.ConfigField
+import com.komgareader.plugin.FieldType
 import com.komgareader.plugin.PluginCategory
 import com.komgareader.plugin.host.PluginHost
 import com.panela.comiccutter.GeometricPanelSource
@@ -12,9 +14,27 @@ import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val PANEL_YOLO_PKG = "com.komgareader.model.panel.yolo"
+internal const val PANEL_YOLO_PKG = "com.komgareader.model.panel.yolo"
+internal const val MIN_CONFIDENCE_KEY = "min_confidence"
 
-internal const val DEFAULT_MIN_CONFIDENCE = 0.25f
+internal const val DEFAULT_MIN_CONFIDENCE = 0.55f
+
+/**
+ * Built-in confidence schema for the panel-model plugin. Used instead of (or merged over) the
+ * plugin's shipped `config.json` so the in-app slider always has sane bounds and the 0.55 default —
+ * independent of whatever the external plugin declares (a broken/missing range left the slider
+ * pinned at its minimum). Bounds 0.10–0.95, step 0.05, default matches [DEFAULT_MIN_CONFIDENCE].
+ */
+internal val PANEL_MIN_CONFIDENCE_FIELD = ConfigField(
+    key = MIN_CONFIDENCE_KEY,
+    label = "Min. confidence",
+    type = FieldType.NUMBER,
+    required = false,
+    default = "%.2f".format(DEFAULT_MIN_CONFIDENCE),
+    min = 0.1,
+    max = 0.95,
+    step = 0.05,
+)
 
 /** Parses the stored confidence string; falls back to [DEFAULT_MIN_CONFIDENCE] on null/invalid. */
 internal fun resolveMinConfidence(stored: String?): Float =

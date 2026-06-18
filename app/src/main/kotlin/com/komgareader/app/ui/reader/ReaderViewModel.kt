@@ -4,10 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
+import com.komgareader.app.data.LocalCoverRenderer
 import com.komgareader.app.data.RenderedPageStore
 import com.komgareader.app.data.ScreenSaverManager
 import com.komgareader.app.di.ApplicationScope
 import com.komgareader.app.data.coil.RenderedPageImage
+import com.komgareader.app.data.coil.SourceCover
 import com.komgareader.app.data.coil.SourceImage
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.ui.common.ErrorKind
@@ -54,6 +56,7 @@ class ReaderViewModel @Inject constructor(
     private val renderedPages: RenderedPageStore,
     private val settings: SettingsRepository,
     private val screenSaver: ScreenSaverManager,
+    private val localCoverRenderer: LocalCoverRenderer,
     @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel(), Viewer {
 
@@ -142,7 +145,13 @@ class ReaderViewModel @Inject constructor(
             .getOrDefault(ScreenSaverMode.OFF)
         if (mode != ScreenSaverMode.BOOK_COVER) return@launch
         val source = active.get(routeSourceId) ?: return@launch
-        val bytes = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
+        // Primary: the source's own cover (Komga thumbnail, local CBZ/EPUB embedded image). For local
+        // PDF/CBR the source returns empty (those need a render engine) — fall back to the same render
+        // path the library grid uses (LocalCoverRenderer → LocalCoverStore/MuPDF), so every format gets
+        // a standby cover, not just the renderer-free ones.
+        val primary = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
+        val bytes = primary?.takeIf { it.isNotEmpty() }
+            ?: localCoverRenderer.render(SourceCover(routeSourceId, bookId, isSeries = false))
         if (bytes != null && bytes.isNotEmpty()) screenSaver.applyBytes(bytes)
     }
 

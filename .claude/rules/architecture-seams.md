@@ -503,9 +503,12 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`PluginHost.binaryDataPluginBytes`); jeder Fehler (kein Plugin, ONNX-Init) **degradiert sauber**
   auf geometrisch, die gewählte Quelle wird gecacht. **`min_confidence` konfigurierbar (Ist,
   2026-06-17):** `PanelSourceProvider` liest den Wert über `SettingsRepository.pluginConfig(pkg,
-  "min_confidence")` via `resolveMinConfidence(stored): Float` (pure, Default `0.25`, Paket
-  `com.komgareader.model.panel.yolo`) statt hardcoded; Cache invalidiert bei Wertänderung.
-  NMS/IoU bleiben hardcoded. `ComicReaderViewModel` injiziert den Provider;
+  "min_confidence")` via `resolveMinConfidence(stored): Float` (pure, Default `0.55`, Paket
+  `com.komgareader.model.panel.yolo`) statt hardcoded; Cache invalidiert bei Wertänderung. Die
+  In-App-`configSchemaFor(PANEL_YOLO_PKG)` erzwingt zudem ein eigenes `min_confidence`-NUMBER-Feld
+  (`PANEL_MIN_CONFIDENCE_FIELD`, 0.10–0.95, step 0.05, Default 0.55), damit der Slider unabhängig
+  von der externen `config.json` des Plugins korrekte Grenzen + Default hat (eine kaputte/fehlende
+  Range pinnte ihn sonst am Minimum). NMS/IoU bleiben hardcoded. `ComicReaderViewModel` injiziert den Provider;
   `ComicPageLoader.detect(page, panelSource)` erkennt und **sortiert das Ergebnis in
   Lesereihenfolge** (`ReadingOrder.sort(panels, LEFT_TO_RIGHT)` — die ML-Quelle liefert
   Confidence-Reihenfolge, geometrisch war schon sortiert → idempotent). Alles dahinter

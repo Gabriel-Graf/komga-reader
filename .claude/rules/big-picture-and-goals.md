@@ -196,7 +196,7 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
      optional `DATA_CONFIG=config.json`). Die Comic-Panel-Erkennung läuft über die externe Lib
      **comic-cutter** (0.4.0); `PanelSourceProvider` wählt geometrisch (Default) oder ML
      (`MlPanelSource`+ONNX, wenn `useMlDetection` an **und** Plugin installiert), liest `min_confidence`
-     aus `plugincfg:<pkg>:min_confidence` (Default 0.25), degradiert sauber. `PanelRect.score`/
+     aus `plugincfg:<pkg>:min_confidence` (Default 0.55), degradiert sauber. `PanelRect.score`/
      `NormRect.score` seit 0.4.0 durchgereicht. Details: Naht B + Naht-A-Panel-Modell-Item +
      „Generische Data-Plugin-Config" in `architecture-seams.md`.
    - **(a) Quellen — Ist: erstes APK-Plugin gebaut (Kavita, 2026-06-11):** `SourcePlugin` liefert

@@ -122,7 +122,7 @@ fun ComicReaderScreen(
             if (misdetectionDir != null) {
                 IconButton(onClick = { comicVm.captureMisdetection() }) {
                     Icon(
-                        AppIcons.Download,
+                        AppIcons.OctagonMinus,
                         contentDescription = s.misdetectionCapture,
                         tint = Color.White,
                     )

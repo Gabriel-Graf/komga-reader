@@ -59,6 +59,31 @@ class SeriesFilterTest {
         assertEquals(listOf("Roman ohne Typ"), filterSeries(all, "Roman", emptySet()).map { it.title })
     }
 
+    // --- Fuzzy / Tippfehler-Toleranz ---
+
+    @Test fun `typo within a long token still matches`() {
+        // "berserc" -> "berserk": one substitution, token length 7 -> tolerance 2.
+        assertEquals(listOf("Berserk"), filterSeries(all, "berserc", emptySet()).map { it.title })
+    }
+
+    @Test fun `medium token tolerates one edit`() {
+        // "sava" -> "saga": one substitution, length 4 -> tolerance 1.
+        assertEquals(listOf("Saga"), filterSeries(all, "sava", emptySet()).map { it.title })
+    }
+
+    @Test fun `short token does not fuzzy over-match`() {
+        // "ber" (length 3) tolerates nothing; substring still finds Berserk but not unrelated titles.
+        assertEquals(listOf("Berserk"), filterSeries(all, "ber", emptySet()).map { it.title })
+        // "sag" is a substring of Saga only — a near-miss like "tov" must not pull in "Tower".
+        assertEquals(emptyList<String>(), filterSeries(all, "tov", emptySet()).map { it.title })
+    }
+
+    @Test fun `multi word query matches when each token hits`() {
+        val list = listOf(series("Tower of God"))
+        // "towr god": first token fuzzy (length 4, one deletion), second token exact.
+        assertEquals(listOf("Tower of God"), filterSeries(list, "towr god", emptySet()).map { it.title })
+    }
+
     // --- typeOf-Injektion: Filter nutzt den hereingereichten effektiven Typ (= das Tag) ---
 
     @Test fun `filter uses injected effective type not the override field`() {

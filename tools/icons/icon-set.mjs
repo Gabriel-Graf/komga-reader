@@ -34,6 +34,7 @@ export const ICONS = {
   "list": "List",
   "list-filter": "ListFilter",
   "minus": "Minus",
+  "octagon-minus": "OctagonMinus",
   "palette": "Palette",
   "plus": "Plus",
   "puzzle": "Puzzle",

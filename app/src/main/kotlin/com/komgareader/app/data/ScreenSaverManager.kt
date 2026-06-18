@@ -80,8 +80,11 @@ class ScreenSaverManager @Inject constructor(
      */
     private suspend fun fitToScreen(src: Bitmap): Bitmap {
         val dm = context.resources.displayMetrics
-        val w = dm.widthPixels.coerceAtLeast(1)
-        val h = dm.heightPixels.coerceAtLeast(1)
+        // The Onyx standby canvas is ALWAYS portrait, independent of the app's current orientation.
+        // Build the target portrait (short edge = width, long edge = height) so the published image is
+        // never landscape — otherwise, when the app happens to be rotated, the standby shows it sideways.
+        val w = minOf(dm.widthPixels, dm.heightPixels).coerceAtLeast(1)
+        val h = maxOf(dm.widthPixels, dm.heightPixels).coerceAtLeast(1)
         val cover = settings.screenSaverFillCrop.first()
         if (!cover && src.width == w && src.height == h) return src
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)

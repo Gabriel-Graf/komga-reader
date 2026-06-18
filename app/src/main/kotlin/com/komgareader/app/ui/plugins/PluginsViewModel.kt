@@ -11,6 +11,9 @@ import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.data.pluginServerConfig
 import com.komgareader.app.ui.common.holdSpinning
 import com.komgareader.data.plugin.ColorPresetImporter
+import com.komgareader.app.ui.reader.MIN_CONFIDENCE_KEY
+import com.komgareader.app.ui.reader.PANEL_MIN_CONFIDENCE_FIELD
+import com.komgareader.app.ui.reader.PANEL_YOLO_PKG
 import com.komgareader.data.plugin.parseConfigSchema
 import com.komgareader.data.plugin.repo.BrowsableEntry
 import com.komgareader.data.plugin.repo.BrowserRow
@@ -240,9 +243,21 @@ class PluginsViewModel @Inject constructor(
         colorProfiles.delete(profile.id)
     }.let {}
 
-    /** Parsed config schema for a data-only plugin, or null if none declared. */
-    fun configSchemaFor(pkg: String): ConfigSchema? =
-        pluginHost.dataPluginConfigJson(pkg)?.let { parseConfigSchema(it) }
+    /**
+     * Parsed config schema for a data-only plugin, or null if none declared.
+     *
+     * For the panel-model plugin we enforce a sane built-in `min_confidence` field
+     * ([PANEL_MIN_CONFIDENCE_FIELD]): the in-app slider then always has correct bounds (0.10–0.95)
+     * and the 0.55 default, regardless of what the external plugin's `config.json` declares — a
+     * broken/missing range previously left the slider pinned at its minimum. Any other fields the
+     * plugin declares are preserved.
+     */
+    fun configSchemaFor(pkg: String): ConfigSchema? {
+        val parsed = pluginHost.dataPluginConfigJson(pkg)?.let { parseConfigSchema(it) }
+        if (pkg != PANEL_YOLO_PKG) return parsed
+        val others = parsed?.fields.orEmpty().filter { it.key != MIN_CONFIDENCE_KEY }
+        return ConfigSchema(listOf(PANEL_MIN_CONFIDENCE_FIELD) + others)
+    }
 
     /** Returns the currently saved values for all schema fields (falls back to field defaults). */
     suspend fun savedConfig(pkg: String, schema: ConfigSchema): Map<String, String> =

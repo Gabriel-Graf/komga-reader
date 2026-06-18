@@ -21,9 +21,28 @@ import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.plugin.ConfigField
 import com.komgareader.plugin.ConfigSchema
 import com.komgareader.plugin.FieldType
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 private const val DEFAULT_NUMBER_STEP = 0.05
+
+/**
+ * Decimal places needed to store a value without losing the [step] granularity. A coarser format than
+ * the step would round a moved value back onto the previous notch, pinning the slider (e.g. step 0.001
+ * formatted as "%.2f" always reads back the same position). At least 2 decimals (confidence-style).
+ */
+private fun decimalsFor(step: Double): Int {
+    var decimals = 0
+    var s = step
+    while (decimals < 6 && kotlin.math.abs(s - s.roundToInt()) > 1e-9) {
+        s *= 10
+        decimals++
+    }
+    return max(2, decimals)
+}
+
+/** Formats [value] with exactly enough decimals for [step] (see [decimalsFor]). */
+private fun formatForStep(value: Double, step: Double): String = "%.${decimalsFor(step)}f".format(value)
 
 /**
  * Retained state of a plugin configuration form — lets the caller (e.g. an
@@ -160,10 +179,12 @@ private fun PluginConfigField(
             val position = ((current - min) / step).roundToInt().coerceIn(0, stepCount)
             EinkSliderRow(
                 label = field.label,
-                valueText = "%.2f".format(current),
+                valueText = formatForStep(current, step),
                 position = position,
                 stepCount = stepCount,
-                onPosition = { p -> onValueChange("%.2f".format(min + p * step)) },
+                // Format with enough decimals for the step so the stored value round-trips to the
+                // same notch — otherwise a coarse format pins the slider at its minimum.
+                onPosition = { p -> onValueChange(formatForStep(min + p * step, step)) },
             )
         }
         FieldType.BOOL -> {

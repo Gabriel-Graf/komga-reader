@@ -127,10 +127,11 @@ class OnyxEinkController(
 
     override fun setScreenSaverImage(absolutePath: String): Boolean {
         // ScreenSaverUtils.setScreenResource broadcasts ONYX_SCREENSAVER_ACTION to the system, which
-        // installs the file as the standby image (TYPE_SCREENSAVER). showResultHint=true surfaces the
-        // Onyx toast so we can see acceptance on device.
+        // installs the file as the standby image (TYPE_SCREENSAVER). showResultHint=false: BOOK_COVER
+        // is the default and the worker runs on every book open, so the Onyx "saved" toast would pop
+        // up each time — suppress it (it was only on for PoC acceptance on device).
         val ok = runCatching {
-            ScreenSaverUtils.setScreenResource(appContext, absolutePath, ScreenSaverUtils.TYPE_SCREENSAVER, true)
+            ScreenSaverUtils.setScreenResource(appContext, absolutePath, ScreenSaverUtils.TYPE_SCREENSAVER, false)
         }.isSuccess
         // The Onyx daydream/standby service caches the standby bitmap and does not hot-reload when the
         // image changes — only the FIRST set ever showed. A reload is forced with an "update_standby_pic"

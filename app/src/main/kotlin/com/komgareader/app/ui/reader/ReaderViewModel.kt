@@ -1,5 +1,6 @@
 package com.komgareader.app.ui.reader
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -145,14 +146,36 @@ class ReaderViewModel @Inject constructor(
             .getOrDefault(ScreenSaverMode.OFF)
         if (mode != ScreenSaverMode.BOOK_COVER) return@launch
         val source = active.get(routeSourceId) ?: return@launch
-        // Primary: the source's own cover (Komga thumbnail, local CBZ/EPUB embedded image). For local
-        // PDF/CBR the source returns empty (those need a render engine) — fall back to the same render
-        // path the library grid uses (LocalCoverRenderer → LocalCoverStore/MuPDF), so every format gets
-        // a standby cover, not just the renderer-free ones.
-        val primary = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
-        val bytes = primary?.takeIf { it.isNotEmpty() }
-            ?: localCoverRenderer.render(SourceCover(routeSourceId, bookId, isSeries = false))
+        // Cover choice by reader type (request 2026-06-18): a Webtoon is a continuous multi-chapter
+        // strip, so a single chapter cover is arbitrary → use the WHOLE-SERIES cover. Paged/Comic/Novel
+        // show the CURRENT work's own cover. The route-supplied [initialViewerMode] is known here in
+        // init (no need to wait for loadBook); EPUB/novel opens as PAGED → book cover, as intended.
+        val bytes = if (initialViewerMode == ViewerMode.WEBTOON) {
+            seriesCoverBytes(source) ?: bookCoverBytes(source)
+        } else {
+            bookCoverBytes(source)
+        }
+        Log.i("ReaderViewModel", "screensaver cover: mode=$initialViewerMode bytes=${bytes?.size ?: 0}")
         if (bytes != null && bytes.isNotEmpty()) screenSaver.applyBytes(bytes)
+    }
+
+    /**
+     * Cover bytes for this book itself: the source's own cover (Komga thumbnail, local CBZ/EPUB
+     * embedded image) and — for local PDF/CBR, which the source can't extract — the app-side render
+     * path the library grid uses ([LocalCoverRenderer]). `null` only if neither yields anything.
+     */
+    private suspend fun bookCoverBytes(source: BrowsableSource): ByteArray? {
+        val primary = runCatching { source.coverBytes(bookId, isSeriesCover = false) }.getOrNull()
+        return primary?.takeIf { it.isNotEmpty() }
+            ?: localCoverRenderer.render(SourceCover(routeSourceId, bookId, isSeries = false))
+    }
+
+    /** Whole-series cover (Webtoon): resolve the series id from the book, then its series cover. */
+    private suspend fun seriesCoverBytes(source: BrowsableSource): ByteArray? {
+        val seriesId = runCatching { source.seriesIdOf(bookId) }.getOrNull() ?: return null
+        val primary = runCatching { source.coverBytes(seriesId, isSeriesCover = true) }.getOrNull()
+        return primary?.takeIf { it.isNotEmpty() }
+            ?: localCoverRenderer.render(SourceCover(routeSourceId, seriesId, isSeries = true))
     }
 
     private fun loadBook() = viewModelScope.launch {

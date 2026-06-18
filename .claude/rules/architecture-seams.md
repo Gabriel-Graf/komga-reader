@@ -409,10 +409,18 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   **Default `BOOK_COVER`** (2026-06-18 — der Standby zeigt auf dem E-Ink-Ziel standardmäßig das Werk-Cover; explizites
   OFF wird respektiert, nur ein ungesetzter Wert fällt auf BOOK_COVER). `ScreenSaverManager.applyCached` bricht auf
   Nicht-E-Ink (`!capabilities.hasEink`) früh ab, damit der Default nicht sinnlos ein Cover in die LCD-Galerie schreibt.
-  CUSTOM = SAF-gewähltes Bild (persistable URI); BOOK_COVER = `ReaderViewModel` setzt beim Öffnen jedes Werks dessen
-  Cover als Screensaver (fire-and-forget, off the load path) — **per Typ**: Webtoon = Serien-Cover, Paged/Comic/Novel =
-  Werk-Cover. Quelle ist die **volle erste Seite** (native Auflösung, = Cover bei Bild-Werken), nicht Komgas Cover-
-  *Thumbnail* (je Serie 200×300…720×1024 → klein = unscharf hochskaliert); Thumbnail/Local-Render nur als Fallback. Das Bild wird vor dem Publish geschärft + in Kontrast/Sättigung angehoben (`enhanceForEink`), um das
+  CUSTOM = SAF-gewähltes Bild (persistable URI); BOOK_COVER = beim Öffnen jedes Werks wird dessen Cover als Screensaver
+  gesetzt. **Off-load-path über einen WorkManager-Worker (Ist, 2026-06-18):** `ReaderViewModel.init` enqueued nur
+  `ScreenSaverScheduler.schedule(sourceId, bookId, viewerMode, format)` (`enqueueUniqueWork(REPLACE)` — das zuletzt
+  geöffnete Werk gewinnt); der `@HiltWorker ScreenSaverCoverWorker` ruft den `@Singleton ScreenSaverCoverResolver`, der
+  **(1)** das Server-Cover sofort setzt = **Crash-Fallback** (`needsHighResUpgrade`-Policy davor) und **(2)** bei zu
+  kleinem Cover (Kurzkante < halbe Schirmkante) auf Hochauflösung upgradet. So blockiert die Cover-Erzeugung den
+  Reader-Start nicht mehr; alle Resolver-Calls sind exception-safe + der Worker gibt immer `Result.success()`.
+  — **per Typ**: Webtoon = Serien-Cover (kein Upgrade), Paged/Comic/Novel = Werk-Cover. Hochauflösungs-Quelle: die
+  **volle erste Seite** via `openPage(0)` (Bild-Werke, native Auflösung) bzw. — wenn nicht streambar (EPUB/whole-file)
+  — die **ganze Datei laden + Cover extrahieren** (EPUB-Embedded-Cover `extractEpubCoverImage`, sonst MuPDF `renderFirstPageCover`);
+  das fixt auch die Roman-Schärfe (Komga liefert für EPUB nur ein ~195×300-Thumbnail). Komgas Cover-*Thumbnail* ist je
+  Serie 200×300…720×1024 → klein = unscharf hochskaliert, daher nur Fallback. Das Bild wird vor dem Publish geschärft + in Kontrast/Sättigung angehoben (`enhanceForEink`), um das
   Weichzeichnen/Entsättigen des Onyx-Standby-Renderers zu kompensieren (kein SDK-Qualitätsregler vorhanden); der
   Standby-Reload-Broadcast wird sofort **und** nach 1,5 s gesendet (async `setScreenResource`-Race → sonst nur erstes Setzen sichtbar). **Nicht per adb visuell verifizierbar** (Onyx-Standby ist
   ein Daydream-Overlay, SurfaceFlinger sieht es nicht); `ScreenSaverManager` end-to-end auf Boox verifiziert

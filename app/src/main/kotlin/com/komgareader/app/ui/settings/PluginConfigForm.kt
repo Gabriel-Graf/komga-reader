@@ -21,6 +21,7 @@ import com.komgareader.app.ui.components.EinkToggle
 import com.komgareader.plugin.ConfigField
 import com.komgareader.plugin.ConfigSchema
 import com.komgareader.plugin.FieldType
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -41,8 +42,15 @@ private fun decimalsFor(step: Double): Int {
     return max(2, decimals)
 }
 
-/** Formats [value] with exactly enough decimals for [step] (see [decimalsFor]). */
-private fun formatForStep(value: Double, step: Double): String = "%.${decimalsFor(step)}f".format(value)
+/**
+ * Formats [value] with exactly enough decimals for [step] (see [decimalsFor]) using a **dot** decimal
+ * separator ([Locale.ROOT]). This is the value that gets STORED and later parsed with
+ * [String.toDoubleOrNull], which only accepts a dot — formatting with the default locale would emit a
+ * comma on e.g. German devices, making the round-trip return null and pinning the slider at its
+ * minimum. Internal so the locale round-trip is unit-testable.
+ */
+internal fun formatForStep(value: Double, step: Double): String =
+    String.format(Locale.ROOT, "%.${decimalsFor(step)}f", value)
 
 /**
  * Retained state of a plugin configuration form — lets the caller (e.g. an
@@ -78,7 +86,7 @@ class PluginFormState(
  * Creates and remembers a [PluginFormState] for the given [schema].
  * Pre-filled with the configured default or a type-specific fallback:
  * - BOOL   → "false"
- * - NUMBER → "%.2f".format(min ?: 0.0) — matches the slider storage format, no rounding drift
+ * - NUMBER → [formatForStep] of (min ?: 0.0) — dot decimal separator, matches the slider storage format
  * - else   → "" (required fields → isValid checks for empty string)
  */
 @Composable
@@ -88,7 +96,7 @@ fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
             val initial = field.default.ifEmpty {
                 when (field.type) {
                     FieldType.BOOL -> "false"
-                    FieldType.NUMBER -> "%.2f".format(field.min ?: 0.0)
+                    FieldType.NUMBER -> formatForStep(field.min ?: 0.0, field.step ?: DEFAULT_NUMBER_STEP)
                     else -> ""
                 }
             }

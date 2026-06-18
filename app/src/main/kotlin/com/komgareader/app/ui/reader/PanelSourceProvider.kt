@@ -30,7 +30,9 @@ internal val PANEL_MIN_CONFIDENCE_FIELD = ConfigField(
     label = "Min. confidence",
     type = FieldType.NUMBER,
     required = false,
-    default = "%.2f".format(DEFAULT_MIN_CONFIDENCE),
+    // Dot decimal separator (NOT the default locale): the stored value is parsed with toFloatOrNull,
+    // which only accepts a dot — a German-locale "0,55" would fail to parse and pin the slider.
+    default = String.format(java.util.Locale.ROOT, "%.2f", DEFAULT_MIN_CONFIDENCE),
     min = 0.1,
     max = 0.95,
     step = 0.05,

@@ -50,7 +50,7 @@ class ScreenSaverCoverResolver @Inject constructor(
         val kind = coverKindFor(viewerMode)
         val baseline = baselineCover(source, bookRemoteId, kind)
         if (baseline != null && baseline.isNotEmpty()) {
-            screenSaver.applyBytes(baseline) // crash fallback: standby is set before any upgrade work
+            runCatching { screenSaver.applyBytes(baseline) } // crash fallback: standby is set before any upgrade work
         }
 
         if (kind == ScreenSaverCoverKind.SERIES) return // series poster is the cover; no first-page upgrade
@@ -59,7 +59,7 @@ class ScreenSaverCoverResolver @Inject constructor(
         val hi = highResWorkCover(source, bookRemoteId, format)
         if (hi != null && hi.isNotEmpty()) {
             Log.i(TAG, "screensaver upgraded to high-res cover (${hi.size} bytes)")
-            screenSaver.applyBytes(hi)
+            runCatching { screenSaver.applyBytes(hi) }
         }
     }
 
@@ -70,12 +70,12 @@ class ScreenSaverCoverResolver @Inject constructor(
                 val seriesId = runCatching { source.seriesIdOf(bookRemoteId) }.getOrNull()
                 val poster = seriesId?.let { runCatching { source.coverBytes(it, isSeriesCover = true) }.getOrNull() }
                 poster?.takeIf { it.isNotEmpty() }
-                    ?: seriesId?.let { localCoverRenderer.render(SourceCover(source.id, it, isSeries = true)) }
+                    ?: seriesId?.let { runCatching { localCoverRenderer.render(SourceCover(source.id, it, isSeries = true)) }.getOrNull() }
             }
             ScreenSaverCoverKind.WORK -> {
                 val cover = runCatching { source.coverBytes(bookRemoteId, isSeriesCover = false) }.getOrNull()
                 cover?.takeIf { it.isNotEmpty() }
-                    ?: localCoverRenderer.render(SourceCover(source.id, bookRemoteId, isSeries = false))
+                    ?: runCatching { localCoverRenderer.render(SourceCover(source.id, bookRemoteId, isSeries = false)) }.getOrNull()
             }
         }
 
@@ -87,9 +87,9 @@ class ScreenSaverCoverResolver @Inject constructor(
         val whole = runCatching { source.downloadFile(bookRemoteId) }.getOrNull()?.takeIf { it.isNotEmpty() }
             ?: return null
         return if (format == BookFormat.EPUB) {
-            extractEpubCoverImage(whole)
+            runCatching { extractEpubCoverImage(whole) }.getOrNull()
         } else {
-            renderFirstPageCover(documentFactory, whole, ".${format.name.lowercase()}")
+            runCatching { renderFirstPageCover(documentFactory, whole, ".${format.name.lowercase()}") }.getOrNull()
         }
     }
 

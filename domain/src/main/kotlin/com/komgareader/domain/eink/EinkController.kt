@@ -53,4 +53,11 @@ interface EinkController {
      * (proof-of-concept: verifies the Onyx SDK path works and is not overridden by the system saver).
      */
     fun setScreenSaverImage(absolutePath: String): Boolean = false
+
+    /**
+     * Sets the device power-off / shutdown image to the file at [absolutePath] (shown when the device
+     * is turned off), mirroring the standby image. Same constraints as [setScreenSaverImage] (the file
+     * must live in shared storage). No-op returning false on hardware without a controllable shutdown image.
+     */
+    fun setPowerOffImage(absolutePath: String): Boolean = false
 }

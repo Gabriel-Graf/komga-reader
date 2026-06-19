@@ -148,6 +148,17 @@ class OnyxEinkController(
         return ok
     }
 
+    override fun setPowerOffImage(absolutePath: String): Boolean {
+        // Same path as the standby image, but TYPE_SHUTDOWN_IMAGE (the screen shown when the device is
+        // powered off). The shutdown image is read at power-off, not from a live daydream cache, so no
+        // update_standby_pic reload broadcast is needed. showResultHint=false (no per-set toast).
+        val ok = runCatching {
+            ScreenSaverUtils.setScreenResource(appContext, absolutePath, ScreenSaverUtils.TYPE_SHUTDOWN_IMAGE, false)
+        }.isSuccess
+        Log.i(TAG, "setPowerOffImage($absolutePath) -> $ok")
+        return ok
+    }
+
     companion object {
         private const val TAG = "OnyxEinkController"
 

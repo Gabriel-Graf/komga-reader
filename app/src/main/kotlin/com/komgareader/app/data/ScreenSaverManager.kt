@@ -94,9 +94,10 @@ class ScreenSaverManager @Inject constructor(
     }
 
     /**
-     * Returns a copy of [src] with a "Power Off" script label drawn centered in the lower third. Legible
-     * on ANY background WITHOUT a solid box: a white fill over a thick black outline (readable on both
-     * light and dark areas) plus a soft drop shadow for separation on busy/mid-tone backgrounds.
+     * Returns a copy of [src] with a "Power Off" script label drawn centered in the lower third, on a
+     * rounded black box sized a bit larger than the text itself (padding around the glyphs). The box
+     * guarantees legibility on any background; white glyphs sit on top. A faint drop shadow lifts the
+     * box off busy covers.
      */
     private fun drawPowerOffLabel(src: Bitmap): Bitmap {
         val out = src.copy(Bitmap.Config.ARGB_8888, true)
@@ -106,28 +107,33 @@ class ScreenSaverManager @Inject constructor(
         val size = w * 0.13f
         val cx = w / 2f
         val cy = h * 0.82f // lower third
-        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            typeface = scriptTypeface
-            textSize = size
-            textAlign = Paint.Align.CENTER
-            color = Color.BLACK
-            style = Paint.Style.STROKE
-            strokeWidth = size * 0.08f
-            strokeJoin = Paint.Join.ROUND
-        }
         val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = scriptTypeface
             textSize = size
             textAlign = Paint.Align.CENTER
             color = Color.WHITE
             style = Paint.Style.FILL
-            setShadowLayer(size * 0.18f, 0f, size * 0.04f, Color.argb(200, 0, 0, 0))
         }
+        val fm = fill.fontMetrics
         // Baseline so the glyphs are vertically centered on cy.
-        val baseline = cy - (fill.descent() + fill.ascent()) / 2f
+        val baseline = cy - (fm.descent + fm.ascent) / 2f
+        // Box = text bounds + padding (a bit larger than the text), rounded corners.
+        val textW = fill.measureText(text)
+        val padX = size * 0.45f
+        val padY = size * 0.28f
+        val boxLeft = cx - textW / 2f - padX
+        val boxRight = cx + textW / 2f + padX
+        val boxTop = baseline + fm.ascent - padY
+        val boxBottom = baseline + fm.descent + padY
+        val radius = (boxBottom - boxTop) * 0.30f
+        val box = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(0xCC, 0, 0, 0) // black, slightly translucent
+            style = Paint.Style.FILL
+            setShadowLayer(size * 0.12f, 0f, size * 0.03f, Color.argb(130, 0, 0, 0))
+        }
         Canvas(out).apply {
-            drawText(text, cx, baseline, stroke) // black outline underneath
-            drawText(text, cx, baseline, fill) // white fill + soft shadow on top
+            drawRoundRect(boxLeft, boxTop, boxRight, boxBottom, radius, radius, box)
+            drawText(text, cx, baseline, fill)
         }
         return out
     }

@@ -26,6 +26,8 @@ Gebündelte Lese-Schriften (app/src/main/assets/fonts/):
   https://github.com/google/fonts/tree/main/ofl/literata — Lizenztext: assets/fonts/licenses/Literata-OFL.txt
 - Bitter 3.021 (Slab-Serif-Lese-Schrift) — OFL-1.1, The Bitter Project Authors.
   https://github.com/google/fonts/tree/main/ofl/bitter — Lizenztext: assets/fonts/licenses/Bitter-OFL.txt
+- Lobster Two (Schreibschrift für den „Power Off"-Schriftzug auf dem Abschaltbild) — OFL-1.1, Pablo Impallari.
+  https://github.com/google/fonts/tree/main/ofl/lobstertwo — Lizenztext: assets/fonts/licenses/LobsterTwo-OFL.txt
 
 Gebündelte Silbentrennungs-Muster (app/src/main/assets/hyph/), aus dem hyph-utf8/TeX-Hyphenation-Paket (via crengine-ng nach .pattern konvertiert):
 - hyph-de-1996.pattern (Deutsch, reformiert 2006) — MIT.

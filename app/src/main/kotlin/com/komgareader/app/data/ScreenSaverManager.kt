@@ -10,6 +10,7 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.Typeface
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
@@ -74,8 +75,61 @@ class ScreenSaverManager @Inject constructor(
         // its native size (e.g. 720x1024) is silently rejected (no standby update). Fit it onto a
         // full-screen canvas first (letterbox or fill-crop per setting).
         val bitmap = enhanceForEink(fitToScreen(decoded))
-        val path = publishToPictures(bitmap) ?: return false
-        return eink.setScreenSaverImage(path)
+        val ssPath = publishToPictures(bitmap, PREFIX_SCREENSAVER) ?: return false
+        val ssOk = eink.setScreenSaverImage(ssPath)
+        // Mirror the same image as the power-off screen, but with a "Power Off" script label added in the
+        // lower third (the standby has no label). Best-effort: a power-off failure must not fail the
+        // screensaver result.
+        runCatching {
+            val poPath = publishToPictures(drawPowerOffLabel(bitmap), PREFIX_POWEROFF)
+            if (poPath != null) eink.setPowerOffImage(poPath)
+        }
+        return ssOk
+    }
+
+    /** Script typeface for the power-off label (bundled Lobster Two, OFL-1.1); falls back to the system cursive. */
+    private val scriptTypeface: Typeface by lazy {
+        runCatching { Typeface.createFromAsset(context.assets, "fonts/LobsterTwo-Italic.otf") }.getOrNull()
+            ?: Typeface.create("cursive", Typeface.ITALIC)
+    }
+
+    /**
+     * Returns a copy of [src] with a "Power Off" script label drawn centered in the lower third. Legible
+     * on ANY background WITHOUT a solid box: a white fill over a thick black outline (readable on both
+     * light and dark areas) plus a soft drop shadow for separation on busy/mid-tone backgrounds.
+     */
+    private fun drawPowerOffLabel(src: Bitmap): Bitmap {
+        val out = src.copy(Bitmap.Config.ARGB_8888, true)
+        val w = out.width.toFloat()
+        val h = out.height.toFloat()
+        val text = "Power Off"
+        val size = w * 0.13f
+        val cx = w / 2f
+        val cy = h * 0.82f // lower third
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = scriptTypeface
+            textSize = size
+            textAlign = Paint.Align.CENTER
+            color = Color.BLACK
+            style = Paint.Style.STROKE
+            strokeWidth = size * 0.08f
+            strokeJoin = Paint.Join.ROUND
+        }
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = scriptTypeface
+            textSize = size
+            textAlign = Paint.Align.CENTER
+            color = Color.WHITE
+            style = Paint.Style.FILL
+            setShadowLayer(size * 0.18f, 0f, size * 0.04f, Color.argb(200, 0, 0, 0))
+        }
+        // Baseline so the glyphs are vertically centered on cy.
+        val baseline = cy - (fill.descent() + fill.ascent()) / 2f
+        Canvas(out).apply {
+            drawText(text, cx, baseline, stroke) // black outline underneath
+            drawText(text, cx, baseline, fill) // white fill + soft shadow on top
+        }
+        return out
     }
 
     /**
@@ -169,19 +223,19 @@ class ScreenSaverManager @Inject constructor(
      *  filesystem path, or null on failure. The name must be unique per set: the Onyx screensaver
      *  importer dedupes by source path — reusing one filename makes it skip every set after the first
      *  (verified on device: the system stopped re-copying the file), so the live standby never updated.
-     *  Prior `komga_screensaver_*` files (ours + the system's Pictures-root copies) are pruned first. */
-    private fun publishToPictures(bitmap: Bitmap): String? {
+     *  Prior files of the same [prefix] (ours + the system's Pictures-root copies) are pruned first. */
+    private fun publishToPictures(bitmap: Bitmap, prefix: String): String? {
         val resolver = context.contentResolver
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        // Prune previous screensaver files everywhere so the gallery doesn't accumulate them.
+        // Prune previous files of this kind everywhere so the gallery doesn't accumulate them.
         runCatching {
             resolver.delete(
                 collection,
                 "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ?",
-                arrayOf("$FILE_PREFIX%"),
+                arrayOf("$prefix%"),
             )
         }
-        val uniqueName = "$FILE_PREFIX${System.currentTimeMillis()}.png"
+        val uniqueName = "$prefix${System.currentTimeMillis()}.png"
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, uniqueName)
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
@@ -199,7 +253,8 @@ class ScreenSaverManager @Inject constructor(
 
     private companion object {
         const val TAG = "ScreenSaverManager"
-        const val FILE_PREFIX = "komga_screensaver_"
+        const val PREFIX_SCREENSAVER = "komga_screensaver_"
+        const val PREFIX_POWEROFF = "komga_poweroff_"
         const val RELATIVE_DIR = "Pictures/KomgaReader"
     }
 }

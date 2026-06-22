@@ -146,6 +146,13 @@ Entscheidungen 1 und 3 sind jetzt real, nicht mehr nur festgelegter Plan.
 2. **ABI-Gate als zwei Integer** (`VERSION`, `MIN_SUPPORTED`), nicht semver-Strings. Plugin-Manifest
    nennt `abiVersion`; außerhalb der Spanne → „inkompatibel", nie instanziiert. Neue Capability =
    neues **optionales** Interface (wie `ContainerSource`), additiv, ohne ABI-Bump.
+   **Grenze des Gates (Ist, 2026-06-22):** das Integer-Gate erkennt **keine JVM-Signatur-Brüche** — ein
+   Plugin innerhalb der Spanne wird instanziiert und crasht erst dann, wenn eine Vertragsklasse binär
+   inkompatibel geändert wurde. So geschehen mit `ConfigField` (ABI 3→4: neue Konstruktor-Parameter
+   brachen den 5-arg-`<init>`, alte Quellen-Plugin-APKs warfen `NoSuchMethodError`). Zwei Leitplanken:
+   (1) **SDK binär-kompatibel halten** — neue Felder über explizite Kompat-Konstruktoren/Overloads, denn
+   `MIN_SUPPORTED` anheben sperrt alte Plugins nur aus, repariert kein kaputtes; (2) `PluginHost.discoverPlugins`
+   **isoliert pro Plugin** (`runCatching`), damit ein inkompatibles nie alle gesunden verdeckt.
 3. **Paket = separate APK**, via `PackageManager` (Metadata-Flag) entdeckt, via
    `PathClassLoader(sourceDir, nativeLibDir, hostClassLoader)` geladen (Parent = Host-Classloader, sonst
    `ClassCastException` durch doppelte Interface-Klassen). Die OS macht Signatur/Integrität/Update/`.so`-

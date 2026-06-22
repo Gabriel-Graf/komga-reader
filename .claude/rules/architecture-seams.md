@@ -236,8 +236,17 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`SettingsRepository`, Default **true**, Room-Key `use_ml_detection`, **keine** Migration; Toggle in
   Settings → Comic). Distribution wie die anderen Kategorien über `KomgaReaderPlugins` (`type:panel_model`,
   `abiVersion:3`).
-- **Generische Data-Plugin-Config (Ist, 2026-06-17):** ABI-Bump `VERSION=3`→`4` (additiv, MIN_SUPPORTED
-  bleibt 1). Neues Manifest-Key `PluginManifestKeys.DATA_CONFIG` (`com.komgareader.plugin.DATA_CONFIG`)
+- **Generische Data-Plugin-Config (Ist, 2026-06-17):** ABI-Bump `VERSION=3`→`4` (MIN_SUPPORTED bleibt 1).
+  **Korrektur (2026-06-22):** dieser Bump war für data-only-Plugins additiv, **nicht** aber binär für
+  Code-Plugins — `FieldType.NUMBER` fügte `ConfigField` die Konstruktor-Parameter `min/max/step` hinzu und
+  brach damit die JVM-Signatur des 5-arg-Konstruktors, gegen den ältere Quellen-Plugin-APKs (Kavita/Calibre)
+  gelinkt waren → `NoSuchMethodError` beim Instanziieren (auf echter Boox 2026-06-22 reproduziert). Geheilt
+  durch einen **expliziten Legacy-5-arg-Sekundärkonstruktor** auf `ConfigField` (binäre Kompat wiederhergestellt,
+  `ConfigFieldTest.legacy_five_arg_constructor_stays_binary_compatible` als Reflection-Guard) — deshalb bleibt
+  MIN_SUPPORTED 1. **Das Integer-ABI-Gate erkennt Signatur-Brüche nicht** (ein `ABI_VERSION=1`-Plugin fällt
+  durchs Gate `1..4`, crasht dann beim Instanziieren); zusätzlich isoliert `PluginHost.discoverPlugins` jetzt
+  pro Plugin (`runCatching`), sodass ein inkompatibles Plugin nie die gesunden verdeckt. Neues Manifest-Key
+  `PluginManifestKeys.DATA_CONFIG` (`com.komgareader.plugin.DATA_CONFIG`)
   trägt den Asset-Namen einer `config.json`-Schemadatei (parallel zu `DATA_ASSET`). `DataPluginInfo`
   trägt das neue Feld `configAssetName: String?`. `PluginHost.dataPluginConfigJson(packageName): String?`
   liest das Asset ressourcen-only (derzeit auf `PANEL_MODEL` beschränkt). Neuer `FieldType.NUMBER` in

@@ -3,6 +3,7 @@ package com.komgareader.plugin.host
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import dalvik.system.PathClassLoader
 import java.io.File
 import com.komgareader.domain.model.SourceKind
@@ -28,14 +29,21 @@ class PluginHost(private val context: Context) {
     fun discoverPlugins(): List<DiscoveredPlugin> {
         val pm = context.packageManager
         val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+        // Isolate each plugin: instantiating + reading its metadata/config runs plugin code, which can
+        // throw (e.g. a plugin built against an older SDK whose ConfigField constructor no longer exists
+        // → NoSuchMethodError). A single broken plugin must never hide all the healthy ones, so we skip
+        // it (logged) instead of letting the exception abort the whole scan. Mirrors discoverDataPlugins.
         return packages.mapNotNull { pkg ->
-            val meta = pkg.applicationInfo?.metaData ?: return@mapNotNull null
-            val entry = meta.getString(PluginManifestKeys.ENTRY_CLASS) ?: return@mapNotNull null
-            val abi = readAbiVersion(meta) ?: return@mapNotNull null
-            if (!AbiGate.isCompatible(abi)) return@mapNotNull null
-            val sig = signatureSha256(pkg.packageName) ?: return@mapNotNull null
-            val plugin = instantiate(pkg.packageName, entry) ?: return@mapNotNull null
-            DiscoveredPlugin(pkg.packageName, sig, abi, plugin.metadata, plugin.configSchema(), entry)
+            runCatching {
+                val meta = pkg.applicationInfo?.metaData ?: return@runCatching null
+                val entry = meta.getString(PluginManifestKeys.ENTRY_CLASS) ?: return@runCatching null
+                val abi = readAbiVersion(meta) ?: return@runCatching null
+                if (!AbiGate.isCompatible(abi)) return@runCatching null
+                val sig = signatureSha256(pkg.packageName) ?: return@runCatching null
+                val plugin = instantiate(pkg.packageName, entry) ?: return@runCatching null
+                DiscoveredPlugin(pkg.packageName, sig, abi, plugin.metadata, plugin.configSchema(), entry)
+            }.onFailure { Log.w("PluginHost", "discoverPlugins skipped ${pkg.packageName}", it) }
+                .getOrNull()
         }
     }
 

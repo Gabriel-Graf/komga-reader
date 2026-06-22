@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -52,6 +53,7 @@ import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.components.EinkOutlinedButton
 import com.komgareader.app.ui.components.EinkSearchBar
 import com.komgareader.app.ui.components.FilteredAsyncImage
+import com.komgareader.app.ui.components.LoadingIndicator
 import com.komgareader.app.ui.components.LocalContentBottomInset
 import com.komgareader.app.ui.components.SyncIconButton
 import com.komgareader.app.ui.components.TileTitleBand
@@ -87,6 +89,11 @@ fun CollectionDetailScreen(
     val syncLinks by viewModel.syncLinks(collectionId).collectAsState(emptyList())
     val syncing by viewModel.syncing.collectAsState()
 
+    // Beim Öffnen einmal die Erreichbarkeit der Member-Quellen proben → offline nur lokale Werke zeigen.
+    LaunchedEffect(collectionId) { viewModel.probeCollectionSources(collectionId) }
+    val membersFlow = remember(collectionId) { viewModel.membersFor(collectionId) }
+    val membersUi by membersFlow.collectAsState(initial = CollectionMembersUi(emptyList(), emptyOffline = false))
+
     var searchActive by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var syncAnchor by remember { mutableStateOf(IntOffset.Zero) }
@@ -99,8 +106,10 @@ fun CollectionDetailScreen(
         return
     }
     val isSeries = collection.kind == CollectionKind.SERIES
-    val members = if (query.isBlank()) collection.members
-    else collection.members.filter { it.title.contains(query, ignoreCase = true) }
+    // Nur lokal verfügbare Mitglieder, wenn die Quelle(n) offline sind (sonst alle); dann per Suche filtern.
+    val available = membersUi.members
+    val members = if (query.isBlank()) available
+    else available.filter { it.title.contains(query, ignoreCase = true) }
 
     LocalResolvedSlots.current.detail(
         DetailScaffoldState(
@@ -135,20 +144,39 @@ fun CollectionDetailScreen(
                 actionLabel = s.searchAction,
             ),
             content = { padding ->
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = EinkTokens.tileGap),
-                    contentPadding = PaddingValues(top = EinkTokens.tileGap, bottom = LocalContentBottomInset.current + 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
-                    verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
-                ) {
-                    items(members, key = { it.sourceId.toString() + it.remoteId }) { member ->
-                        MemberTile(
-                            member = member,
-                            isSeries = isSeries,
-                            onOpen = if (isSeries) ({ onOpenSeries(member.remoteId, member.sourceId) }) else null,
-                            onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
+                if (membersUi.loading) {
+                    // Erreichbarkeits-Probe läuft noch — Lade-Anzeige (E-Ink-sicher), kein Member-Flash.
+                    Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                        LoadingIndicator()
+                    }
+                } else if (membersUi.emptyOffline && query.isBlank()) {
+                    // Offline und nichts heruntergeladen — statt blanker, nicht öffenbarer Kacheln eine Meldung.
+                    Box(
+                        Modifier.fillMaxSize().padding(padding).padding(horizontal = 32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            s.collectionNoLocalWorks,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = EinkTokens.tileGap),
+                        contentPadding = PaddingValues(top = EinkTokens.tileGap, bottom = LocalContentBottomInset.current + 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                        verticalArrangement = Arrangement.spacedBy(EinkTokens.tileGap),
+                    ) {
+                        items(members, key = { it.sourceId.toString() + it.remoteId }) { member ->
+                            MemberTile(
+                                member = member,
+                                isSeries = isSeries,
+                                onOpen = if (isSeries) ({ onOpenSeries(member.remoteId, member.sourceId) }) else null,
+                                onRemove = { viewModel.removeMember(collectionId, member.sourceId, member.remoteId) },
+                            )
+                        }
                     }
                 }
             },

@@ -152,7 +152,7 @@ fun renderFirstPageCover(factory: DocumentFactory, bytes: ByteArray, formatHint:
 private fun needsAppRender(format: String): Boolean =
     format.equals("pdf", ignoreCase = true) || format.equals("cbr", ignoreCase = true)
 
-private fun sha256Hex(input: String): String =
+internal fun sha256Hex(input: String): String =
     MessageDigest.getInstance("SHA-256")
         .digest(input.toByteArray())
         .joinToString("") { "%02x".format(it) }

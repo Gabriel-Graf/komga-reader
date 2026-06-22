@@ -10,6 +10,7 @@ import com.komgareader.app.data.coil.RenderedPageFetcher
 import com.komgareader.app.data.coil.SourceCoverFetcher
 import com.komgareader.app.data.coil.SourcePageFetcher
 import com.komgareader.app.di.ApplicationScope
+import com.komgareader.data.cover.SourceCoverCache
 import com.komgareader.app.eink.HardwareButtonBus
 import com.komgareader.app.eink.NoOpEinkController
 import com.komgareader.domain.eink.EinkController
@@ -54,13 +55,14 @@ object AppModule {
         @ApplicationContext ctx: Context,
         sources: SourceManager,
         localCover: LocalCoverRenderer,
+        coverCache: SourceCoverCache,
         renderedPages: RenderedPageStore,
     ): ImageLoader =
         ImageLoader.Builder(ctx)
             .components {
                 add(SourcePageFetcher.Factory(sources))
                 add(RenderedPageFetcher.Factory(renderedPages))
-                add(SourceCoverFetcher.Factory(sources, localCover))
+                add(SourceCoverFetcher.Factory(sources, localCover, coverCache))
             }
             .build()
 

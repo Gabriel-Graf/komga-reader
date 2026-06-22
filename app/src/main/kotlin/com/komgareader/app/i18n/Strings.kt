@@ -198,6 +198,7 @@ interface Strings {
     val removeFromCollection: String
     val collectionSyncNow: String
     val collectionLocalOnly: String
+    val collectionNoLocalWorks: String
     val collectionSyncInfoTitle: String
     val collectionSyncUnsupported: String
     val collectionSyncForbidden: String
@@ -659,6 +660,7 @@ object StringsDe : Strings {
     override val removeFromCollection = "Aus Sammlung entfernen"
     override val collectionSyncNow = "Jetzt synchronisieren"
     override val collectionLocalOnly = "Nur lokal"
+    override val collectionNoLocalWorks = "Sammlung hat keine lokalen Werke"
     override val collectionSyncInfoTitle = "Sync-Status"
     override val collectionSyncUnsupported = "Die hinterlegte Quelle unterstützt keinen Sync — diese Werke bleiben nur lokal, kein Abgleich zwischen Geräten."
     override val collectionSyncForbidden = "Dein Konto darf am Server keine Sammlungen anlegen (nur Admins) — diese Werke bleiben nur lokal."
@@ -1093,6 +1095,7 @@ object StringsEn : Strings {
     override val removeFromCollection = "Remove from collection"
     override val collectionSyncNow = "Sync now"
     override val collectionLocalOnly = "Local only"
+    override val collectionNoLocalWorks = "Collection has no local works"
     override val collectionSyncInfoTitle = "Sync status"
     override val collectionSyncUnsupported = "The configured source does not support syncing — these works stay local only, no cross-device sync."
     override val collectionSyncForbidden = "Your account cannot create collections on the server (admins only) — these works stay local only."

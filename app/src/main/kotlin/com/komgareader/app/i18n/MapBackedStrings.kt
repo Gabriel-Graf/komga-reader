@@ -202,6 +202,7 @@ class MapBackedStrings(
     override val removeFromCollection: String get() = overrides["removeFromCollection"] ?: fallback.removeFromCollection
     override val collectionSyncNow: String get() = overrides["collectionSyncNow"] ?: fallback.collectionSyncNow
     override val collectionLocalOnly: String get() = overrides["collectionLocalOnly"] ?: fallback.collectionLocalOnly
+    override val collectionNoLocalWorks: String get() = overrides["collectionNoLocalWorks"] ?: fallback.collectionNoLocalWorks
     override val collectionSyncInfoTitle: String get() = overrides["collectionSyncInfoTitle"] ?: fallback.collectionSyncInfoTitle
     override val collectionSyncUnsupported: String get() = overrides["collectionSyncUnsupported"] ?: fallback.collectionSyncUnsupported
     override val collectionSyncForbidden: String get() = overrides["collectionSyncForbidden"] ?: fallback.collectionSyncForbidden

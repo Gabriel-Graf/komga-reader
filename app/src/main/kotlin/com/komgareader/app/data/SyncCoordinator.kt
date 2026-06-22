@@ -26,6 +26,8 @@ class SyncCoordinator(
     private val syncLocalDownloads: suspend () -> Unit,
     private val purgeExternal: suspend () -> Unit,
     private val displayMode: suspend () -> String,
+    /** Caches collection-member covers (Seam A) so the collage/grid show them offline. Fire-and-forget. */
+    private val prewarmCovers: suspend () -> Unit = {},
 ) {
     @Inject constructor(
         sync: CollectionSyncManager,
@@ -33,6 +35,7 @@ class SyncCoordinator(
         localDownloads: LocalDownloadSync,
         externalOpener: ExternalBookOpener,
         settings: SettingsRepository,
+        collectionCovers: CollectionCoverPrewarmer,
     ) : this(
         fullSync = { sync.fullSync() },
         pullOnlySync = { sync.pullOnlySync() },
@@ -41,6 +44,7 @@ class SyncCoordinator(
         syncLocalDownloads = { localDownloads.sync() },
         purgeExternal = { externalOpener.purgeTransient() },
         displayMode = { settings.displayMode.first() },
+        prewarmCovers = { collectionCovers.prewarm() },
     )
 
     private val appStartMutex = Mutex()
@@ -57,12 +61,14 @@ class SyncCoordinator(
         runCatching { fetchRepos() }
         runCatching { syncLocalDownloads() }
         runCatching { purgeExternal() }
+        runCatching { prewarmCovers() }
     }
 
     /** Server hinzugefügt/aktualisiert/entfernt (auch lokaler Ordner) → Sammlungen pullen + lokale Downloads spiegeln. */
     suspend fun onServerChanged() {
         runCatching { pullOnlySync() }
         runCatching { syncLocalDownloads() }
+        runCatching { prewarmCovers() }
     }
 
     /** Reload-Button im Plugins-Tab: Repo neu holen + lokal neu scannen + lokale Downloads spiegeln. */
@@ -82,6 +88,9 @@ class SyncCoordinator(
 
     /** Sammlungen-Tab betreten: auf Nicht-E-Ink zusätzlich voll synchronisieren (Akku-Gating). */
     suspend fun onCollectionsTabEntered() {
-        if (aggressiveSyncAllowed(displayMode())) runCatching { fullSync() }
+        if (aggressiveSyncAllowed(displayMode())) {
+            runCatching { fullSync() }
+            runCatching { prewarmCovers() }
+        }
     }
 }

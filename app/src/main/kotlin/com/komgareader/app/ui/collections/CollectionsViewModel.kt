@@ -2,6 +2,7 @@ package com.komgareader.app.ui.collections
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.CollectionSyncManager
 import com.komgareader.app.data.SyncCoordinator
 import com.komgareader.app.ui.common.holdSpinning
@@ -9,9 +10,11 @@ import com.komgareader.domain.model.CollectionKind
 import com.komgareader.domain.model.CollectionMember
 import com.komgareader.domain.model.UserCollection
 import com.komgareader.domain.repository.CollectionRepository
+import com.komgareader.domain.repository.DownloadRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.usecase.VanishedCollection
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +25,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import com.komgareader.domain.model.SyncStatus
 import javax.inject.Inject
 
@@ -31,6 +35,8 @@ class CollectionsViewModel @Inject constructor(
     private val sync: CollectionSyncManager,
     private val settings: SettingsRepository,
     private val coordinator: SyncCoordinator,
+    private val active: ActiveSource,
+    private val downloads: DownloadRepository,
 ) : ViewModel() {
 
     val collections: StateFlow<List<UserCollection>> =
@@ -131,7 +137,53 @@ class CollectionsViewModel @Inject constructor(
     /** Alle Sync-Links einer Collection, als Flow — für den Erklär-Dialog. */
     fun syncLinks(collectionId: Long) = repo.syncLinks(collectionId)
 
+    // --- Offline-Verfügbarkeit der Mitglieder (Sammlungs-Detail) ---
+
+    /** Erreichbarkeit je Quelle der gerade geöffneten Sammlung; `null` = noch nicht geprobt. */
+    private val _onlineSources = MutableStateFlow<Set<Long>?>(null)
+
+    /**
+     * Probt je distinkter Member-Quelle EINMAL die Erreichbarkeit (ein leichter Cover-Abruf, kurzer
+     * Timeout) — quellen-agnostisch über [ActiveSource], gilt für Komga/OPDS/Plugin gleich. Das Ergebnis
+     * steuert den Offline-Filter in [membersFor]: eine unerreichbare Quelle zeigt nur ihre lokal
+     * heruntergeladenen Mitglieder.
+     */
+    fun probeCollectionSources(collectionId: Long) = viewModelScope.launch {
+        val col = repo.get(collectionId) ?: return@launch
+        val online = col.members.map { it.sourceId }.distinct().filter { sourceId ->
+            val source = active.get(sourceId) ?: return@filter false
+            val probe = col.members.first { it.sourceId == sourceId }
+            runCatching {
+                withTimeoutOrNull(REACH_TIMEOUT_MS) {
+                    source.coverBytes(probe.remoteId, isSeriesCover = col.kind == CollectionKind.SERIES)
+                } != null
+            }.getOrDefault(false)
+        }.toSet()
+        _onlineSources.value = online
+    }
+
+    /**
+     * Sichtbare Mitglieder einer Sammlung nach dem Offline-Filter. Bis die Erreichbarkeits-Probe landet
+     * (`_onlineSources == null`) ist [CollectionMembersUi.loading] true — der Screen zeigt eine
+     * Lade-Anzeige, kein Mitglied erscheint kurz und verschwindet wieder. Danach greift der Filter;
+     * [CollectionMembersUi.emptyOffline] wird erst nach der Probe true.
+     */
+    fun membersFor(collectionId: Long): Flow<CollectionMembersUi> =
+        combine(repo.collections, downloads.downloads, _onlineSources) { cols, dls, online ->
+            val col = cols.find { it.id == collectionId }
+                ?: return@combine CollectionMembersUi(emptyList(), emptyOffline = false)
+            if (online == null) return@combine CollectionMembersUi(emptyList(), emptyOffline = false, loading = true)
+            val visible = visibleMembers(col.members, downloadedMemberKeys(dls, col.kind), online)
+            CollectionMembersUi(
+                members = visible,
+                emptyOffline = visible.isEmpty() && col.members.isNotEmpty(),
+            )
+        }
+
     companion object {
         private val problemStatuses = setOf(SyncStatus.LOCAL_ONLY, SyncStatus.UNSUPPORTED, SyncStatus.FORBIDDEN)
+
+        /** Kurzer Timeout je Quellen-Erreichbarkeits-Probe — offline schnell scheitern, nicht hängen. */
+        private const val REACH_TIMEOUT_MS = 4_000L
     }
 }

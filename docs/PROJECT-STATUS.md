@@ -33,7 +33,7 @@ Legend: ✅ built & wired · 🟡 partial / model ahead of UX · 🟢 built, by�
 | **Plugins** | ✅ / 🟢 | Source + 5 data‑only categories real (colour presets, reader presets, languages, UI packs, fonts), TOFU‑pinned, SDK shipped. Arbitrary‑Compose UI plugins are deliberately **not** built (declarative‑only by design). |
 | **Modular UI** | 🟡 | Theme + shell + 8 region slots all built and wired. External packs are **deliberately declarative/data‑only**; today they cover theme / shell nav‑style / icons. The additive frontier is widening that declarative vocabulary to address individual chrome slots — **not** loading external code. |
 | **Colour filter** | ✅ | Per‑profile saturation/contrast/brightness on **both** covers and reader pages, for all sources. |
-| **Offline‑first** | ✅ | Download manager, local `dirty` progress, sync queue, bidirectional collection sync (LWW). |
+| **Offline‑first** | ✅ | Download manager, local `dirty` progress, sync queue, bidirectional collection sync (LWW). Collection covers are cached (`SourceCoverCache`) so the collage/grid stay populated offline; the collection detail shows only locally‑available members when its sources are unreachable. |
 | **Reading statistics** | ✅ | Local per‑reader‑type time tracking (`ReaderKind`, `ReadingSession`, `ReadingStats`); idle‑capped deltas; started/finished counts derived from existing progress tables. Room v18, Settings → Statistics. |
 
 ### Multi‑reader — ✅

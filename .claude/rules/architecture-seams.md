@@ -295,6 +295,26 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   behalten die anderen Quellen; fremde leere Sammlungen bleiben). Verdrahtet in
   `SettingsViewModel.removeServer` über `SourceRegistration.sourceIdOf(config)`. Details:
   `source-agnostic-integration.md`, `source-extensibility.md` (Kochrezept Metadatum).
+- **Sammlungen offline (Ist, 2026-06-23):** zwei offline-Härtungen, alle quellen-agnostisch über
+  `ActiveSource`. (1) **Cover bleiben offline nie blank:** der `@Singleton SourceCoverCache`
+  (`:data`, `com.komgareader.data.cover`) persistiert die rohen `coverBytes` (Naht A) **gekeyt am Werk**
+  (`sourceCoverKey(sourceId, remoteId, isSeries)`, sha256) — unabhängig von einer Download-Datei, anders
+  als `LocalCoverStore` (datei-signatur-gekeyt, nur heruntergeladene Werke). Gefüllt zweifach:
+  **write-through** im `SourceCoverFetcher` (jedes online geladene Cover wird `putIfAbsent`-persistiert) +
+  der `@Singleton CollectionCoverPrewarmer` (`app/data`) cacht beim Collection-Sync die Cover **aller**
+  Sammlungs-Mitglieder (Serien, die nicht heruntergeladen sein müssen → Server-Cover sonst offline blank),
+  getriggert über `SyncCoordinator.prewarmCovers` (onAppStart/onServerChanged/onCollectionsTabEntered),
+  geprunt auf die aktuellen Member-Keys (`coverPrunePlan`). Der `SourceCoverFetcher`-Fallback ist jetzt:
+  primary (online) → `LocalCoverRenderer.render` (Download-Datei) → `SourceCoverCache.get` (sync-gecacht) →
+  leer. (2) **Sammlungs-Detail offline = nur lokale Werke:** `CollectionsViewModel.probeCollectionSources`
+  probt je distinkter Member-Quelle EINMAL die Erreichbarkeit (ein `coverBytes`-Abruf, 4s-Timeout); die
+  reine `visibleMembers(members, downloadedMemberKeys(downloads, kind), onlineSources)`
+  (`CollectionAvailability.kt`, unit-getestet) zeigt pro Mitglied nur, wenn dessen Quelle erreichbar **oder**
+  das Werk heruntergeladen ist — sonst `collectionNoLocalWorks`-Meldung. Bis die Probe landet
+  (`_onlineSources == null`) zeigt der Screen eine Lade-Anzeige (`CollectionMembersUi.loading`), kein
+  Member erscheint kurz und verschwindet wieder. Mixed-source sauber (eine Quelle offline blendet nur ihre
+  nicht-geladenen Member aus). Build + Unit grün, Hilt-Graph auf echter Boox; voller Offline-E2E (WLAN aus,
+  Sammlung mit Downloads) gerätegebunden offen (Soll).
 - **SyncCoordinator (Ist, 2026-06-11):** `app/data/SyncCoordinator.kt` (@Singleton) ist die zentrale
   Sync-/Discovery-Naht: bündelt App-Start- (`onAppStart`, latch-geschützt: `fullSync` + lokaler
   Plugin-Scan + 1× Repo-Fetch), Server-Changed- (`onServerChanged` → `pullOnlySync`), Reload-

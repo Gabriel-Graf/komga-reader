@@ -34,6 +34,10 @@ class RoomDownloadRepository(private val dao: DownloadDao) : DownloadRepository 
         totalPages = e.totalPages,
         seriesTitle = e.seriesTitle,
         seriesCoverUrl = e.seriesCoverUrl,
+        number = e.number,
+        seriesSummary = e.seriesSummary,
+        seriesStatus = e.seriesStatus,
+        seriesGenres = e.seriesGenres?.split("\n")?.filter { it.isNotBlank() } ?: emptyList(),
     )
 
     private fun toEntity(b: DownloadedBook) = DownloadEntity(
@@ -46,5 +50,9 @@ class RoomDownloadRepository(private val dao: DownloadDao) : DownloadRepository 
         totalPages = b.totalPages,
         seriesTitle = b.seriesTitle,
         seriesCoverUrl = b.seriesCoverUrl,
+        number = b.number,
+        seriesSummary = b.seriesSummary,
+        seriesStatus = b.seriesStatus,
+        seriesGenres = b.seriesGenres.takeIf { it.isNotEmpty() }?.joinToString("\n"),
     )
 }

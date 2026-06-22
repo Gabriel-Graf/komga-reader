@@ -64,6 +64,7 @@ class LibraryViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val shelfRepository: ShelfRepository,
     private val overrideRepository: SeriesOverrideRepository,
+    private val coverPrewarmer: com.komgareader.app.data.DownloadCoverPrewarmer,
 ) : ViewModel() {
 
     private val refreshTrigger = MutableStateFlow(0)
@@ -163,6 +164,9 @@ class LibraryViewModel @Inject constructor(
             val source = active.get(series.sourceId) ?: return@launch
             runCatching {
                 val books = withContext(Dispatchers.IO) { source.books(series.remoteId) }
+                // Reichhaltige Serien-Metadaten einmal laden, damit die Offline-Detailseite Beschreibung/
+                // Status/Genres zeigt (der Server ist offline nicht abfragbar).
+                val detail = withContext(Dispatchers.IO) { runCatching { source.seriesDetail(series.remoteId) }.getOrNull() }
                 events.emit(LibraryEvent.DownloadStarted(books.size))
                 for (book in books) {
                     withContext(Dispatchers.IO) {
@@ -177,10 +181,15 @@ class LibraryViewModel @Inject constructor(
                             bytes = bytes,
                             seriesTitle = series.title,
                             seriesCoverUrl = series.coverUrl,
+                            number = book.number,
+                            seriesSummary = detail?.summary ?: series.summary,
+                            seriesStatus = detail?.status ?: series.status,
+                            seriesGenres = detail?.genres ?: series.genres,
                         )
                     }
                 }
                 events.emit(LibraryEvent.DownloadComplete)
+                coverPrewarmer.prewarm()  // Cover offline schnell statt on-demand-Render.
             }.onFailure { e ->
                 events.emit(LibraryEvent.DownloadError(uiErrorOf(e)))
             }

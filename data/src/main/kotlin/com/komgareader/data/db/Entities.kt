@@ -141,6 +141,12 @@ data class DownloadEntity(
     val totalPages: Int,
     val seriesTitle: String = "",
     val seriesCoverUrl: String? = null,
+    /** Band-Nummer für die Offline-Sortierung; null = unbekannt (vor Migration 21→22). */
+    val number: String? = null,
+    /** Offline-Serien-Metadaten (Migration 21→22); `genres` newline-getrennt (Tags ohne Newlines). */
+    val seriesSummary: String? = null,
+    val seriesStatus: String? = null,
+    val seriesGenres: String? = null,
 )
 
 /** Persistiertes E-Ink-Farbfilter-Profil. */

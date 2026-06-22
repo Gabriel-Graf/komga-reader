@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CollectionEntity::class, CollectionMemberEntity::class, CollectionSyncLinkEntity::class,
         PluginRepoEntity::class, ReadingSessionEntity::class, SeriesAutoTypeEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -421,6 +421,18 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
                 PRIMARY KEY(`sourceId`, `seriesRemoteId`)
             )""".trimIndent(),
         )
+    }
+}
+
+/** v21 -> v22: offline metadata cached on the downloads row (band number + series summary/status/genres),
+ *  so a downloaded series shows its description and the correct volume order offline. All nullable,
+ *  no DEFAULT — matches the nullable entity fields, so no destructive recreate. */
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `number` TEXT")
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesSummary` TEXT")
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesStatus` TEXT")
+        db.execSQL("ALTER TABLE `downloads` ADD COLUMN `seriesGenres` TEXT")
     }
 }
 

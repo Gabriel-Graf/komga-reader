@@ -51,6 +51,10 @@ class DownloadManager @Inject constructor(
         bytes: ByteArray,
         seriesTitle: String = "",
         seriesCoverUrl: String? = null,
+        number: String? = null,
+        seriesSummary: String? = null,
+        seriesStatus: String? = null,
+        seriesGenres: List<String> = emptyList(),
     ) = withContext(Dispatchers.IO) {
         val ext = format.lowercase()
         val fileName = "$bookRemoteId.$ext"
@@ -70,6 +74,10 @@ class DownloadManager @Inject constructor(
                 totalPages = totalPages,
                 seriesTitle = seriesTitle,
                 seriesCoverUrl = seriesCoverUrl,
+                number = number,
+                seriesSummary = seriesSummary,
+                seriesStatus = seriesStatus,
+                seriesGenres = seriesGenres,
             ),
         )
     }

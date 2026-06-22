@@ -38,7 +38,10 @@ fun List<DownloadedBook>.localSeriesIds(): Set<String> = mapTo(mutableSetOf()) {
  */
 fun List<DownloadedBook>.localBooks(seriesRemoteId: String, sourceId: Long): List<Book> =
     filter { it.seriesRemoteId == seriesRemoteId && it.sourceId == sourceId }
-        .sortedBy { naturalSortKey(it.title) }
+        // Nach der Band-Nummer sortieren (wie online), nicht nach dem Titel-String — der Titel ist oft
+        // der Kapitel-Name ohne Nummer. Fällt auf den Titel zurück, wenn keine Nummer gespeichert ist
+        // (Downloads von vor Migration 21→22).
+        .sortedBy { naturalSortKey(it.number?.ifBlank { null } ?: it.title) }
         .map { dl ->
             Book(
                 id = 0,
@@ -50,8 +53,28 @@ fun List<DownloadedBook>.localBooks(seriesRemoteId: String, sourceId: Long): Lis
                 pageCount = dl.totalPages,
                 downloadState = DownloadState.LOCAL,
                 seriesTitle = dl.seriesTitle,
+                number = dl.number,
             )
         }
+
+/**
+ * Reichhaltige Serien-Metadaten **offline** aus den heruntergeladenen Bänden (beim Download
+ * persistiert, je Band redundant wie [DownloadedBook.seriesTitle]) — Beschreibung/Status/Genres für
+ * die Detailseite ohne Server. `null`, wenn keine Bände der Serie lokal sind.
+ */
+fun List<DownloadedBook>.localSeriesDetail(seriesRemoteId: String, sourceId: Long): Series? {
+    val first = firstOrNull { it.seriesRemoteId == seriesRemoteId && it.sourceId == sourceId } ?: return null
+    return Series(
+        id = 0,
+        sourceId = sourceId,
+        remoteId = seriesRemoteId,
+        title = first.seriesTitle.ifBlank { first.title },
+        coverUrl = first.seriesCoverUrl,
+        summary = first.seriesSummary,
+        status = first.seriesStatus,
+        genres = first.seriesGenres,
+    )
+}
 
 /**
  * Das heruntergeladene Buch, das ein [SourceCover] offline bedient — Serien-Cover = erster Band

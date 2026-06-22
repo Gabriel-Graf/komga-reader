@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.ContentTypeDetector
 import com.komgareader.app.data.localBooks
+import com.komgareader.app.data.localSeriesDetail
 import com.komgareader.app.ui.common.ErrorKind
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
@@ -109,6 +110,7 @@ class SeriesDetailViewModel @Inject constructor(
     private val detector: ContentTypeDetector,
     private val readProgressRepository: ReadProgressRepository,
     private val settings: SettingsRepository,
+    private val coverPrewarmer: com.komgareader.app.data.DownloadCoverPrewarmer,
 ) : ViewModel() {
 
     init {
@@ -162,9 +164,16 @@ class SeriesDetailViewModel @Inject constructor(
                             // Offline / Quelle nicht erreichbar: die lokal heruntergeladenen Bände dieser
                             // Serie zeigen, statt zu blockieren — der Reader liest sie über den Download-Pfad.
                             // Sonst: ohne Server „kein Server", mit Server aber unerreichbar ein echter Fehler.
-                            val downloaded = downloadRepository.downloads.first().localBooks(seriesId, sourceId)
+                            val allDownloads = downloadRepository.downloads.first()
+                            val downloaded = allDownloads.localBooks(seriesId, sourceId)
                             when {
-                                downloaded.isNotEmpty() -> buildContent(downloaded, detail = null, source = null)
+                                // Offline: Bände + die beim Download gecachten Serien-Metadaten
+                                // (Beschreibung/Status/Genres) zeigen, statt einer leeren Detailseite.
+                                downloaded.isNotEmpty() -> buildContent(
+                                    downloaded,
+                                    detail = allDownloads.localSeriesDetail(seriesId, sourceId),
+                                    source = null,
+                                )
                                 config == null || source == null -> SeriesDetailUiState.NoServer
                                 else -> SeriesDetailUiState.Error(uiErrorOf(err))
                             }
@@ -346,7 +355,9 @@ class SeriesDetailViewModel @Inject constructor(
             val total = books.size
             val pending = books.filter { it.remoteId !in localBookIds.value }
             var done = total - pending.size
-            val seriesTitle = (state.value as? SeriesDetailUiState.Content)?.seriesTitle ?: seriesId
+            // Online geladene Serien-Metadaten mitspeichern → Offline-Detailseite zeigt sie ohne Server.
+            val content = state.value as? SeriesDetailUiState.Content
+            val seriesTitle = content?.seriesTitle ?: seriesId
             val seriesCover = "${config.baseUrl}series/$seriesId/thumbnail"
             // Geschwindigkeit über ein gleitendes 1-Sekunden-Fenster, das über Kapitelgrenzen
             // hinweg weiterläuft — der zuletzt berechnete Wert bleibt sichtbar, bis ein neuer kommt.
@@ -388,6 +399,10 @@ class SeriesDetailViewModel @Inject constructor(
                                 bytes = bytes,
                                 seriesTitle = seriesTitle,
                                 seriesCoverUrl = seriesCover,
+                                number = book.number,
+                                seriesSummary = content?.seriesSummary,
+                                seriesStatus = content?.seriesStatus,
+                                seriesGenres = content?.seriesGenres ?: emptyList(),
                             )
                         }
                     }.onFailure { e ->
@@ -406,6 +421,7 @@ class SeriesDetailViewModel @Inject constructor(
                 _downloadingIds.value = emptySet()
                 _bookDownloadPercent.value = emptyMap()
                 _downloadProgress.value = null
+                coverPrewarmer.prewarm()  // Cover der frisch geladenen Bände offline schnell.
                 if (_cancelling.value) {
                     // Genau EINE Abbruch-Meldung (tryEmit, da der Scope hier evtl. abgebrochen ist).
                     _events.tryEmit(SeriesDetailEvent.DownloadCancelled)
@@ -461,6 +477,7 @@ class SeriesDetailViewModel @Inject constructor(
                         }
                     }
                     check(bytes.isNotEmpty()) { "Server lieferte leere Datei für ${book.remoteId}" }
+                    val content = state.value as? SeriesDetailUiState.Content
                     downloadManager.store(
                         bookRemoteId = book.remoteId,
                         sourceId = book.sourceId,
@@ -469,11 +486,16 @@ class SeriesDetailViewModel @Inject constructor(
                         format = book.format.name,
                         totalPages = book.pageCount,
                         bytes = bytes,
-                        seriesTitle = (state.value as? SeriesDetailUiState.Content)?.seriesTitle ?: seriesId,
+                        seriesTitle = content?.seriesTitle ?: seriesId,
                         seriesCoverUrl = "${config.baseUrl}series/$seriesId/thumbnail",
+                        number = book.number,
+                        seriesSummary = content?.seriesSummary,
+                        seriesStatus = content?.seriesStatus,
+                        seriesGenres = content?.seriesGenres ?: emptyList(),
                     )
                     Log.i(TAG, "Download gespeichert: ${book.title} (${bytes.size} Bytes)")
                 }
+                coverPrewarmer.prewarm()  // Cover offline schnell statt on-demand-Render.
             }.onFailure { e ->
                 Log.e(TAG, "Download fehlgeschlagen: ${book.title}", e)
                 _events.emit(SeriesDetailEvent.DownloadError(uiErrorOf(e)))

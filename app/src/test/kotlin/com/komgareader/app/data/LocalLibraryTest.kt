@@ -16,6 +16,10 @@ class LocalLibraryTest {
         src: Long = 7,
         title: String = book,
         fmt: String = "CBZ",
+        number: String? = null,
+        summary: String? = null,
+        status: String? = null,
+        genres: List<String> = emptyList(),
     ) = DownloadedBook(
         bookRemoteId = book,
         sourceId = src,
@@ -25,6 +29,10 @@ class LocalLibraryTest {
         localPath = "/dl/$book.$fmt",
         totalPages = 10,
         seriesTitle = "Series",
+        number = number,
+        seriesSummary = summary,
+        seriesStatus = status,
+        seriesGenres = genres,
     )
 
     // --- localBooks (offline book list of a downloaded server series) ---
@@ -55,6 +63,27 @@ class LocalLibraryTest {
             dl("b1", title = "Vol. 1"),
         )
         assertEquals(listOf("b1", "b2", "b10"), downloads.localBooks("S1", 7).map { it.remoteId })
+    }
+
+    @Test fun `localBooks sorts by band number, not the title string`() {
+        // Titles don't carry the order (chapter names); the band number does. Sort must follow number.
+        val downloads = listOf(
+            dl("b3", title = "Apple", number = "3"),
+            dl("b1", title = "Zebra", number = "1"),
+            dl("b10", title = "Mango", number = "10"),
+            dl("b2", title = "Banana", number = "2"),
+        )
+        assertEquals(listOf("b1", "b2", "b3", "b10"), downloads.localBooks("S1", 7).map { it.remoteId })
+    }
+
+    @Test fun `localBooks carries the band number onto the Book`() {
+        val b = listOf(dl("b1", number = "5")).localBooks("S1", 7).single()
+        assertEquals("5", b.number)
+    }
+
+    @Test fun `localBooks falls back to the title when no number is stored (old downloads)`() {
+        val downloads = listOf(dl("b10", title = "Vol. 10"), dl("b2", title = "Vol. 2"))
+        assertEquals(listOf("b2", "b10"), downloads.localBooks("S1", 7).map { it.remoteId })
     }
 
     @Test fun `localBooks tolerates unknown format strings`() {
@@ -98,5 +127,23 @@ class LocalLibraryTest {
     @Test fun `coverBookFor returns null when no download matches the source`() {
         val downloads = listOf(dl("b1", series = "S1", src = 7))
         assertNull(downloads.coverBookFor(SourceCover(sourceId = 9, remoteId = "S1", isSeries = true)))
+    }
+
+    // --- localSeriesDetail (offline series metadata: description/status/genres) ---
+
+    @Test fun `localSeriesDetail builds series metadata from the downloaded books`() {
+        val downloads = listOf(
+            dl("b1", summary = "An epic tale.", status = "ONGOING", genres = listOf("Action", "Drama")),
+            dl("b2", summary = "An epic tale.", status = "ONGOING", genres = listOf("Action", "Drama")),
+        )
+        val series = downloads.localSeriesDetail("S1", 7)
+        assertEquals("An epic tale.", series?.summary)
+        assertEquals("ONGOING", series?.status)
+        assertEquals(listOf("Action", "Drama"), series?.genres)
+        assertEquals("S1", series?.remoteId)
+    }
+
+    @Test fun `localSeriesDetail is null when nothing of that series is downloaded`() {
+        assertNull(listOf(dl("b1", series = "S2")).localSeriesDetail("S1", 7))
     }
 }

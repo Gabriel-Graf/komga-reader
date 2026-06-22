@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.komgareader.app.data.ActiveSource
 import com.komgareader.app.data.ContentTypeDetector
+import com.komgareader.app.data.localBooks
 import com.komgareader.app.ui.common.ErrorKind
 import com.komgareader.app.ui.common.UiError
 import com.komgareader.app.ui.common.uiErrorOf
@@ -24,6 +25,7 @@ import com.komgareader.domain.repository.SeriesOverrideRepository
 import com.komgareader.domain.repository.ServerRepository
 import com.komgareader.domain.repository.SettingsRepository
 import com.komgareader.domain.repository.ShelfRepository
+import com.komgareader.domain.source.BrowsableSource
 import com.komgareader.domain.source.SyncingSource
 import com.komgareader.domain.usecase.ResolveShelfContentType
 import com.komgareader.domain.usecase.ResolveViewerType
@@ -141,65 +143,95 @@ class SeriesDetailViewModel @Inject constructor(
             flow {
                 emit(SeriesDetailUiState.Loading)
                 val source = active.get(sourceId)
-                if (config == null || source == null) { emit(SeriesDetailUiState.NoServer); return@flow }
-                emit(runCatching { source.books(seriesId) }
-                    .fold(
+                // Online: die Serie über die Quelle (Naht A) laden. Offline / keine Quelle: bewusst als
+                // Fehlschlag behandeln, damit der Offline-Fallback unten greift (lokale Downloads zeigen).
+                val booksResult = if (config != null && source != null) {
+                    runCatching { source.books(seriesId) }
+                } else {
+                    Result.failure(IllegalStateException("offline: source $sourceId unavailable"))
+                }
+                emit(
+                    booksResult.fold(
                         { books ->
                             // Reichhaltige Serien-Metadaten optional nachladen (Naht A).
                             // Ältere/abweichende Quellen können das nicht — dann Fallback.
-                            val detail = runCatching { source.seriesDetail(seriesId) }.getOrNull()
-                            // Serientitel: Serien-Detail > erstes Buch (seriesTitle) > seriesId
-                            val resolvedTitle = detail?.title?.takeIf { it.isNotBlank() }
-                                ?: books.firstOrNull()?.seriesTitle?.takeIf { it.isNotBlank() }
-                                ?: seriesId
-                            val seriesForResolve: Series = detail
-                                ?: Series(id = 0, sourceId = 0, remoteId = seriesId, title = resolvedTitle)
-                            // Regal-Tag pfad-unabhängig anwenden: explizite shelfId (durchs Regal geöffnet)
-                            // ODER — bei Öffnen über Stöbern/Suche ohne shelfId — das Regal über die
-                            // Library-Zugehörigkeit der Serie finden. So greift COMIC/MANGA/WEBTOON/NOVEL
-                            // unabhängig vom Navigationspfad.
-                            val allShelves = shelfRepository.shelves.first()
-                            val libraryDefault: ContentType? =
-                                shelfId?.let { id -> allShelves.firstOrNull { it.id == id } }?.defaultContentType
-                                    ?: resolveShelfContentType(seriesForResolve, allShelves)
-                            val manualType: ContentType? = overrideRepository.get(source.id, seriesId)
-                            // Bibliothek hat Vorrang vor manuell; beide speisen den Stufe-4-Fallback.
-                            val effectiveType: ContentType? = libraryDefault ?: manualType
-                            // Stufe 5: persistierter Pixel-Vorschlag — schlägt nur den Format-Default.
-                            val autoType: ContentType? = autoTypeRepository.get(source.id, seriesId)
-                            val viewerModes = books.associate { book ->
-                                book.remoteId to mapViewerMode(
-                                    resolveViewerType(seriesForResolve, book, effectiveType, autoType),
-                                ).name
-                            }
-                            // Detect off the read path; when it lands a verdict, bump _autoRefresh so
-                            // baseState re-runs and the new type drives the chip + viewer modes now.
-                            if (autoType == null) {
-                                viewModelScope.launch {
-                                    val verdict = runCatching { detector.detectIfNeeded(source, seriesId, books) }.getOrNull()
-                                    if (verdict != null) _autoRefresh.update { it + 1 }
-                                }
-                            }
-                            SeriesDetailUiState.Content(
-                                books = books,
-                                seriesTitle = resolvedTitle,
-                                seriesRemoteId = seriesId,
-                                seriesSummary = detail?.summary,
-                                seriesStatus = detail?.status,
-                                seriesGenres = detail?.genres ?: emptyList(),
-                                viewerModes = viewerModes,
-                                effectiveContentType = effectiveType,
-                                manualContentType = manualType,
-                                autoContentType = autoType,
-                                libraryDefault = libraryDefault,
-                                readingDirection = seriesForResolve.readingDirection,
-                            )
+                            val detail = runCatching { source!!.seriesDetail(seriesId) }.getOrNull()
+                            buildContent(books, detail, source)
                         },
-                        { SeriesDetailUiState.Error(uiErrorOf(it)) },
-                    ))
+                        { err ->
+                            // Offline / Quelle nicht erreichbar: die lokal heruntergeladenen Bände dieser
+                            // Serie zeigen, statt zu blockieren — der Reader liest sie über den Download-Pfad.
+                            // Sonst: ohne Server „kein Server", mit Server aber unerreichbar ein echter Fehler.
+                            val downloaded = downloadRepository.downloads.first().localBooks(seriesId, sourceId)
+                            when {
+                                downloaded.isNotEmpty() -> buildContent(downloaded, detail = null, source = null)
+                                config == null || source == null -> SeriesDetailUiState.NoServer
+                                else -> SeriesDetailUiState.Error(uiErrorOf(err))
+                            }
+                        },
+                    ),
+                )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SeriesDetailUiState.Loading)
+
+    /**
+     * Baut den [SeriesDetailUiState.Content] aus einer Bücher-Liste — online aus der Quelle, offline
+     * aus den lokal heruntergeladenen Bänden ([source] == null, [detail] == null). Typ-/Viewer-Auflösung
+     * und die persistierten Overrides/Auto-Typen gelten in beiden Fällen; die Pixel-Auto-Erkennung läuft
+     * nur online (sie braucht die Quelle).
+     */
+    private suspend fun buildContent(
+        books: List<Book>,
+        detail: Series?,
+        source: BrowsableSource?,
+    ): SeriesDetailUiState.Content {
+        val sid = source?.id ?: sourceId
+        // Serientitel: Serien-Detail > erstes Buch (seriesTitle) > seriesId
+        val resolvedTitle = detail?.title?.takeIf { it.isNotBlank() }
+            ?: books.firstOrNull()?.seriesTitle?.takeIf { it.isNotBlank() }
+            ?: seriesId
+        val seriesForResolve: Series = detail
+            ?: Series(id = 0, sourceId = 0, remoteId = seriesId, title = resolvedTitle)
+        // Regal-Tag pfad-unabhängig anwenden: explizite shelfId (durchs Regal geöffnet) ODER — bei
+        // Öffnen über Stöbern/Suche ohne shelfId — das Regal über die Library-Zugehörigkeit der Serie.
+        val allShelves = shelfRepository.shelves.first()
+        val libraryDefault: ContentType? =
+            shelfId?.let { id -> allShelves.firstOrNull { it.id == id } }?.defaultContentType
+                ?: resolveShelfContentType(seriesForResolve, allShelves)
+        val manualType: ContentType? = overrideRepository.get(sid, seriesId)
+        // Bibliothek hat Vorrang vor manuell; beide speisen den Stufe-4-Fallback.
+        val effectiveType: ContentType? = libraryDefault ?: manualType
+        // Stufe 5: persistierter Pixel-Vorschlag — schlägt nur den Format-Default.
+        val autoType: ContentType? = autoTypeRepository.get(sid, seriesId)
+        val viewerModes = books.associate { book ->
+            book.remoteId to mapViewerMode(
+                resolveViewerType(seriesForResolve, book, effectiveType, autoType),
+            ).name
+        }
+        // Detect off the read path (online only); when it lands a verdict, bump _autoRefresh so
+        // baseState re-runs and the new type drives the chip + viewer modes now.
+        if (autoType == null && source != null) {
+            viewModelScope.launch {
+                val verdict = runCatching { detector.detectIfNeeded(source, seriesId, books) }.getOrNull()
+                if (verdict != null) _autoRefresh.update { it + 1 }
+            }
+        }
+        return SeriesDetailUiState.Content(
+            books = books,
+            seriesTitle = resolvedTitle,
+            seriesRemoteId = seriesId,
+            seriesSummary = detail?.summary,
+            seriesStatus = detail?.status,
+            seriesGenres = detail?.genres ?: emptyList(),
+            viewerModes = viewerModes,
+            effectiveContentType = effectiveType,
+            manualContentType = manualType,
+            autoContentType = autoType,
+            libraryDefault = libraryDefault,
+            readingDirection = seriesForResolve.readingDirection,
+        )
+    }
 
     /**
      * Öffentlicher State = geladene Bücher + optimistische Read-/Typ-Änderungen. So aktualisieren

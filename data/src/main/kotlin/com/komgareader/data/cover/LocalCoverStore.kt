@@ -49,11 +49,13 @@ class LocalCoverStore @Inject constructor(
     private val renderGate = Semaphore(permits = 3)
 
     /**
-     * Cover bytes for [book]: a cache hit reads the precomputed PNG; a miss renders page 0, writes
-     * it, and returns it. `null` for formats handled by the source (CBZ/EPUB) or on render failure.
+     * Cover bytes for [book]: a cache hit reads the precomputed PNG; a miss renders page 0 (MuPDF
+     * handles cbz/cbr/pdf/epub), writes it, and returns it. `null` on render failure. On-demand path —
+     * renders **any** format, so a downloaded CBZ/EPUB read offline (whose source cover is unreachable)
+     * still gets a cover; the LOCAL renderer-free formats (CBZ/EPUB) only reach here for non-LOCAL
+     * sources, since `LocalSource.coverBytes` serves them directly.
      */
     suspend fun get(book: DownloadedBook): ByteArray? {
-        if (!needsAppRender(book.format)) return null
         val file = cacheFileFor(book) ?: return null
         return withContext(Dispatchers.IO) {
             if (file.isFile && file.length() > 0L) {
@@ -86,7 +88,8 @@ class LocalCoverStore @Inject constructor(
 
     private fun renderAndStore(book: DownloadedBook, file: File): ByteArray? = runCatching {
         val bytes = localBookBytes.bytesOf(book)
-        // PDF/CBR: the cover is the rasterized first page (full-bleed). EPUB/CBZ never reach here.
+        // Cover = the rasterized first page (full-bleed). MuPDF renders cbz/cbr/pdf/epub alike, so this
+        // also serves a downloaded CBZ/EPUB whose source cover is unreachable offline (non-LOCAL sources).
         val cover = renderFirstPageCover(documentFactory, bytes, ".${book.format.lowercase()}")
             ?: return null
         File(dir, "${file.name}.tmp").let { tmp ->

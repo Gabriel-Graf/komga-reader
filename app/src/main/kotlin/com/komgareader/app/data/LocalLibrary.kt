@@ -1,5 +1,9 @@
 package com.komgareader.app.data
 
+import com.komgareader.app.data.coil.SourceCover
+import com.komgareader.domain.model.Book
+import com.komgareader.domain.model.BookFormat
+import com.komgareader.domain.model.DownloadState
 import com.komgareader.domain.model.Series
 import com.komgareader.domain.repository.DownloadedBook
 
@@ -25,3 +29,49 @@ fun List<DownloadedBook>.localSeries(sourceId: Long? = null): List<Series> =
 
 /** Menge der Serien-Remote-IDs, die lokale Downloads haben (für das „lokal"-Cover-Badge). */
 fun List<DownloadedBook>.localSeriesIds(): Set<String> = mapTo(mutableSetOf()) { it.seriesRemoteId }
+
+/**
+ * Die heruntergeladenen Bücher **einer** Serie als Domain-[Book]s — der Offline-Fallback, wenn
+ * der Server (Naht A) eine Serie nicht laden kann. So zeigt die Serien-Detailseite ohne Netz die
+ * lokal vorhandenen Bände statt zu blockieren (analog zum Offline-Browsing über [localSeries]).
+ * Natürlich sortiert (Band 10 nach Band 2), als [DownloadState.LOCAL] markiert.
+ */
+fun List<DownloadedBook>.localBooks(seriesRemoteId: String, sourceId: Long): List<Book> =
+    filter { it.seriesRemoteId == seriesRemoteId && it.sourceId == sourceId }
+        .sortedBy { naturalSortKey(it.title) }
+        .map { dl ->
+            Book(
+                id = 0,
+                sourceId = dl.sourceId,
+                seriesId = 0,
+                remoteId = dl.bookRemoteId,
+                title = dl.title,
+                format = bookFormatOf(dl.format),
+                pageCount = dl.totalPages,
+                downloadState = DownloadState.LOCAL,
+                seriesTitle = dl.seriesTitle,
+            )
+        }
+
+/**
+ * Das heruntergeladene Buch, das ein [SourceCover] offline bedient — Serien-Cover = erster Band
+ * dieser Serie, Buch-Cover = genau dieses Buch. Quellen-übergreifend (matcht die [SourceCover.sourceId]),
+ * damit auch Server-Downloads (Komga & Co.) offline ein Cover aus der lokalen Datei bekommen, nicht
+ * nur die LOCAL-Quelle.
+ */
+fun List<DownloadedBook>.coverBookFor(model: SourceCover): DownloadedBook? =
+    if (model.isSeries) {
+        // Series cover = the naturally-first downloaded volume (vol. 1), independent of DB/list order.
+        filter { it.sourceId == model.sourceId && it.seriesRemoteId == model.remoteId }
+            .minByOrNull { naturalSortKey(it.title) }
+    } else {
+        firstOrNull { it.sourceId == model.sourceId && it.bookRemoteId == model.remoteId }
+    }
+
+/** Toleranter Parser für den persistierten Format-String ("CBZ"/"cbz"/…); Unbekanntes → [BookFormat.CBZ]. */
+private fun bookFormatOf(format: String): BookFormat =
+    BookFormat.entries.firstOrNull { it.name.equals(format, ignoreCase = true) } ?: BookFormat.CBZ
+
+/** Natürlicher Sortierschlüssel: Zahlenfolgen null-gepaddet, damit "Vol. 10" nach "Vol. 2" sortiert. */
+private fun naturalSortKey(title: String): String =
+    Regex("\\d+").replace(title.lowercase()) { it.value.padStart(12, '0') }

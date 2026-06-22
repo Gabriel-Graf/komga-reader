@@ -133,10 +133,13 @@ class SettingsViewModel @Inject constructor(
     /**
      * Persistiert eine bestätigte Plugin-Quelle als [ServerConfig] (kind = PLUGIN).
      * Spiegelt [PluginsViewModel.addPluginSource] — beide nutzen [pluginServerConfig] (DRY).
+     *
+     * [id] == 0 legt eine neue Verbindung an; ein bestehender Rowid aktualisiert die Plugin-Quelle
+     * in-place (Bearbeiten der URL/Config über das Plugin-Config-Form statt löschen + neu).
      */
-    fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>) =
+    fun addPluginSource(plugin: DiscoveredPlugin, values: Map<String, String>, id: Long = 0L) =
         viewModelScope.launch {
-            servers.save(pluginServerConfig(plugin, values))
+            servers.save(pluginServerConfig(plugin, values, id))
             coordinator.onServerChanged()
         }.let {}
 

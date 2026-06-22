@@ -82,11 +82,13 @@ internal fun PluginConfigModal(
     plugin: DiscoveredPlugin,
     onDismiss: () -> Unit,
     onSubmit: (Map<String, String>) -> Unit,
+    initialValues: Map<String, String> = emptyMap(),
 ) {
     val s = LocalStrings.current
     // Formular-Zustand im Aufrufer gehalten, damit EinkModal confirmEnabled + onConfirm
     // auf den aktuellen Formular-Zustand zugreifen kann (Compose-State-Hoisting).
-    val formState = rememberPluginFormState(plugin.configSchema)
+    // initialValues vorbelegt = Bearbeiten (gespeicherte Plugin-Config); leer = Hinzufügen.
+    val formState = rememberPluginFormState(plugin.configSchema, initialValues)
 
     EinkModal(
         title = plugin.metadata.displayName,

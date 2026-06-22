@@ -84,16 +84,25 @@ class PluginFormState(
 
 /**
  * Creates and remembers a [PluginFormState] for the given [schema].
- * Pre-filled with the configured default or a type-specific fallback:
- * - BOOL   → "false"
- * - NUMBER → [formatForStep] of (min ?: 0.0) — dot decimal separator, matches the slider storage format
- * - else   → "" (required fields → isValid checks for empty string)
+ *
+ * Each field is pre-filled, in order of precedence:
+ * 1. [initialValues] — the already-saved value (edit flow: the stored plugin config).
+ * 2. [ConfigField.default] — the schema default.
+ * 3. a type-specific fallback:
+ *    - BOOL   → "false"
+ *    - NUMBER → [formatForStep] of (min ?: 0.0) — dot decimal separator, matches the slider storage format
+ *    - else   → "" (required fields → isValid checks for empty string)
+ *
+ * [initialValues] defaults to empty (add flow → schema defaults only).
  */
 @Composable
-fun rememberPluginFormState(schema: ConfigSchema): PluginFormState {
-    val values: SnapshotStateMap<String, String> = remember(schema) {
+fun rememberPluginFormState(
+    schema: ConfigSchema,
+    initialValues: Map<String, String> = emptyMap(),
+): PluginFormState {
+    val values: SnapshotStateMap<String, String> = remember(schema, initialValues) {
         schema.fields.map { field ->
-            val initial = field.default.ifEmpty {
+            val initial = initialValues[field.key] ?: field.default.ifEmpty {
                 when (field.type) {
                     FieldType.BOOL -> "false"
                     FieldType.NUMBER -> formatForStep(field.min ?: 0.0, field.step ?: DEFAULT_NUMBER_STEP)

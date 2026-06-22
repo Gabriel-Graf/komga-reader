@@ -59,6 +59,7 @@ import com.komgareader.app.ui.components.IconAnimation
 import com.komgareader.app.ui.components.SettingsRow
 import com.komgareader.app.ui.components.EinkModal
 import com.komgareader.app.ui.plugins.AddPluginSourceModals
+import com.komgareader.app.ui.plugins.PluginConfigModal
 import com.komgareader.app.ui.reader.HyphenationPicker
 import com.komgareader.plugin.host.DiscoveredPlugin
 import com.komgareader.app.ui.components.EinkOutlinedButton
@@ -100,10 +101,14 @@ private const val OVERLAP_MAX = 50
  *
  * - [Add]  → Standard-Formular für Komga/OPDS
  * - [Edit] → Verbindung bearbeiten (Komga/OPDS)
+ * - [EditPlugin] → Plugin-Quelle über ihr eigenes Config-Form bearbeiten (vorbelegt), NICHT den
+ *   Komga/OPDS-Dialog: der schreibt nur `baseUrl`/Komga-Auth + normalisiert die URL (`/api/v1/`)
+ *   und fasst die Plugin-`extras` (woraus das Plugin seine URL liest) nie an.
  */
 private sealed interface ConnectionModal {
     data object Add : ConnectionModal
     data class Edit(val config: ServerConfig) : ConnectionModal
+    data class EditPlugin(val config: ServerConfig, val plugin: DiscoveredPlugin) : ConnectionModal
 }
 
 @Composable
@@ -145,12 +150,26 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 displayedServers.forEach { cfg ->
+                    // Plugin-Quelle über IHR Config-Form bearbeiten (vorbelegt aus den extras), nicht
+                    // den Komga/OPDS-Dialog. Ist das Plugin nicht (mehr) installiert, fehlt das Schema
+                    // → kein Bearbeiten möglich (onEdit = null → kein Zahnrad, nur Entfernen + neu).
+                    val pluginForRow =
+                        if (cfg.kind == SourceKind.PLUGIN) {
+                            sourcePlugins.firstOrNull { it.packageName == cfg.extras["__pkg"] }
+                        } else {
+                            null
+                        }
+                    val onEdit: (() -> Unit)? = when {
+                        cfg.kind != SourceKind.PLUGIN -> ({ modal = ConnectionModal.Edit(cfg) })
+                        pluginForRow != null -> ({ modal = ConnectionModal.EditPlugin(cfg, pluginForRow) })
+                        else -> null
+                    }
                     ServerRow(
                         config = cfg,
                         query = query,
                         editLabel = s.editServer,
                         removeLabel = s.removeServer,
-                        onEdit = { modal = ConnectionModal.Edit(cfg) },
+                        onEdit = onEdit,
                         onRemove = { viewModel.removeServer(cfg.id) },
                     )
                 }
@@ -178,6 +197,17 @@ fun ConnectionSettingsContent(viewModel: SettingsViewModel, query: String) {
             onDismiss = { modal = null },
             onSave = { name, url, apiKey, username, password, kind, id ->
                 viewModel.saveServer(name, url, apiKey, username, password, kind, id)
+                modal = null
+            },
+        )
+        is ConnectionModal.EditPlugin -> PluginConfigModal(
+            plugin = mode.plugin,
+            // Vorbelegt mit den gespeicherten Plugin-Werten (ohne die reservierten __-Wiring-Keys).
+            // Schon getrusted (Signatur gepinnt) → kein TOFU-Schritt; Upsert über die bestehende id.
+            initialValues = mode.config.extras.filterKeys { !it.startsWith("__") },
+            onDismiss = { modal = null },
+            onSubmit = { values ->
+                viewModel.addPluginSource(mode.plugin, values, mode.config.id)
                 modal = null
             },
         )
@@ -313,8 +343,9 @@ private fun AddConnectionModal(
 }
 
 /**
- * Modal „Verbindung bearbeiten" für Komga/OPDS. Plugin-Verbindungen sind in v1 nicht editierbar
- * (Plugin-Schema kann sich ändern; Signatur-Pin bleibt; Benutzer entfernt und fügt neu hinzu).
+ * Modal „Verbindung bearbeiten" für **Komga/OPDS**. Plugin-Quellen bearbeitet stattdessen
+ * [PluginConfigModal] über [ConnectionModal.EditPlugin] (vorbelegtes Plugin-Config-Form), da dieser
+ * Komga/OPDS-Dialog die Plugin-`extras` nie schreibt und die URL Komga-normalisieren würde.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -449,6 +480,9 @@ private fun CredentialsFields(
  * Eine Zeile der Server-Liste: Name + Quellenart + URL links, rechts zwei neutrale Icon-Aktionen
  * — Zahnrad (Bearbeiten) links vom Papierkorb (Entfernen). Flach mit 1.5px-Border
  * (E-Ink-Designsprache), kein Schatten. Aktions-Icons neutral (`onSurface`), kein Akzent.
+ *
+ * [onEdit] `null` = nicht bearbeitbar → kein Zahnrad (z.B. Plugin-Quelle, deren Plugin nicht mehr
+ * installiert ist: ohne Schema gibt es kein Config-Form zum Bearbeiten).
  */
 @Composable
 private fun ServerRow(
@@ -456,7 +490,7 @@ private fun ServerRow(
     query: String,
     editLabel: String,
     removeLabel: String,
-    onEdit: () -> Unit,
+    onEdit: (() -> Unit)?,
     onRemove: () -> Unit,
 ) {
     Row(
@@ -476,13 +510,15 @@ private fun ServerRow(
             HighlightText(config.baseUrl, query, MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.width(8.dp))
-        IconButton(onClick = onEdit) {
-            Icon(
-                AppIcons.Settings,
-                contentDescription = editLabel,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        if (onEdit != null) {
+            IconButton(onClick = onEdit) {
+                Icon(
+                    AppIcons.Settings,
+                    contentDescription = editLabel,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
         IconButton(onClick = onRemove) {
             Icon(

@@ -935,9 +935,9 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
     fun folderName(uri: Uri): String =
         androidx.documentfile.provider.DocumentFile.fromTreeUri(ctx, uri)?.name ?: "Local"
 
-    // Download-Ordner (Server-Downloads landen hier). Setzt den lokalen Ordner gleich mit,
-    // damit geräte-lokale Werke standardmäßig im selben Ordner liegen (überschreibbar unten).
-    val downloadPicker = rememberLauncherForActivityResult(
+    // Ein einziger Ordner für Server-Downloads UND geräte-lokale Werke (intern: Download-Ordner +
+    // die LOCAL-Quelle, gemeinsam gesetzt). Der Nutzer pflegt nur diesen einen Ordner.
+    val folderPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
     ) { uri: Uri? ->
         if (uri != null) {
@@ -945,35 +945,22 @@ fun DownloadsSettingsContent(viewModel: SettingsViewModel, query: String) {
             viewModel.setBothFolders(folderName(uri), uri.toString())
         }
     }
-    // Lokaler Ordner (geräte-lokale Werke ohne Server — intern die LOCAL-Quelle).
-    val localPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree(),
-    ) { uri: Uri? ->
-        if (uri != null) {
-            takeTreePermission(uri)
-            viewModel.saveLocalFolder(folderName(uri), uri.toString())
-        }
-    }
     val externalOpenBehavior by viewModel.externalOpenBehavior.collectAsState()
 
-    val downloadPath = downloadDir?.let { treeUriToDisplayPath(it) } ?: s.defaultFolder
-    val localPath = localFolder?.let { treeUriToDisplayPath(it) } ?: s.localFolderNotSet
+    // Beide werden zusammen gesetzt; fällt auf den jeweils anderen zurück (Alt-Zustand).
+    val folderPath = (downloadDir ?: localFolder)?.let { treeUriToDisplayPath(it) } ?: s.defaultFolder
+    val folderSet = downloadDir != null || localFolder != null
 
     Column(verticalArrangement = Arrangement.spacedBy(EinkTokens.sectionGap)) {
         SettingsGroup(s.downloadFolder, query) {
-            FolderPickerRow(
-                path = downloadPath,
-                onClick = { downloadPicker.launch(null) },
-                onReset = if (downloadDir != null) ({ viewModel.setDownloadDir(null) }) else null,
-            )
-        }
-
-        SettingsGroup(s.serverKindLocal, query) {
-            FolderPickerRow(
-                path = localPath,
-                onClick = { localPicker.launch(null) },
-                onReset = if (localFolder != null) ({ viewModel.removeLocalFolder() }) else null,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FolderPickerRow(
+                    path = folderPath,
+                    onClick = { folderPicker.launch(null) },
+                    onReset = if (folderSet) ({ viewModel.clearBothFolders() }) else null,
+                )
+                FieldCaption(s.sameFolderForBothHelp)
+            }
         }
 
         SettingsGroup(s.externalOpenSetting, query) {

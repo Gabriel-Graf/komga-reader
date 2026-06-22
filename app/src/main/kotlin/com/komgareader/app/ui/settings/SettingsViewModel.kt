@@ -171,6 +171,12 @@ class SettingsViewModel @Inject constructor(
         saveLocalFolder(name, treeUri)
     }
 
+    /** Leert Download-Ordner UND lokalen Ordner — das eine „Ordner"-Reset der Downloads-Sektion. */
+    fun clearBothFolders() {
+        setDownloadDir(null)
+        removeLocalFolder()
+    }
+
     private fun releaseTreePermission(treeUri: String) {
         runCatching {
             context.contentResolver.releasePersistableUriPermission(

@@ -71,10 +71,13 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`LocalSourceFactory.create(context, name, treeUri)`, `@ApplicationContext`). **Ordnerwahl in
   Settings → Downloads** (nicht im Server-Dialog — UX-Entscheidung 2026-06-14: ein lokaler Ordner ist
   kein Server, daher aus der „Verbundene Server"-Liste **ausgeblendet** via `kind != LOCAL`-Filter):
-  Gruppe „Lokaler Ordner" (`ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`, **Upsert** über
-  die eine LOCAL-Rowid → kein zweiter Eintrag, Release beim Entfernen) neben „Download-Ordner" + einem
-  „Gemeinsamer Ordner"-Button (`SettingsViewModel.setBothFolders` setzt beide Pfade gleich). Beide Pfade
-  werden **voll qualifiziert** angezeigt (`treeUriToDisplayPath`: SAF-Tree-URI → `/storage/emulated/0/…`).
+  **EIN** Ordner-Picker (`ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`) setzt über
+  `SettingsViewModel.setBothFolders` Download-Ordner **und** lokale Quelle (LOCAL-Upsert über die eine
+  Rowid → kein zweiter Eintrag) auf **denselben** Ordner; Reset (`clearBothFolders`) leert beide. (UX
+  2026-06-20: getrennte „Download-Ordner"/„Lokaler Ordner"-Sektionen + „Gemeinsamer Ordner"-Button
+  zusammengeführt — der Nutzer pflegt nur einen Ordner. Die zwei Persistenz-Backends bleiben intern
+  getrennt.) Der Pfad wird **voll qualifiziert** angezeigt (`treeUriToDisplayPath`: SAF-Tree-URI →
+  `/storage/emulated/0/…`).
   **E2E (Emulator, 2026-06-14):** Ordnerwahl →
   Bibliothek (Serie+Bände+lose Werke) → CBZ-PAGED (Zip-Extrakt) + PDF (whole-file MuPDF) gerendert,
   Persistenz über Neustart. (EPUB liefert Bytes korrekt; crengine-`.so` fehlt für x86_64-Emulator —

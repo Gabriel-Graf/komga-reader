@@ -27,6 +27,8 @@ class CollectionSyncManagerTest {
         /** BOOK-Sammlungen am Server (Komga: readlists) — getrennt, sonst tauchen SERIES doppelt auf. */
         val existingBooks: MutableList<RemoteCollection> = mutableListOf(),
         private val failOnCreate: Boolean = false,
+        /** Simuliert eine unerreichbare Quelle (offline): listCollections wirft. */
+        private val failOnList: Boolean = false,
     ) : CollectionSyncSource {
         override val name = "fake$id"
         override val kind = SourceKind.KOMGA
@@ -41,7 +43,10 @@ class CollectionSyncManagerTest {
             if (kind == CollectionKind.SERIES) existing else existingBooks
 
         override suspend fun canWriteCollections() = canWrite
-        override suspend fun listCollections(kind: CollectionKind) = storeFor(kind).toList()
+        override suspend fun listCollections(kind: CollectionKind): List<RemoteCollection> {
+            if (failOnList) throw RuntimeException("offline")
+            return storeFor(kind).toList()
+        }
         override suspend fun createCollection(kind: CollectionKind, name: String, memberRemoteIds: List<String>): RemoteCollection {
             if (failOnCreate) throw RuntimeException("boom")
             lastCreate = name to memberRemoteIds
@@ -212,6 +217,22 @@ class CollectionSyncManagerTest {
         assertEquals(CollectionKind.SERIES, neu.first().kind)
         assertEquals(1, vanished.size)
         assertEquals("Weg", vanished.first().name)
+    }
+
+    @Test
+    fun `fullSync meldet kein vanished wenn die Quelle unerreichbar ist (offline)`() = runBlocking {
+        // Quelle 7 ist offline (listCollections wirft). Eine früher synchrone Sammlung darf NICHT als
+        // am Server gelöscht gemeldet werden, nur weil keine Verbindung besteht (offline ≠ gelöscht).
+        val source = FakeSource(7, canWrite = true, failOnList = true)
+        val repo = FakeCollectionRepo()
+        val wegId = repo.seedCollection("Weg", CollectionKind.SERIES, listOf(CollectionMember(7, "x", "X")))
+        repo.seedLink(CollectionSyncLink(wegId, 7, "rc-weg", SyncStatus.SYNCED, dirty = false, updatedAt = 50L))
+
+        val mgr = CollectionSyncManager(repo, resolver = { source }, allSources = { listOf(7L to source) }, titleResolver = { _, _, _ -> null })
+        val vanished = mgr.fullSync()
+
+        assertEquals(0, vanished.size, "offline = nicht gelöscht → kein vanished")
+        assertEquals(1, repo.storedCollections.values.count { it.name == "Weg" }, "Sammlung bleibt lokal erhalten")
     }
 
     @Test

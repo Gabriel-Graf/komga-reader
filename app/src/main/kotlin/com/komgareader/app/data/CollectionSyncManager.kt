@@ -101,9 +101,14 @@ class CollectionSyncManager(
             val vanished = mutableListOf<VanishedCollection>()
             for (kind in CollectionKind.values()) {
                 val kindCollections = collections.filter { it.kind == kind }
-                val remotePerSource = srcs.associate { (id, src) ->
-                    id to runCatching { src.listCollections(kind) }.getOrDefault(emptyList())
-                }
+                // Eine UNERREICHBARE Quelle (offline / Listen-Fehler) wird WEGGELASSEN, nicht als leer
+                // eingesetzt: sonst meldet planCollectionSync alle ihre früher synchronen Sammlungen als
+                // „vanished" (falsches „Server hat gelöscht", nur weil keine Verbindung). Nur eine
+                // erreichbare Quelle, die wirklich `[]` liefert, zählt als echte Leere. planCollectionSync
+                // überspringt Quellen, die nicht in der Map sind (`remotePerSource[sourceId] ?: continue`).
+                val remotePerSource = srcs.mapNotNull { (id, src) ->
+                    runCatching { src.listCollections(kind) }.getOrNull()?.let { id to it }
+                }.toMap()
                 val plan = planCollectionSync(
                     local = kindCollections,
                     links = links.filterKeys { id -> kindCollections.any { it.id == id } },

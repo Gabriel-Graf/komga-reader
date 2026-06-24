@@ -18,13 +18,22 @@ class ScreenSaverCoverPolicyTest {
     }
 
     @Test fun `cover far below screen needs upgrade`() {
-        // 200px cover, 1264px screen short edge -> 200 < 632 -> upgrade.
+        // 200px cover, 1264px screen short edge -> 200 < 1264 -> upgrade.
         assertTrue(needsHighResUpgrade(coverMinEdgePx = 200, screenMinEdgePx = 1264))
     }
 
-    @Test fun `cover near screen resolution does not need upgrade`() {
-        // 720px cover, 1264px screen -> 720 >= 632 -> keep.
-        assertFalse(needsHighResUpgrade(coverMinEdgePx = 720, screenMinEdgePx = 1264))
+    @Test fun `mid-size cover still below screen needs upgrade`() {
+        // Real case: a 1067px Komga thumbnail upscaled to a 1264px-wide standby looks blurry,
+        // so the full first page must be fetched. This value deliberately sits in the gap the old
+        // half-screen threshold missed: screenMinEdge/2 (632) < 1067 < screenMinEdge (1264), so it
+        // guards the threshold move from `/2` to full-edge. 1067 < 1264 -> upgrade.
+        assertTrue(needsHighResUpgrade(coverMinEdgePx = 1067, screenMinEdgePx = 1264))
+    }
+
+    @Test fun `cover at or above screen resolution does not need upgrade`() {
+        // No upscale needed -> keep the cover as is.
+        assertFalse(needsHighResUpgrade(coverMinEdgePx = 1264, screenMinEdgePx = 1264))
+        assertFalse(needsHighResUpgrade(coverMinEdgePx = 1400, screenMinEdgePx = 1264))
     }
 
     @Test fun `missing or undecodable cover triggers upgrade`() {

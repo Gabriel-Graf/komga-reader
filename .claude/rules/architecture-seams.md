@@ -446,13 +446,24 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   `ScreenSaverScheduler.schedule(sourceId, bookId, viewerMode, format)` (`enqueueUniqueWork(REPLACE)` — das zuletzt
   geöffnete Werk gewinnt); der `@HiltWorker ScreenSaverCoverWorker` ruft den `@Singleton ScreenSaverCoverResolver`, der
   **(1)** das Server-Cover sofort setzt = **Crash-Fallback** (`needsHighResUpgrade`-Policy davor) und **(2)** bei zu
-  kleinem Cover (Kurzkante < halbe Schirmkante) auf Hochauflösung upgradet. So blockiert die Cover-Erzeugung den
-  Reader-Start nicht mehr; alle Resolver-Calls sind exception-safe + der Worker gibt immer `Result.success()`.
+  kleinem Cover **auf Hochauflösung upgradet, sobald die Kurzkante < Schirmkante** liegt (jeder Upscale weicht auf
+  dem E-Ink-Panel auf — der Onyx-Standby dithert/downscalet zusätzlich, und Fill/Crop skaliert auf die volle
+  Schirmbreite; daher reicht **kein** „nah genug"-Thumbnail, korrigiert 2026-06-23 von der früheren `< halbe
+  Schirmkante`-Schwelle, die mittelgroße ~1067px-Komga-Thumbnails unscharf upgescaled stehen ließ). So blockiert die
+  Cover-Erzeugung den Reader-Start nicht mehr; alle Resolver-Calls sind exception-safe + der Worker gibt immer `Result.success()`.
   — **per Typ**: Webtoon = Serien-Cover (kein Upgrade), Paged/Comic/Novel = Werk-Cover. Hochauflösungs-Quelle: die
   **volle erste Seite** via `openPage(0)` (Bild-Werke, native Auflösung) bzw. — wenn nicht streambar (EPUB/whole-file)
   — die **ganze Datei laden + Cover extrahieren** (EPUB-Embedded-Cover `extractEpubCoverImage`, sonst MuPDF `renderFirstPageCover`);
   das fixt auch die Roman-Schärfe (Komga liefert für EPUB nur ein ~195×300-Thumbnail). Komgas Cover-*Thumbnail* ist je
-  Serie 200×300…720×1024 → klein = unscharf hochskaliert, daher nur Fallback. Das Bild wird vor dem Publish geschärft + in Kontrast/Sättigung angehoben (`enhanceForEink`), um das
+  Serie 200×300…720×1024 → unterhalb der Schirmkante = unscharf hochskaliert, daher **immer** nur Fallback (die volle
+  erste Seite gewinnt, sobald sie größer ist). **Fit (Ist, 2026-06-23):** das Standby-Bild entsteht in `fitToScreen`/
+  `fitCentered` (pur, `ScreenSaverManagerTest`) — Letterbox (contain, ganzes Bild, mittig) oder Fill/Crop (cover/zoom).
+  **Im Cover/Zoom-Modus wird nie über die native Auflösung hochskaliert** (User-Entscheidung 2026-06-23, Schärfe vor
+  Füllung): ein hochauflösendes Cover wird auf Schirmgröße **herunter**skaliert und der Überlauf **oben-bündig** (nur
+  unten) beschnitten, damit der Titel sichtbar bleibt; ein **unterhalb der Schirmgröße liegendes** Cover (z. B. eine
+  ~1067px-Manga-Seite auf 1264px Standby-Breite) bleibt **nativ + zentriert** (scharf, minimaler Rand) statt
+  hochskaliert-unscharf — Hochskalieren fügt keine Details hinzu, nur Weichzeichnung. Gilt Screensaver + Power-Off
+  (beide über `fitToScreen`). Das Bild wird vor dem Publish geschärft + in Kontrast/Sättigung angehoben (`enhanceForEink`), um das
   Weichzeichnen/Entsättigen des Onyx-Standby-Renderers zu kompensieren (kein SDK-Qualitätsregler vorhanden); der
   Standby-Reload-Broadcast wird sofort **und** nach 1,5 s gesendet (async `setScreenResource`-Race → sonst nur erstes Setzen sichtbar). **Nicht per adb visuell verifizierbar** (Onyx-Standby ist
   ein Daydream-Overlay, SurfaceFlinger sieht es nicht); `ScreenSaverManager` end-to-end auf Boox verifiziert

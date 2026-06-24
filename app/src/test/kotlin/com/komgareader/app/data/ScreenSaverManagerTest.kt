@@ -40,20 +40,40 @@ class ScreenSaverManagerTest {
     }
 
     @Test
-    fun `cover mode fills the width and crops top and bottom for a tall cover`() {
-        // 720x1024 cover into 1264x1680: scale = max(1264/720=1.7556, 1680/1024=1.6406) = 1.7556
-        // width = 720 * 1.7556 = 1264, height = 1024 * 1.7556 = 1797 (truncated)
-        // left = 0, top = (1680 - 1797) / 2 = -58 (Int division toward zero) -> rect overflows, gets clipped
-        val r = fitCentered(srcW = 720, srcH = 1024, dstW = 1264, dstH = 1680, cover = true)
-        assertEquals(FitRect(0, -58, 1264, -58 + 1797), r)
+    fun `cover mode does not upscale a sub-screen cover - stays native and centered`() {
+        // The real regression case: a 1067x1600 manga page on a 1264x1680 standby. Cover fill would be
+        // max(1264/1067=1.1846, 1680/1600=1.05) = 1.1846, but upscaling only blurs -> capped at 1.0.
+        // At native size both edges fit (1067<1264, 1600<1680) so it is centered, not cropped, and SHARP.
+        // left = (1264-1067)/2 = 98, top = (1680-1600)/2 = 40.
+        val r = fitCentered(srcW = 1067, srcH = 1600, dstW = 1264, dstH = 1680, cover = true)
+        assertEquals(FitRect(98, 40, 98 + 1067, 40 + 1600), r)
     }
 
     @Test
-    fun `cover mode fills the height and crops left and right for a wide image`() {
-        // 2000x1000 cover into 1264x1680: scale = max(1264/2000=0.632, 1680/1000=1.68) = 1.68
-        // width = 2000 * 1.68 = 3360, height = 1000 * 1.68 = 1680
-        // left = (1264 - 3360) / 2 = -1048, top = 0 -> overflows horizontally, gets clipped
-        val r = fitCentered(srcW = 2000, srcH = 1000, dstW = 1264, dstH = 1680, cover = true)
-        assertEquals(FitRect(-1048, 0, -1048 + 3360, 1680), r)
+    fun `cover mode downscales a high-res tall cover to fill the width and crops only the bottom`() {
+        // 2000x3056 cover into 1264x1680: scale = max(1264/2000=0.632, 1680/3056=0.5497) = 0.632 (<=1, no cap)
+        // width = 2000 * 0.632 = 1264, height = 3056 * 0.632 = 1931 (truncated)
+        // left = 0, top = 0 (top-aligned so the title stays visible) -> overflow crops the bottom.
+        val r = fitCentered(srcW = 2000, srcH = 3056, dstW = 1264, dstH = 1680, cover = true)
+        assertEquals(FitRect(0, 0, 1264, 1931), r)
+    }
+
+    @Test
+    fun `cover mode downscales a high-res wide cover to fill the height and crops the sides`() {
+        // 3000x3360 cover into 1264x1680: scale = max(1264/3000=0.4213, 1680/3360=0.5) = 0.5 (<=1, no cap)
+        // width = 3000 * 0.5 = 1500, height = 3360 * 0.5 = 1680
+        // Height fits exactly (h == dstH), so top = 0 comes from the centering branch (NOT a bottom crop);
+        // width overflows -> left = (1264 - 1500) / 2 = -118, the sides get clipped.
+        val r = fitCentered(srcW = 3000, srcH = 3360, dstW = 1264, dstH = 1680, cover = true)
+        assertEquals(FitRect(-118, 0, -118 + 1500, 1680), r)
+    }
+
+    @Test
+    fun `cover mode at exactly native screen width fills and crops the bottom`() {
+        // Cap boundary: a cover whose width equals the screen short edge needs no scaling (scale = 1.0).
+        // 1264x1896 -> scale = max(1264/1264=1.0, 1680/1896=0.886) = 1.0 -> native, fills width.
+        // height 1896 > 1680 -> top = 0, bottom cropped.
+        val r = fitCentered(srcW = 1264, srcH = 1896, dstW = 1264, dstH = 1680, cover = true)
+        assertEquals(FitRect(0, 0, 1264, 1896), r)
     }
 }

@@ -16,13 +16,15 @@ fun coverKindFor(viewerMode: ViewerMode): ScreenSaverCoverKind =
 /**
  * Whether the server cover is too low-resolution for the standby screen and a high-res upgrade
  * (full first page / whole-file extraction) is worth fetching. True when the cover's shorter edge is
- * below half the screen's shorter edge — a 200px cover upscaled to a ~1264px-wide standby looks
- * blurry, while a ~720px cover holds up. A non-positive [coverMinEdgePx] (no/undecodable cover) also
- * returns true so the upgrade is attempted; a non-positive [screenMinEdgePx] (unknown) returns false
- * so we never loop on a bad metric.
+ * **below** the screen's shorter edge — i.e. whenever the standby would have to upscale it. Any
+ * upscale softens on the E-Ink panel (the Onyx standby renderer dithers and downscales further), and
+ * fill/crop mode scales the cover up to the full screen width, so even a "near-screen" 1067px Komga
+ * thumbnail looks blurry; the full first page (native page resolution) downsamples crisply instead.
+ * A non-positive [coverMinEdgePx] (no/undecodable cover) also returns true so the upgrade is
+ * attempted; a non-positive [screenMinEdgePx] (unknown) returns false so we never loop on a bad metric.
  */
 fun needsHighResUpgrade(coverMinEdgePx: Int, screenMinEdgePx: Int): Boolean {
     if (screenMinEdgePx <= 0) return false
     if (coverMinEdgePx <= 0) return true
-    return coverMinEdgePx < screenMinEdgePx / 2
+    return coverMinEdgePx < screenMinEdgePx
 }

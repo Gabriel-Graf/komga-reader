@@ -199,7 +199,8 @@ class ScreenSaverManager @Inject constructor(
 
     /**
      * Draws [src] onto a device-screen-sized bitmap. Per the user's screensaver setting: letterbox
-     * (contain, whole image on white) or fill+crop (cover — fills the width, crops top/bottom).
+     * (contain, whole image on white) or fill+crop (cover/zoom — fills the target and crops the
+     * overflow top-aligned, but never upscales a sub-screen cover past native; see [fitCentered]).
      */
     private suspend fun fitToScreen(src: Bitmap): Bitmap {
         val dm = context.resources.displayMetrics
@@ -263,21 +264,29 @@ class ScreenSaverManager @Inject constructor(
 internal data class FitRect(val left: Int, val top: Int, val right: Int, val bottom: Int)
 
 /**
- * Computes the centered destination rectangle for a [srcW]x[srcH] image inside a [dstW]x[dstH]
- * target. [cover] = false → aspect-fit ("contain", letterboxed, whole image visible); [cover] = true
- * → aspect-fill ("cover", fills the target and crops the overflow — the rect may extend past the
- * target, which the caller's canvas clips). Pure (no Android types) so the logic is unit-testable.
+ * Computes the destination rectangle for a [srcW]x[srcH] image inside a [dstW]x[dstH] target.
+ *
+ * [cover] = false → aspect-fit ("contain", letterboxed, whole image centered, visible — may upscale a
+ * small source to fit). [cover] = true → aspect-fill ("cover/zoom"), but **never upscaled past native**:
+ * a high-res cover downscales to fill the target and crops the overflow, while a sub-screen cover (e.g. a
+ * ~1067px manga page on a 1264px-wide standby) stays at native size — sharp, with a minimal centred
+ * margin — because enlarging it only blurs without adding detail (user decision 2026-06-23: sharpness
+ * over fill). When the cover mode *does* crop a bottom overflow, the image is **top**-aligned so a
+ * cover's title near the top edge stays visible; when it fits, it is centred for balanced margins.
+ * Pure (no Android types) so the logic is unit-testable.
  */
 internal fun fitCentered(srcW: Int, srcH: Int, dstW: Int, dstH: Int, cover: Boolean = false): FitRect {
     if (srcW <= 0 || srcH <= 0) return FitRect(0, 0, dstW, dstH)
     val scale = if (cover) {
-        maxOf(dstW.toFloat() / srcW, dstH.toFloat() / srcH)
+        // Fill the target, but cap at 1.0 so a sub-screen cover is never upscaled (sharpness over fill).
+        minOf(maxOf(dstW.toFloat() / srcW, dstH.toFloat() / srcH), 1f)
     } else {
         minOf(dstW.toFloat() / srcW, dstH.toFloat() / srcH)
     }
     val w = (srcW * scale).toInt()
     val h = (srcH * scale).toInt()
     val left = (dstW - w) / 2
-    val top = (dstH - h) / 2
+    // Top-align only when a bottom overflow gets cropped (keep the title); otherwise centre for balance.
+    val top = if (cover && h > dstH) 0 else (dstH - h) / 2
     return FitRect(left, top, left + w, top + h)
 }

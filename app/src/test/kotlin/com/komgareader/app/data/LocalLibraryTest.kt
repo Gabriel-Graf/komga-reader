@@ -146,4 +146,36 @@ class LocalLibraryTest {
     @Test fun `localSeriesDetail is null when nothing of that series is downloaded`() {
         assertNull(listOf(dl("b1", series = "S2")).localSeriesDetail("S1", 7))
     }
+
+    // --- coverRequests (covers to prewarm at download time so they show instantly offline) ---
+
+    @Test fun `coverRequests yields one series cover per source-series plus each book cover`() {
+        val downloads = listOf(
+            dl("b1", series = "S1", src = 7),
+            dl("b2", series = "S1", src = 7), // same series -> series cover deduped
+            dl("b3", series = "S2", src = 9),
+        )
+        val reqs = downloads.coverRequests()
+        assertEquals(
+            setOf(
+                CoverRequest(7, "S1", isSeries = true),
+                CoverRequest(9, "S2", isSeries = true),
+            ),
+            reqs.filter { it.isSeries }.toSet(),
+        )
+        assertEquals(
+            setOf(
+                CoverRequest(7, "b1", isSeries = false),
+                CoverRequest(7, "b2", isSeries = false),
+                CoverRequest(9, "b3", isSeries = false),
+            ),
+            reqs.filter { !it.isSeries }.toSet(),
+        )
+    }
+
+    @Test fun `coverRequests has no duplicates`() {
+        val downloads = listOf(dl("b1", series = "S1", src = 7), dl("b1", series = "S1", src = 7))
+        val reqs = downloads.coverRequests()
+        assertEquals(reqs.size, reqs.distinct().size)
+    }
 }

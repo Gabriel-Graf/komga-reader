@@ -44,10 +44,12 @@ class SourceCoverFetcher(
             coverCache.putIfAbsent(model.sourceId, model.remoteId, model.isSeries, primary)
             primary
         } else {
-            // Offline / no source cover: render the downloaded file (its own work), else the sync-cached
-            // source cover (e.g. a non-downloaded collection member prewarmed while online), else nothing.
-            localCover.render(model)
-                ?: coverCache.get(model.sourceId, model.remoteId, model.isSeries)
+            // Offline / no source cover. Prefer the cached source thumbnail (instant bytes, the cover the
+            // user saw online — prewarmed at download or collection sync) over rendering the downloaded
+            // file (slow on the first view, and app-renderable only for PDF/CBR); fall back to that render
+            // for works whose source cover was never cached, else nothing.
+            coverCache.get(model.sourceId, model.remoteId, model.isSeries)
+                ?: localCover.render(model)
                 ?: primary
         }
         return SourceResult(

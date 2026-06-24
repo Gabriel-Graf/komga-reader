@@ -91,6 +91,24 @@ fun List<DownloadedBook>.coverBookFor(model: SourceCover): DownloadedBook? =
         firstOrNull { it.sourceId == model.sourceId && it.bookRemoteId == model.remoteId }
     }
 
+/**
+ * A cover the offline cache should hold for a downloaded work, addressed exactly like a [SourceCover]
+ * (sourceId, remoteId, isSeries). Fetched from the source's own `coverBytes` while the download is
+ * still online and persisted in `SourceCoverCache`, so the library grid and the series-detail list
+ * show covers **instantly** offline — for every format, not just the app-rendered PDF/CBR.
+ */
+data class CoverRequest(val sourceId: Long, val remoteId: String, val isSeries: Boolean)
+
+/**
+ * Distinct covers to prewarm for these downloads: one **series** cover per (source, series) — what the
+ * library grid and the detail hero show — plus each downloaded **book**'s own cover (the detail list).
+ */
+fun List<DownloadedBook>.coverRequests(): List<CoverRequest> {
+    val series = map { CoverRequest(it.sourceId, it.seriesRemoteId, isSeries = true) }
+    val books = map { CoverRequest(it.sourceId, it.bookRemoteId, isSeries = false) }
+    return (series + books).distinct()
+}
+
 /** Toleranter Parser für den persistierten Format-String ("CBZ"/"cbz"/…); Unbekanntes → [BookFormat.CBZ]. */
 private fun bookFormatOf(format: String): BookFormat =
     BookFormat.entries.firstOrNull { it.name.equals(format, ignoreCase = true) } ?: BookFormat.CBZ

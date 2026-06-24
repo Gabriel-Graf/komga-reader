@@ -123,6 +123,14 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   **kein** `AuthHeaders` mehr und keine quellen-spezifische URL/Auth in der UI. `BrowsableSource`
   trägt jetzt `downloadFile(…, onProgress)`, `seriesIdOf`, `coverBytes`. `KomgaSource`-Typen leben
   nur noch in `ActiveSource`/`SourceRegistration`/`KomgaSourceProvider`.
+  **Streaming-Download (Ist, 2026-06-24):** `BrowsableSource.downloadTo(id, out: OutputStream, onProgress)`
+  streamt die Buchdatei in 64-KB-Chunks direkt in den Ziel-Strom — **nie** die ganze Datei im RAM. Default
+  = gepuffert über `downloadFile` (abwärtskompatibel, OPDS/Plugins), `KomgaSource` überschreibt mit echtem
+  Stream. `DownloadManager.store(…)` nimmt jetzt eine `write: suspend (OutputStream) -> Unit`-Lambda statt
+  `bytes` und streamt in die SAF-/filesDir-Datei (löscht eine halb geschriebene Datei bei Fehler). **Grund:**
+  `downloadFile` puffert die Datei in `ByteArrayOutputStream` + kopiert sie bei `toByteArray()` doppelt →
+  mehrere/große Downloads sprengten den ~256-MB-E-Ink-Heap (`OutOfMemoryError` bei 4 parallelen ~58-MB-CBZ,
+  auf echter Boox 2026-06-24). `downloadFile` bleibt für die In-RAM-Konsumenten (Reader-Render, Screensaver).
 - **Multi-Source verdrahtet (2026-06-09, #7 P2/P3):** N Quellen gleichzeitig, gemischt.
   `ActiveSource` bietet `all()` (Aggregation) + `get(sourceId)` (genau die Quelle eines Werks);
   `current()` bleibt nur Übergangs-API. Die `sourceId` jedes Werks wird **durch die Navigation

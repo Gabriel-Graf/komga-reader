@@ -170,7 +170,6 @@ class LibraryViewModel @Inject constructor(
                 events.emit(LibraryEvent.DownloadStarted(books.size))
                 for (book in books) {
                     withContext(Dispatchers.IO) {
-                        val bytes = source.downloadFile(book.remoteId)
                         downloadManager.store(
                             bookRemoteId = book.remoteId,
                             sourceId = book.sourceId,
@@ -178,14 +177,13 @@ class LibraryViewModel @Inject constructor(
                             title = book.title,
                             format = book.format.name,
                             totalPages = book.pageCount,
-                            bytes = bytes,
                             seriesTitle = series.title,
                             seriesCoverUrl = series.coverUrl,
                             number = book.number,
                             seriesSummary = detail?.summary ?: series.summary,
                             seriesStatus = detail?.status ?: series.status,
                             seriesGenres = detail?.genres ?: series.genres,
-                        )
+                        ) { out -> source.downloadTo(book.remoteId, out) }
                     }
                 }
                 events.emit(LibraryEvent.DownloadComplete)

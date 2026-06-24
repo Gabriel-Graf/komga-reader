@@ -58,8 +58,8 @@ class BlockFDownloadTest {
         // Offline speichern und zurücklesen.
         downloads.store(
             bookRemoteId = book.remoteId, sourceId = source.id, seriesRemoteId = series.remoteId,
-            title = book.title, format = "cbz", totalPages = book.pageCount, bytes = bytes,
-        )
+            title = book.title, format = "cbz", totalPages = book.pageCount,
+        ) { out -> out.write(bytes) }
         val entity = db.downloadDao().get(book.remoteId)
         assertNotNull("Download-Eintrag muss persistiert sein", entity)
         val localBytes = downloads.readBytes(entity!!.localPath)

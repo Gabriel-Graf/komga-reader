@@ -35,32 +35,35 @@ class DownloadManager @Inject constructor(
     private val resolver: ContentResolver get() = ctx.contentResolver
 
     /**
-     * Schreibt [bytes] in den konfigurierten Speicherort und merkt den Download in der DB.
+     * Streamt die Buchdatei über [write] in den konfigurierten Speicherort und merkt den Download in
+     * der DB. [write] bekommt den Ziel-[OutputStream] und schreibt die Bytes hinein (typisch
+     * `source.downloadTo(id, out, onProgress)`) — **ohne** die Datei je als Ganzes im RAM zu halten
+     * (das verhinderte `OutOfMemoryError` bei mehreren/großen Downloads auf dem kleinen E-Ink-Heap).
      *
-     * Wenn ein SAF-Tree-URI in den Settings gesetzt ist, wird die Datei dort per
-     * DocumentFile angelegt und der resultierende content-URI gespeichert.
-     * Sonst fällt es auf [filesDir]/downloads zurück.
+     * Wenn ein SAF-Tree-URI in den Settings gesetzt ist, wird die Datei dort per DocumentFile angelegt
+     * und der resultierende content-URI gespeichert. Sonst fällt es auf [filesDir]/downloads zurück.
+     * Schlägt [write] fehl (z.B. Netzfehler mitten im Stream), wird die angefangene Datei gelöscht.
      */
     suspend fun store(
         bookRemoteId: String,
         sourceId: Long,
         seriesRemoteId: String,
-        title: String,
         format: String,
         totalPages: Int,
-        bytes: ByteArray,
+        title: String,
         seriesTitle: String = "",
         seriesCoverUrl: String? = null,
         number: String? = null,
         seriesSummary: String? = null,
         seriesStatus: String? = null,
         seriesGenres: List<String> = emptyList(),
+        write: suspend (out: java.io.OutputStream) -> Unit,
     ) = withContext(Dispatchers.IO) {
         val ext = format.lowercase()
         val fileName = "$bookRemoteId.$ext"
         val mimeType = mimeTypeFor(ext)
 
-        val localPath: String = storeBytes(bytes, fileName, mimeType)
+        val localPath: String = streamToStore(fileName, mimeType, write)
         Log.i(TAG, "Gespeichert: $fileName → $localPath")
 
         downloads.put(
@@ -82,7 +85,11 @@ class DownloadManager @Inject constructor(
         )
     }
 
-    private suspend fun storeBytes(bytes: ByteArray, fileName: String, mimeType: String): String {
+    private suspend fun streamToStore(
+        fileName: String,
+        mimeType: String,
+        write: suspend (out: java.io.OutputStream) -> Unit,
+    ): String {
         val treeDirUri = settings.downloadDir.firstOrNull()
         if (treeDirUri != null) {
             val treeDir = DocumentFile.fromTreeUri(ctx, Uri.parse(treeDirUri))
@@ -92,15 +99,27 @@ class DownloadManager @Inject constructor(
             treeDir.findFile(fileName)?.delete()
             val docFile = treeDir.createFile(mimeType, fileName)
                 ?: error("Datei konnte nicht im SAF-Ordner angelegt werden: $fileName")
-            resolver.openOutputStream(docFile.uri)?.use { it.write(bytes) }
-                ?: error("OutputStream für SAF-URI konnte nicht geöffnet werden: ${docFile.uri}")
+            try {
+                resolver.openOutputStream(docFile.uri)?.use { write(it) }
+                    ?: error("OutputStream für SAF-URI konnte nicht geöffnet werden: ${docFile.uri}")
+                check((docFile.length()) > 0L) { "Leere Datei heruntergeladen: $fileName" }
+            } catch (e: Throwable) {
+                runCatching { docFile.delete() } // angefangene Datei nicht als gültigen Download liegen lassen
+                throw e
+            }
             return docFile.uri.toString()
         }
 
         // Fallback: interner App-Speicher
         val dir = File(ctx.filesDir, "downloads").apply { mkdirs() }
         val file = File(dir, fileName)
-        file.writeBytes(bytes)
+        try {
+            file.outputStream().use { write(it) }
+            check(file.length() > 0L) { "Leere Datei heruntergeladen: $fileName" }
+        } catch (e: Throwable) {
+            runCatching { file.delete() }
+            throw e
+        }
         return file.absolutePath
     }
 

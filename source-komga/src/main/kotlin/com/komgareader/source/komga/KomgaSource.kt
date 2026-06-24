@@ -103,6 +103,32 @@ class KomgaSource internal constructor(
         return sink.toByteArray()
     }
 
+    /**
+     * Memory-safe download path: streams the response body straight into [out] in 64 KB chunks, never
+     * buffering the whole file (unlike [downloadFile], which holds it in a [java.io.ByteArrayOutputStream]
+     * and copies it again on `toByteArray()` — the source of the download `OutOfMemoryError` on the small
+     * E-Ink heap when several volumes download at once).
+     */
+    override suspend fun downloadTo(
+        bookRemoteId: String,
+        out: java.io.OutputStream,
+        onProgress: (read: Long, total: Long) -> Unit,
+    ) {
+        val body = api.getFile(bookRemoteId)
+        val total = body.contentLength()
+        body.byteStream().use { input ->
+            val chunk = ByteArray(64 * 1024)
+            var read = input.read(chunk)
+            var sum = 0L
+            while (read >= 0) {
+                out.write(chunk, 0, read)
+                sum += read
+                onProgress(sum, total)
+                read = input.read(chunk)
+            }
+        }
+    }
+
     override suspend fun seriesIdOf(bookRemoteId: String): String =
         api.getBook(bookRemoteId).seriesId
 

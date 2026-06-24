@@ -61,6 +61,22 @@ interface BrowsableSource : MediaSource {
     ): ByteArray
 
     /**
+     * Streamt die komplette Buchdatei in [out], ohne sie als Ganzes im RAM zu halten — der
+     * speicherschonende Pfad für **Downloads** (die Bytes gehen direkt auf die Platte). Wichtig auf
+     * E-Ink-Geräten mit kleinem Heap: [downloadFile] puffert die ganze Datei (und kopiert sie bei
+     * `toByteArray()` kurz doppelt), was bei mehreren/großen Downloads zu `OutOfMemoryError` führt.
+     * Default = gepuffert über [downloadFile] (abwärtskompatibel); Quellen mit echtem Stream
+     * überschreiben es. [out] wird **nicht** geschlossen — der Aufrufer besitzt den Strom.
+     */
+    suspend fun downloadTo(
+        bookRemoteId: String,
+        out: java.io.OutputStream,
+        onProgress: (read: Long, total: Long) -> Unit = { _, _ -> },
+    ) {
+        out.write(downloadFile(bookRemoteId, onProgress))
+    }
+
+    /**
      * Löst auf, zu welcher Serie ein Buch gehört (für die Kapitel-Liste des Webtoon-Strips).
      * Gibt die quellen-interne Serien-`remoteId` zurück.
      */

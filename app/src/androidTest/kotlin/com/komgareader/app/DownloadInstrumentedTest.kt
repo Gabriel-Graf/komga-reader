@@ -52,8 +52,7 @@ class DownloadInstrumentedTest {
             title = "Berserk Vol01",
             format = "CBZ",
             totalPages = 200,
-            bytes = bytes,
-        )
+        ) { out -> out.write(bytes) }
 
         // DB-Eintrag muss vorhanden sein
         val downloaded = db.downloadDao().get(bookRemoteId)

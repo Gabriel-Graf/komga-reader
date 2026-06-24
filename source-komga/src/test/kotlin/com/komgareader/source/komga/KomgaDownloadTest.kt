@@ -23,4 +23,21 @@ class KomgaDownloadTest {
         assertEquals("EPUBBYTES", bytes.decodeToString())
         assertTrue(server.takeRequest().path!!.endsWith("/books/B1/file"))
     }
+
+    @Test
+    fun `downloadTo streamt die ganze Datei in den OutputStream`() = runTest {
+        server.enqueue(MockResponse().setBody("CBZBYTES"))
+        val out = java.io.ByteArrayOutputStream()
+        source().downloadTo("B1", out)
+        assertEquals("CBZBYTES", out.toByteArray().decodeToString())
+        assertTrue(server.takeRequest().path!!.endsWith("/books/B1/file"))
+    }
+
+    @Test
+    fun `downloadTo meldet Fortschritt`() = runTest {
+        server.enqueue(MockResponse().setBody("0123456789"))
+        var lastRead = 0L
+        source().downloadTo("B1", java.io.ByteArrayOutputStream()) { read, _ -> lastRead = read }
+        assertEquals(10L, lastRead)
+    }
 }

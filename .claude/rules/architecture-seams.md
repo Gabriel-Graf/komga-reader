@@ -300,13 +300,18 @@ zentrale Design-Entscheidung (Spec §3) — sie darf nie aufgeweicht werden.
   (`:data`, `com.komgareader.data.cover`) persistiert die rohen `coverBytes` (Naht A) **gekeyt am Werk**
   (`sourceCoverKey(sourceId, remoteId, isSeries)`, sha256) — unabhängig von einer Download-Datei, anders
   als `LocalCoverStore` (datei-signatur-gekeyt, nur heruntergeladene Werke). Gefüllt zweifach:
-  **write-through** im `SourceCoverFetcher` (jedes online geladene Cover wird `putIfAbsent`-persistiert) +
+  **write-through** im `SourceCoverFetcher` (jedes online geladene Cover wird `putIfAbsent`-persistiert),
   der `@Singleton CollectionCoverPrewarmer` (`app/data`) cacht beim Collection-Sync die Cover **aller**
   Sammlungs-Mitglieder (Serien, die nicht heruntergeladen sein müssen → Server-Cover sonst offline blank),
   getriggert über `SyncCoordinator.prewarmCovers` (onAppStart/onServerChanged/onCollectionsTabEntered),
-  geprunt auf die aktuellen Member-Keys (`coverPrunePlan`). Der `SourceCoverFetcher`-Fallback ist jetzt:
-  primary (online) → `LocalCoverRenderer.render` (Download-Datei) → `SourceCoverCache.get` (sync-gecacht) →
-  leer. (2) **Sammlungs-Detail offline = nur lokale Werke:** `CollectionsViewModel.probeCollectionSources`
+  geprunt auf die aktuellen Member-Keys (`coverPrunePlan`); **und (Ist, 2026-06-24)** der
+  `@Singleton DownloadCoverPrewarmer` cacht nach jedem Download das **eigene Server-Cover** des Werks
+  (Serie + Buch, `coverRequests()` pure+unit-getestet) über `ActiveSource` — für **jedes Format**,
+  schließt die Lücke, dass heruntergeladene CBZ/EPUB offline blank/langsam waren (`LocalCoverStore`
+  app-rendert nur PDF/CBR). Der `SourceCoverFetcher`-Fallback ist jetzt: primary (online) →
+  `SourceCoverCache.get` (gecachtes Server-Thumbnail, instant — was der Nutzer online sah) →
+  `LocalCoverRenderer.render` (Download-Datei-Render, langsam, nur PDF/CBR) → leer. **Wichtig: die
+  Reihenfolge cache-vor-render** — das gecachte Thumbnail schlägt das langsame Datei-Render. (2) **Sammlungs-Detail offline = nur lokale Werke:** `CollectionsViewModel.probeCollectionSources`
   probt je distinkter Member-Quelle EINMAL die Erreichbarkeit (ein `coverBytes`-Abruf, 4s-Timeout); die
   reine `visibleMembers(members, downloadedMemberKeys(downloads, kind), onlineSources)`
   (`CollectionAvailability.kt`, unit-getestet) zeigt pro Mitglied nur, wenn dessen Quelle erreichbar **oder**
